@@ -1,6 +1,0 @@
-{
-  "name": "Cadastro de Jogos de Futebol",
-  "description": "Sistema para cadastrar e gerenciar partidas de futebol, ligas, países e times com geração automática de IDs Únicos.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
