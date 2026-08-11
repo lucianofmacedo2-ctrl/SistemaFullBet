@@ -24,17 +24,17 @@ export const ToastNotification: React.FC<ToastProps> = ({ notifications, onDismi
       {notifications.map((notif, idx) => (
         <div
           key={`${notif.id}-${idx}`}
-          className="pointer-events-auto flex items-start gap-3 bg-[#0e0e0e] border border-emerald-500/40 text-gray-100 p-4 rounded-xl shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-3 duration-300"
+          className="pointer-events-auto flex items-start gap-3 bg-[#0f1325] border border-[#2C3EC4]/50 text-white p-4 rounded-xl shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-3 duration-300"
         >
-          <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg shrink-0 mt-0.5 border border-emerald-500/20">
-            <Sparkles className="w-5 h-5" />
+          <div className="p-2 bg-[#2C3EC4]/20 text-[#2C3EC4] rounded-lg shrink-0 mt-0.5 border border-[#2C3EC4]/40">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 tracking-wide uppercase border border-emerald-500/30">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#2C3EC4]/30 text-white tracking-wide uppercase border border-[#2C3EC4]/50">
                 ID Único Gerado
               </span>
-              <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
+              <span className="text-xs font-mono font-bold text-white bg-[#2C3EC4] px-2 py-0.5 rounded border border-white/20">
                 {notif.id}
               </span>
             </div>
@@ -44,7 +44,7 @@ export const ToastNotification: React.FC<ToastProps> = ({ notifications, onDismi
               {notif.type === 'team' && `Time: ${notif.name}`}
               {notif.type === 'match' && `Partida: ${notif.name}`}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-300 mt-0.5">
               Item cadastrado pela 1ª vez e salvo no banco de dados.
             </p>
           </div>

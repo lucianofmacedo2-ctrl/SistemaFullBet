@@ -403,17 +403,17 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0b0e1b] text-white flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-400 rounded-full animate-spin"></div>
-          <p className="text-xs font-mono text-gray-400">Carregando Banco de Dados de Futebol...</p>
+          <div className="w-12 h-12 border-4 border-[#2C3EC4]/30 border-t-[#2C3EC4] rounded-full animate-spin"></div>
+          <p className="text-xs font-mono text-gray-300">Carregando Banco de Dados de Futebol...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-100 font-sans selection:bg-emerald-500 selection:text-black pb-16">
+    <div className="min-h-screen bg-[#0b0e1b] text-white font-sans selection:bg-[#2C3EC4] selection:text-white pb-16">
       {/* Navbar */}
       <Navbar
         dbState={dbState}

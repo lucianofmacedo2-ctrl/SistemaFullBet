@@ -76,11 +76,14 @@ async function parseXlsxFile(file: File): Promise<ParsedTeamRow[]> {
       if (colIdx <= 0) return '';
       const cell = row.getCell(colIdx);
       if (!cell || cell.value === null || cell.value === undefined) return '';
-      if (typeof cell.value === 'object' && 'text' in cell.value) {
-        return String(cell.value.text || '').trim();
-      }
-      if (typeof cell.value === 'object' && 'hyperlink' in cell.value) {
-        return String(cell.value.hyperlink || cell.value.text || '').trim();
+      if (typeof cell.value === 'object') {
+        const obj = cell.value as Record<string, any>;
+        if ('hyperlink' in obj) {
+          return String(obj.hyperlink || obj.text || '').trim();
+        }
+        if ('text' in obj) {
+          return String(obj.text || '').trim();
+        }
       }
       return String(cell.value).trim();
     };

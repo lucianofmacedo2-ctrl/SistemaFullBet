@@ -1,10 +1,54 @@
 export type MatchStatus = 'AGENDADO' | 'EM_ANDAMENTO' | 'FINALIZADO' | 'ADIADO';
 
 export interface MatchStats {
+  // Gols & Placar
   halftimeHomeScore?: number | null;
   halftimeAwayScore?: number | null;
-  possessionHome?: number | null; // e.g. 55 (%)
-  possessionAway?: number | null; // e.g. 45 (%)
+  goalMinutesHome?: string;
+  goalMinutesAway?: string;
+  firstGoalMinuteHome?: number | null;
+  firstGoalMinuteAway?: number | null;
+  firstGoalMinuteMatch?: number | null;
+
+  // Cantos (Escanteios)
+  cornersHomeFT?: number | null;
+  cornersAwayFT?: number | null;
+  cornersHomeHT?: number | null;
+  cornersAwayHT?: number | null;
+
+  // Posse de Bola (%)
+  possessionHomeFT?: number | null;
+  possessionAwayFT?: number | null;
+  possessionHomeHT?: number | null;
+  possessionAwayHT?: number | null;
+
+  // Cartões Amarelos
+  yellowCardsHomeFT?: number | null;
+  yellowCardsAwayFT?: number | null;
+  yellowCardsHomeHT?: number | null;
+  yellowCardsAwayHT?: number | null;
+
+  // Cartões Vermelhos
+  redCardsHomeFT?: number | null;
+  redCardsAwayFT?: number | null;
+  redCardsHomeHT?: number | null;
+  redCardsAwayHT?: number | null;
+
+  // Chutes ao Gol (On Target)
+  shotsOnTargetHomeFT?: number | null;
+  shotsOnTargetAwayFT?: number | null;
+  shotsOnTargetHomeHT?: number | null;
+  shotsOnTargetAwayHT?: number | null;
+
+  // Finalizações (Chutes Totais)
+  shotsHomeFT?: number | null;
+  shotsAwayFT?: number | null;
+  shotsHomeHT?: number | null;
+  shotsAwayHT?: number | null;
+
+  // Campos legados para compatibilidade
+  possessionHome?: number | null;
+  possessionAway?: number | null;
   shotsHome?: number | null;
   shotsAway?: number | null;
   shotsOnTargetHome?: number | null;
@@ -19,8 +63,8 @@ export interface MatchStats {
   redCardsAway?: number | null;
   offsidesHome?: number | null;
   offsidesAway?: number | null;
-  scorersHome?: string; // e.g. "Pedro (23', 45'), Gabigol (80')"
-  scorersAway?: string; // e.g. "Veiga (12')"
+  scorersHome?: string;
+  scorersAway?: string;
 }
 
 export interface Country {
@@ -51,6 +95,34 @@ export interface Team {
   createdAt: string;
 }
 
+export interface MinuteAndOdd {
+  minute?: number | null;
+  odd?: number | null;
+}
+
+export interface MatchOdds {
+  // Odds FT (Full Time)
+  homeFT?: number | null;
+  drawFT?: number | null;
+  awayFT?: number | null;
+  over25FT?: number | null;
+  under25FT?: number | null;
+  bttsFT?: number | null;
+
+  // Odds HT (Half Time)
+  homeHT?: number | null;
+  drawHT?: number | null;
+  awayHT?: number | null;
+  over05HT?: number | null;
+  under05HT?: number | null;
+  bttsHT?: number | null;
+
+  // Goal moments & odds
+  firstGoalHome?: MinuteAndOdd;
+  firstGoalAway?: MinuteAndOdd;
+  earlyGameGoal?: MinuteAndOdd;
+}
+
 export interface Match {
   id: string; // e.g. "JOGO-001"
   countryId: string;
@@ -70,9 +142,11 @@ export interface Match {
   matchDate: string; // ISO date-time string
   round?: string; // e.g. "Rodada 1", "Final"
   stadium?: string;
+  referee?: string;
   status: MatchStatus;
   notes?: string;
   stats?: MatchStats;
+  odds?: MatchOdds;
   createdAt: string;
 }
 
