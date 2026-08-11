@@ -8,7 +8,8 @@ import {
   BarChart3,
   ListOrdered,
   RotateCcw,
-  CheckCircle2
+  CheckCircle2,
+  FileSpreadsheet
 } from 'lucide-react';
 import { DbState } from '../types';
 
@@ -18,6 +19,7 @@ interface NavbarProps {
   setActiveTab: (tab: 'matches' | 'countries' | 'leagues' | 'teams' | 'stats') => void;
   onOpenMatchModal: () => void;
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
+  onOpenBulkImportModal?: () => void;
   onOpenBackupModal: () => void;
 }
 
@@ -27,6 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   onOpenMatchModal,
   onOpenEntityModal,
+  onOpenBulkImportModal,
   onOpenBackupModal,
 }) => {
   return (
@@ -64,6 +67,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Plus className="w-4 h-4 stroke-[3]" />
               <span className="hidden xs:inline">Cadastrar</span> Jogo
             </button>
+
+            {onOpenBulkImportModal && (
+              <button
+                onClick={onOpenBulkImportModal}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-400 border border-emerald-500/30 font-medium text-sm rounded-xl transition-all"
+                title="Cadastrar Equipes em Massa via Excel (.xlsx)"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <span className="hidden md:inline">Importar Excel</span>
+              </button>
+            )}
 
             <button
               onClick={() => onOpenEntityModal()}

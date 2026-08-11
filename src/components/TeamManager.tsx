@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2 } from 'lucide-react';
+import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet } from 'lucide-react';
 import { DbState, Team } from '../types';
 
 interface TeamManagerProps {
   dbState: DbState;
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
+  onOpenBulkImportModal?: () => void;
   onDeleteTeam: (id: string) => void;
   onUpdateTeamLogo?: (teamId: string, logoUrl: string) => void;
   onEditTeam?: (team: Team) => void;
@@ -13,6 +14,7 @@ interface TeamManagerProps {
 export const TeamManager: React.FC<TeamManagerProps> = ({
   dbState,
   onOpenEntityModal,
+  onOpenBulkImportModal,
   onDeleteTeam,
   onUpdateTeamLogo,
   onEditTeam,
@@ -64,6 +66,17 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
               className="bg-[#1a1a1a] border border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
             />
           </div>
+
+          {onOpenBulkImportModal && (
+            <button
+              onClick={onOpenBulkImportModal}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-400 font-bold text-xs rounded-xl border border-emerald-500/30 transition-all hover:scale-[1.02]"
+              title="Importar lista de equipes em massa via arquivo Excel (.xlsx)"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <span>Importar Excel</span>
+            </button>
+          )}
 
           <button
             onClick={() => onOpenEntityModal('team')}

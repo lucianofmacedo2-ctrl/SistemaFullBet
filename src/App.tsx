@@ -13,6 +13,7 @@ import { MatchList } from './components/MatchList';
 import { MatchFormModal } from './components/MatchFormModal';
 import { EntityFormModal } from './components/EntityFormModal';
 import { EditEntityModal } from './components/EditEntityModal';
+import { BulkTeamImportModal } from './components/BulkTeamImportModal';
 import { CountryManager } from './components/CountryManager';
 import { LeagueManager } from './components/LeagueManager';
 import { TeamManager } from './components/TeamManager';
@@ -21,6 +22,7 @@ import { BackupModal } from './components/BackupModal';
 import { MatchStatsModal } from './components/MatchStatsModal';
 import { ToastNotification } from './components/ToastNotification';
 import { MatchStats, MatchStatus } from './types';
+import { findOrCreateTeam } from './utils/idGenerator';
 
 export default function App() {
   const [dbState, setDbState] = useState<DbState>({
@@ -49,6 +51,7 @@ export default function App() {
   const [editEntityData, setEditEntityData] = useState<Country | League | Team | null>(null);
 
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [isBulkTeamModalOpen, setIsBulkTeamModalOpen] = useState(false);
 
   // Toast notifications for newly created IDs
   const [notifications, setNotifications] = useState<NewEntityCreatedNotification[]>([]);
@@ -283,6 +286,61 @@ export default function App() {
     await saveDatabaseState(newState);
   };
 
+  // Bulk import handler for teams
+  const handleBulkImportTeams = async (importData: {
+    countryId: string;
+    countryName: string;
+    leagueId: string;
+    leagueName: string;
+    season: string;
+    teams: { name: string; stadium: string; logoUrl: string }[];
+  }) => {
+    let currentTeams = [...dbState.teams];
+    let createdCount = 0;
+    const newNotifs: NewEntityCreatedNotification[] = [];
+
+    for (const teamItem of importData.teams) {
+      const res = findOrCreateTeam(
+        teamItem.name,
+        importData.countryId,
+        importData.countryName,
+        currentTeams,
+        teamItem.stadium,
+        teamItem.logoUrl
+      );
+
+      if (res.isNew) {
+        createdCount++;
+        currentTeams = res.updatedTeams;
+        newNotifs.push({
+          type: 'team',
+          id: res.team.id,
+          name: res.team.name,
+        });
+      } else {
+        // If team already exists, update stadium and logoUrl if provided
+        currentTeams = currentTeams.map(t => {
+          if (t.id === res.team.id) {
+            return {
+              ...t,
+              stadium: teamItem.stadium || t.stadium,
+              logoUrl: teamItem.logoUrl || t.logoUrl,
+            };
+          }
+          return t;
+        });
+      }
+    }
+
+    const newState = { ...dbState, teams: currentTeams };
+    setDbState(newState);
+    await saveDatabaseState(newState);
+
+    if (newNotifs.length > 0) {
+      setNotifications(prev => [...prev, ...newNotifs]);
+    }
+  };
+
   // Import Database
   const handleImportDb = async (importedState: DbState) => {
     setDbState(importedState);
@@ -363,6 +421,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenMatchModal={handleOpenNewMatchModal}
         onOpenEntityModal={handleOpenEntityModal}
+        onOpenBulkImportModal={() => setIsBulkTeamModalOpen(true)}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
       />
 
@@ -412,6 +471,7 @@ export default function App() {
           <TeamManager
             dbState={dbState}
             onOpenEntityModal={handleOpenEntityModal}
+            onOpenBulkImportModal={() => setIsBulkTeamModalOpen(true)}
             onDeleteTeam={handleDeleteTeam}
             onUpdateTeamLogo={handleUpdateTeamLogo}
             onEditTeam={handleOpenEditTeam}
@@ -464,6 +524,14 @@ export default function App() {
         dbState={dbState}
         onImportDb={handleImportDb}
         onClearDb={handleClearDb}
+      />
+
+      <BulkTeamImportModal
+        isOpen={isBulkTeamModalOpen}
+        onClose={() => setIsBulkTeamModalOpen(false)}
+        dbState={dbState}
+        onBulkImportTeams={handleBulkImportTeams}
+        onOpenEntityModal={handleOpenEntityModal}
       />
 
       {/* Unique ID Toast Notifications */}
