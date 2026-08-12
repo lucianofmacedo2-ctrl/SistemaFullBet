@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Search,
   Filter,
@@ -25,7 +25,12 @@ import {
   TrendingUp,
   DollarSign,
   Zap,
-  FileSpreadsheet
+  FileSpreadsheet,
+  CheckSquare,
+  Square,
+  X,
+  FileCheck,
+  FileWarning
 } from 'lucide-react';
 import { DbState, Match, MatchStatus } from '../types';
 
@@ -38,6 +43,31 @@ interface MatchListProps {
   onOpenBulkMatchImportModal?: () => void;
 }
 
+export interface CompletenessResult {
+  isComplete: boolean;
+  missingFields: string[];
+}
+
+export function checkMatchCompleteness(match: Match): CompletenessResult {
+  const missing: string[] = [];
+  if (!match.matchDate) missing.push('Data/Hora');
+  if (!match.stadium || !match.stadium.trim()) missing.push('Estádio');
+  if (!match.referee || !match.referee.trim()) missing.push('Árbitro');
+  if (!match.round || !match.round.trim()) missing.push('Rodada');
+  if (
+    !match.odds ||
+    match.odds.homeFT == null ||
+    match.odds.drawFT == null ||
+    match.odds.awayFT == null
+  ) {
+    missing.push('Odds 1X2 FT');
+  }
+  return {
+    isComplete: missing.length === 0,
+    missingFields: missing,
+  };
+}
+
 export const MatchList: React.FC<MatchListProps> = ({
   dbState,
   onEditMatch,
@@ -48,17 +78,42 @@ export const MatchList: React.FC<MatchListProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCountryId, setFilterCountryId] = useState('');
-  const [filterLeagueId, setFilterLeagueId] = useState('');
+  const [selectedLeagueIds, setSelectedLeagueIds] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('');
+  const [futureCompletenessFilter, setFutureCompletenessFilter] = useState<'ALL' | 'COMPLETE' | 'INCOMPLETE'>('ALL');
   const [expandedStatsMatchId, setExpandedStatsMatchId] = useState<string | null>(null);
+  const [isLeagueDropdownOpen, setIsLeagueDropdownOpen] = useState(false);
+  const [leagueSearchTerm, setLeagueSearchTerm] = useState('');
+
+  const leagueDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close league dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (leagueDropdownRef.current && !leagueDropdownRef.current.contains(e.target as Node)) {
+        setIsLeagueDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const matches = dbState.matches;
 
   // Counts
   const totalMatches = matches.length;
-  const agendadosCount = matches.filter(m => m.status === 'AGENDADO').length;
+  const agendadosMatchesAll = matches.filter(m => m.status === 'AGENDADO');
+  const agendadosCount = agendadosMatchesAll.length;
+  const agendadosCompletosCount = agendadosMatchesAll.filter(m => checkMatchCompleteness(m).isComplete).length;
+  const agendadosIncompletosCount = agendadosMatchesAll.filter(m => !checkMatchCompleteness(m).isComplete).length;
   const finalizadosCount = matches.filter(m => m.status === 'FINALIZADO').length;
   const emAndamentoCount = matches.filter(m => m.status === 'EM_ANDAMENTO').length;
+
+  // Available leagues filtered by country if selected
+  const availableLeagues = dbState.leagues.filter(l => {
+    if (filterCountryId) return l.countryId === filterCountryId;
+    return true;
+  });
 
   // Filter logic
   const filteredMatches = matches.filter(match => {
@@ -75,11 +130,46 @@ export const MatchList: React.FC<MatchListProps> = ({
       (match.stadium && match.stadium.toLowerCase().includes(searchLower));
 
     const matchesCountry = filterCountryId ? match.countryId === filterCountryId : true;
-    const matchesLeague = filterLeagueId ? match.leagueId === filterLeagueId : true;
+    
+    // Multi-league logic: if selectedLeagueIds is non-empty, match must be in list
+    const matchesLeague =
+      selectedLeagueIds.length > 0 ? selectedLeagueIds.includes(match.leagueId) : true;
+
     const matchesStatus = filterStatus ? match.status === filterStatus : true;
 
-    return matchesSearch && matchesCountry && matchesLeague && matchesStatus;
+    // Completeness filter for future matches
+    let matchesCompleteness = true;
+    if (match.status === 'AGENDADO') {
+      const completeness = checkMatchCompleteness(match);
+      if (futureCompletenessFilter === 'COMPLETE') matchesCompleteness = completeness.isComplete;
+      if (futureCompletenessFilter === 'INCOMPLETE') matchesCompleteness = !completeness.isComplete;
+    }
+
+    return matchesSearch && matchesCountry && matchesLeague && matchesStatus && matchesCompleteness;
   });
+
+  // Grouped match categories for section separators
+  const completeScheduled = filteredMatches.filter(
+    m => m.status === 'AGENDADO' && checkMatchCompleteness(m).isComplete
+  );
+  const incompleteScheduled = filteredMatches.filter(
+    m => m.status === 'AGENDADO' && !checkMatchCompleteness(m).isComplete
+  );
+  const nonScheduledMatches = filteredMatches.filter(m => m.status !== 'AGENDADO');
+
+  const toggleLeagueSelection = (leagueId: string) => {
+    setSelectedLeagueIds(prev =>
+      prev.includes(leagueId) ? prev.filter(id => id !== leagueId) : [...prev, leagueId]
+    );
+  };
+
+  const selectAllLeagues = () => {
+    setSelectedLeagueIds(availableLeagues.map(l => l.id));
+  };
+
+  const clearLeagueSelection = () => {
+    setSelectedLeagueIds([]);
+  };
 
   const getStatusBadge = (status: MatchStatus) => {
     switch (status) {
@@ -151,7 +241,10 @@ export const MatchList: React.FC<MatchListProps> = ({
           <div>
             <select
               value={filterCountryId}
-              onChange={(e) => setFilterCountryId(e.target.value)}
+              onChange={(e) => {
+                setFilterCountryId(e.target.value);
+                setSelectedLeagueIds([]); // Reset selected leagues when country changes
+              }}
               className="w-full bg-[#0b0e1b] border border-[#2C3EC4]/30 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#2C3EC4]"
             >
               <option value="">Todos os Países ({dbState.countries.length})</option>
@@ -163,20 +256,97 @@ export const MatchList: React.FC<MatchListProps> = ({
             </select>
           </div>
 
-          {/* League Filter */}
-          <div>
-            <select
-              value={filterLeagueId}
-              onChange={(e) => setFilterLeagueId(e.target.value)}
-              className="w-full bg-[#0b0e1b] border border-[#2C3EC4]/30 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#2C3EC4]"
+          {/* Multi-League Selector */}
+          <div className="relative" ref={leagueDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsLeagueDropdownOpen(prev => !prev)}
+              className="w-full bg-[#0b0e1b] border border-[#2C3EC4]/30 rounded-xl px-3 py-2 text-xs text-left text-gray-200 focus:outline-none focus:border-[#2C3EC4] flex items-center justify-between gap-2"
             >
-              <option value="">Todas as Ligas ({dbState.leagues.length})</option>
-              {dbState.leagues.map(l => (
-                <option key={l.id} value={l.id}>
-                  [{l.id}] {l.name}
-                </option>
-              ))}
-            </select>
+              <span className="truncate">
+                {selectedLeagueIds.length === 0 ? (
+                  `Todas as Ligas (${availableLeagues.length})`
+                ) : (
+                  <span className="text-white font-bold">
+                    {selectedLeagueIds.length} liga(s) selecionada(s)
+                  </span>
+                )}
+              </span>
+              <div className="flex items-center gap-1 shrink-0">
+                {selectedLeagueIds.length > 0 && (
+                  <span className="bg-[#2C3EC4] text-white text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold">
+                    {selectedLeagueIds.length}
+                  </span>
+                )}
+                <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+              </div>
+            </button>
+
+            {/* Dropdown Menu */}
+            {isLeagueDropdownOpen && (
+              <div className="absolute z-50 left-0 right-0 mt-1 bg-[#0b0e1b] border border-[#2C3EC4]/50 rounded-xl shadow-2xl p-2 space-y-2 text-xs text-white max-h-64 overflow-y-auto">
+                <div className="flex items-center justify-between pb-1.5 border-b border-white/10 gap-2">
+                  <span className="font-bold text-gray-300">Escolha as Ligas:</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={selectAllLeagues}
+                      className="text-[11px] text-[#2C3EC4] hover:underline font-bold"
+                    >
+                      Todas
+                    </button>
+                    <span className="text-gray-600">|</span>
+                    <button
+                      type="button"
+                      onClick={clearLeagueSelection}
+                      className="text-[11px] text-gray-400 hover:text-white"
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                </div>
+
+                {availableLeagues.length > 6 && (
+                  <input
+                    type="text"
+                    placeholder="Filtrar ligas..."
+                    value={leagueSearchTerm}
+                    onChange={(e) => setLeagueSearchTerm(e.target.value)}
+                    className="w-full bg-[#12162a] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white placeholder-gray-500 focus:outline-none"
+                  />
+                )}
+
+                <div className="space-y-1">
+                  {availableLeagues
+                    .filter(l => l.name.toLowerCase().includes(leagueSearchTerm.toLowerCase()) || l.id.toLowerCase().includes(leagueSearchTerm.toLowerCase()))
+                    .map(league => {
+                      const isSelected = selectedLeagueIds.includes(league.id);
+                      return (
+                        <label
+                          key={league.id}
+                          className="flex items-center justify-between p-1.5 rounded-lg hover:bg-white/5 cursor-pointer transition-colors"
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            {isSelected ? (
+                              <CheckSquare className="w-4 h-4 text-[#2C3EC4] shrink-0" />
+                            ) : (
+                              <Square className="w-4 h-4 text-gray-500 shrink-0" />
+                            )}
+                            <span className={isSelected ? 'font-bold text-white' : 'text-gray-300'}>
+                              [{league.id}] {league.name}
+                            </span>
+                          </div>
+                          {league.countryName && (
+                            <span className="text-[10px] text-gray-500 shrink-0 ml-2">
+                              {league.countryName}
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Status Filter */}
@@ -187,13 +357,47 @@ export const MatchList: React.FC<MatchListProps> = ({
               className="w-full bg-[#0b0e1b] border border-[#2C3EC4]/30 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#2C3EC4]"
             >
               <option value="">Todos os Status</option>
+              <option value="AGENDADO">Agendado (Jogos Futuros)</option>
               <option value="FINALIZADO">Finalizado</option>
-              <option value="AGENDADO">Agendado</option>
               <option value="EM_ANDAMENTO">Em Andamento</option>
               <option value="ADIADO">Adiado</option>
             </select>
           </div>
         </div>
+
+        {/* Selected Leagues Interactive Pills */}
+        {selectedLeagueIds.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap pt-1">
+            <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+              Ligas Filtradas:
+            </span>
+            {selectedLeagueIds.map(id => {
+              const league = dbState.leagues.find(l => l.id === id);
+              return (
+                <span
+                  key={id}
+                  className="bg-[#2C3EC4]/20 border border-[#2C3EC4]/50 text-white text-xs font-bold px-2 py-0.5 rounded-lg flex items-center gap-1.5 shadow-sm"
+                >
+                  <span>{league ? league.name : id}</span>
+                  <button
+                    type="button"
+                    onClick={() => toggleLeagueSelection(id)}
+                    className="hover:text-red-400 transition-colors p-0.5"
+                    title="Remover liga"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+            <button
+              onClick={clearLeagueSelection}
+              className="text-xs text-[#2C3EC4] hover:underline font-bold ml-1"
+            >
+              Limpar todas as ligas
+            </button>
+          </div>
+        )}
 
         {/* Counter Results info & Quick Actions */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-gray-300 pt-2 border-t border-white/10 font-medium gap-2">
@@ -212,13 +416,14 @@ export const MatchList: React.FC<MatchListProps> = ({
               </button>
             )}
 
-            {(searchTerm || filterCountryId || filterLeagueId || filterStatus) && (
+            {(searchTerm || filterCountryId || selectedLeagueIds.length > 0 || filterStatus || futureCompletenessFilter !== 'ALL') && (
               <button
                 onClick={() => {
                   setSearchTerm('');
                   setFilterCountryId('');
-                  setFilterLeagueId('');
+                  setSelectedLeagueIds([]);
                   setFilterStatus('');
+                  setFutureCompletenessFilter('ALL');
                 }}
                 className="text-xs text-[#2C3EC4] hover:underline font-bold"
               >
@@ -230,563 +435,657 @@ export const MatchList: React.FC<MatchListProps> = ({
       </div>
 
       {/* Quick Status Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        <button
-          onClick={() => setFilterStatus('')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            filterStatus === ''
-              ? 'bg-[#2C3EC4] text-white shadow-lg shadow-[#2C3EC4]/30 border border-white/20'
-              : 'bg-[#0f1325] border border-white/10 text-gray-300 hover:text-white'
-          }`}
-        >
-          <span>Todos os Jogos</span>
-          <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/30 font-mono text-white">
-            {totalMatches}
-          </span>
-        </button>
+      <div className="flex flex-col space-y-3">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <button
+            onClick={() => {
+              setFilterStatus('');
+              setFutureCompletenessFilter('ALL');
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              filterStatus === ''
+                ? 'bg-[#2C3EC4] text-white shadow-lg shadow-[#2C3EC4]/30 border border-white/20'
+                : 'bg-[#0f1325] border border-white/10 text-gray-300 hover:text-white'
+            }`}
+          >
+            <span>Todos os Jogos</span>
+            <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/30 font-mono text-white">
+              {totalMatches}
+            </span>
+          </button>
 
-        <button
-          onClick={() => setFilterStatus('AGENDADO')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            filterStatus === 'AGENDADO'
-              ? 'bg-[#2C3EC4] text-white shadow-lg shadow-[#2C3EC4]/30 border border-white/20'
-              : 'bg-[#0f1325] border border-white/10 text-gray-300 hover:text-white'
-          }`}
-        >
-          <Calendar className="w-3.5 h-3.5 text-[#2C3EC4]" />
-          <span>Jogos Futuros (Agendados)</span>
-          <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/30 font-mono text-white">
-            {agendadosCount}
-          </span>
-        </button>
+          <button
+            onClick={() => setFilterStatus('AGENDADO')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              filterStatus === 'AGENDADO'
+                ? 'bg-[#2C3EC4] text-white shadow-lg shadow-[#2C3EC4]/30 border border-white/20'
+                : 'bg-[#0f1325] border border-white/10 text-gray-300 hover:text-white'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5 text-white" />
+            <span>Jogos Futuros (Agendados)</span>
+            <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/30 font-mono text-white">
+              {agendadosCount}
+            </span>
+          </button>
 
-        <button
-          onClick={() => setFilterStatus('FINALIZADO')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            filterStatus === 'FINALIZADO'
-              ? 'bg-[#2C3EC4] text-white shadow-lg shadow-[#2C3EC4]/30 border border-white/20'
-              : 'bg-[#0f1325] border border-white/10 text-gray-300 hover:text-white'
-          }`}
-        >
-          <CheckCircle2 className="w-3.5 h-3.5 text-[#2C3EC4]" />
-          <span>Finalizados</span>
-          <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/30 font-mono text-white">
-            {finalizadosCount}
-          </span>
-        </button>
+          <button
+            onClick={() => {
+              setFilterStatus('');
+              setFutureCompletenessFilter('ALL');
+            }}
+            onClickCapture={() => setFilterStatus('FINALIZADO')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              filterStatus === 'FINALIZADO'
+                ? 'bg-[#2C3EC4] text-white shadow-lg shadow-[#2C3EC4]/30 border border-white/20'
+                : 'bg-[#0f1325] border border-white/10 text-gray-300 hover:text-white'
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#2C3EC4]" />
+            <span>Finalizados</span>
+            <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/30 font-mono text-white">
+              {finalizadosCount}
+            </span>
+          </button>
 
-        <button
-          onClick={() => setFilterStatus('EM_ANDAMENTO')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-            filterStatus === 'EM_ANDAMENTO'
-              ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/10'
-              : 'bg-[#0f1325] border border-white/10 text-amber-400 hover:text-amber-300'
-          }`}
-        >
-          <Clock className="w-3.5 h-3.5" />
-          <span>Ao Vivo</span>
-          <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/20 font-mono">
-            {emAndamentoCount}
-          </span>
-        </button>
+          <button
+            onClick={() => setFilterStatus('EM_ANDAMENTO')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              filterStatus === 'EM_ANDAMENTO'
+                ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/10'
+                : 'bg-[#0f1325] border border-white/10 text-amber-400 hover:text-amber-300'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>Ao Vivo</span>
+            <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/20 font-mono">
+              {emAndamentoCount}
+            </span>
+          </button>
+        </div>
+
+        {/* Future Matches Completeness Sub-Bar (When viewing Agendado or All) */}
+        {(filterStatus === 'AGENDADO' || filterStatus === '') && agendadosCount > 0 && (
+          <div className="bg-[#0b0e1b] border border-[#2C3EC4]/30 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 text-gray-300 font-bold">
+              <Calendar className="w-4 h-4 text-[#2C3EC4]" />
+              <span>Filtro de Preenchimento dos Jogos Futuros:</span>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setFutureCompletenessFilter('ALL')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                  futureCompletenessFilter === 'ALL'
+                    ? 'bg-[#2C3EC4] text-white shadow'
+                    : 'bg-white/5 text-gray-300 hover:text-white'
+                }`}
+              >
+                <span>Todos os Futuros</span>
+                <span className="font-mono text-[10px] bg-black/30 px-1.5 py-0.2 rounded">
+                  {agendadosCount}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFutureCompletenessFilter('COMPLETE')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  futureCompletenessFilter === 'COMPLETE'
+                    ? 'bg-emerald-600 text-white shadow'
+                    : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
+                }`}
+              >
+                <FileCheck className="w-3.5 h-3.5" />
+                <span>🟢 Dados Completos</span>
+                <span className="font-mono text-[10px] bg-black/30 px-1.5 py-0.2 rounded text-emerald-300">
+                  {agendadosCompletosCount}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFutureCompletenessFilter('INCOMPLETE')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  futureCompletenessFilter === 'INCOMPLETE'
+                    ? 'bg-amber-600 text-white shadow'
+                    : 'bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30'
+                }`}
+              >
+                <FileWarning className="w-3.5 h-3.5" />
+                <span>⚠️ Faltando Dados</span>
+                <span className="font-mono text-[10px] bg-black/30 px-1.5 py-0.2 rounded text-amber-200">
+                  {agendadosIncompletosCount}
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Matches Grid / List */}
       {filteredMatches.length === 0 ? (
-        <div className="bg-[#0f1325] border border-[#2C3EC4]/30 rounded-2xl p-8 text-center text-gray-300">
+        <div className="bg-[#0f1325] border border-[#2C3EC4]/30 rounded-2xl p-8 text-center text-gray-300 space-y-3">
           <p className="text-base font-semibold text-white">Nenhuma partida encontrada para os filtros aplicados.</p>
-          <button
-            onClick={onOpenMatchModal}
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#2C3EC4] hover:bg-[#2231A8] text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-[#2C3EC4]/30 border border-white/10"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" /> Cadastrar Nova Partida
-          </button>
+          <div className="flex justify-center gap-3">
+            <button
+              onClick={onOpenMatchModal}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#2C3EC4] hover:bg-[#2231A8] text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-[#2C3EC4]/30 border border-white/10"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" /> Cadastrar Nova Partida
+            </button>
+          </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {filteredMatches.map(match => {
-            const isExpanded = expandedStatsMatchId === match.id;
-            const hasStats = match.stats && (
-              match.stats.possessionHome !== undefined ||
-              match.stats.shotsHome !== undefined ||
-              match.stats.scorersHome !== undefined ||
-              match.stats.cornersHome !== undefined
-            );
-
-            return (
-              <div
-                key={match.id}
-                className="bg-[#0f1325] border border-[#2C3EC4]/25 hover:border-[#2C3EC4]/50 rounded-2xl p-5 shadow-xl transition-all duration-200 flex flex-col justify-between space-y-4 group"
-              >
-                {(() => {
-                  const country = dbState.countries.find(c => c.id === match.countryId || c.name.toLowerCase() === match.countryName.toLowerCase());
-                  const flagUrl = match.countryFlagUrl || country?.flagUrl;
-
-                  const league = dbState.leagues.find(l => l.id === match.leagueId || l.name.toLowerCase() === match.leagueName.toLowerCase());
-                  const leagueLogoUrl = match.leagueLogoUrl || league?.logoUrl;
-
-                  const homeTeam = dbState.teams.find(t => t.id === match.homeTeamId || t.name.toLowerCase() === match.homeTeamName.toLowerCase());
-                  const homeLogoUrl = match.homeTeamLogoUrl || homeTeam?.logoUrl;
-
-                  const awayTeam = dbState.teams.find(t => t.id === match.awayTeamId || t.name.toLowerCase() === match.awayTeamName.toLowerCase());
-                  const awayLogoUrl = match.awayTeamLogoUrl || awayTeam?.logoUrl;
-
-                  return (
-                    <>
-                      {/* Card Top: Match Unique ID + Country + League + Status */}
-                      <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/10">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {/* Match ID */}
-                          <span className="font-mono font-bold text-xs bg-[#2C3EC4] text-white border border-white/20 px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
-                            <Hash className="w-3 h-3 text-white" />
-                            {match.id}
-                          </span>
-
-                          {/* League + Country */}
-                          <div className="flex items-center gap-1.5 text-xs text-gray-200">
-                            {leagueLogoUrl && (
-                              <img
-                                src={leagueLogoUrl}
-                                alt={match.leagueName}
-                                className="w-4 h-4 object-contain"
-                                onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                              />
-                            )}
-                            <span className="font-bold text-white">{match.leagueName}</span>
-                            <span className="text-gray-500">•</span>
-                            <span className="text-gray-300 flex items-center gap-1 font-medium">
-                              {flagUrl ? (
-                                <img
-                                  src={flagUrl}
-                                  alt={match.countryName}
-                                  className="w-4 h-3 object-cover rounded-sm border border-white/10"
-                                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                                />
-                              ) : (
-                                <Globe className="w-3 h-3 text-gray-400" />
-                              )}
-                              {match.countryName}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div>{getStatusBadge(match.status)}</div>
-                      </div>
-
-                      {/* Future Match Special Banner */}
-                      {match.status === 'AGENDADO' && (
-                        <div className="bg-[#2C3EC4]/15 border border-[#2C3EC4]/30 rounded-xl p-2.5 flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 text-xs text-white font-medium">
-                            <Calendar className="w-4 h-4 text-[#2C3EC4] shrink-0" />
-                            <span>Jogo Agendado • Aguardando Resultado</span>
-                          </div>
-                          <button
-                            onClick={() => onOpenStatsModal(match)}
-                            className="px-3 py-1 bg-[#2C3EC4] hover:bg-[#2231A8] text-white text-xs font-bold rounded-lg transition-all shadow hover:scale-[1.02] shrink-0 border border-white/10"
-                          >
-                            + Lançar Placar & Stats
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Scoreboard Body */}
-                      <div className="grid grid-cols-7 items-center gap-2 my-2">
-                        {/* Home Team */}
-                        <div className="col-span-3 flex items-center justify-end gap-2.5 text-right">
-                          <div className="space-y-0.5 truncate">
-                            <span className="font-bold text-white text-base sm:text-lg truncate block leading-tight">
-                              {match.homeTeamName}
-                            </span>
-                            <div className="text-[10px] font-mono text-gray-400 flex items-center justify-end gap-1 font-semibold">
-                              <span>ID:</span>
-                              <span className="text-white bg-[#2C3EC4]/40 px-1 rounded border border-[#2C3EC4]/50">{match.homeTeamId}</span>
-                            </div>
-                          </div>
-                          {homeLogoUrl ? (
-                            <img
-                              src={homeLogoUrl}
-                              alt={match.homeTeamName}
-                              className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded-lg bg-black/40 border border-white/10 p-1 shrink-0 shadow-sm"
-                              onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                            />
-                          ) : (
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs shrink-0">
-                              🛡️
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Score Pill */}
-                        <div className="col-span-1 text-center flex flex-col items-center justify-center">
-                          <div className="px-3 py-1.5 bg-[#0b0e1b] border border-[#2C3EC4]/40 text-white rounded-xl font-black text-lg sm:text-xl shadow-md font-mono tracking-wider min-w-[68px]">
-                            {match.homeScore !== null && match.awayScore !== null ? (
-                              `${match.homeScore} - ${match.awayScore}`
-                            ) : (
-                              <span className="text-xs text-gray-400 font-sans uppercase">vs</span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Away Team */}
-                        <div className="col-span-3 flex items-center justify-start gap-2.5 text-left">
-                          {awayLogoUrl ? (
-                            <img
-                              src={awayLogoUrl}
-                              alt={match.awayTeamName}
-                              className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded-lg bg-black/40 border border-white/10 p-1 shrink-0 shadow-sm"
-                              onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                            />
-                          ) : (
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs shrink-0">
-                              🛡️
-                            </div>
-                          )}
-                          <div className="space-y-0.5 truncate">
-                            <span className="font-bold text-white text-base sm:text-lg truncate block leading-tight">
-                              {match.awayTeamName}
-                            </span>
-                            <div className="text-[10px] font-mono text-gray-400 flex items-center justify-start gap-1 font-semibold">
-                              <span>ID:</span>
-                              <span className="text-white bg-[#2C3EC4]/40 px-1 rounded border border-[#2C3EC4]/50">{match.awayTeamId}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  );
-                })()}
-
-                {/* Goalscorers preview if available */}
-                {(match.stats?.scorersHome || match.stats?.scorersAway) && (
-                  <div className="bg-[#0b0e1b] p-2 rounded-xl border border-white/10 text-[11px] text-gray-300 space-y-1">
-                    {match.stats?.scorersHome && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[#2C3EC4] font-bold">⚽ {match.homeTeamName}:</span>
-                        <span className="text-white font-medium">{match.stats.scorersHome}</span>
-                      </div>
-                    )}
-                    {match.stats?.scorersAway && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[#2C3EC4] font-bold">⚽ {match.awayTeamName}:</span>
-                        <span className="text-white font-medium">{match.stats.scorersAway}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Odds & Cotações Badge Strip */}
-                {match.odds && (match.odds.homeFT != null || match.odds.drawFT != null || match.odds.awayFT != null || match.odds.over25FT != null || match.odds.under25FT != null || match.odds.bttsFT != null || match.odds.homeHT != null || match.odds.over05HT != null || match.odds.firstGoalHome?.minute != null || match.odds.firstGoalAway?.minute != null || match.odds.earlyGameGoal?.minute != null) && (
-                  <div className="bg-[#0b0e1b] p-2.5 rounded-xl border border-white/10 space-y-2 text-xs">
-                    <div className="flex items-center justify-between text-[11px] font-bold text-gray-300">
-                      <span className="flex items-center gap-1 text-[#2C3EC4] uppercase tracking-wider font-extrabold">
-                        <TrendingUp className="w-3.5 h-3.5" />
-                        Odds / Cotações
-                      </span>
-                      {(match.odds.homeFT != null || match.odds.drawFT != null || match.odds.awayFT != null) && (
-                        <span className="font-mono text-gray-200 text-[11px]">
-                          1X2 FT: <span className="text-[#2C3EC4] font-bold">{match.odds.homeFT ?? '-'}</span> | <span className="text-amber-400 font-bold">{match.odds.drawFT ?? '-'}</span> | <span className="text-[#2C3EC4] font-bold">{match.odds.awayFT ?? '-'}</span>
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 text-[11px] font-mono">
-                      {match.odds.over25FT != null && (
-                        <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                          <span className="text-gray-300 font-sans">Over 2,5 FT:</span>
-                          <span className="text-[#2C3EC4] font-bold">{match.odds.over25FT}</span>
-                        </div>
-                      )}
-                      {match.odds.under25FT != null && (
-                        <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                          <span className="text-gray-300 font-sans">Under 2,5 FT:</span>
-                          <span className="text-[#2C3EC4] font-bold">{match.odds.under25FT}</span>
-                        </div>
-                      )}
-                      {match.odds.bttsFT != null && (
-                        <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                          <span className="text-gray-300 font-sans">Ambos FT:</span>
-                          <span className="text-[#2C3EC4] font-bold">{match.odds.bttsFT}</span>
-                        </div>
-                      )}
-                      {match.odds.homeHT != null && (
-                        <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                          <span className="text-gray-300 font-sans">Mandante HT:</span>
-                          <span className="text-[#2C3EC4] font-bold">{match.odds.homeHT}</span>
-                        </div>
-                      )}
-                      {match.odds.drawHT != null && (
-                        <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                          <span className="text-gray-300 font-sans">Empate HT:</span>
-                          <span className="text-amber-400 font-bold">{match.odds.drawHT}</span>
-                        </div>
-                      )}
-                      {match.odds.awayHT != null && (
-                        <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                          <span className="text-gray-300 font-sans">Visitante HT:</span>
-                          <span className="text-[#2C3EC4] font-bold">{match.odds.awayHT}</span>
-                        </div>
-                      )}
-                      {match.odds.over05HT != null && (
-                        <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                          <span className="text-gray-300 font-sans">Over 0,5 HT:</span>
-                          <span className="text-[#2C3EC4] font-bold">{match.odds.over05HT}</span>
-                        </div>
-                      )}
-                      {match.odds.under05HT != null && (
-                        <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                          <span className="text-gray-300 font-sans">Under 0,5 HT:</span>
-                          <span className="text-[#2C3EC4] font-bold">{match.odds.under05HT}</span>
-                        </div>
-                      )}
-                      {match.odds.bttsHT != null && (
-                        <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                          <span className="text-gray-300 font-sans">Ambos HT:</span>
-                          <span className="text-[#2C3EC4] font-bold">{match.odds.bttsHT}</span>
-                        </div>
-                      )}
-                      {match.odds.firstGoalHome?.minute != null && (
-                        <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between col-span-2 sm:col-span-1">
-                          <span className="text-gray-300 font-sans">1º Gol Mand:</span>
-                          <span className="text-[#2C3EC4] font-bold">{match.odds.firstGoalHome.minute}' {match.odds.firstGoalHome.odd != null ? `(Odd ${match.odds.firstGoalHome.odd})` : ''}</span>
-                        </div>
-                      )}
-                      {match.odds.firstGoalAway?.minute != null && (
-                        <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between col-span-2 sm:col-span-1">
-                          <span className="text-gray-300 font-sans">1º Gol Visit:</span>
-                          <span className="text-[#2C3EC4] font-bold">{match.odds.firstGoalAway.minute}' {match.odds.firstGoalAway.odd != null ? `(Odd ${match.odds.firstGoalAway.odd})` : ''}</span>
-                        </div>
-                      )}
-                      {match.odds.earlyGameGoal?.minute != null && (
-                        <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between col-span-2 sm:col-span-1">
-                          <span className="text-gray-300 font-sans">Gol Início:</span>
-                          <span className="text-[#2C3EC4] font-bold">{match.odds.earlyGameGoal.minute}' {match.odds.earlyGameGoal.odd != null ? `(Odd ${match.odds.earlyGameGoal.odd})` : ''}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Expandable Match Stats Section */}
-                {isExpanded && match.stats && (
-                  <div className="bg-[#0b0e1b] p-3 rounded-xl border border-white/10 space-y-3 text-xs animate-in fade-in duration-200">
-                    <div className="flex items-center justify-between text-gray-300 font-bold text-[11px] uppercase border-b border-white/10 pb-1.5">
-                      <span>Estatísticas da Partida (FT & HT)</span>
-                      {match.stats.halftimeHomeScore !== undefined && match.stats.halftimeHomeScore !== null && (
-                        <span className="text-white font-mono font-bold bg-[#2C3EC4]/30 px-2 py-0.5 rounded border border-[#2C3EC4]/40">
-                          1º Tempo (HT): {match.stats.halftimeHomeScore} - {match.stats.halftimeAwayScore}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Moments of goals strip */}
-                    {(match.stats.firstGoalMinuteMatch != null || match.stats.firstGoalMinuteHome != null || match.stats.firstGoalMinuteAway != null) && (
-                      <div className="flex flex-wrap gap-2 text-[11px] font-mono bg-[#12162a] p-2 rounded-lg border border-white/10">
-                        {match.stats.firstGoalMinuteMatch != null && (
-                          <span className="text-white font-bold">
-                            ⚡ 1º Gol Jogo: <span className="text-[#2C3EC4] font-extrabold">{match.stats.firstGoalMinuteMatch}'</span>
-                          </span>
-                        )}
-                        {match.stats.firstGoalMinuteHome != null && (
-                          <span className="text-blue-300 font-bold">
-                            ⚽ 1º Gol {match.homeTeamName}: <span className="text-white">{match.stats.firstGoalMinuteHome}'</span>
-                          </span>
-                        )}
-                        {match.stats.firstGoalMinuteAway != null && (
-                          <span className="text-amber-300 font-bold">
-                            ⚽ 1º Gol {match.awayTeamName}: <span className="text-white">{match.stats.firstGoalMinuteAway}'</span>
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Posse de bola bar */}
-                    {(match.stats.possessionHomeFT ?? match.stats.possessionHome) != null && (
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-[11px] text-gray-200 font-medium">
-                          <span>{match.stats.possessionHomeFT ?? match.stats.possessionHome}% Posse FT</span>
-                          <span className="text-gray-400 font-bold">Posse de Bola</span>
-                          <span>{match.stats.possessionAwayFT ?? match.stats.possessionAway}% Posse FT</span>
-                        </div>
-                        <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden flex">
-                          <div
-                            className="bg-[#2C3EC4] h-full transition-all"
-                            style={{ width: `${match.stats.possessionHomeFT ?? match.stats.possessionHome}%` }}
-                          />
-                          <div
-                            className="bg-blue-400 h-full transition-all"
-                            style={{ width: `${match.stats.possessionAwayFT ?? match.stats.possessionAway}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Stats metrics grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                      {/* Cantos / Escanteios FT & HT */}
-                      {((match.stats.cornersHomeFT ?? match.stats.cornersHome) != null || match.stats.cornersHomeHT != null) && (
-                        <div className="bg-[#12162a] p-2 rounded border border-white/10 space-y-1">
-                          <div className="flex justify-between font-bold">
-                            <span className="text-white">{match.stats.cornersHomeFT ?? match.stats.cornersHome ?? 0}</span>
-                            <span className="text-gray-300">Escanteios (FT)</span>
-                            <span className="text-white">{match.stats.cornersAwayFT ?? match.stats.cornersAway ?? 0}</span>
-                          </div>
-                          {(match.stats.cornersHomeHT != null || match.stats.cornersAwayHT != null) && (
-                            <div className="flex justify-between text-[10px] text-blue-200 border-t border-white/10 pt-1">
-                              <span>HT: {match.stats.cornersHomeHT ?? 0}</span>
-                              <span className="text-gray-400">1º Tempo</span>
-                              <span>HT: {match.stats.cornersAwayHT ?? 0}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Chutes no Gol FT & HT */}
-                      {((match.stats.shotsOnTargetHomeFT ?? match.stats.shotsOnTargetHome) != null || match.stats.shotsOnTargetHomeHT != null) && (
-                        <div className="bg-[#12162a] p-2 rounded border border-white/10 space-y-1">
-                          <div className="flex justify-between font-bold">
-                            <span className="text-white">{match.stats.shotsOnTargetHomeFT ?? match.stats.shotsOnTargetHome ?? 0}</span>
-                            <span className="text-gray-300">Chutes no Gol (FT)</span>
-                            <span className="text-white">{match.stats.shotsOnTargetAwayFT ?? match.stats.shotsOnTargetAway ?? 0}</span>
-                          </div>
-                          {(match.stats.shotsOnTargetHomeHT != null || match.stats.shotsOnTargetAwayHT != null) && (
-                            <div className="flex justify-between text-[10px] text-blue-200 border-t border-white/10 pt-1">
-                              <span>HT: {match.stats.shotsOnTargetHomeHT ?? 0}</span>
-                              <span className="text-gray-400">1º Tempo</span>
-                              <span>HT: {match.stats.shotsOnTargetAwayHT ?? 0}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Finalizações / Chutes Totais FT & HT */}
-                      {((match.stats.shotsHomeFT ?? match.stats.shotsHome) != null || match.stats.shotsHomeHT != null) && (
-                        <div className="bg-[#12162a] p-2 rounded border border-white/10 space-y-1">
-                          <div className="flex justify-between font-bold">
-                            <span className="text-white">{match.stats.shotsHomeFT ?? match.stats.shotsHome ?? 0}</span>
-                            <span className="text-gray-300">Finalizações (FT)</span>
-                            <span className="text-white">{match.stats.shotsAwayFT ?? match.stats.shotsAway ?? 0}</span>
-                          </div>
-                          {(match.stats.shotsHomeHT != null || match.stats.shotsAwayHT != null) && (
-                            <div className="flex justify-between text-[10px] text-blue-200 border-t border-white/10 pt-1">
-                              <span>HT: {match.stats.shotsHomeHT ?? 0}</span>
-                              <span className="text-gray-400">1º Tempo</span>
-                              <span>HT: {match.stats.shotsAwayHT ?? 0}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Cartões Amarelos & Vermelhos */}
-                      {((match.stats.yellowCardsHomeFT ?? match.stats.yellowCardsHome) != null || (match.stats.redCardsHomeFT ?? match.stats.redCardsHome) != null) && (
-                        <div className="bg-[#12162a] p-2 rounded border border-white/10 space-y-1">
-                          <div className="flex justify-between font-bold">
-                            <span className="text-amber-300">
-                              🟨{match.stats.yellowCardsHomeFT ?? match.stats.yellowCardsHome ?? 0} {(match.stats.redCardsHomeFT ?? match.stats.redCardsHome) ? `🟥${match.stats.redCardsHomeFT ?? match.stats.redCardsHome}` : ''}
-                            </span>
-                            <span className="text-gray-300">Cartões (FT)</span>
-                            <span className="text-amber-300">
-                              🟨{match.stats.yellowCardsAwayFT ?? match.stats.yellowCardsAway ?? 0} {(match.stats.redCardsAwayFT ?? match.stats.redCardsAway) ? `🟥${match.stats.redCardsAwayFT ?? match.stats.redCardsAway}` : ''}
-                            </span>
-                          </div>
-                          {(match.stats.yellowCardsHomeHT != null || match.stats.redCardsHomeHT != null) && (
-                            <div className="flex justify-between text-[10px] text-blue-200 border-t border-white/10 pt-1">
-                              <span>HT: 🟨{match.stats.yellowCardsHomeHT ?? 0}</span>
-                              <span className="text-gray-400">1º Tempo</span>
-                              <span>HT: 🟨{match.stats.yellowCardsAwayHT ?? 0}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Entity IDs Footer Banner */}
-                <div className="bg-[#0b0e1b] p-2.5 rounded-xl border border-[#2C3EC4]/20 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono">
-                  <div className="flex items-center gap-3 text-gray-300 flex-wrap font-semibold">
-                    <span className="flex items-center gap-1">
-                      <span className="text-gray-400">País:</span>
-                      <span className="text-white bg-[#2C3EC4]/30 px-1 rounded">{match.countryId}</span>
-                    </span>
-                    <span className="text-gray-600">|</span>
-                    <span className="flex items-center gap-1">
-                      <span className="text-gray-400">Liga:</span>
-                      <span className="text-white bg-[#2C3EC4]/30 px-1 rounded">{match.leagueId}</span>
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3 text-gray-300 text-[11px] font-sans flex-wrap font-medium">
-                    {match.round && <span>{match.round}</span>}
-                    {match.stadium && (
-                      <span className="flex items-center gap-1 text-gray-300">
-                        <MapPin className="w-3 h-3 text-[#2C3EC4]" />
-                        {match.stadium}
-                      </span>
-                    )}
-                    {match.referee && (
-                      <span className="flex items-center gap-1 text-white font-bold bg-[#2C3EC4]/20 px-2 py-0.5 rounded border border-[#2C3EC4]/40">
-                        👨‍⚖️ Árbitro: {match.referee}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Date & Actions Bar */}
-                <div className="flex items-center justify-between pt-2 text-xs text-gray-300 border-t border-white/10 font-medium">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-[#2C3EC4]" />
-                    {formatDate(match.matchDate)}
+        <div className="space-y-8">
+          {/* Section 1: Jogos Futuros - Dados Completos */}
+          {completeScheduled.length > 0 && (
+            <div className="space-y-3">
+              <div className="bg-[#0b0e1b] border-l-4 border-emerald-500 border-y border-r border-emerald-500/30 rounded-xl p-3 flex items-center justify-between shadow-md">
+                <div className="flex items-center gap-2 text-white font-bold text-sm">
+                  <FileCheck className="w-5 h-5 text-emerald-400" />
+                  <span>🟢 Jogos Futuros - Dados Completos</span>
+                  <span className="bg-emerald-500/20 text-emerald-300 font-mono text-xs px-2 py-0.5 rounded-full border border-emerald-500/40">
+                    {completeScheduled.length} partidas
                   </span>
+                </div>
+                <span className="text-xs text-gray-400 hidden sm:inline">
+                  Partidas agendadas com Estádio, Árbitro, Rodada e Odds preenchidos.
+                </span>
+              </div>
 
-                  <div className="flex items-center gap-2">
-                    {/* Expand stats toggle if stats exist */}
-                    {hasStats && (
-                      <button
-                        onClick={() => setExpandedStatsMatchId(isExpanded ? null : match.id)}
-                        className="px-2.5 py-1.5 rounded-lg bg-[#2C3EC4]/20 hover:bg-[#2C3EC4]/30 text-white text-xs font-bold flex items-center gap-1 border border-[#2C3EC4]/40 transition-colors"
-                      >
-                        <BarChart2 className="w-3.5 h-3.5 text-[#2C3EC4]" />
-                        <span>{isExpanded ? 'Ocultar Stats' : 'Ver Stats'}</span>
-                        {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                      </button>
-                    )}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {completeScheduled.map(match => renderMatchCard(match))}
+              </div>
+            </div>
+          )}
 
-                    {/* Stats modal launch button */}
-                    <button
-                      onClick={() => onOpenStatsModal(match)}
-                      className="px-2.5 py-1.5 rounded-lg bg-[#2C3EC4] hover:bg-[#2231A8] text-white text-xs font-bold border border-white/10 flex items-center gap-1 transition-all shadow-sm"
-                      title="Lançar/Editar Placar & Estatísticas"
-                    >
-                      <BarChart2 className="w-3.5 h-3.5" />
-                      <span>{match.status === 'AGENDADO' ? 'Lançar Stats' : 'Estatísticas'}</span>
-                    </button>
+          {/* Section 2: Jogos Futuros - Faltando Informações / Pendentes */}
+          {incompleteScheduled.length > 0 && (
+            <div className="space-y-3">
+              <div className="bg-[#0b0e1b] border-l-4 border-amber-500 border-y border-r border-amber-500/30 rounded-xl p-3 flex items-center justify-between shadow-md">
+                <div className="flex items-center gap-2 text-white font-bold text-sm">
+                  <FileWarning className="w-5 h-5 text-amber-400" />
+                  <span>⚠️ Jogos Futuros - Faltando Informações (Pendentes)</span>
+                  <span className="bg-amber-500/20 text-amber-300 font-mono text-xs px-2 py-0.5 rounded-full border border-amber-500/40">
+                    {incompleteScheduled.length} partidas
+                  </span>
+                </div>
+                <span className="text-xs text-amber-300/80 hidden sm:inline">
+                  Estes jogos possuem dados pendentes (ex: sem estádio, árbitro ou odds).
+                </span>
+              </div>
 
-                    <button
-                      onClick={() => onEditMatch(match)}
-                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10"
-                      title="Editar Partida"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {incompleteScheduled.map(match => renderMatchCard(match))}
+              </div>
+            </div>
+          )}
 
-                    <button
-                      onClick={() => {
-                        if (confirm(`Tem certeza que deseja excluir o jogo ${match.id} (${match.homeTeamName} x ${match.awayTeamName})?`)) {
-                          onDeleteMatch(match.id);
-                        }
-                      }}
-                      className="p-1.5 rounded-lg bg-white/10 hover:bg-red-500/30 text-gray-300 hover:text-white transition-colors border border-white/10"
-                      title="Excluir Partida"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+          {/* Section 3: Non-Scheduled Matches (Finalizados / Em Andamento / Adiados) */}
+          {nonScheduledMatches.length > 0 && (
+            <div className="space-y-3">
+              {(completeScheduled.length > 0 || incompleteScheduled.length > 0) && (
+                <div className="bg-[#0b0e1b] border-l-4 border-[#2C3EC4] border-y border-r border-[#2C3EC4]/30 rounded-xl p-3 flex items-center justify-between shadow-md">
+                  <div className="flex items-center gap-2 text-white font-bold text-sm">
+                    <CheckCircle2 className="w-5 h-5 text-[#2C3EC4]" />
+                    <span>🏁 Outras Partidas (Finalizados & Ao Vivo)</span>
+                    <span className="bg-[#2C3EC4]/20 text-[#2C3EC4] font-mono text-xs px-2 py-0.5 rounded-full border border-[#2C3EC4]/40">
+                      {nonScheduledMatches.length} partidas
+                    </span>
                   </div>
                 </div>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {nonScheduledMatches.map(match => renderMatchCard(match))}
               </div>
-            );
-          })}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
+
+  // Helper function to render individual match card
+  function renderMatchCard(match: Match) {
+    const isExpanded = expandedStatsMatchId === match.id;
+    const hasStats =
+      match.stats &&
+      (match.stats.possessionHome !== undefined ||
+        match.stats.shotsHome !== undefined ||
+        match.stats.scorersHome !== undefined ||
+        match.stats.cornersHome !== undefined);
+
+    const completeness = checkMatchCompleteness(match);
+
+    const country = dbState.countries.find(
+      c => c.id === match.countryId || c.name.toLowerCase() === match.countryName.toLowerCase()
+    );
+    const flagUrl = match.countryFlagUrl || country?.flagUrl;
+
+    const league = dbState.leagues.find(
+      l => l.id === match.leagueId || l.name.toLowerCase() === match.leagueName.toLowerCase()
+    );
+    const leagueLogoUrl = match.leagueLogoUrl || league?.logoUrl;
+
+    const homeTeam = dbState.teams.find(
+      t => t.id === match.homeTeamId || t.name.toLowerCase() === match.homeTeamName.toLowerCase()
+    );
+    const homeLogoUrl = match.homeTeamLogoUrl || homeTeam?.logoUrl;
+
+    const awayTeam = dbState.teams.find(
+      t => t.id === match.awayTeamId || t.name.toLowerCase() === match.awayTeamName.toLowerCase()
+    );
+    const awayLogoUrl = match.awayTeamLogoUrl || awayTeam?.logoUrl;
+
+    return (
+      <div
+        key={match.id}
+        className={`bg-[#0f1325] border ${
+          match.status === 'AGENDADO'
+            ? completeness.isComplete
+              ? 'border-emerald-500/40 hover:border-emerald-500/70'
+              : 'border-amber-500/40 hover:border-amber-500/70'
+            : 'border-[#2C3EC4]/25 hover:border-[#2C3EC4]/50'
+        } rounded-2xl p-5 shadow-xl transition-all duration-200 flex flex-col justify-between space-y-4 group`}
+      >
+        {/* Card Top: Match Unique ID + Country + League + Completeness Badge + Status */}
+        <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/10 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Match ID */}
+            <span className="font-mono font-bold text-xs bg-[#2C3EC4] text-white border border-white/20 px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+              <Hash className="w-3 h-3 text-white" />
+              {match.id}
+            </span>
+
+            {/* League + Country */}
+            <div className="flex items-center gap-1.5 text-xs text-gray-200">
+              {leagueLogoUrl && (
+                <img
+                  src={leagueLogoUrl}
+                  alt={match.leagueName}
+                  className="w-4 h-4 object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+              )}
+              <span className="font-bold text-white">{match.leagueName}</span>
+              <span className="text-gray-500">•</span>
+              <span className="text-gray-300 flex items-center gap-1 font-medium">
+                {flagUrl ? (
+                  <img
+                    src={flagUrl}
+                    alt={match.countryName}
+                    className="w-4 h-3 object-cover rounded-sm border border-white/10"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <Globe className="w-3 h-3 text-gray-400" />
+                )}
+                {match.countryName}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Completeness Badge for AGENDADO matches */}
+            {match.status === 'AGENDADO' && (
+              completeness.isComplete ? (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1 shadow-sm">
+                  <FileCheck className="w-3 h-3 text-emerald-400" />
+                  Dados Completos
+                </span>
+              ) : (
+                <span
+                  className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1 shadow-sm"
+                  title={`Faltam os campos: ${completeness.missingFields.join(', ')}`}
+                >
+                  <FileWarning className="w-3 h-3 text-amber-400" />
+                  Falta: {completeness.missingFields.join(', ')}
+                </span>
+              )
+            )}
+
+            <div>{getStatusBadge(match.status)}</div>
+          </div>
+        </div>
+
+        {/* Future Match Special Banner */}
+        {match.status === 'AGENDADO' && (
+          <div
+            className={`${
+              completeness.isComplete
+                ? 'bg-emerald-950/30 border-emerald-500/30'
+                : 'bg-amber-950/30 border-amber-500/30'
+            } border rounded-xl p-2.5 flex items-center justify-between gap-2`}
+          >
+            <div className="flex items-center gap-2 text-xs font-medium">
+              <Calendar
+                className={`w-4 h-4 ${
+                  completeness.isComplete ? 'text-emerald-400' : 'text-amber-400'
+                } shrink-0`}
+              />
+              <span className="text-white">
+                {completeness.isComplete
+                  ? 'Jogo Agendado • Todos os dados preenchidos'
+                  : `Jogo Agendado • Faltando: ${completeness.missingFields.join(', ')}`}
+              </span>
+            </div>
+            <button
+              onClick={() => onOpenStatsModal(match)}
+              className="px-3 py-1 bg-[#2C3EC4] hover:bg-[#2231A8] text-white text-xs font-bold rounded-lg transition-all shadow hover:scale-[1.02] shrink-0 border border-white/10"
+            >
+              + Lançar Placar & Stats
+            </button>
+          </div>
+        )}
+
+        {/* Scoreboard Body */}
+        <div className="grid grid-cols-7 items-center gap-2 my-2">
+          {/* Home Team */}
+          <div className="col-span-3 flex items-center justify-end gap-2.5 text-right">
+            <div className="space-y-0.5 truncate">
+              <span className="font-bold text-white text-base sm:text-lg truncate block leading-tight">
+                {match.homeTeamName}
+              </span>
+              <div className="text-[10px] font-mono text-gray-400 flex items-center justify-end gap-1 font-semibold">
+                <span>ID:</span>
+                <span className="text-white bg-[#2C3EC4]/40 px-1 rounded border border-[#2C3EC4]/50">
+                  {match.homeTeamId}
+                </span>
+              </div>
+            </div>
+            {homeLogoUrl ? (
+              <img
+                src={homeLogoUrl}
+                alt={match.homeTeamName}
+                className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded-lg bg-black/40 border border-white/10 p-1 shrink-0 shadow-sm"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs shrink-0">
+                🛡️
+              </div>
+            )}
+          </div>
+
+          {/* Score Pill */}
+          <div className="col-span-1 text-center flex flex-col items-center justify-center">
+            <div className="px-3 py-1.5 bg-[#0b0e1b] border border-[#2C3EC4]/40 text-white rounded-xl font-black text-lg sm:text-xl shadow-md font-mono tracking-wider min-w-[68px]">
+              {match.homeScore !== null && match.awayScore !== null ? (
+                `${match.homeScore} - ${match.awayScore}`
+              ) : (
+                <span className="text-xs text-gray-400 font-sans uppercase">vs</span>
+              )}
+            </div>
+          </div>
+
+          {/* Away Team */}
+          <div className="col-span-3 flex items-center justify-start gap-2.5 text-left">
+            {awayLogoUrl ? (
+              <img
+                src={awayLogoUrl}
+                alt={match.awayTeamName}
+                className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded-lg bg-black/40 border border-white/10 p-1 shrink-0 shadow-sm"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs shrink-0">
+                🛡️
+              </div>
+            )}
+            <div className="space-y-0.5 truncate">
+              <span className="font-bold text-white text-base sm:text-lg truncate block leading-tight">
+                {match.awayTeamName}
+              </span>
+              <div className="text-[10px] font-mono text-gray-400 flex items-center justify-start gap-1 font-semibold">
+                <span>ID:</span>
+                <span className="text-white bg-[#2C3EC4]/40 px-1 rounded border border-[#2C3EC4]/50">
+                  {match.awayTeamId}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Goalscorers preview if available */}
+        {(match.stats?.scorersHome || match.stats?.scorersAway) && (
+          <div className="bg-[#0b0e1b] p-2 rounded-xl border border-white/10 text-[11px] text-gray-300 space-y-1">
+            {match.stats?.scorersHome && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[#2C3EC4] font-bold">⚽ {match.homeTeamName}:</span>
+                <span className="text-white font-medium">{match.stats.scorersHome}</span>
+              </div>
+            )}
+            {match.stats?.scorersAway && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[#2C3EC4] font-bold">⚽ {match.awayTeamName}:</span>
+                <span className="text-white font-medium">{match.stats.scorersAway}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Odds & Cotações Badge Strip */}
+        {match.odds &&
+          (match.odds.homeFT != null ||
+            match.odds.drawFT != null ||
+            match.odds.awayFT != null ||
+            match.odds.over25FT != null ||
+            match.odds.under25FT != null ||
+            match.odds.bttsFT != null ||
+            match.odds.homeHT != null ||
+            match.odds.over05HT != null ||
+            match.odds.firstGoalHome?.minute != null ||
+            match.odds.firstGoalAway?.minute != null ||
+            match.odds.earlyGameGoal?.minute != null) && (
+            <div className="bg-[#0b0e1b] p-2.5 rounded-xl border border-white/10 space-y-2 text-xs">
+              <div className="flex items-center justify-between text-[11px] font-bold text-gray-300">
+                <span className="flex items-center gap-1 text-[#2C3EC4] uppercase tracking-wider font-extrabold">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  Odds / Cotações
+                </span>
+                {(match.odds.homeFT != null ||
+                  match.odds.drawFT != null ||
+                  match.odds.awayFT != null) && (
+                  <span className="font-mono text-gray-200 text-[11px]">
+                    1X2 FT:{' '}
+                    <span className="text-[#2C3EC4] font-bold">{match.odds.homeFT ?? '-'}</span> |{' '}
+                    <span className="text-amber-400 font-bold">{match.odds.drawFT ?? '-'}</span> |{' '}
+                    <span className="text-[#2C3EC4] font-bold">{match.odds.awayFT ?? '-'}</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 text-[11px] font-mono">
+                {match.odds.over25FT != null && (
+                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
+                    <span className="text-gray-300 font-sans">Over 2,5 FT:</span>
+                    <span className="text-[#2C3EC4] font-bold">{match.odds.over25FT}</span>
+                  </div>
+                )}
+                {match.odds.under25FT != null && (
+                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
+                    <span className="text-gray-300 font-sans">Under 2,5 FT:</span>
+                    <span className="text-[#2C3EC4] font-bold">{match.odds.under25FT}</span>
+                  </div>
+                )}
+                {match.odds.bttsFT != null && (
+                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
+                    <span className="text-gray-300 font-sans">Ambos FT:</span>
+                    <span className="text-[#2C3EC4] font-bold">{match.odds.bttsFT}</span>
+                  </div>
+                )}
+                {match.odds.homeHT != null && (
+                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
+                    <span className="text-gray-300 font-sans">Mandante HT:</span>
+                    <span className="text-[#2C3EC4] font-bold">{match.odds.homeHT}</span>
+                  </div>
+                )}
+                {match.odds.drawHT != null && (
+                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
+                    <span className="text-gray-300 font-sans">Empate HT:</span>
+                    <span className="text-amber-400 font-bold">{match.odds.drawHT}</span>
+                  </div>
+                )}
+                {match.odds.awayHT != null && (
+                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
+                    <span className="text-gray-300 font-sans">Visitante HT:</span>
+                    <span className="text-[#2C3EC4] font-bold">{match.odds.awayHT}</span>
+                  </div>
+                )}
+                {match.odds.over05HT != null && (
+                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
+                    <span className="text-gray-300 font-sans">Over 0,5 HT:</span>
+                    <span className="text-[#2C3EC4] font-bold">{match.odds.over05HT}</span>
+                  </div>
+                )}
+                {match.odds.under05HT != null && (
+                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
+                    <span className="text-gray-300 font-sans">Under 0,5 HT:</span>
+                    <span className="text-[#2C3EC4] font-bold">{match.odds.under05HT}</span>
+                  </div>
+                )}
+                {match.odds.bttsHT != null && (
+                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
+                    <span className="text-gray-300 font-sans">Ambos HT:</span>
+                    <span className="text-[#2C3EC4] font-bold">{match.odds.bttsHT}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+        {/* Expandable Match Stats Section */}
+        {isExpanded && match.stats && (
+          <div className="bg-[#0b0e1b] p-3 rounded-xl border border-white/10 space-y-3 text-xs animate-in fade-in duration-200">
+            <div className="flex items-center justify-between text-gray-300 font-bold text-[11px] uppercase border-b border-white/10 pb-1.5">
+              <span>Estatísticas da Partida (FT & HT)</span>
+              {match.stats.halftimeHomeScore !== undefined && match.stats.halftimeHomeScore !== null && (
+                <span className="text-white font-mono font-bold bg-[#2C3EC4]/30 px-2 py-0.5 rounded border border-[#2C3EC4]/40">
+                  1º Tempo (HT): {match.stats.halftimeHomeScore} - {match.stats.halftimeAwayScore}
+                </span>
+              )}
+            </div>
+
+            {/* Posse de bola bar */}
+            {(match.stats.possessionHomeFT ?? match.stats.possessionHome) != null && (
+              <div className="space-y-1">
+                <div className="flex justify-between text-[11px] text-gray-200 font-medium">
+                  <span>{match.stats.possessionHomeFT ?? match.stats.possessionHome}% Posse FT</span>
+                  <span className="text-gray-400 font-bold">Posse de Bola</span>
+                  <span>{match.stats.possessionAwayFT ?? match.stats.possessionAway}% Posse FT</span>
+                </div>
+                <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden flex">
+                  <div
+                    className="bg-[#2C3EC4] h-full transition-all"
+                    style={{ width: `${match.stats.possessionHomeFT ?? match.stats.possessionHome}%` }}
+                  />
+                  <div
+                    className="bg-blue-400 h-full transition-all"
+                    style={{ width: `${match.stats.possessionAwayFT ?? match.stats.possessionAway}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Entity IDs Footer Banner */}
+        <div className="bg-[#0b0e1b] p-2.5 rounded-xl border border-[#2C3EC4]/20 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono">
+          <div className="flex items-center gap-3 text-gray-300 flex-wrap font-semibold">
+            <span className="flex items-center gap-1">
+              <span className="text-gray-400">País:</span>
+              <span className="text-white bg-[#2C3EC4]/30 px-1 rounded">{match.countryId}</span>
+            </span>
+            <span className="text-gray-600">|</span>
+            <span className="flex items-center gap-1">
+              <span className="text-gray-400">Liga:</span>
+              <span className="text-white bg-[#2C3EC4]/30 px-1 rounded">{match.leagueId}</span>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 text-gray-300 text-[11px] font-sans flex-wrap font-medium">
+            {match.round && <span>{match.round}</span>}
+            {match.stadium && (
+              <span className="flex items-center gap-1 text-gray-300">
+                <MapPin className="w-3 h-3 text-[#2C3EC4]" />
+                {match.stadium}
+              </span>
+            )}
+            {match.referee && (
+              <span className="flex items-center gap-1 text-white font-bold bg-[#2C3EC4]/20 px-2 py-0.5 rounded border border-[#2C3EC4]/40">
+                👨‍⚖️ Árbitro: {match.referee}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Date & Actions Bar */}
+        <div className="flex items-center justify-between pt-2 text-xs text-gray-300 border-t border-white/10 font-medium">
+          <span className="flex items-center gap-1">
+            <Calendar className="w-3.5 h-3.5 text-[#2C3EC4]" />
+            {formatDate(match.matchDate)}
+          </span>
+
+          <div className="flex items-center gap-2">
+            {/* Expand stats toggle if stats exist */}
+            {hasStats && (
+              <button
+                onClick={() => setExpandedStatsMatchId(isExpanded ? null : match.id)}
+                className="px-2.5 py-1.5 rounded-lg bg-[#2C3EC4]/20 hover:bg-[#2C3EC4]/30 text-white text-xs font-bold flex items-center gap-1 border border-[#2C3EC4]/40 transition-colors"
+              >
+                <BarChart2 className="w-3.5 h-3.5 text-[#2C3EC4]" />
+                <span>{isExpanded ? 'Ocultar Stats' : 'Ver Stats'}</span>
+                {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            )}
+
+            {/* Stats modal launch button */}
+            <button
+              onClick={() => onOpenStatsModal(match)}
+              className="px-2.5 py-1.5 rounded-lg bg-[#2C3EC4] hover:bg-[#2231A8] text-white text-xs font-bold border border-white/10 flex items-center gap-1 transition-all shadow-sm"
+              title="Lançar/Editar Placar & Estatísticas"
+            >
+              <BarChart2 className="w-3.5 h-3.5" />
+              <span>{match.status === 'AGENDADO' ? 'Lançar Stats' : 'Estatísticas'}</span>
+            </button>
+
+            <button
+              onClick={() => onEditMatch(match)}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10"
+              title="Editar Partida"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={() => {
+                if (
+                  confirm(
+                    `Tem certeza que deseja excluir o jogo ${match.id} (${match.homeTeamName} x ${match.awayTeamName})?`
+                  )
+                ) {
+                  onDeleteMatch(match.id);
+                }
+              }}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-red-500/30 text-gray-300 hover:text-white transition-colors border border-white/10"
+              title="Excluir Partida"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 };
