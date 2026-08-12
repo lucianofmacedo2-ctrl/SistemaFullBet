@@ -35,26 +35,26 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenBackupModal,
 }) => {
   return (
-    <header className="bg-[#0f1325] border-b border-[#2C3EC4]/25 text-white sticky top-0 z-40 shadow-2xl">
+    <header className="bg-white border-b border-blue-200 text-slate-800 sticky top-0 z-40 shadow-sm">
       {/* Top Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo & Title */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#2C3EC4] flex items-center justify-center text-white font-black text-xl shadow-lg shadow-[#2C3EC4]/40 border border-white/20">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xl shadow-md shadow-blue-500/20 border border-blue-400">
               ⚽
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-extrabold tracking-tight text-white leading-none">
-                  FUT<span className="text-[#2C3EC4]">DB4</span>
+                <h1 className="text-lg font-extrabold tracking-tight text-slate-900 leading-none">
+                  FUT<span className="text-blue-600">DB4</span>
                 </h1>
-                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#2C3EC4]/20 text-white border border-[#2C3EC4]/40 flex items-center gap-1.5 shadow-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#2C3EC4] animate-pulse"></span>
+                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-300 flex items-center gap-1.5 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
                   Banco Ativo
                 </span>
               </div>
-              <p className="text-xs text-gray-300 hidden sm:block mt-0.5 font-medium">
+              <p className="text-xs text-slate-500 hidden sm:block mt-0.5 font-medium">
                 Sistema de Cadastro de Jogos & Entidades
               </p>
             </div>
@@ -64,7 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={onOpenMatchModal}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#2C3EC4] hover:bg-[#2231A8] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#2C3EC4]/30 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] border border-blue-500"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               <span className="hidden xs:inline">Cadastrar</span> Jogo
@@ -73,10 +73,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             {onOpenBulkMatchImportModal && (
               <button
                 onClick={onOpenBulkMatchImportModal}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#2C3EC4]/20 hover:bg-[#2C3EC4]/40 text-white border border-[#2C3EC4]/50 font-semibold text-sm rounded-xl transition-all shadow-md cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 font-semibold text-sm rounded-xl transition-all shadow-sm cursor-pointer"
                 title="Cadastrar Jogos Futuros em Massa via Excel (.xlsx)"
               >
-                <FileSpreadsheet className="w-4 h-4 text-white" />
+                <FileSpreadsheet className="w-4 h-4 text-blue-600" />
                 <span className="hidden sm:inline">Importar Jogos Excel</span>
               </button>
             )}
@@ -84,29 +84,29 @@ export const Navbar: React.FC<NavbarProps> = ({
             {onOpenBulkImportModal && (
               <button
                 onClick={onOpenBulkImportModal}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold text-sm rounded-xl transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-sm rounded-xl transition-all"
                 title="Cadastrar Equipes em Massa via Excel (.xlsx)"
               >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
                 <span className="hidden md:inline">Importar Times</span>
               </button>
             )}
 
             <button
               onClick={() => onOpenEntityModal()}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold text-sm rounded-xl transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-sm rounded-xl transition-all"
               title="Cadastrar País, Liga ou Time individualmente"
             >
-              <Plus className="w-4 h-4 text-[#2C3EC4]" />
+              <Plus className="w-4 h-4 text-blue-600" />
               <span className="hidden md:inline">Nova Entidade</span>
             </button>
 
             <button
               onClick={onOpenBackupModal}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold text-sm rounded-xl transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-sm rounded-xl transition-all"
               title="Gerenciar Dados & Backup JSON"
             >
-              <Database className="w-4 h-4 text-[#2C3EC4]" />
+              <Database className="w-4 h-4 text-blue-600" />
               <span className="hidden lg:inline">Banco & Backup</span>
             </button>
           </div>
@@ -114,7 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Navigation & Summary Bar */}
-      <div className="bg-[#0b0e1b] border-t border-[#2C3EC4]/20 px-4 sm:px-6 lg:px-8">
+      <div className="bg-blue-50/80 border-t border-blue-100 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-2">
           {/* Tabs */}
           <nav className="flex items-center space-x-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
@@ -122,14 +122,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setActiveTab('matches')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === 'matches'
-                  ? 'bg-[#2C3EC4] text-white border border-white/20 shadow-md shadow-[#2C3EC4]/30'
-                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
+                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
               }`}
             >
               <ListOrdered className="w-3.5 h-3.5" />
               Partidas
               <span className={`ml-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${
-                activeTab === 'matches' ? 'bg-white/20 text-white' : 'bg-white/10 text-gray-300'
+                activeTab === 'matches' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
               }`}>
                 {dbState.matches.length}
               </span>
@@ -139,14 +139,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setActiveTab('countries')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === 'countries'
-                  ? 'bg-[#2C3EC4] text-white border border-white/20 shadow-md shadow-[#2C3EC4]/30'
-                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
+                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
               }`}
             >
               <Globe className="w-3.5 h-3.5" />
               Países
               <span className={`ml-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${
-                activeTab === 'countries' ? 'bg-white/20 text-white' : 'bg-white/10 text-gray-300'
+                activeTab === 'countries' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
               }`}>
                 {dbState.countries.length}
               </span>
@@ -156,14 +156,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setActiveTab('leagues')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === 'leagues'
-                  ? 'bg-[#2C3EC4] text-white border border-white/20 shadow-md shadow-[#2C3EC4]/30'
-                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
+                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
               }`}
             >
               <Trophy className="w-3.5 h-3.5" />
               Ligas
               <span className={`ml-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${
-                activeTab === 'leagues' ? 'bg-white/20 text-white' : 'bg-white/10 text-gray-300'
+                activeTab === 'leagues' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
               }`}>
                 {dbState.leagues.length}
               </span>
@@ -173,14 +173,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setActiveTab('teams')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === 'teams'
-                  ? 'bg-[#2C3EC4] text-white border border-white/20 shadow-md shadow-[#2C3EC4]/30'
-                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
+                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
               }`}
             >
               <Shield className="w-3.5 h-3.5" />
               Times
               <span className={`ml-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${
-                activeTab === 'teams' ? 'bg-white/20 text-white' : 'bg-white/10 text-gray-300'
+                activeTab === 'teams' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
               }`}>
                 {dbState.teams.length}
               </span>
@@ -190,8 +190,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => setActiveTab('stats')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
                 activeTab === 'stats'
-                  ? 'bg-[#2C3EC4] text-white border border-white/20 shadow-md shadow-[#2C3EC4]/30'
-                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
+                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
@@ -200,9 +200,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Quick summary line */}
-          <div className="hidden lg:flex items-center gap-4 text-xs text-gray-300 font-medium">
+          <div className="hidden lg:flex items-center gap-3 text-xs text-slate-600 font-medium">
             <span>IDs Registrados no Sistema:</span>
-            <span className="font-mono bg-[#141a33] px-2.5 py-1 rounded-lg border border-[#2C3EC4]/30 text-white font-bold">
+            <span className="font-mono bg-white px-2.5 py-1 rounded-lg border border-blue-200 text-slate-800 font-bold shadow-xs">
               {dbState.countries.length} Países • {dbState.leagues.length} Ligas • {dbState.teams.length} Times
             </span>
           </div>

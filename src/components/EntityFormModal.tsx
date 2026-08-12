@@ -162,22 +162,22 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-md bg-[#0e0e0e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-y-auto">
+      <div className="relative w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden my-8">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[#080808] border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg border border-blue-100">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Cadastrar Entidade</h2>
-              <p className="text-xs text-gray-400">Geração automática de ID Único</p>
+              <h2 className="text-lg font-bold text-slate-900">Cadastrar Entidade</h2>
+              <p className="text-xs text-slate-500">Geração automática de ID Único</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -186,24 +186,24 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {errorMsg && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm font-medium">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
               {errorMsg}
             </div>
           )}
 
           {/* Type Switcher */}
           <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wider">
               Tipo de Entidade
             </label>
-            <div className="grid grid-cols-3 gap-2 p-1 bg-[#060606] rounded-xl border border-white/10">
+            <div className="grid grid-cols-3 gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200">
               <button
                 type="button"
                 onClick={() => setEntityType('country')}
                 className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
                   entityType === 'country'
-                    ? 'bg-emerald-500 text-black shadow-md'
-                    : 'text-gray-400 hover:text-gray-200'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Globe className="w-3.5 h-3.5" />
@@ -215,8 +215,8 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
                 onClick={() => setEntityType('league')}
                 className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
                   entityType === 'league'
-                    ? 'bg-emerald-500 text-black shadow-md'
-                    : 'text-gray-400 hover:text-gray-200'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Trophy className="w-3.5 h-3.5" />
@@ -228,8 +228,8 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
                 onClick={() => setEntityType('team')}
                 className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
                   entityType === 'team'
-                    ? 'bg-emerald-500 text-black shadow-md'
-                    : 'text-gray-400 hover:text-gray-200'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Shield className="w-3.5 h-3.5" />
@@ -239,9 +239,9 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
           </div>
 
           {/* ID Preview Box */}
-          <div className="p-3 bg-[#060606] rounded-xl border border-emerald-500/30 flex items-center justify-between">
-            <span className="text-xs text-gray-400 font-medium">Próximo ID Único a ser gerado:</span>
-            <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded border border-emerald-500/40">
+          <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 flex items-center justify-between">
+            <span className="text-xs text-slate-600 font-medium">Próximo ID Único a ser gerado:</span>
+            <span className="text-xs font-mono font-bold text-blue-700 bg-blue-100/80 px-2.5 py-1 rounded border border-blue-200">
               {nextIdPreview}
             </span>
           </div>
@@ -249,18 +249,18 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
           {/* Country selector if League or Team */}
           {(entityType === 'league' || entityType === 'team') && (
             <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1">
+              <label className="block text-xs font-medium text-slate-700 mb-1">
                 País Vinculado
               </label>
               {dbState.countries.length === 0 ? (
-                <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 text-xs">
+                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs">
                   Nenhum país cadastrado. Cadastre um país primeiro ou digite o país diretamente ao cadastrar um jogo!
                 </div>
               ) : (
                 <select
                   value={countryId}
                   onChange={(e) => setCountryId(e.target.value)}
-                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
                   required
                 >
                   <option value="">-- Selecione o País --</option>
@@ -276,7 +276,7 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
 
           {/* Name Input */}
           <div>
-            <label className="block text-xs font-medium text-gray-300 mb-1">
+            <label className="block text-xs font-medium text-slate-700 mb-1">
               Nome do {entityType === 'country' ? 'País' : entityType === 'league' ? 'Liga' : 'Time'}
             </label>
             <input
@@ -290,14 +290,14 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
               }
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
               required
             />
           </div>
 
           {/* Extra input (Code/Type/Stadium) */}
           <div>
-            <label className="block text-xs font-medium text-gray-300 mb-1">
+            <label className="block text-xs font-medium text-slate-700 mb-1">
               {entityType === 'country'
                 ? 'Código ISO / Sigla (Opcional)'
                 : entityType === 'league'
@@ -315,13 +315,13 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
               }
               value={extraInfo}
               onChange={(e) => setExtraInfo(e.target.value)}
-              className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
             />
           </div>
 
           {/* Logo / Flag Image Link Input + Live Preview */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-gray-200">
+            <label className="block text-xs font-semibold text-slate-700">
               {entityType === 'country'
                 ? 'Link / URL da Bandeira (Opcional)'
                 : entityType === 'league'
@@ -340,42 +340,42 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
               }
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 font-mono"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white font-mono"
             />
 
             {/* Live Image Preview Box */}
-            <div className="p-3 bg-[#080808] border border-white/10 rounded-xl space-y-2">
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
               <div className="flex items-center justify-between text-[11px]">
-                <span className="font-semibold text-gray-300 flex items-center gap-1.5">
-                  <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                  <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
                   Pré-visualização do Escudo / Logo:
                 </span>
 
                 {/* Status Badges */}
                 {imageStatus === 'idle' && (
-                  <span className="text-gray-500 text-[10px]">Aguardando link...</span>
+                  <span className="text-slate-400 text-[10px]">Aguardando link...</span>
                 )}
                 {imageStatus === 'loading' && (
-                  <span className="text-blue-400 text-[10px] flex items-center gap-1 font-mono">
+                  <span className="text-blue-600 text-[10px] flex items-center gap-1 font-mono">
                     <Loader2 className="w-3 h-3 animate-spin" /> Carregando...
                   </span>
                 )}
                 {imageStatus === 'success' && (
-                  <span className="text-emerald-400 text-[10px] flex items-center gap-1 font-semibold font-mono bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                  <span className="text-blue-700 text-[10px] flex items-center gap-1 font-semibold font-mono bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
+                    <CheckCircle2 className="w-3 h-3 text-blue-600" />
                     Link OK {imageDims ? `(${imageDims.width}x${imageDims.height}px)` : ''}
                   </span>
                 )}
                 {imageStatus === 'error' && (
-                  <span className="text-red-400 text-[10px] flex items-center gap-1 font-semibold font-mono bg-red-950/60 border border-red-500/30 px-1.5 py-0.5 rounded">
-                    <AlertCircle className="w-3 h-3 text-red-400" /> Link Indisponível
+                  <span className="text-red-600 text-[10px] flex items-center gap-1 font-semibold font-mono bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">
+                    <AlertCircle className="w-3 h-3 text-red-600" /> Link Indisponível
                   </span>
                 )}
               </div>
 
-              <div className="flex items-center gap-4 bg-[#030303] p-3 rounded-lg border border-white/5">
-                {/* Visual Image Preview Box with checkerboard contrast background */}
-                <div className="w-16 h-16 rounded-xl bg-[radial-gradient(#222_1px,transparent_1px)] [background-size:8px_8px] bg-[#121212] border border-white/10 flex items-center justify-center overflow-hidden shrink-0 shadow-inner relative group">
+              <div className="flex items-center gap-4 bg-white p-3 rounded-lg border border-slate-200">
+                {/* Visual Image Preview Box */}
+                <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 shadow-inner relative group">
                   {imageUrl.trim() ? (
                     <img
                       src={imageUrl.trim()}
@@ -401,46 +401,46 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
                   {(imageStatus === 'idle' || imageStatus === 'error') && (
                     <div className="text-center p-1">
                       {imageStatus === 'error' ? (
-                        <AlertCircle className="w-6 h-6 text-red-400 mx-auto" />
+                        <AlertCircle className="w-6 h-6 text-red-500 mx-auto" />
                       ) : (
-                        <ImageIcon className="w-6 h-6 text-gray-600 mx-auto" />
+                        <ImageIcon className="w-6 h-6 text-slate-400 mx-auto" />
                       )}
                     </div>
                   )}
 
                   {imageStatus === 'loading' && (
-                    <Loader2 className="w-5 h-5 text-emerald-400 animate-spin absolute" />
+                    <Loader2 className="w-5 h-5 text-blue-600 animate-spin absolute" />
                   )}
                 </div>
 
                 {/* Status Explanation Text */}
                 <div className="space-y-1 text-xs">
                   {imageStatus === 'idle' && (
-                    <p className="text-gray-400 text-[11px] leading-relaxed">
-                      Cole qualquer link direto de imagem (<code className="text-emerald-400 font-mono">.png, .jpg, .svg</code>) para verificar se o escudo aparece corretamente.
+                    <p className="text-slate-500 text-[11px] leading-relaxed">
+                      Cole qualquer link direto de imagem (<code className="text-blue-600 font-mono">.png, .jpg, .svg</code>) para verificar se o escudo aparece corretamente.
                     </p>
                   )}
                   {imageStatus === 'loading' && (
-                    <p className="text-blue-300 text-[11px]">
+                    <p className="text-blue-600 text-[11px]">
                       Testando o carregamento da imagem e conexões...
                     </p>
                   )}
                   {imageStatus === 'success' && (
                     <div>
-                      <p className="text-emerald-300 font-semibold text-xs">
+                      <p className="text-blue-700 font-semibold text-xs">
                         ✓ Imagem carregada perfeitamente!
                       </p>
-                      <p className="text-gray-400 text-[11px]">
+                      <p className="text-slate-500 text-[11px]">
                         Este escudo será exibido no cadastro e nos placares.
                       </p>
                     </div>
                   )}
                   {imageStatus === 'error' && (
                     <div>
-                      <p className="text-red-300 font-semibold text-xs">
+                      <p className="text-red-600 font-semibold text-xs">
                         ✕ Não foi possível carregar o link
                       </p>
-                      <p className="text-gray-400 text-[11px]">
+                      <p className="text-slate-500 text-[11px]">
                         Verifique se a URL termina com extensão de imagem ou permite acesso externo (CORS).
                       </p>
                     </div>
@@ -450,17 +450,17 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 text-sm font-semibold rounded-xl transition-colors"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-sm font-semibold rounded-xl transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="inline-flex items-center gap-2 px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm rounded-xl shadow-lg shadow-emerald-500/10 transition-all"
+              className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md transition-all"
             >
               <Check className="w-4 h-4 stroke-[3]" />
               Salvar Entidade

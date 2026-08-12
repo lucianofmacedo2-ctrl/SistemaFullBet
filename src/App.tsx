@@ -541,17 +541,17 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0b0e1b] text-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-50 text-slate-800 flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 border-4 border-[#2C3EC4]/30 border-t-[#2C3EC4] rounded-full animate-spin"></div>
-          <p className="text-xs font-mono text-gray-300">Carregando Banco de Dados de Futebol...</p>
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          <p className="text-xs font-mono text-slate-500">Carregando Banco de Dados de Futebol...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0e1b] text-white font-sans selection:bg-[#2C3EC4] selection:text-white pb-16">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-600 selection:text-white pb-16">
       {/* Navbar */}
       <Navbar
         dbState={dbState}

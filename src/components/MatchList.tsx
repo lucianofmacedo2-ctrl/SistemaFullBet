@@ -222,17 +222,17 @@ export const MatchList: React.FC<MatchListProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Filter & Search Controls */}
-      <div className="bg-[#0f1325] border border-[#2C3EC4]/30 rounded-2xl p-4 shadow-xl space-y-3">
+      <div className="bg-white border border-blue-200 rounded-2xl p-4 shadow-sm space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {/* Search Box */}
           <div className="relative md:col-span-1">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
             <input
               type="text"
               placeholder="Buscar por time, liga, estádio ou ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#0b0e1b] border border-[#2C3EC4]/30 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-[#2C3EC4]"
+              className="w-full bg-slate-50 border border-blue-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
             />
           </div>
 
@@ -244,7 +244,7 @@ export const MatchList: React.FC<MatchListProps> = ({
                 setFilterCountryId(e.target.value);
                 setSelectedLeagueIds([]); // Reset selected leagues when country changes
               }}
-              className="w-full bg-[#0b0e1b] border border-[#2C3EC4]/30 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#2C3EC4]"
+              className="w-full bg-slate-50 border border-blue-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-600"
             >
               <option value="">Todos os Países ({dbState.countries.length})</option>
               {dbState.countries.map(c => (
@@ -260,45 +260,45 @@ export const MatchList: React.FC<MatchListProps> = ({
             <button
               type="button"
               onClick={() => setIsLeagueDropdownOpen(prev => !prev)}
-              className="w-full bg-[#0b0e1b] border border-[#2C3EC4]/30 rounded-xl px-3 py-2 text-xs text-left text-gray-200 focus:outline-none focus:border-[#2C3EC4] flex items-center justify-between gap-2"
+              className="w-full bg-slate-50 border border-blue-200 rounded-xl px-3 py-2 text-xs text-left text-slate-800 focus:outline-none focus:border-blue-600 flex items-center justify-between gap-2"
             >
               <span className="truncate">
                 {selectedLeagueIds.length === 0 ? (
                   `Todas as Ligas (${availableLeagues.length})`
                 ) : (
-                  <span className="text-white font-bold">
+                  <span className="text-blue-900 font-bold">
                     {selectedLeagueIds.length} liga(s) selecionada(s)
                   </span>
                 )}
               </span>
               <div className="flex items-center gap-1 shrink-0">
                 {selectedLeagueIds.length > 0 && (
-                  <span className="bg-[#2C3EC4] text-white text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold">
+                  <span className="bg-blue-600 text-white text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold">
                     {selectedLeagueIds.length}
                   </span>
                 )}
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </div>
             </button>
 
             {/* Dropdown Menu */}
             {isLeagueDropdownOpen && (
-              <div className="absolute z-50 left-0 right-0 mt-1 bg-[#0b0e1b] border border-[#2C3EC4]/50 rounded-xl shadow-2xl p-2 space-y-2 text-xs text-white max-h-64 overflow-y-auto">
-                <div className="flex items-center justify-between pb-1.5 border-b border-white/10 gap-2">
-                  <span className="font-bold text-gray-300">Escolha as Ligas:</span>
+              <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-blue-200 rounded-xl shadow-xl p-2 space-y-2 text-xs text-slate-900 max-h-64 overflow-y-auto">
+                <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 gap-2">
+                  <span className="font-bold text-slate-700">Escolha as Ligas:</span>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={selectAllLeagues}
-                      className="text-[11px] text-[#2C3EC4] hover:underline font-bold"
+                      className="text-[11px] text-blue-600 hover:underline font-bold"
                     >
                       Todas
                     </button>
-                    <span className="text-gray-600">|</span>
+                    <span className="text-slate-300">|</span>
                     <button
                       type="button"
                       onClick={clearLeagueSelection}
-                      className="text-[11px] text-gray-400 hover:text-white"
+                      className="text-[11px] text-slate-500 hover:text-slate-800"
                     >
                       Limpar
                     </button>
@@ -311,7 +311,7 @@ export const MatchList: React.FC<MatchListProps> = ({
                     placeholder="Filtrar ligas..."
                     value={leagueSearchTerm}
                     onChange={(e) => setLeagueSearchTerm(e.target.value)}
-                    className="w-full bg-[#12162a] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white placeholder-gray-500 focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
                   />
                 )}
 
@@ -323,20 +323,20 @@ export const MatchList: React.FC<MatchListProps> = ({
                       return (
                         <label
                           key={league.id}
-                          className="flex items-center justify-between p-1.5 rounded-lg hover:bg-white/5 cursor-pointer transition-colors"
+                          className="flex items-center justify-between p-1.5 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors"
                         >
                           <div className="flex items-center gap-2 truncate">
                             {isSelected ? (
-                              <CheckSquare className="w-4 h-4 text-[#2C3EC4] shrink-0" />
+                              <CheckSquare className="w-4 h-4 text-blue-600 shrink-0" />
                             ) : (
-                              <Square className="w-4 h-4 text-gray-500 shrink-0" />
+                              <Square className="w-4 h-4 text-slate-400 shrink-0" />
                             )}
-                            <span className={isSelected ? 'font-bold text-white' : 'text-gray-300'}>
+                            <span className={isSelected ? 'font-bold text-blue-900' : 'text-slate-700'}>
                               [{league.id}] {league.name}
                             </span>
                           </div>
                           {league.countryName && (
-                            <span className="text-[10px] text-gray-500 shrink-0 ml-2">
+                            <span className="text-[10px] text-slate-500 shrink-0 ml-2">
                               {league.countryName}
                             </span>
                           )}
@@ -353,7 +353,7 @@ export const MatchList: React.FC<MatchListProps> = ({
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full bg-[#0b0e1b] border border-[#2C3EC4]/30 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#2C3EC4]"
+              className="w-full bg-slate-50 border border-blue-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-600"
             >
               <option value="">Todos os Status</option>
               <option value="AGENDADO">Agendado (Jogos Futuros)</option>
@@ -367,7 +367,7 @@ export const MatchList: React.FC<MatchListProps> = ({
         {/* Selected Leagues Interactive Pills */}
         {selectedLeagueIds.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap pt-1">
-            <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+            <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">
               Ligas Filtradas:
             </span>
             {selectedLeagueIds.map(id => {
@@ -375,13 +375,13 @@ export const MatchList: React.FC<MatchListProps> = ({
               return (
                 <span
                   key={id}
-                  className="bg-[#2C3EC4]/20 border border-[#2C3EC4]/50 text-white text-xs font-bold px-2 py-0.5 rounded-lg flex items-center gap-1.5 shadow-sm"
+                  className="bg-blue-50 border border-blue-300 text-blue-800 text-xs font-bold px-2 py-0.5 rounded-lg flex items-center gap-1.5 shadow-xs"
                 >
                   <span>{league ? league.name : id}</span>
                   <button
                     type="button"
                     onClick={() => toggleLeagueSelection(id)}
-                    className="hover:text-red-400 transition-colors p-0.5"
+                    className="hover:text-red-600 transition-colors p-0.5"
                     title="Remover liga"
                   >
                     <X className="w-3 h-3" />
@@ -391,7 +391,7 @@ export const MatchList: React.FC<MatchListProps> = ({
             })}
             <button
               onClick={clearLeagueSelection}
-              className="text-xs text-[#2C3EC4] hover:underline font-bold ml-1"
+              className="text-xs text-blue-600 hover:underline font-bold ml-1"
             >
               Limpar todas as ligas
             </button>
@@ -399,18 +399,18 @@ export const MatchList: React.FC<MatchListProps> = ({
         )}
 
         {/* Counter Results info & Quick Actions */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-gray-300 pt-2 border-t border-white/10 font-medium gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-600 pt-2 border-t border-slate-100 font-medium gap-2">
           <span>
-            Exibindo <strong className="text-[#2C3EC4] font-bold">{filteredMatches.length}</strong> de <strong className="text-white">{matches.length}</strong> partidas cadastradas.
+            Exibindo <strong className="text-blue-600 font-bold">{filteredMatches.length}</strong> de <strong className="text-slate-900">{matches.length}</strong> partidas cadastradas.
           </span>
 
           <div className="flex items-center gap-3">
             {onOpenBulkMatchImportModal && (
               <button
                 onClick={onOpenBulkMatchImportModal}
-                className="inline-flex items-center gap-1.5 text-xs text-white bg-[#2C3EC4]/20 hover:bg-[#2C3EC4]/40 border border-[#2C3EC4]/50 px-2.5 py-1 rounded-lg transition-all font-bold cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-300 px-2.5 py-1 rounded-lg transition-all font-bold cursor-pointer"
               >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-white" />
+                <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600" />
                 Importar Jogos Futuros (Excel)
               </button>
             )}
@@ -424,7 +424,7 @@ export const MatchList: React.FC<MatchListProps> = ({
                   setFilterStatus('');
                   setFutureCompletenessFilter('ALL');
                 }}
-                className="text-xs text-[#2C3EC4] hover:underline font-bold"
+                className="text-xs text-blue-600 hover:underline font-bold"
               >
                 Limpar Filtros
               </button>
@@ -443,12 +443,12 @@ export const MatchList: React.FC<MatchListProps> = ({
             }}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
               filterStatus === ''
-                ? 'bg-[#2C3EC4] text-white shadow-lg shadow-[#2C3EC4]/30 border border-white/20'
-                : 'bg-[#0f1325] border border-white/10 text-gray-300 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20 border border-blue-600'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
             }`}
           >
             <span>Todos os Jogos</span>
-            <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/30 font-mono text-white">
+            <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/10 font-mono">
               {totalMatches}
             </span>
           </button>
@@ -457,32 +457,28 @@ export const MatchList: React.FC<MatchListProps> = ({
             onClick={() => setFilterStatus('AGENDADO')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
               filterStatus === 'AGENDADO'
-                ? 'bg-[#2C3EC4] text-white shadow-lg shadow-[#2C3EC4]/30 border border-white/20'
-                : 'bg-[#0f1325] border border-white/10 text-gray-300 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20 border border-blue-600'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
             }`}
           >
-            <Calendar className="w-3.5 h-3.5 text-white" />
+            <Calendar className="w-3.5 h-3.5" />
             <span>Jogos Futuros (Agendados)</span>
-            <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/30 font-mono text-white">
+            <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/10 font-mono">
               {agendadosCount}
             </span>
           </button>
 
           <button
-            onClick={() => {
-              setFilterStatus('');
-              setFutureCompletenessFilter('ALL');
-            }}
-            onClickCapture={() => setFilterStatus('FINALIZADO')}
+            onClick={() => setFilterStatus('FINALIZADO')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
               filterStatus === 'FINALIZADO'
-                ? 'bg-[#2C3EC4] text-white shadow-lg shadow-[#2C3EC4]/30 border border-white/20'
-                : 'bg-[#0f1325] border border-white/10 text-gray-300 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20 border border-blue-600'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
             }`}
           >
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#2C3EC4]" />
+            <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Finalizados</span>
-            <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/30 font-mono text-white">
+            <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/10 font-mono">
               {finalizadosCount}
             </span>
           </button>
@@ -491,13 +487,13 @@ export const MatchList: React.FC<MatchListProps> = ({
             onClick={() => setFilterStatus('EM_ANDAMENTO')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
               filterStatus === 'EM_ANDAMENTO'
-                ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/10'
-                : 'bg-[#0f1325] border border-white/10 text-amber-400 hover:text-amber-300'
+                ? 'bg-amber-500 text-slate-950 shadow-sm'
+                : 'bg-white border border-slate-200 text-amber-700 hover:bg-amber-50'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
             <span>Ao Vivo</span>
-            <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/20 font-mono">
+            <span className="px-1.5 py-0.2 text-[10px] rounded-md bg-black/10 font-mono">
               {emAndamentoCount}
             </span>
           </button>
@@ -505,9 +501,9 @@ export const MatchList: React.FC<MatchListProps> = ({
 
         {/* Future Matches Completeness Sub-Bar (When viewing Agendado or All) */}
         {(filterStatus === 'AGENDADO' || filterStatus === '') && agendadosCount > 0 && (
-          <div className="bg-[#0b0e1b] border border-[#2C3EC4]/30 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2 text-gray-300 font-bold">
-              <Calendar className="w-4 h-4 text-[#2C3EC4]" />
+          <div className="bg-white border border-blue-200 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs shadow-xs">
+            <div className="flex items-center gap-2 text-slate-700 font-bold">
+              <Calendar className="w-4 h-4 text-blue-600" />
               <span>Filtro de Preenchimento dos Jogos Futuros:</span>
             </div>
 
@@ -517,12 +513,12 @@ export const MatchList: React.FC<MatchListProps> = ({
                 onClick={() => setFutureCompletenessFilter('ALL')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
                   futureCompletenessFilter === 'ALL'
-                    ? 'bg-[#2C3EC4] text-white shadow'
-                    : 'bg-white/5 text-gray-300 hover:text-white'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
                 <span>Todos os Futuros</span>
-                <span className="font-mono text-[10px] bg-black/30 px-1.5 py-0.2 rounded">
+                <span className="font-mono text-[10px] bg-black/10 px-1.5 py-0.2 rounded">
                   {agendadosCount}
                 </span>
               </button>
@@ -532,13 +528,13 @@ export const MatchList: React.FC<MatchListProps> = ({
                 onClick={() => setFutureCompletenessFilter('COMPLETE')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                   futureCompletenessFilter === 'COMPLETE'
-                    ? 'bg-emerald-600 text-white shadow'
-                    : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
                 }`}
               >
                 <FileCheck className="w-3.5 h-3.5" />
                 <span>🟢 Dados Completos</span>
-                <span className="font-mono text-[10px] bg-black/30 px-1.5 py-0.2 rounded text-emerald-300">
+                <span className="font-mono text-[10px] bg-black/10 px-1.5 py-0.2 rounded text-emerald-800">
                   {agendadosCompletosCount}
                 </span>
               </button>
@@ -548,13 +544,13 @@ export const MatchList: React.FC<MatchListProps> = ({
                 onClick={() => setFutureCompletenessFilter('INCOMPLETE')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                   futureCompletenessFilter === 'INCOMPLETE'
-                    ? 'bg-amber-600 text-white shadow'
-                    : 'bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
                 }`}
               >
                 <FileWarning className="w-3.5 h-3.5" />
                 <span>⚠️ Faltando Dados</span>
-                <span className="font-mono text-[10px] bg-black/30 px-1.5 py-0.2 rounded text-amber-200">
+                <span className="font-mono text-[10px] bg-black/10 px-1.5 py-0.2 rounded text-amber-900">
                   {agendadosIncompletosCount}
                 </span>
               </button>
@@ -565,12 +561,12 @@ export const MatchList: React.FC<MatchListProps> = ({
 
       {/* Matches Grid / List */}
       {filteredMatches.length === 0 ? (
-        <div className="bg-[#0f1325] border border-[#2C3EC4]/30 rounded-2xl p-8 text-center text-gray-300 space-y-3">
-          <p className="text-base font-semibold text-white">Nenhuma partida encontrada para os filtros aplicados.</p>
+        <div className="bg-white border border-blue-200 rounded-2xl p-8 text-center text-slate-600 space-y-3 shadow-xs">
+          <p className="text-base font-semibold text-slate-800">Nenhuma partida encontrada para os filtros aplicados.</p>
           <div className="flex justify-center gap-3">
             <button
               onClick={onOpenMatchModal}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#2C3EC4] hover:bg-[#2231A8] text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-[#2C3EC4]/30 border border-white/10"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 border border-blue-500"
             >
               <Plus className="w-4 h-4 stroke-[3]" /> Cadastrar Nova Partida
             </button>
@@ -581,15 +577,15 @@ export const MatchList: React.FC<MatchListProps> = ({
           {/* Section 1: Jogos Futuros - Dados Completos */}
           {completeScheduled.length > 0 && (
             <div className="space-y-3">
-              <div className="bg-[#0b0e1b] border-l-4 border-emerald-500 border-y border-r border-emerald-500/30 rounded-xl p-3 flex items-center justify-between shadow-md">
-                <div className="flex items-center gap-2 text-white font-bold text-sm">
-                  <FileCheck className="w-5 h-5 text-emerald-400" />
+              <div className="bg-emerald-50 border-l-4 border-emerald-500 border-y border-r border-emerald-200 rounded-xl p-3 flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-2 text-emerald-950 font-bold text-sm">
+                  <FileCheck className="w-5 h-5 text-emerald-600" />
                   <span>🟢 Jogos Futuros - Dados Completos</span>
-                  <span className="bg-emerald-500/20 text-emerald-300 font-mono text-xs px-2 py-0.5 rounded-full border border-emerald-500/40">
+                  <span className="bg-emerald-200/60 text-emerald-900 font-mono text-xs px-2 py-0.5 rounded-full border border-emerald-300">
                     {completeScheduled.length} partidas
                   </span>
                 </div>
-                <span className="text-xs text-gray-400 hidden sm:inline">
+                <span className="text-xs text-emerald-700 hidden sm:inline">
                   Partidas agendadas com Estádio, Árbitro, Rodada e Odds preenchidos.
                 </span>
               </div>
@@ -603,15 +599,15 @@ export const MatchList: React.FC<MatchListProps> = ({
           {/* Section 2: Jogos Futuros - Faltando Informações / Pendentes */}
           {incompleteScheduled.length > 0 && (
             <div className="space-y-3">
-              <div className="bg-[#0b0e1b] border-l-4 border-amber-500 border-y border-r border-amber-500/30 rounded-xl p-3 flex items-center justify-between shadow-md">
-                <div className="flex items-center gap-2 text-white font-bold text-sm">
-                  <FileWarning className="w-5 h-5 text-amber-400" />
+              <div className="bg-amber-50 border-l-4 border-amber-500 border-y border-r border-amber-200 rounded-xl p-3 flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-2 text-amber-950 font-bold text-sm">
+                  <FileWarning className="w-5 h-5 text-amber-600" />
                   <span>⚠️ Jogos Futuros - Faltando Informações (Pendentes)</span>
-                  <span className="bg-amber-500/20 text-amber-300 font-mono text-xs px-2 py-0.5 rounded-full border border-amber-500/40">
+                  <span className="bg-amber-200/60 text-amber-900 font-mono text-xs px-2 py-0.5 rounded-full border border-amber-300">
                     {incompleteScheduled.length} partidas
                   </span>
                 </div>
-                <span className="text-xs text-amber-300/80 hidden sm:inline">
+                <span className="text-xs text-amber-800 hidden sm:inline">
                   Estes jogos possuem dados pendentes (ex: sem estádio, árbitro ou odds).
                 </span>
               </div>
@@ -626,11 +622,11 @@ export const MatchList: React.FC<MatchListProps> = ({
           {nonScheduledMatches.length > 0 && (
             <div className="space-y-3">
               {(completeScheduled.length > 0 || incompleteScheduled.length > 0) && (
-                <div className="bg-[#0b0e1b] border-l-4 border-[#2C3EC4] border-y border-r border-[#2C3EC4]/30 rounded-xl p-3 flex items-center justify-between shadow-md">
-                  <div className="flex items-center gap-2 text-white font-bold text-sm">
-                    <CheckCircle2 className="w-5 h-5 text-[#2C3EC4]" />
+                <div className="bg-blue-50 border-l-4 border-blue-600 border-y border-r border-blue-200 rounded-xl p-3 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center gap-2 text-blue-950 font-bold text-sm">
+                    <CheckCircle2 className="w-5 h-5 text-blue-600" />
                     <span>🏁 Outras Partidas (Finalizados & Ao Vivo)</span>
-                    <span className="bg-[#2C3EC4]/20 text-[#2C3EC4] font-mono text-xs px-2 py-0.5 rounded-full border border-[#2C3EC4]/40">
+                    <span className="bg-blue-200/60 text-blue-900 font-mono text-xs px-2 py-0.5 rounded-full border border-blue-300">
                       {nonScheduledMatches.length} partidas
                     </span>
                   </div>
@@ -682,25 +678,25 @@ export const MatchList: React.FC<MatchListProps> = ({
     return (
       <div
         key={match.id}
-        className={`bg-[#0f1325] border ${
+        className={`bg-white border ${
           match.status === 'AGENDADO'
             ? completeness.isComplete
-              ? 'border-emerald-500/40 hover:border-emerald-500/70'
-              : 'border-amber-500/40 hover:border-amber-500/70'
-            : 'border-[#2C3EC4]/25 hover:border-[#2C3EC4]/50'
-        } rounded-2xl p-5 shadow-xl transition-all duration-200 flex flex-col justify-between space-y-4 group`}
+              ? 'border-emerald-300 hover:border-emerald-500'
+              : 'border-amber-300 hover:border-amber-500'
+            : 'border-blue-200 hover:border-blue-400'
+        } rounded-2xl p-5 shadow-sm transition-all duration-200 flex flex-col justify-between space-y-4 group`}
       >
         {/* Card Top: Match Unique ID + Country + League + Completeness Badge + Status */}
-        <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/10 flex-wrap">
+        <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
             {/* Match ID */}
-            <span className="font-mono font-bold text-xs bg-[#2C3EC4] text-white border border-white/20 px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+            <span className="font-mono font-bold text-xs bg-blue-600 text-white border border-blue-500 px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
               <Hash className="w-3 h-3 text-white" />
               {match.id}
             </span>
 
             {/* League + Country */}
-            <div className="flex items-center gap-1.5 text-xs text-gray-200">
+            <div className="flex items-center gap-1.5 text-xs text-slate-700">
               {leagueLogoUrl && (
                 <img
                   src={leagueLogoUrl}
@@ -711,26 +707,26 @@ export const MatchList: React.FC<MatchListProps> = ({
                   }}
                 />
               )}
-              <span className="font-bold text-white">{match.leagueName}</span>
-              <span className="text-gray-500">•</span>
-              <span className="text-gray-300 flex items-center gap-1 font-medium">
+              <span className="font-bold text-slate-900">{match.leagueName}</span>
+              <span className="text-slate-300">•</span>
+              <span className="text-slate-600 flex items-center gap-1 font-medium">
                 {flagUrl ? (
                   <img
                     src={flagUrl}
                     alt={match.countryName}
-                    className="w-4 h-3 object-cover rounded-sm border border-white/10"
+                    className="w-4 h-3 object-cover rounded-sm border border-slate-200"
                     onError={(e) => {
                       (e.target as HTMLElement).style.display = 'none';
                     }}
                   />
                 ) : (
-                  <Globe className="w-3 h-3 text-gray-400" />
+                  <Globe className="w-3 h-3 text-slate-400" />
                 )}
                 {match.countryName}
               </span>
               {match.isContinental && (
-                <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#2C3EC4]/30 text-blue-200 border border-[#2C3EC4]/50 flex items-center gap-1">
-                  <Globe className="w-3 h-3 text-blue-400" />
+                <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300 flex items-center gap-1">
+                  <Globe className="w-3 h-3 text-blue-600" />
                   Intercontinental
                 </span>
               )}
@@ -741,16 +737,16 @@ export const MatchList: React.FC<MatchListProps> = ({
             {/* Completeness Badge for AGENDADO matches */}
             {match.status === 'AGENDADO' && (
               completeness.isComplete ? (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1 shadow-sm">
-                  <FileCheck className="w-3 h-3 text-emerald-400" />
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 shadow-xs">
+                  <FileCheck className="w-3 h-3 text-emerald-600" />
                   Dados Completos
                 </span>
               ) : (
                 <span
-                  className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1 shadow-sm"
+                  className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-xs"
                   title={`Faltam os campos: ${completeness.missingFields.join(', ')}`}
                 >
-                  <FileWarning className="w-3 h-3 text-amber-400" />
+                  <FileWarning className="w-3 h-3 text-amber-600" />
                   Falta: {completeness.missingFields.join(', ')}
                 </span>
               )
@@ -765,17 +761,17 @@ export const MatchList: React.FC<MatchListProps> = ({
           <div
             className={`${
               completeness.isComplete
-                ? 'bg-emerald-950/30 border-emerald-500/30'
-                : 'bg-amber-950/30 border-amber-500/30'
+                ? 'bg-emerald-50/80 border-emerald-200'
+                : 'bg-amber-50/80 border-amber-200'
             } border rounded-xl p-2.5 flex items-center justify-between gap-2`}
           >
             <div className="flex items-center gap-2 text-xs font-medium">
               <Calendar
                 className={`w-4 h-4 ${
-                  completeness.isComplete ? 'text-emerald-400' : 'text-amber-400'
+                  completeness.isComplete ? 'text-emerald-600' : 'text-amber-600'
                 } shrink-0`}
               />
-              <span className="text-white">
+              <span className="text-slate-800 font-medium">
                 {completeness.isComplete
                   ? 'Jogo Agendado • Todos os dados preenchidos'
                   : `Jogo Agendado • Faltando: ${completeness.missingFields.join(', ')}`}
@@ -783,7 +779,7 @@ export const MatchList: React.FC<MatchListProps> = ({
             </div>
             <button
               onClick={() => onOpenStatsModal(match)}
-              className="px-3 py-1 bg-[#2C3EC4] hover:bg-[#2231A8] text-white text-xs font-bold rounded-lg transition-all shadow hover:scale-[1.02] shrink-0 border border-white/10"
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all shadow-xs shrink-0"
             >
               + Lançar Placar & Stats
             </button>
@@ -795,12 +791,12 @@ export const MatchList: React.FC<MatchListProps> = ({
           {/* Home Team */}
           <div className="col-span-3 flex items-center justify-end gap-2.5 text-right">
             <div className="space-y-0.5 truncate">
-              <span className="font-bold text-white text-base sm:text-lg truncate block leading-tight">
+              <span className="font-bold text-slate-900 text-base sm:text-lg truncate block leading-tight">
                 {match.homeTeamName}
               </span>
-              <div className="text-[10px] font-mono text-gray-400 flex items-center justify-end gap-1 font-semibold">
+              <div className="text-[10px] font-mono text-slate-500 flex items-center justify-end gap-1 font-semibold">
                 <span>ID:</span>
-                <span className="text-white bg-[#2C3EC4]/40 px-1 rounded border border-[#2C3EC4]/50">
+                <span className="text-blue-900 bg-blue-100 px-1 rounded border border-blue-200">
                   {match.homeTeamId}
                 </span>
               </div>
@@ -809,13 +805,13 @@ export const MatchList: React.FC<MatchListProps> = ({
               <img
                 src={homeLogoUrl}
                 alt={match.homeTeamName}
-                className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded-lg bg-black/40 border border-white/10 p-1 shrink-0 shadow-sm"
+                className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded-lg bg-slate-50 border border-slate-200 p-1 shrink-0 shadow-xs"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
             ) : (
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs shrink-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-xs shrink-0">
                 🛡️
               </div>
             )}
@@ -823,11 +819,11 @@ export const MatchList: React.FC<MatchListProps> = ({
 
           {/* Score Pill */}
           <div className="col-span-1 text-center flex flex-col items-center justify-center">
-            <div className="px-3 py-1.5 bg-[#0b0e1b] border border-[#2C3EC4]/40 text-white rounded-xl font-black text-lg sm:text-xl shadow-md font-mono tracking-wider min-w-[68px]">
+            <div className="px-3 py-1.5 bg-blue-50 border border-blue-300 text-blue-950 rounded-xl font-black text-lg sm:text-xl shadow-xs font-mono tracking-wider min-w-[68px]">
               {match.homeScore !== null && match.awayScore !== null ? (
                 `${match.homeScore} - ${match.awayScore}`
               ) : (
-                <span className="text-xs text-gray-400 font-sans uppercase">vs</span>
+                <span className="text-xs text-slate-400 font-sans uppercase">vs</span>
               )}
             </div>
           </div>
@@ -838,23 +834,23 @@ export const MatchList: React.FC<MatchListProps> = ({
               <img
                 src={awayLogoUrl}
                 alt={match.awayTeamName}
-                className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded-lg bg-black/40 border border-white/10 p-1 shrink-0 shadow-sm"
+                className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded-lg bg-slate-50 border border-slate-200 p-1 shrink-0 shadow-xs"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
             ) : (
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs shrink-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-xs shrink-0">
                 🛡️
               </div>
             )}
             <div className="space-y-0.5 truncate">
-              <span className="font-bold text-white text-base sm:text-lg truncate block leading-tight">
+              <span className="font-bold text-slate-900 text-base sm:text-lg truncate block leading-tight">
                 {match.awayTeamName}
               </span>
-              <div className="text-[10px] font-mono text-gray-400 flex items-center justify-start gap-1 font-semibold">
+              <div className="text-[10px] font-mono text-slate-500 flex items-center justify-start gap-1 font-semibold">
                 <span>ID:</span>
-                <span className="text-white bg-[#2C3EC4]/40 px-1 rounded border border-[#2C3EC4]/50">
+                <span className="text-blue-900 bg-blue-100 px-1 rounded border border-blue-200">
                   {match.awayTeamId}
                 </span>
               </div>
@@ -864,17 +860,17 @@ export const MatchList: React.FC<MatchListProps> = ({
 
         {/* Goalscorers preview if available */}
         {(match.stats?.scorersHome || match.stats?.scorersAway) && (
-          <div className="bg-[#0b0e1b] p-2 rounded-xl border border-white/10 text-[11px] text-gray-300 space-y-1">
+          <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 text-[11px] text-slate-700 space-y-1">
             {match.stats?.scorersHome && (
               <div className="flex items-center gap-1.5">
-                <span className="text-[#2C3EC4] font-bold">⚽ {match.homeTeamName}:</span>
-                <span className="text-white font-medium">{match.stats.scorersHome}</span>
+                <span className="text-blue-600 font-bold">⚽ {match.homeTeamName}:</span>
+                <span className="text-slate-900 font-medium">{match.stats.scorersHome}</span>
               </div>
             )}
             {match.stats?.scorersAway && (
               <div className="flex items-center gap-1.5">
-                <span className="text-[#2C3EC4] font-bold">⚽ {match.awayTeamName}:</span>
-                <span className="text-white font-medium">{match.stats.scorersAway}</span>
+                <span className="text-blue-600 font-bold">⚽ {match.awayTeamName}:</span>
+                <span className="text-slate-900 font-medium">{match.stats.scorersAway}</span>
               </div>
             )}
           </div>
@@ -893,77 +889,77 @@ export const MatchList: React.FC<MatchListProps> = ({
             match.odds.firstGoalHome?.minute != null ||
             match.odds.firstGoalAway?.minute != null ||
             match.odds.earlyGameGoal?.minute != null) && (
-            <div className="bg-[#0b0e1b] p-2.5 rounded-xl border border-white/10 space-y-2 text-xs">
-              <div className="flex items-center justify-between text-[11px] font-bold text-gray-300">
-                <span className="flex items-center gap-1 text-[#2C3EC4] uppercase tracking-wider font-extrabold">
+            <div className="bg-blue-50/60 p-2.5 rounded-xl border border-blue-100 space-y-2 text-xs">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                <span className="flex items-center gap-1 text-blue-700 uppercase tracking-wider font-extrabold">
                   <TrendingUp className="w-3.5 h-3.5" />
                   Odds / Cotações
                 </span>
                 {(match.odds.homeFT != null ||
                   match.odds.drawFT != null ||
                   match.odds.awayFT != null) && (
-                  <span className="font-mono text-gray-200 text-[11px]">
+                  <span className="font-mono text-slate-800 text-[11px]">
                     1X2 FT:{' '}
-                    <span className="text-[#2C3EC4] font-bold">{match.odds.homeFT ?? '-'}</span> |{' '}
-                    <span className="text-amber-400 font-bold">{match.odds.drawFT ?? '-'}</span> |{' '}
-                    <span className="text-[#2C3EC4] font-bold">{match.odds.awayFT ?? '-'}</span>
+                    <span className="text-blue-700 font-bold">{match.odds.homeFT ?? '-'}</span> |{' '}
+                    <span className="text-amber-700 font-bold">{match.odds.drawFT ?? '-'}</span> |{' '}
+                    <span className="text-blue-700 font-bold">{match.odds.awayFT ?? '-'}</span>
                   </span>
                 )}
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 text-[11px] font-mono">
                 {match.odds.over25FT != null && (
-                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                    <span className="text-gray-300 font-sans">Over 2,5 FT:</span>
-                    <span className="text-[#2C3EC4] font-bold">{match.odds.over25FT}</span>
+                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
+                    <span className="text-slate-500 font-sans">Over 2,5 FT:</span>
+                    <span className="text-blue-700 font-bold">{match.odds.over25FT}</span>
                   </div>
                 )}
                 {match.odds.under25FT != null && (
-                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                    <span className="text-gray-300 font-sans">Under 2,5 FT:</span>
-                    <span className="text-[#2C3EC4] font-bold">{match.odds.under25FT}</span>
+                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
+                    <span className="text-slate-500 font-sans">Under 2,5 FT:</span>
+                    <span className="text-blue-700 font-bold">{match.odds.under25FT}</span>
                   </div>
                 )}
                 {match.odds.bttsFT != null && (
-                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                    <span className="text-gray-300 font-sans">Ambos FT:</span>
-                    <span className="text-[#2C3EC4] font-bold">{match.odds.bttsFT}</span>
+                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
+                    <span className="text-slate-500 font-sans">Ambos FT:</span>
+                    <span className="text-blue-700 font-bold">{match.odds.bttsFT}</span>
                   </div>
                 )}
                 {match.odds.homeHT != null && (
-                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                    <span className="text-gray-300 font-sans">Mandante HT:</span>
-                    <span className="text-[#2C3EC4] font-bold">{match.odds.homeHT}</span>
+                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
+                    <span className="text-slate-500 font-sans">Mandante HT:</span>
+                    <span className="text-blue-700 font-bold">{match.odds.homeHT}</span>
                   </div>
                 )}
                 {match.odds.drawHT != null && (
-                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                    <span className="text-gray-300 font-sans">Empate HT:</span>
-                    <span className="text-amber-400 font-bold">{match.odds.drawHT}</span>
+                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
+                    <span className="text-slate-500 font-sans">Empate HT:</span>
+                    <span className="text-amber-700 font-bold">{match.odds.drawHT}</span>
                   </div>
                 )}
                 {match.odds.awayHT != null && (
-                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                    <span className="text-gray-300 font-sans">Visitante HT:</span>
-                    <span className="text-[#2C3EC4] font-bold">{match.odds.awayHT}</span>
+                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
+                    <span className="text-slate-500 font-sans">Visitante HT:</span>
+                    <span className="text-blue-700 font-bold">{match.odds.awayHT}</span>
                   </div>
                 )}
                 {match.odds.over05HT != null && (
-                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                    <span className="text-gray-300 font-sans">Over 0,5 HT:</span>
-                    <span className="text-[#2C3EC4] font-bold">{match.odds.over05HT}</span>
+                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
+                    <span className="text-slate-500 font-sans">Over 0,5 HT:</span>
+                    <span className="text-blue-700 font-bold">{match.odds.over05HT}</span>
                   </div>
                 )}
                 {match.odds.under05HT != null && (
-                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                    <span className="text-gray-300 font-sans">Under 0,5 HT:</span>
-                    <span className="text-[#2C3EC4] font-bold">{match.odds.under05HT}</span>
+                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
+                    <span className="text-slate-500 font-sans">Under 0,5 HT:</span>
+                    <span className="text-blue-700 font-bold">{match.odds.under05HT}</span>
                   </div>
                 )}
                 {match.odds.bttsHT != null && (
-                  <div className="bg-[#12162a] p-1 rounded border border-white/10 flex justify-between">
-                    <span className="text-gray-300 font-sans">Ambos HT:</span>
-                    <span className="text-[#2C3EC4] font-bold">{match.odds.bttsHT}</span>
+                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
+                    <span className="text-slate-500 font-sans">Ambos HT:</span>
+                    <span className="text-blue-700 font-bold">{match.odds.bttsHT}</span>
                   </div>
                 )}
               </div>
@@ -972,11 +968,11 @@ export const MatchList: React.FC<MatchListProps> = ({
 
         {/* Expandable Match Stats Section */}
         {isExpanded && match.stats && (
-          <div className="bg-[#0b0e1b] p-3 rounded-xl border border-white/10 space-y-3 text-xs animate-in fade-in duration-200">
-            <div className="flex items-center justify-between text-gray-300 font-bold text-[11px] uppercase border-b border-white/10 pb-1.5">
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-3 text-xs animate-in fade-in duration-200">
+            <div className="flex items-center justify-between text-slate-700 font-bold text-[11px] uppercase border-b border-slate-200 pb-1.5">
               <span>Estatísticas da Partida (FT & HT)</span>
               {match.stats.halftimeHomeScore !== undefined && match.stats.halftimeHomeScore !== null && (
-                <span className="text-white font-mono font-bold bg-[#2C3EC4]/30 px-2 py-0.5 rounded border border-[#2C3EC4]/40">
+                <span className="text-blue-900 font-mono font-bold bg-blue-100 px-2 py-0.5 rounded border border-blue-200">
                   1º Tempo (HT): {match.stats.halftimeHomeScore} - {match.stats.halftimeAwayScore}
                 </span>
               )}
@@ -985,14 +981,14 @@ export const MatchList: React.FC<MatchListProps> = ({
             {/* Posse de bola bar */}
             {(match.stats.possessionHomeFT ?? match.stats.possessionHome) != null && (
               <div className="space-y-1">
-                <div className="flex justify-between text-[11px] text-gray-200 font-medium">
+                <div className="flex justify-between text-[11px] text-slate-700 font-medium">
                   <span>{match.stats.possessionHomeFT ?? match.stats.possessionHome}% Posse FT</span>
-                  <span className="text-gray-400 font-bold">Posse de Bola</span>
+                  <span className="text-slate-500 font-bold">Posse de Bola</span>
                   <span>{match.stats.possessionAwayFT ?? match.stats.possessionAway}% Posse FT</span>
                 </div>
-                <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden flex">
+                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden flex">
                   <div
-                    className="bg-[#2C3EC4] h-full transition-all"
+                    className="bg-blue-600 h-full transition-all"
                     style={{ width: `${match.stats.possessionHomeFT ?? match.stats.possessionHome}%` }}
                   />
                   <div
@@ -1006,29 +1002,29 @@ export const MatchList: React.FC<MatchListProps> = ({
         )}
 
         {/* Entity IDs Footer Banner */}
-        <div className="bg-[#0b0e1b] p-2.5 rounded-xl border border-[#2C3EC4]/20 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono">
-          <div className="flex items-center gap-3 text-gray-300 flex-wrap font-semibold">
+        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono">
+          <div className="flex items-center gap-3 text-slate-600 flex-wrap font-semibold">
             <span className="flex items-center gap-1">
-              <span className="text-gray-400">País:</span>
-              <span className="text-white bg-[#2C3EC4]/30 px-1 rounded">{match.countryId}</span>
+              <span className="text-slate-400">País:</span>
+              <span className="text-blue-900 bg-blue-100 px-1 rounded">{match.countryId}</span>
             </span>
-            <span className="text-gray-600">|</span>
+            <span className="text-slate-300">|</span>
             <span className="flex items-center gap-1">
-              <span className="text-gray-400">Liga:</span>
-              <span className="text-white bg-[#2C3EC4]/30 px-1 rounded">{match.leagueId}</span>
+              <span className="text-slate-400">Liga:</span>
+              <span className="text-blue-900 bg-blue-100 px-1 rounded">{match.leagueId}</span>
             </span>
           </div>
 
-          <div className="flex items-center gap-3 text-gray-300 text-[11px] font-sans flex-wrap font-medium">
+          <div className="flex items-center gap-3 text-slate-600 text-[11px] font-sans flex-wrap font-medium">
             {match.round && <span>{match.round}</span>}
             {match.stadium && (
-              <span className="flex items-center gap-1 text-gray-300">
-                <MapPin className="w-3 h-3 text-[#2C3EC4]" />
+              <span className="flex items-center gap-1 text-slate-600">
+                <MapPin className="w-3 h-3 text-blue-600" />
                 {match.stadium}
               </span>
             )}
             {match.referee && (
-              <span className="flex items-center gap-1 text-white font-bold bg-[#2C3EC4]/20 px-2 py-0.5 rounded border border-[#2C3EC4]/40">
+              <span className="flex items-center gap-1 text-blue-900 font-bold bg-blue-100 px-2 py-0.5 rounded border border-blue-200">
                 👨‍⚖️ Árbitro: {match.referee}
               </span>
             )}
@@ -1036,9 +1032,9 @@ export const MatchList: React.FC<MatchListProps> = ({
         </div>
 
         {/* Date & Actions Bar */}
-        <div className="flex items-center justify-between pt-2 text-xs text-gray-300 border-t border-white/10 font-medium">
+        <div className="flex items-center justify-between pt-2 text-xs text-slate-600 border-t border-slate-100 font-medium">
           <span className="flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5 text-[#2C3EC4]" />
+            <Calendar className="w-3.5 h-3.5 text-blue-600" />
             {formatDate(match.matchDate)}
           </span>
 
@@ -1047,9 +1043,9 @@ export const MatchList: React.FC<MatchListProps> = ({
             {hasStats && (
               <button
                 onClick={() => setExpandedStatsMatchId(isExpanded ? null : match.id)}
-                className="px-2.5 py-1.5 rounded-lg bg-[#2C3EC4]/20 hover:bg-[#2C3EC4]/30 text-white text-xs font-bold flex items-center gap-1 border border-[#2C3EC4]/40 transition-colors"
+                className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold flex items-center gap-1 border border-blue-200 transition-colors"
               >
-                <BarChart2 className="w-3.5 h-3.5 text-[#2C3EC4]" />
+                <BarChart2 className="w-3.5 h-3.5 text-blue-600" />
                 <span>{isExpanded ? 'Ocultar Stats' : 'Ver Stats'}</span>
                 {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
@@ -1058,7 +1054,7 @@ export const MatchList: React.FC<MatchListProps> = ({
             {/* Stats modal launch button */}
             <button
               onClick={() => onOpenStatsModal(match)}
-              className="px-2.5 py-1.5 rounded-lg bg-[#2C3EC4] hover:bg-[#2231A8] text-white text-xs font-bold border border-white/10 flex items-center gap-1 transition-all shadow-sm"
+              className="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold border border-blue-500 flex items-center gap-1 transition-all shadow-xs"
               title="Lançar/Editar Placar & Estatísticas"
             >
               <BarChart2 className="w-3.5 h-3.5" />
@@ -1067,7 +1063,7 @@ export const MatchList: React.FC<MatchListProps> = ({
 
             <button
               onClick={() => onEditMatch(match)}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10"
+              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors border border-slate-200"
               title="Editar Partida"
             >
               <Edit2 className="w-3.5 h-3.5" />
@@ -1083,7 +1079,7 @@ export const MatchList: React.FC<MatchListProps> = ({
                   onDeleteMatch(match.id);
                 }
               }}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-red-500/30 text-gray-300 hover:text-white transition-colors border border-white/10"
+              className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 transition-colors border border-slate-200"
               title="Excluir Partida"
             >
               <Trash2 className="w-3.5 h-3.5" />

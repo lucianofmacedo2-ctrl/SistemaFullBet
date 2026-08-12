@@ -500,26 +500,26 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-[#0f1325] border border-[#2C3EC4]/30 rounded-2xl shadow-2xl overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs overflow-y-auto">
+      <div className="relative w-full max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden my-8">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[#0b0e1b] border-b border-[#2C3EC4]/20">
+        <div className="flex items-center justify-between px-6 py-4 bg-blue-50 border-b border-blue-100">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-[#2C3EC4]/20 text-[#2C3EC4] rounded-lg border border-[#2C3EC4]/30">
-              <Trophy className="w-5 h-5 text-[#2C3EC4]" />
+            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg border border-blue-200">
+              <Trophy className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-lg font-bold text-slate-900">
                 {editingMatch ? 'Editar Jogo' : 'Cadastrar Novo Jogo de Futebol'}
               </h2>
-              <p className="text-xs text-gray-300">
+              <p className="text-xs text-slate-500">
                 Ligas, Países e Times novos recebem IDs Únicos na 1ª vez.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -528,37 +528,37 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
           {errorMsg && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm font-medium">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
               {errorMsg}
             </div>
           )}
 
           {/* Section 1: País & Liga */}
-          <div className="bg-[#0b0e1b] p-4 rounded-xl border border-white/10 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#2C3EC4] uppercase tracking-wider">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-wider">
                 <Globe className="w-3.5 h-3.5" />
                 <span>1. Localização & Competição</span>
               </div>
 
               {/* Option: Torneio Intercontinental */}
-              <label className="flex items-center gap-2 cursor-pointer bg-[#12162a] hover:bg-[#181d36] px-3 py-1.5 rounded-lg border border-[#2C3EC4]/40 text-xs text-white transition-colors">
+              <label className="flex items-center gap-2 cursor-pointer bg-white hover:bg-blue-50/50 px-3 py-1.5 rounded-lg border border-blue-300 text-xs text-slate-800 transition-colors shadow-xs">
                 <input
                   type="checkbox"
                   checked={isContinental}
                   onChange={(e) => setIsContinental(e.target.checked)}
-                  className="rounded text-[#2C3EC4] focus:ring-[#2C3EC4] w-4 h-4 bg-black/40 border-white/20 cursor-pointer"
+                  className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 border-slate-300 cursor-pointer"
                 />
-                <span className="font-semibold text-blue-300 flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5 text-blue-400" />
+                <span className="font-semibold text-blue-900 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-blue-600" />
                   Torneio Intercontinental
                 </span>
               </label>
             </div>
 
             {isContinental && (
-              <div className="p-2.5 bg-[#2C3EC4]/15 border border-[#2C3EC4]/40 rounded-lg text-xs text-blue-200 flex items-center gap-2">
-                <Globe className="w-4 h-4 text-blue-400 shrink-0" />
+              <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 flex items-center gap-2 font-medium">
+                <Globe className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>
                   <strong>Torneio Intercontinental Ativo:</strong> Escolha o País do Mandante e do Visitante de forma independente na Seção 2 abaixo.
                 </span>
@@ -568,13 +568,13 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Country Field */}
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   País Sede / Organizador
                 </label>
                 <select
                   value={selectedCountryId}
                   onChange={(e) => setSelectedCountryId(e.target.value)}
-                  className="w-full bg-[#12162a] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-blue-500 shadow-xs"
                 >
                   <option value="NEW">+ Cadastrar Novo País</option>
                   {countries.map(c => (
@@ -591,10 +591,10 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                       placeholder="Ex: Brasil, Espanha, Europa, Internacional..."
                       value={newCountryName}
                       onChange={(e) => setNewCountryName(e.target.value)}
-                      className="w-full bg-[#181d36] border border-white/10 focus:border-[#2C3EC4] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-400"
+                      className="w-full bg-white border border-slate-300 focus:border-blue-500 rounded-lg px-3 py-1.5 text-sm text-slate-900 placeholder-slate-400 shadow-xs"
                       required
                     />
-                    <span className="text-[11px] text-[#2C3EC4] flex items-center gap-1 mt-1 font-mono font-bold">
+                    <span className="text-[11px] text-blue-600 flex items-center gap-1 mt-1 font-mono font-bold">
                       <Sparkles className="w-3 h-3" /> ID Único será gerado (ex: PAIS-001)
                     </span>
                   </div>
@@ -603,13 +603,13 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
 
               {/* League Field */}
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Liga / Campeonato
                 </label>
                 <select
                   value={selectedLeagueId}
                   onChange={(e) => setSelectedLeagueId(e.target.value)}
-                  className="w-full bg-[#12162a] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-blue-500 shadow-xs"
                 >
                   <option value="NEW">+ Cadastrar Nova Liga</option>
                   {filteredLeagues.map(l => (
@@ -626,10 +626,10 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                       placeholder="Ex: Champions League, Libertadores, Mundial de Clubes..."
                       value={newLeagueName}
                       onChange={(e) => setNewLeagueName(e.target.value)}
-                      className="w-full bg-[#181d36] border border-white/10 focus:border-[#2C3EC4] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-400"
+                      className="w-full bg-white border border-slate-300 focus:border-blue-500 rounded-lg px-3 py-1.5 text-sm text-slate-900 placeholder-slate-400 shadow-xs"
                       required
                     />
-                    <span className="text-[11px] text-[#2C3EC4] flex items-center gap-1 mt-1 font-mono font-bold">
+                    <span className="text-[11px] text-blue-600 flex items-center gap-1 mt-1 font-mono font-bold">
                       <Sparkles className="w-3 h-3" /> ID Único será gerado (ex: LIGA-001)
                     </span>
                   </div>
@@ -639,37 +639,37 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
           </div>
 
           {/* Section 2: Teams (Mandante x Visitante) */}
-          <div className="bg-[#0b0e1b] p-4 rounded-xl border border-white/10 space-y-4">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#2C3EC4] uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-wider">
                 <Shield className="w-3.5 h-3.5" />
                 <span>2. Times Confrontantes</span>
               </div>
               {isContinental && (
-                <span className="text-[10px] bg-[#2C3EC4]/30 text-blue-200 border border-[#2C3EC4]/50 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                  <Globe className="w-3 h-3 text-blue-400" /> Seleção por País Ativa
+                <span className="text-[10px] bg-blue-100 text-blue-800 border border-blue-300 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                  <Globe className="w-3 h-3 text-blue-600" /> Seleção por País Ativa
                 </span>
               )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Home Team */}
-              <div className="bg-[#12162a] p-3 rounded-lg border border-white/10 space-y-3">
-                <label className="block text-xs font-bold text-[#2C3EC4]">
+              <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-3 shadow-xs">
+                <label className="block text-xs font-bold text-blue-700">
                   🏠 Time Mandante (Casa)
                 </label>
 
                 {/* Country Filter for Home Team if Continental */}
                 {isContinental && (
-                  <div className="bg-[#0b0e1b] p-2.5 rounded-lg border border-white/10">
-                    <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
-                      <Globe className="w-3 h-3 text-[#2C3EC4]" />
+                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                      <Globe className="w-3 h-3 text-blue-600" />
                       País do Mandante:
                     </label>
                     <select
                       value={homeCountryFilterId}
                       onChange={(e) => setHomeCountryFilterId(e.target.value)}
-                      className="w-full bg-[#181d36] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#2C3EC4]"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
                     >
                       <option value="">-- Todos os Países ({countries.length}) --</option>
                       {countries.map(c => (
@@ -682,13 +682,13 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                 )}
 
                 <div>
-                  <label className="block text-[11px] font-medium text-gray-300 mb-1">
+                  <label className="block text-[11px] font-medium text-slate-700 mb-1">
                     Equipe / Time Mandante:
                   </label>
                   <select
                     value={selectedHomeTeamId}
                     onChange={(e) => setSelectedHomeTeamId(e.target.value)}
-                    className="w-full bg-[#181d36] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-blue-500 shadow-xs"
                   >
                     <option value="NEW">+ Cadastrar Novo Time</option>
                     {filteredHomeTeams.map(t => (
@@ -705,10 +705,10 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                         placeholder="Ex: Flamengo, Real Madrid..."
                         value={newHomeTeamName}
                         onChange={(e) => setNewHomeTeamName(e.target.value)}
-                        className="w-full bg-[#0b0e1b] border border-white/10 focus:border-[#2C3EC4] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-400"
+                        className="w-full bg-white border border-slate-300 focus:border-blue-500 rounded-lg px-3 py-1.5 text-sm text-slate-900 placeholder-slate-400 shadow-xs"
                         required
                       />
-                      <span className="text-[11px] text-[#2C3EC4] flex items-center gap-1 mt-1 font-mono font-bold">
+                      <span className="text-[11px] text-blue-600 flex items-center gap-1 mt-1 font-mono font-bold">
                         <Sparkles className="w-3 h-3" /> ID Único será gerado (ex: TIME-001)
                       </span>
                     </div>
@@ -717,22 +717,22 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
               </div>
 
               {/* Away Team */}
-              <div className="bg-[#12162a] p-3 rounded-lg border border-white/10 space-y-3">
-                <label className="block text-xs font-bold text-[#2C3EC4]">
+              <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-3 shadow-xs">
+                <label className="block text-xs font-bold text-blue-700">
                   ✈️ Time Visitante (Fora)
                 </label>
 
                 {/* Country Filter for Away Team if Continental */}
                 {isContinental && (
-                  <div className="bg-[#0b0e1b] p-2.5 rounded-lg border border-white/10">
-                    <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
-                      <Globe className="w-3 h-3 text-[#2C3EC4]" />
+                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                      <Globe className="w-3 h-3 text-blue-600" />
                       País do Visitante:
                     </label>
                     <select
                       value={awayCountryFilterId}
                       onChange={(e) => setAwayCountryFilterId(e.target.value)}
-                      className="w-full bg-[#181d36] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#2C3EC4]"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
                     >
                       <option value="">-- Todos os Países ({countries.length}) --</option>
                       {countries.map(c => (
@@ -745,13 +745,13 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                 )}
 
                 <div>
-                  <label className="block text-[11px] font-medium text-gray-300 mb-1">
+                  <label className="block text-[11px] font-medium text-slate-700 mb-1">
                     Equipe / Time Visitante:
                   </label>
                   <select
                     value={selectedAwayTeamId}
                     onChange={(e) => setSelectedAwayTeamId(e.target.value)}
-                    className="w-full bg-[#181d36] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-blue-500 shadow-xs"
                   >
                     <option value="NEW">+ Cadastrar Novo Time</option>
                     {filteredAwayTeams.map(t => (
@@ -768,10 +768,10 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                         placeholder="Ex: Palmeiras, Barcelona..."
                         value={newAwayTeamName}
                         onChange={(e) => setNewAwayTeamName(e.target.value)}
-                        className="w-full bg-[#0b0e1b] border border-white/10 focus:border-[#2C3EC4] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-400"
+                        className="w-full bg-white border border-slate-300 focus:border-blue-500 rounded-lg px-3 py-1.5 text-sm text-slate-900 placeholder-slate-400 shadow-xs"
                         required
                       />
-                      <span className="text-[11px] text-[#2C3EC4] flex items-center gap-1 mt-1 font-mono font-bold">
+                      <span className="text-[11px] text-blue-600 flex items-center gap-1 mt-1 font-mono font-bold">
                         <Sparkles className="w-3 h-3" /> ID Único será gerado (ex: TIME-002)
                       </span>
                     </div>
@@ -782,9 +782,9 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
           </div>
 
           {/* Section 3: Placar & Status & Detalhes */}
-          <div className="bg-[#0b0e1b] p-4 rounded-xl border border-white/10 space-y-4">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
             {/* Quick Match Type Selector Banner */}
-            <div className="flex items-center gap-2 p-1 bg-[#12162a] rounded-xl border border-white/10">
+            <div className="flex items-center gap-2 p-1 bg-white rounded-xl border border-slate-200 shadow-xs">
               <button
                 type="button"
                 onClick={() => {
@@ -794,8 +794,8 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                 }}
                 className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                   status === 'AGENDADO'
-                    ? 'bg-[#2C3EC4] text-white shadow-md'
-                    : 'text-gray-300 hover:text-white'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
               >
                 <Calendar className="w-3.5 h-3.5" />
@@ -807,8 +807,8 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                 onClick={() => setStatus('FINALIZADO')}
                 className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                   status === 'FINALIZADO'
-                    ? 'bg-[#2C3EC4] text-white shadow-md'
-                    : 'text-gray-300 hover:text-white'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
               >
                 <Trophy className="w-3.5 h-3.5" />
@@ -817,8 +817,8 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
             </div>
 
             {status === 'AGENDADO' && (
-              <div className="p-3 bg-[#2C3EC4]/15 border border-[#2C3EC4]/30 rounded-xl text-blue-200 text-xs flex items-start gap-2">
-                <Calendar className="w-4 h-4 text-[#2C3EC4] shrink-0 mt-0.5" />
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-xs flex items-start gap-2 font-medium">
+                <Calendar className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                 <span>
                   <strong>Jogo Agendado:</strong> O placar ficará em aberto. Assim que a partida for realizada, você poderá lançar o resultado e todas as estatísticas detalhadas com apenas um clique!
                 </span>
@@ -826,17 +826,17 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
             )}
 
             <div className="flex items-center justify-between pt-1">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#2C3EC4] uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-wider">
                 <Trophy className="w-3.5 h-3.5" />
                 <span>3. Placar, Data & Status</span>
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-xs text-gray-300 font-medium">Status:</label>
+                <label className="text-xs text-slate-700 font-medium">Status:</label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as MatchStatus)}
-                  className="bg-[#12162a] border border-white/10 text-xs text-white rounded-lg px-2 py-1 focus:border-[#2C3EC4] font-semibold"
+                  className="bg-white border border-slate-300 text-xs text-slate-900 rounded-lg px-2 py-1 focus:border-blue-500 font-semibold shadow-xs"
                 >
                   <option value="FINALIZADO">Finalizado</option>
                   <option value="AGENDADO">Agendado</option>
@@ -847,9 +847,9 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
             </div>
 
             {/* Scoreboard Input */}
-            <div className="flex items-center justify-center gap-4 py-2 bg-[#12162a] rounded-xl border border-white/10">
+            <div className="flex items-center justify-center gap-4 py-3 bg-white rounded-xl border border-slate-200 shadow-xs">
               <div className="text-center">
-                <span className="text-[11px] font-bold text-gray-300 uppercase block mb-1">
+                <span className="text-[11px] font-bold text-slate-600 uppercase block mb-1">
                   Gols Mandante
                 </span>
                 <input
@@ -858,14 +858,14 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                   placeholder="0"
                   value={homeScore}
                   onChange={(e) => setHomeScore(e.target.value)}
-                  className="w-16 h-12 text-center text-xl font-black bg-[#0b0e1b] border border-white/20 rounded-xl text-white focus:outline-none focus:border-[#2C3EC4] font-mono shadow-inner"
+                  className="w-16 h-12 text-center text-xl font-black bg-blue-50/50 border border-blue-200 rounded-xl text-blue-950 focus:outline-none focus:border-blue-500 font-mono shadow-inner"
                 />
               </div>
 
-              <div className="text-xl font-bold text-gray-400 mt-4">X</div>
+              <div className="text-xl font-bold text-slate-400 mt-4">X</div>
 
               <div className="text-center">
-                <span className="text-[11px] font-bold text-gray-300 uppercase block mb-1">
+                <span className="text-[11px] font-bold text-slate-600 uppercase block mb-1">
                   Gols Visitante
                 </span>
                 <input
@@ -874,7 +874,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                   placeholder="0"
                   value={awayScore}
                   onChange={(e) => setAwayScore(e.target.value)}
-                  className="w-16 h-12 text-center text-xl font-black bg-[#0b0e1b] border border-white/20 rounded-xl text-white focus:outline-none focus:border-[#2C3EC4] font-mono shadow-inner"
+                  className="w-16 h-12 text-center text-xl font-black bg-blue-50/50 border border-blue-200 rounded-xl text-blue-950 focus:outline-none focus:border-blue-500 font-mono shadow-inner"
                 />
               </div>
             </div>
@@ -882,20 +882,20 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
             {/* Date, Round, Stadium, Referee */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
               <div>
-                <label className="block font-medium text-gray-300 mb-1 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-[#2C3EC4]" /> Data e Hora
+                <label className="block font-medium text-slate-700 mb-1 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-blue-600" /> Data e Hora
                 </label>
                 <input
                   type="datetime-local"
                   value={matchDate}
                   onChange={(e) => setMatchDate(e.target.value)}
-                  className="w-full bg-[#12162a] border border-white/10 rounded-lg px-2.5 py-1.5 text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-none focus:border-blue-500 shadow-xs"
                   required
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-gray-300 mb-1">
+                <label className="block font-medium text-slate-700 mb-1">
                   Rodada / Fase
                 </label>
                 <input
@@ -903,25 +903,25 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                   placeholder="Ex: Rodada 1, Final..."
                   value={round}
                   onChange={(e) => setRound(e.target.value)}
-                  className="w-full bg-[#12162a] border border-white/10 rounded-lg px-2.5 py-1.5 text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-none focus:border-blue-500 shadow-xs"
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-gray-300 mb-1 flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-[#2C3EC4]" /> Estádio
+                <label className="block font-medium text-slate-700 mb-1 flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-blue-600" /> Estádio
                 </label>
                 <input
                   type="text"
                   placeholder="Ex: Maracanã"
                   value={stadium}
                   onChange={(e) => setStadium(e.target.value)}
-                  className="w-full bg-[#12162a] border border-white/10 rounded-lg px-2.5 py-1.5 text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-none focus:border-blue-500 shadow-xs"
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-gray-300 mb-1">
+                <label className="block font-medium text-slate-700 mb-1">
                   👨‍⚖️ Árbitro da Partida
                 </label>
                 <input
@@ -929,13 +929,13 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                   placeholder="Ex: Wilton Pereira Sampaio"
                   value={referee}
                   onChange={(e) => setReferee(e.target.value)}
-                  className="w-full bg-[#12162a] border border-white/10 rounded-lg px-2.5 py-1.5 text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 focus:outline-none focus:border-blue-500 shadow-xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1">
+              <label className="block text-xs font-medium text-slate-700 mb-1">
                 Observações (opcional)
               </label>
               <textarea
@@ -943,275 +943,275 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                 placeholder="Ex: Árbitro, público, tempo extra, expulsões..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full bg-[#12162a] border border-white/10 rounded-lg p-2.5 text-xs text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
+                className="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500 shadow-xs"
               />
             </div>
           </div>
 
           {/* Section 4: Odds & Cotações da Partida */}
-          <div className="bg-[#0b0e1b] p-4 rounded-xl border border-white/10 space-y-4">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#2C3EC4] uppercase tracking-wider">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-wider">
               <TrendingUp className="w-3.5 h-3.5" />
               <span>4. Odds & Cotações das Apostas</span>
             </div>
 
             {/* Sub-card A: FT Odds (Tempo Total) */}
-            <div className="bg-[#12162a] p-3.5 rounded-xl border border-white/10 space-y-2.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-200">
-                <DollarSign className="w-3.5 h-3.5 text-[#2C3EC4]" />
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5 shadow-xs">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                <DollarSign className="w-3.5 h-3.5 text-blue-600" />
                 <span>A. Mercado FT (Tempo Total - 90 min)</span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 text-xs">
                 <div>
-                  <label className="block text-[11px] text-gray-300 mb-1 truncate" title="Odd Mandante FT">Mandante FT</label>
+                  <label className="block text-[11px] text-slate-600 mb-1 truncate" title="Odd Mandante FT">Mandante FT</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="ex: 1.85"
                     value={oddHomeFT}
                     onChange={(e) => setOddHomeFT(e.target.value)}
-                    className="w-full bg-[#0b0e1b] border border-white/10 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-gray-300 mb-1 truncate" title="Odd Empate FT">Empate FT</label>
+                  <label className="block text-[11px] text-slate-600 mb-1 truncate" title="Odd Empate FT">Empate FT</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="ex: 3.40"
                     value={oddDrawFT}
                     onChange={(e) => setOddDrawFT(e.target.value)}
-                    className="w-full bg-[#0b0e1b] border border-white/10 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-gray-300 mb-1 truncate" title="Odd Visitante FT">Visitante FT</label>
+                  <label className="block text-[11px] text-slate-600 mb-1 truncate" title="Odd Visitante FT">Visitante FT</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="ex: 4.20"
                     value={oddAwayFT}
                     onChange={(e) => setOddAwayFT(e.target.value)}
-                    className="w-full bg-[#0b0e1b] border border-white/10 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-gray-300 mb-1 truncate" title="Over 2,5 FT">Over 2,5 FT</label>
+                  <label className="block text-[11px] text-slate-600 mb-1 truncate" title="Over 2,5 FT">Over 2,5 FT</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="ex: 1.95"
                     value={oddOver25FT}
                     onChange={(e) => setOddOver25FT(e.target.value)}
-                    className="w-full bg-[#0b0e1b] border border-white/10 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-gray-300 mb-1 truncate" title="Under 2,5 FT">Under 2,5 FT</label>
+                  <label className="block text-[11px] text-slate-600 mb-1 truncate" title="Under 2,5 FT">Under 2,5 FT</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="ex: 1.80"
                     value={oddUnder25FT}
                     onChange={(e) => setOddUnder25FT(e.target.value)}
-                    className="w-full bg-[#0b0e1b] border border-white/10 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-gray-300 mb-1 truncate" title="Ambos Marcam FT">Ambos Marcam</label>
+                  <label className="block text-[11px] text-slate-600 mb-1 truncate" title="Ambos Marcam FT">Ambos Marcam</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="ex: 1.75"
                     value={oddBttsFT}
                     onChange={(e) => setOddBttsFT(e.target.value)}
-                    className="w-full bg-[#0b0e1b] border border-white/10 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
             </div>
 
             {/* Sub-card B: HT Odds (1º Tempo / Intervalo) */}
-            <div className="bg-[#12162a] p-3.5 rounded-xl border border-white/10 space-y-2.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-200">
-                <Clock className="w-3.5 h-3.5 text-[#2C3EC4]" />
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5 shadow-xs">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                <Clock className="w-3.5 h-3.5 text-blue-600" />
                 <span>B. Mercado HT (Intervalo / 1º Tempo)</span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 text-xs">
                 <div>
-                  <label className="block text-[11px] text-gray-300 mb-1 truncate" title="Odd Mandante HT">Mandante HT</label>
+                  <label className="block text-[11px] text-slate-600 mb-1 truncate" title="Odd Mandante HT">Mandante HT</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="ex: 2.40"
                     value={oddHomeHT}
                     onChange={(e) => setOddHomeHT(e.target.value)}
-                    className="w-full bg-[#0b0e1b] border border-white/10 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-gray-300 mb-1 truncate" title="Odd Empate HT">Empate HT</label>
+                  <label className="block text-[11px] text-slate-600 mb-1 truncate" title="Odd Empate HT">Empate HT</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="ex: 2.10"
                     value={oddDrawHT}
                     onChange={(e) => setOddDrawHT(e.target.value)}
-                    className="w-full bg-[#0b0e1b] border border-white/10 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-gray-300 mb-1 truncate" title="Odd Visitante HT">Visitante HT</label>
+                  <label className="block text-[11px] text-slate-600 mb-1 truncate" title="Odd Visitante HT">Visitante HT</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="ex: 4.80"
                     value={oddAwayHT}
                     onChange={(e) => setOddAwayHT(e.target.value)}
-                    className="w-full bg-[#0b0e1b] border border-white/10 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-gray-300 mb-1 truncate" title="Over 0,5 HT">Over 0,5 HT</label>
+                  <label className="block text-[11px] text-slate-600 mb-1 truncate" title="Over 0,5 HT">Over 0,5 HT</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="ex: 1.40"
                     value={oddOver05HT}
                     onChange={(e) => setOddOver05HT(e.target.value)}
-                    className="w-full bg-[#0b0e1b] border border-white/10 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-gray-300 mb-1 truncate" title="Under 0,5 HT">Under 0,5 HT</label>
+                  <label className="block text-[11px] text-slate-600 mb-1 truncate" title="Under 0,5 HT">Under 0,5 HT</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="ex: 2.75"
                     value={oddUnder05HT}
                     onChange={(e) => setOddUnder05HT(e.target.value)}
-                    className="w-full bg-[#0b0e1b] border border-white/10 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-gray-300 mb-1 truncate" title="Ambos Marcam HT">Ambos Marcam HT</label>
+                  <label className="block text-[11px] text-slate-600 mb-1 truncate" title="Ambos Marcam HT">Ambos Marcam HT</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="ex: 4.50"
                     value={oddBttsHT}
                     onChange={(e) => setOddBttsHT(e.target.value)}
-                    className="w-full bg-[#0b0e1b] border border-white/10 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-[#2C3EC4]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
             </div>
 
             {/* Sub-card C: Momento dos Gols & Odds */}
-            <div className="bg-[#12162a] p-3.5 rounded-xl border border-white/10 space-y-3">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-200">
-                <Zap className="w-3.5 h-3.5 text-[#2C3EC4]" />
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-3 shadow-xs">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                <Zap className="w-3.5 h-3.5 text-blue-600" />
                 <span>C. Momento dos Gols & Odds Específicas</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* 1º Gol Mandante */}
-                <div className="bg-[#0b0e1b] p-2.5 rounded-lg border border-white/10 space-y-2">
-                  <span className="text-[11px] font-bold text-[#2C3EC4] block">
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-2">
+                  <span className="text-[11px] font-bold text-blue-700 block">
                     ⚽ Momento 1º Gol Mandante
                   </span>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] text-gray-300 mb-0.5">Minuto</label>
+                      <label className="block text-[10px] text-slate-600 mb-0.5">Minuto</label>
                       <input
                         type="number"
                         placeholder="ex: 24"
                         value={firstGoalHomeMin}
                         onChange={(e) => setFirstGoalHomeMin(e.target.value)}
-                        className="w-full bg-[#12162a] border border-white/10 rounded px-2 py-1 text-white text-xs font-mono focus:border-[#2C3EC4]"
+                        className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-slate-900 text-xs font-mono focus:border-blue-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-gray-300 mb-0.5">Odd</label>
+                      <label className="block text-[10px] text-slate-600 mb-0.5">Odd</label>
                       <input
                         type="number"
                         step="0.01"
                         placeholder="ex: 1.90"
                         value={firstGoalHomeOdd}
                         onChange={(e) => setFirstGoalHomeOdd(e.target.value)}
-                        className="w-full bg-[#12162a] border border-white/10 rounded px-2 py-1 text-white text-xs font-mono focus:border-[#2C3EC4]"
+                        className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-slate-900 text-xs font-mono focus:border-blue-500"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* 1º Gol Visitante */}
-                <div className="bg-[#0b0e1b] p-2.5 rounded-lg border border-white/10 space-y-2">
-                  <span className="text-[11px] font-bold text-[#2C3EC4] block">
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-2">
+                  <span className="text-[11px] font-bold text-blue-700 block">
                     ⚽ Momento 1º Gol Visitante
                   </span>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] text-gray-300 mb-0.5">Minuto</label>
+                      <label className="block text-[10px] text-slate-600 mb-0.5">Minuto</label>
                       <input
                         type="number"
                         placeholder="ex: 68"
                         value={firstGoalAwayMin}
                         onChange={(e) => setFirstGoalAwayMin(e.target.value)}
-                        className="w-full bg-[#12162a] border border-white/10 rounded px-2 py-1 text-white text-xs font-mono focus:border-[#2C3EC4]"
+                        className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-slate-900 text-xs font-mono focus:border-blue-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-gray-300 mb-0.5">Odd</label>
+                      <label className="block text-[10px] text-slate-600 mb-0.5">Odd</label>
                       <input
                         type="number"
                         step="0.01"
                         placeholder="ex: 2.75"
                         value={firstGoalAwayOdd}
                         onChange={(e) => setFirstGoalAwayOdd(e.target.value)}
-                        className="w-full bg-[#12162a] border border-white/10 rounded px-2 py-1 text-white text-xs font-mono focus:border-[#2C3EC4]"
+                        className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-slate-900 text-xs font-mono focus:border-blue-500"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Gol no Início da Partida */}
-                <div className="bg-[#0b0e1b] p-2.5 rounded-lg border border-white/10 space-y-2">
-                  <span className="text-[11px] font-bold text-[#2C3EC4] block">
+                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-2">
+                  <span className="text-[11px] font-bold text-blue-700 block">
                     ⚡ Gol no Início da Partida
                   </span>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] text-gray-300 mb-0.5">Minuto</label>
+                      <label className="block text-[10px] text-slate-600 mb-0.5">Minuto</label>
                       <input
                         type="number"
                         placeholder="ex: 15"
                         value={earlyGameGoalMin}
                         onChange={(e) => setEarlyGameGoalMin(e.target.value)}
-                        className="w-full bg-[#12162a] border border-white/10 rounded px-2 py-1 text-white text-xs font-mono focus:border-[#2C3EC4]"
+                        className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-slate-900 text-xs font-mono focus:border-blue-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-gray-300 mb-0.5">Odd</label>
+                      <label className="block text-[10px] text-slate-600 mb-0.5">Odd</label>
                       <input
                         type="number"
                         step="0.01"
                         placeholder="ex: 3.10"
                         value={earlyGameGoalOdd}
                         onChange={(e) => setEarlyGameGoalOdd(e.target.value)}
-                        className="w-full bg-[#12162a] border border-white/10 rounded px-2 py-1 text-white text-xs font-mono focus:border-[#2C3EC4]"
+                        className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-slate-900 text-xs font-mono focus:border-blue-500"
                       />
                     </div>
                   </div>
@@ -1221,17 +1221,17 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
           </div>
 
           {/* Submit Footer */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 text-sm font-semibold rounded-xl transition-colors"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-sm font-semibold rounded-xl transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#2C3EC4] hover:bg-[#2231A8] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#2C3EC4]/30 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md transition-all border border-blue-500 cursor-pointer"
             >
               <Check className="w-4 h-4 stroke-[3]" />
               {editingMatch ? 'Salvar Alterações' : 'Cadastrar Jogo no Banco'}
