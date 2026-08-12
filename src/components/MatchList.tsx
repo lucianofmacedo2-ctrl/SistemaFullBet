@@ -728,6 +728,12 @@ export const MatchList: React.FC<MatchListProps> = ({
                 )}
                 {match.countryName}
               </span>
+              {match.isContinental && (
+                <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#2C3EC4]/30 text-blue-200 border border-[#2C3EC4]/50 flex items-center gap-1">
+                  <Globe className="w-3 h-3 text-blue-400" />
+                  Intercontinental
+                </span>
+              )}
             </div>
           </div>
 

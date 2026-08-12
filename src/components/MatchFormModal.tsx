@@ -72,6 +72,11 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
   const [earlyGameGoalMin, setEarlyGameGoalMin] = useState<string>('');
   const [earlyGameGoalOdd, setEarlyGameGoalOdd] = useState<string>('');
 
+  // Intercontinental tournament mode & country filters for teams
+  const [isContinental, setIsContinental] = useState<boolean>(false);
+  const [homeCountryFilterId, setHomeCountryFilterId] = useState<string>('');
+  const [awayCountryFilterId, setAwayCountryFilterId] = useState<string>('');
+
   const [errorMsg, setErrorMsg] = useState<string>('');
 
   // Populate form if editing or when opening
@@ -81,6 +86,12 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
       setSelectedLeagueId(editingMatch.leagueId);
       setSelectedHomeTeamId(editingMatch.homeTeamId);
       setSelectedAwayTeamId(editingMatch.awayTeamId);
+
+      setIsContinental(editingMatch.isContinental || false);
+      const hTeam = dbState.teams.find(t => t.id === editingMatch.homeTeamId);
+      setHomeCountryFilterId(hTeam ? hTeam.countryId : '');
+      const aTeam = dbState.teams.find(t => t.id === editingMatch.awayTeamId);
+      setAwayCountryFilterId(aTeam ? aTeam.countryId : '');
 
       setMatchDate(editingMatch.matchDate.substring(0, 16));
       setHomeScore(editingMatch.homeScore !== null ? String(editingMatch.homeScore) : '');
@@ -128,6 +139,9 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
       setNewHomeTeamName('');
       setSelectedAwayTeamId('NEW');
       setNewAwayTeamName('');
+      setIsContinental(false);
+      setHomeCountryFilterId('');
+      setAwayCountryFilterId('');
       setHomeScore('');
       setAwayScore('');
       setStatus('FINALIZADO');
@@ -160,7 +174,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
       setEarlyGameGoalOdd('');
     }
     setErrorMsg('');
-  }, [editingMatch, isOpen]);
+  }, [editingMatch, isOpen, dbState.teams]);
 
   // Auto-fill stadium when home team is selected
   React.useEffect(() => {
@@ -185,27 +199,40 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
     ? dbState.leagues.filter(l => l.countryId === selectedCountryId)
     : dbState.leagues;
 
-  const filteredTeams = dbState.teams.filter(t => {
-    if (selectedCountryId && selectedCountryId !== 'NEW') {
-      if (t.countryId !== selectedCountryId) {
-        const playedInCountry = dbState.matches.some(
-          m => m.countryId === selectedCountryId && (m.homeTeamId === t.id || m.awayTeamId === t.id)
-        );
-        if (!playedInCountry) return false;
+  // Function to filter teams per side (Home or Away)
+  const getFilteredTeamsForSide = (countryFilterId: string) => {
+    if (isContinental) {
+      if (countryFilterId && countryFilterId !== '') {
+        return dbState.teams.filter(t => t.countryId === countryFilterId);
       }
+      return dbState.teams;
     }
-    if (selectedLeagueId && selectedLeagueId !== 'NEW') {
-      const league = dbState.leagues.find(l => l.id === selectedLeagueId);
-      if (league) {
-        const sameCountry = t.countryId === league.countryId;
-        const playedInLeague = dbState.matches.some(
-          m => m.leagueId === selectedLeagueId && (m.homeTeamId === t.id || m.awayTeamId === t.id)
-        );
-        if (!sameCountry && !playedInLeague) return false;
+
+    return dbState.teams.filter(t => {
+      if (selectedCountryId && selectedCountryId !== 'NEW') {
+        if (t.countryId !== selectedCountryId) {
+          const playedInCountry = dbState.matches.some(
+            m => m.countryId === selectedCountryId && (m.homeTeamId === t.id || m.awayTeamId === t.id)
+          );
+          if (!playedInCountry) return false;
+        }
       }
-    }
-    return true;
-  });
+      if (selectedLeagueId && selectedLeagueId !== 'NEW') {
+        const league = dbState.leagues.find(l => l.id === selectedLeagueId);
+        if (league) {
+          const sameCountry = t.countryId === league.countryId;
+          const playedInLeague = dbState.matches.some(
+            m => m.leagueId === selectedLeagueId && (m.homeTeamId === t.id || m.awayTeamId === t.id)
+          );
+          if (!sameCountry && !playedInLeague) return false;
+        }
+      }
+      return true;
+    });
+  };
+
+  const filteredHomeTeams = getFilteredTeamsForSide(homeCountryFilterId);
+  const filteredAwayTeams = getFilteredTeamsForSide(awayCountryFilterId);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -300,11 +327,21 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
     }
 
     // 3. Process Home Team
+    let homeCountryIdToUse = countryRes.country.id;
+    let homeCountryNameToUse = countryRes.country.name;
+    if (isContinental && homeCountryFilterId) {
+      const hC = countries.find(c => c.id === homeCountryFilterId);
+      if (hC) {
+        homeCountryIdToUse = hC.id;
+        homeCountryNameToUse = hC.name;
+      }
+    }
+
     let currentTeams = [...dbState.teams];
     const homeTeamRes = findOrCreateTeam(
       finalHomeTeamName,
-      countryRes.country.id,
-      countryRes.country.name,
+      homeCountryIdToUse,
+      homeCountryNameToUse,
       currentTeams,
       stadium
     );
@@ -318,10 +355,20 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
     }
 
     // 4. Process Away Team
+    let awayCountryIdToUse = countryRes.country.id;
+    let awayCountryNameToUse = countryRes.country.name;
+    if (isContinental && awayCountryFilterId) {
+      const aC = countries.find(c => c.id === awayCountryFilterId);
+      if (aC) {
+        awayCountryIdToUse = aC.id;
+        awayCountryNameToUse = aC.name;
+      }
+    }
+
     const awayTeamRes = findOrCreateTeam(
       finalAwayTeamName,
-      countryRes.country.id,
-      countryRes.country.name,
+      awayCountryIdToUse,
+      awayCountryNameToUse,
       currentTeams
     );
     currentTeams = awayTeamRes.updatedTeams;
@@ -399,6 +446,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
             status,
             notes,
             odds: matchOdds,
+            isContinental,
           };
         }
         return m;
@@ -428,6 +476,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
         status,
         notes,
         odds: matchOdds,
+        isContinental,
         createdAt: new Date().toISOString(),
       };
       currentMatches.push(newMatch);
@@ -486,16 +535,41 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
 
           {/* Section 1: País & Liga */}
           <div className="bg-[#0b0e1b] p-4 rounded-xl border border-white/10 space-y-4">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#2C3EC4] uppercase tracking-wider">
-              <Globe className="w-3.5 h-3.5" />
-              <span>1. Localização & Competição</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#2C3EC4] uppercase tracking-wider">
+                <Globe className="w-3.5 h-3.5" />
+                <span>1. Localização & Competição</span>
+              </div>
+
+              {/* Option: Torneio Intercontinental */}
+              <label className="flex items-center gap-2 cursor-pointer bg-[#12162a] hover:bg-[#181d36] px-3 py-1.5 rounded-lg border border-[#2C3EC4]/40 text-xs text-white transition-colors">
+                <input
+                  type="checkbox"
+                  checked={isContinental}
+                  onChange={(e) => setIsContinental(e.target.checked)}
+                  className="rounded text-[#2C3EC4] focus:ring-[#2C3EC4] w-4 h-4 bg-black/40 border-white/20 cursor-pointer"
+                />
+                <span className="font-semibold text-blue-300 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-blue-400" />
+                  Torneio Intercontinental
+                </span>
+              </label>
             </div>
+
+            {isContinental && (
+              <div className="p-2.5 bg-[#2C3EC4]/15 border border-[#2C3EC4]/40 rounded-lg text-xs text-blue-200 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-blue-400 shrink-0" />
+                <span>
+                  <strong>Torneio Intercontinental Ativo:</strong> Escolha o País do Mandante e do Visitante de forma independente na Seção 2 abaixo.
+                </span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Country Field */}
               <div>
                 <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                  País
+                  País Sede / Organizador
                 </label>
                 <select
                   value={selectedCountryId}
@@ -514,7 +588,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                   <div className="mt-2">
                     <input
                       type="text"
-                      placeholder="Ex: Brasil, Espanha, Inglaterra..."
+                      placeholder="Ex: Brasil, Espanha, Europa, Internacional..."
                       value={newCountryName}
                       onChange={(e) => setNewCountryName(e.target.value)}
                       className="w-full bg-[#181d36] border border-white/10 focus:border-[#2C3EC4] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-400"
@@ -549,7 +623,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                   <div className="mt-2">
                     <input
                       type="text"
-                      placeholder="Ex: Brasileirão, La Liga, Premier League..."
+                      placeholder="Ex: Champions League, Libertadores, Mundial de Clubes..."
                       value={newLeagueName}
                       onChange={(e) => setNewLeagueName(e.target.value)}
                       className="w-full bg-[#181d36] border border-white/10 focus:border-[#2C3EC4] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-400"
@@ -566,80 +640,143 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
 
           {/* Section 2: Teams (Mandante x Visitante) */}
           <div className="bg-[#0b0e1b] p-4 rounded-xl border border-white/10 space-y-4">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#2C3EC4] uppercase tracking-wider">
-              <Shield className="w-3.5 h-3.5" />
-              <span>2. Times Confrontantes</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#2C3EC4] uppercase tracking-wider">
+                <Shield className="w-3.5 h-3.5" />
+                <span>2. Times Confrontantes</span>
+              </div>
+              {isContinental && (
+                <span className="text-[10px] bg-[#2C3EC4]/30 text-blue-200 border border-[#2C3EC4]/50 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                  <Globe className="w-3 h-3 text-blue-400" /> Seleção por País Ativa
+                </span>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Home Team */}
-              <div className="bg-[#12162a] p-3 rounded-lg border border-white/10">
-                <label className="block text-xs font-bold text-[#2C3EC4] mb-1">
+              <div className="bg-[#12162a] p-3 rounded-lg border border-white/10 space-y-3">
+                <label className="block text-xs font-bold text-[#2C3EC4]">
                   🏠 Time Mandante (Casa)
                 </label>
-                <select
-                  value={selectedHomeTeamId}
-                  onChange={(e) => setSelectedHomeTeamId(e.target.value)}
-                  className="w-full bg-[#181d36] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
-                >
-                  <option value="NEW">+ Cadastrar Novo Time</option>
-                  {filteredTeams.map(t => (
-                    <option key={t.id} value={t.id}>
-                      [{t.id}] {t.name} ({t.countryName})
-                    </option>
-                  ))}
-                </select>
 
-                {selectedHomeTeamId === 'NEW' && (
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      placeholder="Ex: Flamengo, Real Madrid..."
-                      value={newHomeTeamName}
-                      onChange={(e) => setNewHomeTeamName(e.target.value)}
-                      className="w-full bg-[#0b0e1b] border border-white/10 focus:border-[#2C3EC4] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-400"
-                      required
-                    />
-                    <span className="text-[11px] text-[#2C3EC4] flex items-center gap-1 mt-1 font-mono font-bold">
-                      <Sparkles className="w-3 h-3" /> ID Único será gerado (ex: TIME-001)
-                    </span>
+                {/* Country Filter for Home Team if Continental */}
+                {isContinental && (
+                  <div className="bg-[#0b0e1b] p-2.5 rounded-lg border border-white/10">
+                    <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
+                      <Globe className="w-3 h-3 text-[#2C3EC4]" />
+                      País do Mandante:
+                    </label>
+                    <select
+                      value={homeCountryFilterId}
+                      onChange={(e) => setHomeCountryFilterId(e.target.value)}
+                      className="w-full bg-[#181d36] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#2C3EC4]"
+                    >
+                      <option value="">-- Todos os Países ({countries.length}) --</option>
+                      {countries.map(c => (
+                        <option key={c.id} value={c.id}>
+                          [{c.id}] {c.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 )}
+
+                <div>
+                  <label className="block text-[11px] font-medium text-gray-300 mb-1">
+                    Equipe / Time Mandante:
+                  </label>
+                  <select
+                    value={selectedHomeTeamId}
+                    onChange={(e) => setSelectedHomeTeamId(e.target.value)}
+                    className="w-full bg-[#181d36] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
+                  >
+                    <option value="NEW">+ Cadastrar Novo Time</option>
+                    {filteredHomeTeams.map(t => (
+                      <option key={t.id} value={t.id}>
+                        [{t.id}] {t.name} ({t.countryName})
+                      </option>
+                    ))}
+                  </select>
+
+                  {selectedHomeTeamId === 'NEW' && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        placeholder="Ex: Flamengo, Real Madrid..."
+                        value={newHomeTeamName}
+                        onChange={(e) => setNewHomeTeamName(e.target.value)}
+                        className="w-full bg-[#0b0e1b] border border-white/10 focus:border-[#2C3EC4] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-400"
+                        required
+                      />
+                      <span className="text-[11px] text-[#2C3EC4] flex items-center gap-1 mt-1 font-mono font-bold">
+                        <Sparkles className="w-3 h-3" /> ID Único será gerado (ex: TIME-001)
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Away Team */}
-              <div className="bg-[#12162a] p-3 rounded-lg border border-white/10">
-                <label className="block text-xs font-bold text-[#2C3EC4] mb-1">
+              <div className="bg-[#12162a] p-3 rounded-lg border border-white/10 space-y-3">
+                <label className="block text-xs font-bold text-[#2C3EC4]">
                   ✈️ Time Visitante (Fora)
                 </label>
-                <select
-                  value={selectedAwayTeamId}
-                  onChange={(e) => setSelectedAwayTeamId(e.target.value)}
-                  className="w-full bg-[#181d36] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
-                >
-                  <option value="NEW">+ Cadastrar Novo Time</option>
-                  {filteredTeams.map(t => (
-                    <option key={t.id} value={t.id}>
-                      [{t.id}] {t.name} ({t.countryName})
-                    </option>
-                  ))}
-                </select>
 
-                {selectedAwayTeamId === 'NEW' && (
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      placeholder="Ex: Palmeiras, Barcelona..."
-                      value={newAwayTeamName}
-                      onChange={(e) => setNewAwayTeamName(e.target.value)}
-                      className="w-full bg-[#0b0e1b] border border-white/10 focus:border-[#2C3EC4] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-400"
-                      required
-                    />
-                    <span className="text-[11px] text-[#2C3EC4] flex items-center gap-1 mt-1 font-mono font-bold">
-                      <Sparkles className="w-3 h-3" /> ID Único será gerado (ex: TIME-002)
-                    </span>
+                {/* Country Filter for Away Team if Continental */}
+                {isContinental && (
+                  <div className="bg-[#0b0e1b] p-2.5 rounded-lg border border-white/10">
+                    <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
+                      <Globe className="w-3 h-3 text-[#2C3EC4]" />
+                      País do Visitante:
+                    </label>
+                    <select
+                      value={awayCountryFilterId}
+                      onChange={(e) => setAwayCountryFilterId(e.target.value)}
+                      className="w-full bg-[#181d36] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#2C3EC4]"
+                    >
+                      <option value="">-- Todos os Países ({countries.length}) --</option>
+                      {countries.map(c => (
+                        <option key={c.id} value={c.id}>
+                          [{c.id}] {c.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 )}
+
+                <div>
+                  <label className="block text-[11px] font-medium text-gray-300 mb-1">
+                    Equipe / Time Visitante:
+                  </label>
+                  <select
+                    value={selectedAwayTeamId}
+                    onChange={(e) => setSelectedAwayTeamId(e.target.value)}
+                    className="w-full bg-[#181d36] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
+                  >
+                    <option value="NEW">+ Cadastrar Novo Time</option>
+                    {filteredAwayTeams.map(t => (
+                      <option key={t.id} value={t.id}>
+                        [{t.id}] {t.name} ({t.countryName})
+                      </option>
+                    ))}
+                  </select>
+
+                  {selectedAwayTeamId === 'NEW' && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        placeholder="Ex: Palmeiras, Barcelona..."
+                        value={newAwayTeamName}
+                        onChange={(e) => setNewAwayTeamName(e.target.value)}
+                        className="w-full bg-[#0b0e1b] border border-white/10 focus:border-[#2C3EC4] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-400"
+                        required
+                      />
+                      <span className="text-[11px] text-[#2C3EC4] flex items-center gap-1 mt-1 font-mono font-bold">
+                        <Sparkles className="w-3 h-3" /> ID Único será gerado (ex: TIME-002)
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
