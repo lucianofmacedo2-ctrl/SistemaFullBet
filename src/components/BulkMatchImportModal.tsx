@@ -112,7 +112,7 @@ export const BulkMatchImportModal: React.FC<BulkMatchImportModalProps> = ({
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 Cadastrar Jogos Futuros em Massa (Excel)
                 <span className="text-[10px] bg-[#2C3EC4] text-white font-mono px-2 py-0.5 rounded-full border border-blue-400">
-                  FUTDB2 XLSX
+                  FUTDB3 XLSX
                 </span>
               </h3>
               <p className="text-xs text-gray-300">

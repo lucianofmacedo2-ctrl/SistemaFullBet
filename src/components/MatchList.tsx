@@ -52,7 +52,6 @@ export function checkMatchCompleteness(match: Match): CompletenessResult {
   const missing: string[] = [];
   if (!match.matchDate) missing.push('Data/Hora');
   if (!match.stadium || !match.stadium.trim()) missing.push('Estádio');
-  if (!match.referee || !match.referee.trim()) missing.push('Árbitro');
   if (!match.round || !match.round.trim()) missing.push('Rodada');
   if (
     !match.odds ||

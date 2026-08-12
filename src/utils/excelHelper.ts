@@ -360,7 +360,7 @@ export async function downloadMatchImportTemplate() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `Modelo_Cadastro_Jogos_Futuros_FUTDB2.xlsx`;
+  a.download = `Modelo_Cadastro_Jogos_Futuros_FUTDB3.xlsx`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
