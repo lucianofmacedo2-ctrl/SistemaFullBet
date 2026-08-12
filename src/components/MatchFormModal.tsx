@@ -170,6 +170,43 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
     ? dbState.leagues.filter(l => l.countryId === selectedCountryId)
     : dbState.leagues;
 
+  const filteredTeams = dbState.teams.filter(t => {
+    if (selectedCountryId && selectedCountryId !== 'NEW') {
+      if (t.countryId !== selectedCountryId) {
+        const playedInCountry = dbState.matches.some(
+          m => m.countryId === selectedCountryId && (m.homeTeamId === t.id || m.awayTeamId === t.id)
+        );
+        if (!playedInCountry) return false;
+      }
+    }
+    if (selectedLeagueId && selectedLeagueId !== 'NEW') {
+      const league = dbState.leagues.find(l => l.id === selectedLeagueId);
+      if (league) {
+        const sameCountry = t.countryId === league.countryId;
+        const playedInLeague = dbState.matches.some(
+          m => m.leagueId === selectedLeagueId && (m.homeTeamId === t.id || m.awayTeamId === t.id)
+        );
+        if (!sameCountry && !playedInLeague) return false;
+      }
+    }
+    return true;
+  });
+
+  // Auto-fill stadium when home team is selected
+  React.useEffect(() => {
+    if (selectedHomeTeamId && selectedHomeTeamId !== 'NEW') {
+      const team = dbState.teams.find(t => t.id === selectedHomeTeamId);
+      if (team && team.stadium) {
+        setStadium(team.stadium);
+      } else {
+        const lastMatch = dbState.matches.find(m => m.homeTeamId === selectedHomeTeamId && m.stadium);
+        if (lastMatch && lastMatch.stadium) {
+          setStadium(lastMatch.stadium);
+        }
+      }
+    }
+  }, [selectedHomeTeamId, dbState.teams, dbState.matches]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -546,7 +583,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                   className="w-full bg-[#181d36] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
                 >
                   <option value="NEW">+ Cadastrar Novo Time</option>
-                  {dbState.teams.map(t => (
+                  {filteredTeams.map(t => (
                     <option key={t.id} value={t.id}>
                       [{t.id}] {t.name} ({t.countryName})
                     </option>
@@ -581,7 +618,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                   className="w-full bg-[#181d36] border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-[#2C3EC4]"
                 >
                   <option value="NEW">+ Cadastrar Novo Time</option>
-                  {dbState.teams.map(t => (
+                  {filteredTeams.map(t => (
                     <option key={t.id} value={t.id}>
                       [{t.id}] {t.name} ({t.countryName})
                     </option>

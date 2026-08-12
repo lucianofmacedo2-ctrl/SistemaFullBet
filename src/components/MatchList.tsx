@@ -24,7 +24,8 @@ import {
   Sparkles,
   TrendingUp,
   DollarSign,
-  Zap
+  Zap,
+  FileSpreadsheet
 } from 'lucide-react';
 import { DbState, Match, MatchStatus } from '../types';
 
@@ -34,6 +35,7 @@ interface MatchListProps {
   onDeleteMatch: (matchId: string) => void;
   onOpenMatchModal: () => void;
   onOpenStatsModal: (match: Match) => void;
+  onOpenBulkMatchImportModal?: () => void;
 }
 
 export const MatchList: React.FC<MatchListProps> = ({
@@ -42,6 +44,7 @@ export const MatchList: React.FC<MatchListProps> = ({
   onDeleteMatch,
   onOpenMatchModal,
   onOpenStatsModal,
+  onOpenBulkMatchImportModal,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCountryId, setFilterCountryId] = useState('');
@@ -192,25 +195,37 @@ export const MatchList: React.FC<MatchListProps> = ({
           </div>
         </div>
 
-        {/* Counter Results info */}
-        <div className="flex items-center justify-between text-xs text-gray-300 pt-1 border-t border-white/10 font-medium">
+        {/* Counter Results info & Quick Actions */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-gray-300 pt-2 border-t border-white/10 font-medium gap-2">
           <span>
             Exibindo <strong className="text-[#2C3EC4] font-bold">{filteredMatches.length}</strong> de <strong className="text-white">{matches.length}</strong> partidas cadastradas.
           </span>
 
-          {(searchTerm || filterCountryId || filterLeagueId || filterStatus) && (
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setFilterCountryId('');
-                setFilterLeagueId('');
-                setFilterStatus('');
-              }}
-              className="text-xs text-[#2C3EC4] hover:underline font-bold"
-            >
-              Limpar Filtros
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {onOpenBulkMatchImportModal && (
+              <button
+                onClick={onOpenBulkMatchImportModal}
+                className="inline-flex items-center gap-1.5 text-xs text-white bg-[#2C3EC4]/20 hover:bg-[#2C3EC4]/40 border border-[#2C3EC4]/50 px-2.5 py-1 rounded-lg transition-all font-bold cursor-pointer"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-white" />
+                Importar Jogos Futuros (Excel)
+              </button>
+            )}
+
+            {(searchTerm || filterCountryId || filterLeagueId || filterStatus) && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterCountryId('');
+                  setFilterLeagueId('');
+                  setFilterStatus('');
+                }}
+                className="text-xs text-[#2C3EC4] hover:underline font-bold"
+              >
+                Limpar Filtros
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

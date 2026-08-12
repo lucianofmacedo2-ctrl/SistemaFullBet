@@ -20,6 +20,7 @@ interface NavbarProps {
   onOpenMatchModal: () => void;
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
   onOpenBulkImportModal?: () => void;
+  onOpenBulkMatchImportModal?: () => void;
   onOpenBackupModal: () => void;
 }
 
@@ -30,6 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenMatchModal,
   onOpenEntityModal,
   onOpenBulkImportModal,
+  onOpenBulkMatchImportModal,
   onOpenBackupModal,
 }) => {
   return (
@@ -45,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-extrabold tracking-tight text-white leading-none">
-                  FUT<span className="text-[#2C3EC4]">DB</span>
+                  FUT<span className="text-[#2C3EC4]">DB2</span>
                 </h1>
                 <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#2C3EC4]/20 text-white border border-[#2C3EC4]/40 flex items-center gap-1.5 shadow-sm">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#2C3EC4] animate-pulse"></span>
@@ -68,14 +70,25 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden xs:inline">Cadastrar</span> Jogo
             </button>
 
+            {onOpenBulkMatchImportModal && (
+              <button
+                onClick={onOpenBulkMatchImportModal}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#2C3EC4]/20 hover:bg-[#2C3EC4]/40 text-white border border-[#2C3EC4]/50 font-semibold text-sm rounded-xl transition-all shadow-md cursor-pointer"
+                title="Cadastrar Jogos Futuros em Massa via Excel (.xlsx)"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-white" />
+                <span className="hidden sm:inline">Importar Jogos Excel</span>
+              </button>
+            )}
+
             {onOpenBulkImportModal && (
               <button
                 onClick={onOpenBulkImportModal}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#2C3EC4]/15 hover:bg-[#2C3EC4]/30 text-white border border-[#2C3EC4]/40 font-semibold text-sm rounded-xl transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold text-sm rounded-xl transition-all"
                 title="Cadastrar Equipes em Massa via Excel (.xlsx)"
               >
-                <FileSpreadsheet className="w-4 h-4 text-[#2C3EC4]" />
-                <span className="hidden md:inline">Importar Excel</span>
+                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <span className="hidden md:inline">Importar Times</span>
               </button>
             )}
 

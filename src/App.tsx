@@ -14,6 +14,7 @@ import { MatchFormModal } from './components/MatchFormModal';
 import { EntityFormModal } from './components/EntityFormModal';
 import { EditEntityModal } from './components/EditEntityModal';
 import { BulkTeamImportModal } from './components/BulkTeamImportModal';
+import { BulkMatchImportModal } from './components/BulkMatchImportModal';
 import { CountryManager } from './components/CountryManager';
 import { LeagueManager } from './components/LeagueManager';
 import { TeamManager } from './components/TeamManager';
@@ -22,7 +23,8 @@ import { BackupModal } from './components/BackupModal';
 import { MatchStatsModal } from './components/MatchStatsModal';
 import { ToastNotification } from './components/ToastNotification';
 import { MatchStats, MatchStatus } from './types';
-import { findOrCreateTeam } from './utils/idGenerator';
+import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from './utils/idGenerator';
+import { ParsedMatchRow } from './utils/excelHelper';
 
 export default function App() {
   const [dbState, setDbState] = useState<DbState>({
@@ -52,6 +54,7 @@ export default function App() {
 
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [isBulkTeamModalOpen, setIsBulkTeamModalOpen] = useState(false);
+  const [isBulkMatchModalOpen, setIsBulkMatchModalOpen] = useState(false);
 
   // Toast notifications for newly created IDs
   const [notifications, setNotifications] = useState<NewEntityCreatedNotification[]>([]);
@@ -341,6 +344,141 @@ export default function App() {
     }
   };
 
+  // Bulk import handler for future matches
+  const handleBulkImportMatches = async (rows: ParsedMatchRow[]) => {
+    let currentCountries = [...dbState.countries];
+    let currentLeagues = [...dbState.leagues];
+    let currentTeams = [...dbState.teams];
+    let currentMatches = [...dbState.matches];
+
+    const newNotifs: NewEntityCreatedNotification[] = [];
+
+    for (const row of rows) {
+      // 1. Country
+      const countryRes = findOrCreateCountry(row.countryName, currentCountries);
+      currentCountries = countryRes.updatedCountries;
+      if (countryRes.isNew) {
+        newNotifs.push({
+          type: 'country',
+          id: countryRes.country.id,
+          name: countryRes.country.name,
+        });
+      }
+
+      // 2. League
+      const leagueRes = findOrCreateLeague(
+        row.leagueName,
+        countryRes.country.id,
+        countryRes.country.name,
+        currentLeagues
+      );
+      currentLeagues = leagueRes.updatedLeagues;
+      if (leagueRes.isNew) {
+        newNotifs.push({
+          type: 'league',
+          id: leagueRes.league.id,
+          name: leagueRes.league.name,
+        });
+      }
+
+      // 3. Home Team
+      const homeTeamRes = findOrCreateTeam(
+        row.homeTeamName,
+        countryRes.country.id,
+        countryRes.country.name,
+        currentTeams,
+        row.stadium
+      );
+      currentTeams = homeTeamRes.updatedTeams;
+      if (homeTeamRes.isNew) {
+        newNotifs.push({
+          type: 'team',
+          id: homeTeamRes.team.id,
+          name: homeTeamRes.team.name,
+        });
+      }
+
+      // 4. Away Team
+      const awayTeamRes = findOrCreateTeam(
+        row.awayTeamName,
+        countryRes.country.id,
+        countryRes.country.name,
+        currentTeams
+      );
+      currentTeams = awayTeamRes.updatedTeams;
+      if (awayTeamRes.isNew) {
+        newNotifs.push({
+          type: 'team',
+          id: awayTeamRes.team.id,
+          name: awayTeamRes.team.name,
+        });
+      }
+
+      // 5. Create Match
+      const matchId = getNextUniqueId('JOGO', currentMatches);
+      const newMatch: Match = {
+        id: matchId,
+        countryId: countryRes.country.id,
+        countryName: countryRes.country.name,
+        countryFlagUrl: countryRes.country.flagUrl,
+        leagueId: leagueRes.league.id,
+        leagueName: leagueRes.league.name,
+        leagueLogoUrl: leagueRes.league.logoUrl,
+        homeTeamId: homeTeamRes.team.id,
+        homeTeamName: homeTeamRes.team.name,
+        homeTeamLogoUrl: homeTeamRes.team.logoUrl,
+        awayTeamId: awayTeamRes.team.id,
+        awayTeamName: awayTeamRes.team.name,
+        awayTeamLogoUrl: awayTeamRes.team.logoUrl,
+        homeScore: null,
+        awayScore: null,
+        matchDate: row.matchDate || new Date().toISOString(),
+        round: row.round || 'Rodada 1',
+        stadium: row.stadium || homeTeamRes.team.stadium || '',
+        referee: row.referee || '',
+        status: 'AGENDADO',
+        notes: row.notes || '',
+        odds: {
+          homeFT: row.oddHomeFT ?? null,
+          drawFT: row.oddDrawFT ?? null,
+          awayFT: row.oddAwayFT ?? null,
+          over25FT: row.oddOver25FT ?? null,
+          under25FT: row.oddUnder25FT ?? null,
+          bttsFT: row.oddBttsFT ?? null,
+          homeHT: row.oddHomeHT ?? null,
+          drawHT: row.oddDrawHT ?? null,
+          awayHT: row.oddAwayHT ?? null,
+          over05HT: row.oddOver05HT ?? null,
+          under05HT: row.oddUnder05HT ?? null,
+          bttsHT: row.oddBttsHT ?? null,
+        },
+        createdAt: new Date().toISOString(),
+      };
+
+      currentMatches.push(newMatch);
+
+      newNotifs.push({
+        type: 'match',
+        id: matchId,
+        name: `${homeTeamRes.team.name} x ${awayTeamRes.team.name}`,
+      });
+    }
+
+    const newState: DbState = {
+      countries: currentCountries,
+      leagues: currentLeagues,
+      teams: currentTeams,
+      matches: currentMatches,
+    };
+
+    setDbState(newState);
+    await saveDatabaseState(newState);
+
+    if (newNotifs.length > 0) {
+      setNotifications(prev => [...prev, ...newNotifs]);
+    }
+  };
+
   // Import Database
   const handleImportDb = async (importedState: DbState) => {
     setDbState(importedState);
@@ -422,6 +560,7 @@ export default function App() {
         onOpenMatchModal={handleOpenNewMatchModal}
         onOpenEntityModal={handleOpenEntityModal}
         onOpenBulkImportModal={() => setIsBulkTeamModalOpen(true)}
+        onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
       />
 
@@ -442,6 +581,7 @@ export default function App() {
                 onDeleteMatch={handleDeleteMatch}
                 onOpenMatchModal={handleOpenNewMatchModal}
                 onOpenStatsModal={handleOpenStatsModal}
+                onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
               />
             )}
           </>
@@ -532,6 +672,13 @@ export default function App() {
         dbState={dbState}
         onBulkImportTeams={handleBulkImportTeams}
         onOpenEntityModal={handleOpenEntityModal}
+      />
+
+      <BulkMatchImportModal
+        isOpen={isBulkMatchModalOpen}
+        onClose={() => setIsBulkMatchModalOpen(false)}
+        dbState={dbState}
+        onBulkImportMatches={handleBulkImportMatches}
       />
 
       {/* Unique ID Toast Notifications */}
