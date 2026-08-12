@@ -394,13 +394,55 @@ async function parseMatchXlsxFile(file: File): Promise<ParsedMatchRow[]> {
 
   const getVal = (cell: any): string => {
     if (!cell || cell.value === null || cell.value === undefined) return '';
-    if (typeof cell.value === 'object') {
-      const obj = cell.value as Record<string, any>;
-      if ('hyperlink' in obj) return String(obj.hyperlink || obj.text || '').trim();
-      if ('text' in obj) return String(obj.text || '').trim();
-      if ('result' in obj) return String(obj.result || '').trim();
+    const val = cell.value;
+
+    // Handle Date object from Excel
+    if (val instanceof Date) {
+      if (isNaN(val.getTime())) return '';
+      const day = String(val.getDate()).padStart(2, '0');
+      const month = String(val.getMonth() + 1).padStart(2, '0');
+      const year = val.getFullYear();
+      const hours = String(val.getHours()).padStart(2, '0');
+      const mins = String(val.getMinutes()).padStart(2, '0');
+      if (hours === '00' && mins === '00') {
+        return `${day}/${month}/${year}`;
+      }
+      return `${day}/${month}/${year} ${hours}:${mins}`;
     }
-    return String(cell.value).trim();
+
+    if (typeof val === 'object') {
+      if ('richText' in val && Array.isArray(val.richText)) {
+        return val.richText.map((r: any) => r.text || '').join('').trim();
+      }
+      if ('hyperlink' in val) {
+        return String(val.text || val.hyperlink || '').trim();
+      }
+      if ('result' in val) {
+        if (val.result instanceof Date) {
+          const d = val.result;
+          if (isNaN(d.getTime())) return '';
+          const day = String(d.getDate()).padStart(2, '0');
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const year = d.getFullYear();
+          const hours = String(d.getHours()).padStart(2, '0');
+          const mins = String(d.getMinutes()).padStart(2, '0');
+          return `${day}/${month}/${year} ${hours}:${mins}`;
+        }
+        if (val.result !== null && val.result !== undefined) {
+          return String(val.result).trim();
+        }
+      }
+      if ('text' in val) {
+        return String(val.text || '').trim();
+      }
+    }
+
+    // Try formatted cell.text if string
+    if (cell.text && typeof cell.text === 'string' && cell.text.trim() && cell.text !== '[object Object]') {
+      return cell.text.trim();
+    }
+
+    return String(val).trim();
   };
 
   const parseNum = (cell: any): number | null => {
@@ -411,55 +453,93 @@ async function parseMatchXlsxFile(file: File): Promise<ParsedMatchRow[]> {
   };
 
   let colMap: Record<string, number> = {};
+  let headerRowIndex = -1;
 
   worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-    if (rowNumber === 1) {
+    // Detect header row dynamically
+    if (headerRowIndex === -1) {
+      let containsHeaderKeywords = false;
+
       row.eachCell((cell, colNumber) => {
         const val = normalizeHeader(getVal(cell));
-        if (val.includes('data') || val.includes('date') || val.includes('horar')) colMap.matchDate = colNumber;
-        else if (val.includes('pais') || val.includes('country')) colMap.countryName = colNumber;
-        else if (val.includes('liga') || val.includes('league') || val.includes('campeonato')) colMap.leagueName = colNumber;
-        else if (val.includes('mandante') || val.includes('home') || val.includes('casa')) colMap.homeTeamName = colNumber;
-        else if (val.includes('visitante') || val.includes('away') || val.includes('fora')) colMap.awayTeamName = colNumber;
-        else if (val.includes('rodada') || val.includes('round')) colMap.round = colNumber;
-        else if (val.includes('estadio') || val.includes('arena') || val.includes('stadium')) colMap.stadium = colNumber;
-        else if (val.includes('arbitro') || val.includes('referee') || val.includes('juiz')) colMap.referee = colNumber;
-        else if (val.includes('obs') || val.includes('note') || val.includes('observa')) colMap.notes = colNumber;
-        else if (val.includes('home_ft') || val.includes('mandante_ft') || val.includes('1_ft')) colMap.oddHomeFT = colNumber;
-        else if (val.includes('draw_ft') || val.includes('empate_ft') || val.includes('x_ft')) colMap.oddDrawFT = colNumber;
-        else if (val.includes('away_ft') || val.includes('visitante_ft') || val.includes('2_ft')) colMap.oddAwayFT = colNumber;
-        else if (val.includes('over25_ft') || val.includes('over2.5_ft')) colMap.oddOver25FT = colNumber;
-        else if (val.includes('under25_ft') || val.includes('under2.5_ft')) colMap.oddUnder25FT = colNumber;
-        else if (val.includes('btts_ft') || val.includes('ambos_ft')) colMap.oddBttsFT = colNumber;
-        else if (val.includes('home_ht') || val.includes('mandante_ht') || val.includes('1_ht')) colMap.oddHomeHT = colNumber;
-        else if (val.includes('draw_ht') || val.includes('empate_ht') || val.includes('x_ht')) colMap.oddDrawHT = colNumber;
-        else if (val.includes('away_ht') || val.includes('visitante_ht') || val.includes('2_ht')) colMap.oddAwayHT = colNumber;
-        else if (val.includes('over05_ht') || val.includes('over0.5_ht')) colMap.oddOver05HT = colNumber;
-        else if (val.includes('under05_ht') || val.includes('under0.5_ht')) colMap.oddUnder05HT = colNumber;
-        else if (val.includes('btts_ht') || val.includes('ambos_ht')) colMap.oddBttsHT = colNumber;
+
+        // Prioritize Odds headers FIRST to avoid matching 'home'/'mandante' in 'odd_home_ft'
+        if (val.includes('ft') || val.includes('ht') || val.includes('odd')) {
+          containsHeaderKeywords = true;
+          if (val.includes('home_ft') || val.includes('mandante_ft') || val.includes('1_ft')) colMap.oddHomeFT = colNumber;
+          else if (val.includes('draw_ft') || val.includes('empate_ft') || val.includes('x_ft')) colMap.oddDrawFT = colNumber;
+          else if (val.includes('away_ft') || val.includes('visitante_ft') || val.includes('2_ft')) colMap.oddAwayFT = colNumber;
+          else if (val.includes('over25_ft') || val.includes('over2.5_ft') || val.includes('over_25_ft')) colMap.oddOver25FT = colNumber;
+          else if (val.includes('under25_ft') || val.includes('under2.5_ft') || val.includes('under_25_ft')) colMap.oddUnder25FT = colNumber;
+          else if (val.includes('btts_ft') || val.includes('ambos_ft') || val.includes('ambas_ft')) colMap.oddBttsFT = colNumber;
+          else if (val.includes('home_ht') || val.includes('mandante_ht') || val.includes('1_ht')) colMap.oddHomeHT = colNumber;
+          else if (val.includes('draw_ht') || val.includes('empate_ht') || val.includes('x_ht')) colMap.oddDrawHT = colNumber;
+          else if (val.includes('away_ht') || val.includes('visitante_ht') || val.includes('2_ht')) colMap.oddAwayHT = colNumber;
+          else if (val.includes('over05_ht') || val.includes('over0.5_ht') || val.includes('over_05_ht')) colMap.oddOver05HT = colNumber;
+          else if (val.includes('under05_ht') || val.includes('under0.5_ht') || val.includes('under_05_ht')) colMap.oddUnder05HT = colNumber;
+          else if (val.includes('btts_ht') || val.includes('ambos_ht') || val.includes('ambas_ht')) colMap.oddBttsHT = colNumber;
+        } else if (val.includes('data') || val.includes('date') || val.includes('horar') || val.includes('time_jogo')) {
+          containsHeaderKeywords = true;
+          colMap.matchDate = colNumber;
+        } else if (val.includes('pais') || val.includes('country') || val.includes('nacao')) {
+          containsHeaderKeywords = true;
+          colMap.countryName = colNumber;
+        } else if (val.includes('liga') || val.includes('league') || val.includes('campeonato') || val.includes('torneio')) {
+          containsHeaderKeywords = true;
+          colMap.leagueName = colNumber;
+        } else if (val.includes('mandante') || val === 'home' || val.includes('time_mandante') || val.includes('casa')) {
+          containsHeaderKeywords = true;
+          colMap.homeTeamName = colNumber;
+        } else if (val.includes('visitante') || val === 'away' || val.includes('time_visitante') || val.includes('fora')) {
+          containsHeaderKeywords = true;
+          colMap.awayTeamName = colNumber;
+        } else if (val.includes('rodada') || val.includes('round')) {
+          containsHeaderKeywords = true;
+          colMap.round = colNumber;
+        } else if (val.includes('estadio') || val.includes('arena') || val.includes('stadium') || val.includes('campo')) {
+          containsHeaderKeywords = true;
+          colMap.stadium = colNumber;
+        } else if (val.includes('arbitro') || val.includes('referee') || val.includes('juiz')) {
+          containsHeaderKeywords = true;
+          colMap.referee = colNumber;
+        } else if (val.includes('obs') || val.includes('note') || val.includes('observa')) {
+          containsHeaderKeywords = true;
+          colMap.notes = colNumber;
+        }
       });
 
-      if (!colMap.matchDate) colMap.matchDate = 1;
-      if (!colMap.countryName) colMap.countryName = 2;
-      if (!colMap.leagueName) colMap.leagueName = 3;
-      if (!colMap.homeTeamName) colMap.homeTeamName = 4;
-      if (!colMap.awayTeamName) colMap.awayTeamName = 5;
-      if (!colMap.round) colMap.round = 6;
-      if (!colMap.stadium) colMap.stadium = 7;
-      if (!colMap.referee) colMap.referee = 8;
-      if (!colMap.notes) colMap.notes = 9;
-      if (!colMap.oddHomeFT) colMap.oddHomeFT = 10;
-      if (!colMap.oddDrawFT) colMap.oddDrawFT = 11;
-      if (!colMap.oddAwayFT) colMap.oddAwayFT = 12;
-      if (!colMap.oddOver25FT) colMap.oddOver25FT = 13;
-      if (!colMap.oddUnder25FT) colMap.oddUnder25FT = 14;
-      if (!colMap.oddBttsFT) colMap.oddBttsFT = 15;
-      if (!colMap.oddHomeHT) colMap.oddHomeHT = 16;
-      if (!colMap.oddDrawHT) colMap.oddDrawHT = 17;
-      if (!colMap.oddAwayHT) colMap.oddAwayHT = 18;
-      if (!colMap.oddOver05HT) colMap.oddOver05HT = 19;
-      if (!colMap.oddUnder05HT) colMap.oddUnder05HT = 20;
-      if (!colMap.oddBttsHT) colMap.oddBttsHT = 21;
+      // If we identified this as header row (or reached row 1)
+      if (containsHeaderKeywords || rowNumber === 1) {
+        headerRowIndex = rowNumber;
+
+        // Apply column position defaults if specific headers weren't found
+        if (!colMap.matchDate) colMap.matchDate = 1;
+        if (!colMap.countryName) colMap.countryName = 2;
+        if (!colMap.leagueName) colMap.leagueName = 3;
+        if (!colMap.homeTeamName) colMap.homeTeamName = 4;
+        if (!colMap.awayTeamName) colMap.awayTeamName = 5;
+        if (!colMap.round) colMap.round = 6;
+        if (!colMap.stadium) colMap.stadium = 7;
+        if (!colMap.referee) colMap.referee = 8;
+        if (!colMap.notes) colMap.notes = 9;
+        if (!colMap.oddHomeFT) colMap.oddHomeFT = 10;
+        if (!colMap.oddDrawFT) colMap.oddDrawFT = 11;
+        if (!colMap.oddAwayFT) colMap.oddAwayFT = 12;
+        if (!colMap.oddOver25FT) colMap.oddOver25FT = 13;
+        if (!colMap.oddUnder25FT) colMap.oddUnder25FT = 14;
+        if (!colMap.oddBttsFT) colMap.oddBttsFT = 15;
+        if (!colMap.oddHomeHT) colMap.oddHomeHT = 16;
+        if (!colMap.oddDrawHT) colMap.oddDrawHT = 17;
+        if (!colMap.oddAwayHT) colMap.oddAwayHT = 18;
+        if (!colMap.oddOver05HT) colMap.oddOver05HT = 19;
+        if (!colMap.oddUnder05HT) colMap.oddUnder05HT = 20;
+        if (!colMap.oddBttsHT) colMap.oddBttsHT = 21;
+        return;
+      }
+    }
+
+    // Skip the header row itself
+    if (rowNumber === headerRowIndex) {
       return;
     }
 
@@ -492,7 +572,7 @@ async function parseMatchXlsxFile(file: File): Promise<ParsedMatchRow[]> {
     } else if (!awayTeamName) {
       isValid = false;
       validationError = 'Time Visitante é obrigatório.';
-    } else if (homeTeamName.toLowerCase() === awayTeamName.toLowerCase()) {
+    } else if (homeTeamName.toLowerCase().trim() === awayTeamName.toLowerCase().trim()) {
       isValid = false;
       validationError = 'Mandante e Visitante não podem ser iguais.';
     }
