@@ -47,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-extrabold tracking-tight text-white leading-none">
-                  FUT<span className="text-[#2C3EC4]">DB3</span>
+                  FUT<span className="text-[#2C3EC4]">DB4</span>
                 </h1>
                 <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#2C3EC4]/20 text-white border border-[#2C3EC4]/40 flex items-center gap-1.5 shadow-sm">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#2C3EC4] animate-pulse"></span>

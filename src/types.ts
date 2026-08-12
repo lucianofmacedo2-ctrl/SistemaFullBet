@@ -147,6 +147,7 @@ export interface Match {
   notes?: string;
   stats?: MatchStats;
   odds?: MatchOdds;
+  isContinental?: boolean;
   createdAt: string;
 }
 
