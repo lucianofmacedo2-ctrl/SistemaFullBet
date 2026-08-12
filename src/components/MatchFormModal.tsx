@@ -162,6 +162,21 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
     setErrorMsg('');
   }, [editingMatch, isOpen]);
 
+  // Auto-fill stadium when home team is selected
+  React.useEffect(() => {
+    if (selectedHomeTeamId && selectedHomeTeamId !== 'NEW') {
+      const team = dbState.teams.find(t => t.id === selectedHomeTeamId);
+      if (team && team.stadium) {
+        setStadium(team.stadium);
+      } else {
+        const lastMatch = dbState.matches.find(m => m.homeTeamId === selectedHomeTeamId && m.stadium);
+        if (lastMatch && lastMatch.stadium) {
+          setStadium(lastMatch.stadium);
+        }
+      }
+    }
+  }, [selectedHomeTeamId, dbState.teams, dbState.matches]);
+
   if (!isOpen) return null;
 
   // Filtered lists for dropdowns
@@ -191,21 +206,6 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
     }
     return true;
   });
-
-  // Auto-fill stadium when home team is selected
-  React.useEffect(() => {
-    if (selectedHomeTeamId && selectedHomeTeamId !== 'NEW') {
-      const team = dbState.teams.find(t => t.id === selectedHomeTeamId);
-      if (team && team.stadium) {
-        setStadium(team.stadium);
-      } else {
-        const lastMatch = dbState.matches.find(m => m.homeTeamId === selectedHomeTeamId && m.stadium);
-        if (lastMatch && lastMatch.stadium) {
-          setStadium(lastMatch.stadium);
-        }
-      }
-    }
-  }, [selectedHomeTeamId, dbState.teams, dbState.matches]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
