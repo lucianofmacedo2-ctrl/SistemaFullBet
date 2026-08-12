@@ -415,7 +415,7 @@ export default function App() {
       }
 
       // 5. Create Match
-      const matchId = getNextUniqueId('JOGO', currentMatches);
+      const matchId = getNextUniqueId('JOGO', currentMatches.map(m => m.id));
       const newMatch: Match = {
         id: matchId,
         countryId: countryRes.country.id,

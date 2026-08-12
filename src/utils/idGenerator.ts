@@ -1,15 +1,19 @@
 import { Country, League, Team, Match } from '../types';
 
-export function getNextUniqueId(prefix: 'PAIS' | 'LIGA' | 'TIME' | 'JOGO', existingIds: string[]): string {
+export function getNextUniqueId(prefix: 'PAIS' | 'LIGA' | 'TIME' | 'JOGO', existingIds: (string | { id?: string } | any)[]): string {
   let maxNum = 0;
   const regex = new RegExp(`^${prefix}-(\\d+)$`, 'i');
 
-  for (const id of existingIds) {
-    const match = id.match(regex);
-    if (match) {
-      const num = parseInt(match[1], 10);
-      if (!isNaN(num) && num > maxNum) {
-        maxNum = num;
+  for (const item of existingIds) {
+    if (!item) continue;
+    const strId = typeof item === 'string' ? item : (typeof item === 'object' && item.id ? String(item.id) : String(item));
+    if (typeof strId === 'string' && typeof strId.match === 'function') {
+      const match = strId.match(regex);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
       }
     }
   }
