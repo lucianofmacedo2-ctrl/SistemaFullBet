@@ -65,7 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-black tracking-tight leading-none">
                   <span className="text-black">FUT</span>
-                  <span className="text-blue-600">LFM</span>
+                  <span className="text-blue-600">LFM2</span>
                 </h1>
                 <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-300 flex items-center gap-1.5 shadow-sm">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>

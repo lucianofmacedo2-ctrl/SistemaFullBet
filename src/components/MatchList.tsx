@@ -30,7 +30,9 @@ import {
   Square,
   X,
   FileCheck,
-  FileWarning
+  FileWarning,
+  LayoutList,
+  LayoutGrid
 } from 'lucide-react';
 import { DbState, Match, MatchStatus } from '../types';
 
@@ -82,6 +84,7 @@ export const MatchList: React.FC<MatchListProps> = ({
   const [selectedLeagueIds, setSelectedLeagueIds] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [futureCompletenessFilter, setFutureCompletenessFilter] = useState<'ALL' | 'COMPLETE' | 'INCOMPLETE'>('ALL');
+  const [viewLayout, setViewLayout] = useState<'single' | 'double'>('single');
   const [expandedStatsMatchId, setExpandedStatsMatchId] = useState<string | null>(null);
   const [isLeagueDropdownOpen, setIsLeagueDropdownOpen] = useState(false);
   const [leagueSearchTerm, setLeagueSearchTerm] = useState('');
@@ -588,6 +591,43 @@ export const MatchList: React.FC<MatchListProps> = ({
         </div>
       ) : (
         <div className="space-y-8">
+          {/* Top Bar for Results & Layout Selection */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-xl border border-blue-100 shadow-2xs">
+            <span className="text-xs text-slate-600 font-medium">
+              Exibindo <b>{filteredMatches.length}</b> de <b>{totalMatches}</b> jogos cadastrados
+            </span>
+
+            {/* Layout Toggle: 1 Coluna (um embaixo do outro) vs 2 Colunas */}
+            <div className="inline-flex items-center p-0.5 bg-slate-100 border border-slate-200 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setViewLayout('single')}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                  viewLayout === 'single'
+                    ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80 font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Visualizar jogos um embaixo do outro (1 Coluna)"
+              >
+                <LayoutList className="w-3.5 h-3.5" />
+                <span>1 Coluna (Vertical)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewLayout('double')}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                  viewLayout === 'double'
+                    ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80 font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Visualizar jogos divididos em 2 Colunas"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>2 Colunas</span>
+              </button>
+            </div>
+          </div>
+
           {/* Section 1: Jogos Futuros - Dados Completos */}
           {completeScheduled.length > 0 && (
             <div className="space-y-3">
@@ -604,7 +644,7 @@ export const MatchList: React.FC<MatchListProps> = ({
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
                 {completeScheduled.map(match => renderMatchCard(match))}
               </div>
             </div>
@@ -626,7 +666,7 @@ export const MatchList: React.FC<MatchListProps> = ({
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
                 {incompleteScheduled.map(match => renderMatchCard(match))}
               </div>
             </div>
@@ -647,7 +687,7 @@ export const MatchList: React.FC<MatchListProps> = ({
                 </div>
               )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
                 {nonScheduledMatches.map(match => renderMatchCard(match))}
               </div>
             </div>

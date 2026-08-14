@@ -25,7 +25,9 @@ import {
   BarChart2,
   Eye,
   Info,
-  Zap
+  Zap,
+  LayoutList,
+  LayoutGrid
 } from 'lucide-react';
 import { DbState, Match, MatchStatus } from '../types';
 import { checkMatchCompleteness } from './MatchList';
@@ -143,6 +145,9 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   // View mode and selected custom date
   const [dayMode, setDayMode] = useState<DaySelectionMode>('TODAY');
   const [customDateYMD, setCustomDateYMD] = useState<string>(todayYMD);
+
+  // View layout: 'single' (1 coluna - um embaixo do outro) or 'double' (2 colunas)
+  const [viewLayout, setViewLayout] = useState<'single' | 'double'>('single');
 
   // Search and sub-filters within selected day
   const [searchTerm, setSearchTerm] = useState('');
@@ -621,16 +626,49 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1">
-            <span>
-              Ordenados por horário do jogo • Total: <b>{dailyMatches.length} jogos</b>
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 font-medium px-1">
+            <div className="flex items-center gap-3">
+              <span>
+                Ordenados por horário • Total: <b>{dailyMatches.length} jogos</b>
+              </span>
+              
+              {/* Layout Switcher: 1 Coluna (um embaixo do outro) vs 2 Colunas */}
+              <div className="inline-flex items-center p-0.5 bg-slate-100 border border-slate-200 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setViewLayout('single')}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                    viewLayout === 'single'
+                      ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80 font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Visualizar jogos um embaixo do outro (1 Coluna)"
+                >
+                  <LayoutList className="w-3.5 h-3.5" />
+                  <span>1 Coluna (Vertical)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewLayout('double')}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                    viewLayout === 'double'
+                      ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80 font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Visualizar jogos divididos em 2 Colunas"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span>2 Colunas</span>
+                </button>
+              </div>
+            </div>
+
             <span className="flex items-center gap-1 text-blue-600 font-bold">
-              <Info className="w-3.5 h-3.5" /> Clique em "Lançar Placar" para atualizar os resultados
+              <Info className="w-3.5 h-3.5" /> Clique no placar para editar
             </span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
             {dailyMatches.map(match => {
               const completeness = checkMatchCompleteness(match);
               const isExpanded = expandedMatchId === match.id;
