@@ -51,22 +51,113 @@ export interface CompletenessResult {
   missingFields: string[];
 }
 
-export function checkMatchCompleteness(match: Match): CompletenessResult {
-  const missing: string[] = [];
-  if (!match.matchDate) missing.push('Data/Hora');
-  if (!match.stadium || !match.stadium.trim()) missing.push('Estádio');
-  if (!match.round || !match.round.trim()) missing.push('Rodada');
+export interface MatchFullCompleteness {
+  is100PercentComplete: boolean;
+  isPreMatchComplete: boolean;
+  hasScore: boolean;
+  hasStats: boolean;
+  missingFields: string[];
+  missingPreMatchFields: string[];
+  filledStatsSummary: string[];
+}
+
+export function checkMatchFullCompleteness(match: Match): MatchFullCompleteness {
+  const missingPreMatch: string[] = [];
+  const missingAll: string[] = [];
+
+  // 1. Data/Hora
+  if (!match.matchDate) {
+    missingPreMatch.push('Data/Hora');
+    missingAll.push('Data/Hora');
+  }
+
+  // 2. Estádio
+  if (!match.stadium || !match.stadium.trim()) {
+    missingPreMatch.push('Estádio');
+    missingAll.push('Estádio');
+  }
+
+  // 3. Rodada
+  if (!match.round || !match.round.trim()) {
+    missingPreMatch.push('Rodada');
+    missingAll.push('Rodada');
+  }
+
+  // 4. Odds 1X2 FT
   if (
     !match.odds ||
     match.odds.homeFT == null ||
     match.odds.drawFT == null ||
     match.odds.awayFT == null
   ) {
-    missing.push('Odds 1X2 FT');
+    missingPreMatch.push('Odds 1X2 FT');
+    missingAll.push('Odds 1X2 FT');
   }
+
+  const isPreMatchComplete = missingPreMatch.length === 0;
+
+  // 5. Placar Final
+  const hasScore = match.homeScore !== null && match.awayScore !== null;
+  if (!hasScore) {
+    missingAll.push('Placar Final');
+  }
+
+  // 6. Estatísticas
+  const st = match.stats || {};
+  const filledStatsSummary: string[] = [];
+
+  if (st.halftimeHomeScore != null && st.halftimeAwayScore != null) {
+    filledStatsSummary.push('Placar HT');
+  }
+  if (st.cornersHomeFT != null || st.cornersHome != null) {
+    filledStatsSummary.push('Escanteios');
+  }
+  if (st.possessionHomeFT != null || st.possessionHome != null) {
+    filledStatsSummary.push('Posse %');
+  }
+  if (
+    st.shotsHomeFT != null ||
+    st.shotsHome != null ||
+    st.shotsOnTargetHomeFT != null ||
+    st.shotsOnTargetHome != null
+  ) {
+    filledStatsSummary.push('Finalizações');
+  }
+  if (
+    st.yellowCardsHomeFT != null ||
+    st.yellowCardsHome != null ||
+    st.redCardsHomeFT != null ||
+    st.redCardsHome != null
+  ) {
+    filledStatsSummary.push('Cartões');
+  }
+  if (st.goalMinutesHome || st.goalMinutesAway || st.scorersHome || st.scorersAway) {
+    filledStatsSummary.push('Minutos dos Gols');
+  }
+
+  const hasStats = filledStatsSummary.length > 0;
+  if (!hasStats) {
+    missingAll.push('Estatísticas da Partida');
+  }
+
+  const is100PercentComplete = isPreMatchComplete && hasScore && hasStats;
+
   return {
-    isComplete: missing.length === 0,
-    missingFields: missing,
+    is100PercentComplete,
+    isPreMatchComplete,
+    hasScore,
+    hasStats,
+    missingFields: missingAll,
+    missingPreMatchFields: missingPreMatch,
+    filledStatsSummary,
+  };
+}
+
+export function checkMatchCompleteness(match: Match): CompletenessResult {
+  const full = checkMatchFullCompleteness(match);
+  return {
+    isComplete: full.isPreMatchComplete,
+    missingFields: full.missingPreMatchFields,
   };
 }
 
@@ -83,7 +174,7 @@ export const MatchList: React.FC<MatchListProps> = ({
   const [filterCountryId, setFilterCountryId] = useState('');
   const [selectedLeagueIds, setSelectedLeagueIds] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const [futureCompletenessFilter, setFutureCompletenessFilter] = useState<'ALL' | 'COMPLETE' | 'INCOMPLETE'>('ALL');
+  const [futureCompletenessFilter, setFutureCompletenessFilter] = useState<'ALL' | '100_PERCENT' | 'PRE_MATCH_COMPLETE' | 'INCOMPLETE'>('ALL');
   const [viewLayout, setViewLayout] = useState<'single' | 'double'>('single');
   const [expandedStatsMatchId, setExpandedStatsMatchId] = useState<string | null>(null);
   const [isLeagueDropdownOpen, setIsLeagueDropdownOpen] = useState(false);
@@ -104,12 +195,19 @@ export const MatchList: React.FC<MatchListProps> = ({
 
   const matches = dbState.matches;
 
-  // Counts
+  // Counts & Completeness calculations
   const totalMatches = matches.length;
-  const agendadosMatchesAll = matches.filter(m => m.status === 'AGENDADO');
-  const agendadosCount = agendadosMatchesAll.length;
-  const agendadosCompletosCount = agendadosMatchesAll.filter(m => checkMatchCompleteness(m).isComplete).length;
-  const agendadosIncompletosCount = agendadosMatchesAll.filter(m => !checkMatchCompleteness(m).isComplete).length;
+  const matchesFullCompleteness = matches.map(m => ({
+    match: m,
+    completeness: checkMatchFullCompleteness(m),
+  }));
+
+  const full100MatchesCount = matchesFullCompleteness.filter(x => x.completeness.is100PercentComplete).length;
+  const preMatchOnlyCount = matchesFullCompleteness.filter(
+    x => x.completeness.isPreMatchComplete && !x.completeness.is100PercentComplete
+  ).length;
+  const incompleteCount = matchesFullCompleteness.filter(x => !x.completeness.isPreMatchComplete).length;
+  const agendadosCount = matches.filter(m => m.status === 'AGENDADO').length;
   const finalizadosCount = matches.filter(m => m.status === 'FINALIZADO').length;
   const emAndamentoCount = matches.filter(m => m.status === 'EM_ANDAMENTO').length;
 
@@ -141,25 +239,31 @@ export const MatchList: React.FC<MatchListProps> = ({
 
     const matchesStatus = filterStatus ? match.status === filterStatus : true;
 
-    // Completeness filter for future matches
+    // Completeness filter
     let matchesCompleteness = true;
-    if (match.status === 'AGENDADO') {
-      const completeness = checkMatchCompleteness(match);
-      if (futureCompletenessFilter === 'COMPLETE') matchesCompleteness = completeness.isComplete;
-      if (futureCompletenessFilter === 'INCOMPLETE') matchesCompleteness = !completeness.isComplete;
+    const comp = checkMatchFullCompleteness(match);
+    if (futureCompletenessFilter === '100_PERCENT') {
+      matchesCompleteness = comp.is100PercentComplete;
+    } else if (futureCompletenessFilter === 'PRE_MATCH_COMPLETE') {
+      matchesCompleteness = comp.isPreMatchComplete && !comp.is100PercentComplete;
+    } else if (futureCompletenessFilter === 'INCOMPLETE') {
+      matchesCompleteness = !comp.isPreMatchComplete;
     }
 
     return matchesSearch && matchesCountry && matchesLeague && matchesStatus && matchesCompleteness;
   });
 
   // Grouped match categories for section separators
-  const completeScheduled = filteredMatches.filter(
-    m => m.status === 'AGENDADO' && checkMatchCompleteness(m).isComplete
+  const full100Group = filteredMatches.filter(m => checkMatchFullCompleteness(m).is100PercentComplete);
+  const preMatchScheduled = filteredMatches.filter(
+    m => m.status === 'AGENDADO' && checkMatchFullCompleteness(m).isPreMatchComplete && !checkMatchFullCompleteness(m).is100PercentComplete
   );
   const incompleteScheduled = filteredMatches.filter(
-    m => m.status === 'AGENDADO' && !checkMatchCompleteness(m).isComplete
+    m => m.status === 'AGENDADO' && !checkMatchFullCompleteness(m).isPreMatchComplete
   );
-  const nonScheduledMatches = filteredMatches.filter(m => m.status !== 'AGENDADO');
+  const otherMatches = filteredMatches.filter(
+    m => m.status !== 'AGENDADO' && !checkMatchFullCompleteness(m).is100PercentComplete
+  );
 
   const toggleLeagueSelection = (leagueId: string) => {
     setSelectedLeagueIds(prev =>
@@ -504,76 +608,90 @@ export const MatchList: React.FC<MatchListProps> = ({
           </button>
         </div>
 
-        {/* Future Matches Completeness Sub-Bar (When viewing Agendado or All) */}
-        {(filterStatus === 'AGENDADO' || filterStatus === '') && agendadosCount > 0 && (
-          <div className="bg-white border border-blue-200 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs shadow-xs">
-            <div className="flex items-center gap-2 text-slate-700 font-bold">
-              <Calendar className="w-4 h-4 text-blue-600" />
-              <span>Filtro de Preenchimento dos Jogos Futuros:</span>
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setFutureCompletenessFilter('ALL')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                  futureCompletenessFilter === 'ALL'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                <span>Todos os Futuros</span>
-                <span className="font-mono text-[10px] bg-black/10 px-1.5 py-0.2 rounded">
-                  {agendadosCount}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFutureCompletenessFilter('COMPLETE')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  futureCompletenessFilter === 'COMPLETE'
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
-                }`}
-              >
-                <FileCheck className="w-3.5 h-3.5" />
-                <span>🟢 Dados Completos</span>
-                <span className="font-mono text-[10px] bg-black/10 px-1.5 py-0.2 rounded text-emerald-800">
-                  {agendadosCompletosCount}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFutureCompletenessFilter('INCOMPLETE')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  futureCompletenessFilter === 'INCOMPLETE'
-                    ? 'bg-amber-600 text-white shadow-xs'
-                    : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
-                }`}
-              >
-                <FileWarning className="w-3.5 h-3.5" />
-                <span>⚠️ Faltando Dados</span>
-                <span className="font-mono text-[10px] bg-black/10 px-1.5 py-0.2 rounded text-amber-900">
-                  {agendadosIncompletosCount}
-                </span>
-              </button>
-
-              {onOpenQuickScore && incompleteScheduled.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => onOpenQuickScore(incompleteScheduled[0])}
-                  className="px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs flex items-center gap-1.5 transition-all cursor-pointer border border-blue-500"
-                  title="Abre o preenchimento rápido em sequência para os jogos com pendências"
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>Preencher em Sequência ({incompleteScheduled.length})</span>
-                </button>
-              )}
-            </div>
+        {/* Filter Sub-Bar */}
+        <div className="bg-white border border-blue-200 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs shadow-xs">
+          <div className="flex items-center gap-2 text-slate-700 font-bold">
+            <Filter className="w-4 h-4 text-blue-600" />
+            <span>Filtro de Preenchimento:</span>
           </div>
-        )}
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setFutureCompletenessFilter('ALL')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                futureCompletenessFilter === 'ALL'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <span>Todos os Jogos</span>
+              <span className="font-mono text-[10px] bg-black/10 px-1.5 py-0.2 rounded">
+                {totalMatches}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFutureCompletenessFilter('100_PERCENT')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                futureCompletenessFilter === '100_PERCENT'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+              <span>🌟 100% Preenchidos</span>
+              <span className="font-mono text-[10px] bg-emerald-200/80 px-1.5 py-0.2 rounded font-black text-emerald-900">
+                {full100MatchesCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFutureCompletenessFilter('PRE_MATCH_COMPLETE')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                futureCompletenessFilter === 'PRE_MATCH_COMPLETE'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200'
+              }`}
+            >
+              <FileCheck className="w-3.5 h-3.5 text-blue-600" />
+              <span>📋 Pré-Jogo Pronto</span>
+              <span className="font-mono text-[10px] bg-blue-100 px-1.5 py-0.2 rounded text-blue-900">
+                {preMatchOnlyCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFutureCompletenessFilter('INCOMPLETE')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                futureCompletenessFilter === 'INCOMPLETE'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
+              }`}
+            >
+              <FileWarning className="w-3.5 h-3.5 text-amber-600" />
+              <span>⚠️ Faltando Dados</span>
+              <span className="font-mono text-[10px] bg-amber-100 px-1.5 py-0.2 rounded text-amber-900">
+                {incompleteCount}
+              </span>
+            </button>
+
+            {onOpenQuickScore && incompleteScheduled.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onOpenQuickScore(incompleteScheduled[0])}
+                className="px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs flex items-center gap-1.5 transition-all cursor-pointer border border-blue-500"
+                title="Abre o preenchimento rápido em sequência para os jogos com pendências"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Preencher em Sequência ({incompleteScheduled.length})</span>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Matches Grid / List */}
@@ -594,7 +712,8 @@ export const MatchList: React.FC<MatchListProps> = ({
           {/* Top Bar for Results & Layout Selection */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-xl border border-blue-100 shadow-2xs">
             <span className="text-xs text-slate-600 font-medium">
-              Exibindo <b>{filteredMatches.length}</b> de <b>{totalMatches}</b> jogos cadastrados
+              Exibindo <b>{filteredMatches.length}</b> de <b>{totalMatches}</b> jogos cadastrados •{' '}
+              <span className="text-emerald-700 font-bold">🌟 {full100MatchesCount} 100% preenchidos</span>
             </span>
 
             {/* Layout Toggle: 1 Coluna (um embaixo do outro) vs 2 Colunas */}
@@ -628,41 +747,63 @@ export const MatchList: React.FC<MatchListProps> = ({
             </div>
           </div>
 
-          {/* Section 1: Jogos Futuros - Dados Completos */}
-          {completeScheduled.length > 0 && (
+          {/* Section 1: 🌟 JOGOS 100% PREENCHIDOS (DADOS, PLACAR & ESTATÍSTICAS) */}
+          {full100Group.length > 0 && (
             <div className="space-y-3">
-              <div className="bg-emerald-50 border-l-4 border-emerald-500 border-y border-r border-emerald-200 rounded-xl p-3 flex items-center justify-between shadow-xs">
-                <div className="flex items-center gap-2 text-emerald-950 font-bold text-sm">
-                  <FileCheck className="w-5 h-5 text-emerald-600" />
-                  <span>🟢 Jogos Futuros - Dados Completos</span>
-                  <span className="bg-emerald-200/60 text-emerald-900 font-mono text-xs px-2 py-0.5 rounded-full border border-emerald-300">
-                    {completeScheduled.length} partidas
+              <div className="bg-linear-to-r from-emerald-500 via-teal-600 to-emerald-600 text-white rounded-xl p-3.5 flex items-center justify-between shadow-sm border border-emerald-400">
+                <div className="flex items-center gap-2 font-black text-sm sm:text-base">
+                  <Trophy className="w-5 h-5 text-amber-300" />
+                  <span>🌟 JOGOS 100% PREENCHIDOS (DADOS, ODDS, PLACAR & ESTATÍSTICAS)</span>
+                  <span className="bg-white/20 text-white font-mono text-xs px-2.5 py-0.5 rounded-full border border-white/30 font-black">
+                    {full100Group.length} partidas
                   </span>
                 </div>
-                <span className="text-xs text-emerald-700 hidden sm:inline">
-                  Partidas agendadas com Estádio, Árbitro, Rodada e Odds preenchidos.
+                <span className="text-xs text-emerald-100 hidden md:inline font-medium">
+                  Partidas com 100% das informações cadastradas incluindo estatísticas completas.
                 </span>
               </div>
 
               <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                {completeScheduled.map(match => renderMatchCard(match))}
+                {full100Group.map(match => renderMatchCard(match))}
               </div>
             </div>
           )}
 
-          {/* Section 2: Jogos Futuros - Faltando Informações / Pendentes */}
+          {/* Section 2: Jogos Pré-Jogo Completos (Aguardando Placar/Stats) */}
+          {preMatchScheduled.length > 0 && (
+            <div className="space-y-3">
+              <div className="bg-blue-50 border-l-4 border-blue-500 border-y border-r border-blue-200 rounded-xl p-3 flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-2 text-blue-950 font-bold text-sm">
+                  <FileCheck className="w-5 h-5 text-blue-600" />
+                  <span>📋 Jogos Agendados - Pré-Jogo Completo (Aguardando Placar & Estatísticas)</span>
+                  <span className="bg-blue-200/60 text-blue-900 font-mono text-xs px-2 py-0.5 rounded-full border border-blue-300">
+                    {preMatchScheduled.length} partidas
+                  </span>
+                </div>
+                <span className="text-xs text-blue-700 hidden sm:inline">
+                  Partidas com Data, Estádio, Rodada e Odds 1X2 FT preenchidos.
+                </span>
+              </div>
+
+              <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+                {preMatchScheduled.map(match => renderMatchCard(match))}
+              </div>
+            </div>
+          )}
+
+          {/* Section 3: Jogos com Pendências / Incompletos */}
           {incompleteScheduled.length > 0 && (
             <div className="space-y-3">
               <div className="bg-amber-50 border-l-4 border-amber-500 border-y border-r border-amber-200 rounded-xl p-3 flex items-center justify-between shadow-xs">
                 <div className="flex items-center gap-2 text-amber-950 font-bold text-sm">
                   <FileWarning className="w-5 h-5 text-amber-600" />
-                  <span>⚠️ Jogos Futuros - Faltando Informações (Pendentes)</span>
+                  <span>⚠️ Jogos com Pendências de Dados Pré-Jogo</span>
                   <span className="bg-amber-200/60 text-amber-900 font-mono text-xs px-2 py-0.5 rounded-full border border-amber-300">
                     {incompleteScheduled.length} partidas
                   </span>
                 </div>
                 <span className="text-xs text-amber-800 hidden sm:inline">
-                  Estes jogos possuem dados pendentes (ex: sem estádio, árbitro ou odds).
+                  Faltando estádio, rodada ou odds 1X2 FT.
                 </span>
               </div>
 
@@ -672,23 +813,23 @@ export const MatchList: React.FC<MatchListProps> = ({
             </div>
           )}
 
-          {/* Section 3: Non-Scheduled Matches (Finalizados / Em Andamento / Adiados) */}
-          {nonScheduledMatches.length > 0 && (
+          {/* Section 4: Outras Partidas (Finalizados sem stats 100%, Ao Vivo, etc) */}
+          {otherMatches.length > 0 && (
             <div className="space-y-3">
-              {(completeScheduled.length > 0 || incompleteScheduled.length > 0) && (
-                <div className="bg-blue-50 border-l-4 border-blue-600 border-y border-r border-blue-200 rounded-xl p-3 flex items-center justify-between shadow-xs">
-                  <div className="flex items-center gap-2 text-blue-950 font-bold text-sm">
-                    <CheckCircle2 className="w-5 h-5 text-blue-600" />
-                    <span>🏁 Outras Partidas (Finalizados & Ao Vivo)</span>
-                    <span className="bg-blue-200/60 text-blue-900 font-mono text-xs px-2 py-0.5 rounded-full border border-blue-300">
-                      {nonScheduledMatches.length} partidas
+              {(full100Group.length > 0 || preMatchScheduled.length > 0 || incompleteScheduled.length > 0) && (
+                <div className="bg-slate-100 border-l-4 border-slate-600 border-y border-r border-slate-300 rounded-xl p-3 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                    <CheckCircle2 className="w-5 h-5 text-slate-600" />
+                    <span>🏁 Outras Partidas (Faltando Estatísticas ou Ao Vivo)</span>
+                    <span className="bg-slate-200 text-slate-900 font-mono text-xs px-2 py-0.5 rounded-full border border-slate-300">
+                      {otherMatches.length} partidas
                     </span>
                   </div>
                 </div>
               )}
 
               <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                {nonScheduledMatches.map(match => renderMatchCard(match))}
+                {otherMatches.map(match => renderMatchCard(match))}
               </div>
             </div>
           )}
@@ -700,14 +841,8 @@ export const MatchList: React.FC<MatchListProps> = ({
   // Helper function to render individual match card
   function renderMatchCard(match: Match) {
     const isExpanded = expandedStatsMatchId === match.id;
-    const hasStats =
-      match.stats &&
-      (match.stats.possessionHome !== undefined ||
-        match.stats.shotsHome !== undefined ||
-        match.stats.scorersHome !== undefined ||
-        match.stats.cornersHome !== undefined);
-
-    const completeness = checkMatchCompleteness(match);
+    const fullComp = checkMatchFullCompleteness(match);
+    const hasStats = fullComp.hasStats;
 
     const country = dbState.countries.find(
       c => c.id === match.countryId || c.name.toLowerCase() === match.countryName.toLowerCase()
@@ -732,19 +867,27 @@ export const MatchList: React.FC<MatchListProps> = ({
     return (
       <div
         key={match.id}
-        className={`bg-white border ${
-          match.status === 'AGENDADO'
-            ? completeness.isComplete
-              ? 'border-emerald-300 hover:border-emerald-500'
-              : 'border-amber-300 hover:border-amber-500'
-            : 'border-blue-200 hover:border-blue-400'
-        } rounded-2xl p-5 shadow-sm transition-all duration-200 flex flex-col justify-between space-y-4 group`}
+        className={`${
+          fullComp.is100PercentComplete
+            ? 'bg-linear-to-b from-emerald-50/80 via-white to-teal-50/30 border-2 border-emerald-500 shadow-md ring-4 ring-emerald-500/20 hover:border-emerald-600'
+            : match.status === 'AGENDADO'
+            ? fullComp.isPreMatchComplete
+              ? 'bg-white border border-blue-300 hover:border-blue-400 shadow-sm'
+              : 'bg-white border border-amber-300 hover:border-amber-500 shadow-sm'
+            : 'bg-white border border-slate-200 hover:border-blue-300 shadow-sm'
+        } rounded-2xl p-5 transition-all duration-200 flex flex-col justify-between space-y-4 group`}
       >
         {/* Card Top: Match Unique ID + Country + League + Completeness Badge + Status */}
         <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
             {/* Match ID */}
-            <span className="font-mono font-bold text-xs bg-blue-600 text-white border border-blue-500 px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
+            <span
+              className={`font-mono font-bold text-xs ${
+                fullComp.is100PercentComplete
+                  ? 'bg-emerald-700 text-white border-emerald-600'
+                  : 'bg-blue-600 text-white border-blue-500'
+              } border px-2.5 py-0.5 rounded-md flex items-center gap-1 shadow-xs`}
+            >
               <Hash className="w-3 h-3 text-white" />
               {match.id}
             </span>
@@ -788,47 +931,85 @@ export const MatchList: React.FC<MatchListProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Completeness Badge for AGENDADO matches */}
-            {match.status === 'AGENDADO' && (
-              completeness.isComplete ? (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 shadow-xs">
-                  <FileCheck className="w-3 h-3 text-emerald-600" />
-                  Dados Completos
+            {/* Completeness Badge */}
+            {fullComp.is100PercentComplete ? (
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-600 text-white border border-emerald-500 flex items-center gap-1 shadow-xs animate-in fade-in">
+                <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" />
+                100% PREENCHIDO
+              </span>
+            ) : match.status === 'AGENDADO' ? (
+              fullComp.isPreMatchComplete ? (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1 shadow-xs">
+                  <FileCheck className="w-3 h-3 text-blue-600" />
+                  Pré-Jogo Pronto
                 </span>
               ) : (
                 <span
                   className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-xs"
-                  title={`Faltam os campos: ${completeness.missingFields.join(', ')}`}
+                  title={`Faltam os campos: ${fullComp.missingPreMatchFields.join(', ')}`}
                 >
                   <FileWarning className="w-3 h-3 text-amber-600" />
-                  Falta: {completeness.missingFields.join(', ')}
+                  Falta: {fullComp.missingPreMatchFields.join(', ')}
                 </span>
               )
-            )}
+            ) : !fullComp.hasStats ? (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+                <FileWarning className="w-3 h-3 text-amber-600" />
+                Falta Stats
+              </span>
+            ) : null}
 
             <div>{getStatusBadge(match.status)}</div>
           </div>
         </div>
 
-        {/* Future Match Special Banner */}
-        {match.status === 'AGENDADO' && (
+        {/* Dynamic Completeness Banner */}
+        {fullComp.is100PercentComplete ? (
+          <div className="bg-linear-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white border border-emerald-500 rounded-xl p-2.5 sm:p-3 flex items-center justify-between gap-2 shadow-sm">
+            <div className="flex items-center gap-2 text-xs font-bold">
+              <Trophy className="w-4 h-4 text-amber-300 shrink-0" />
+              <span>🌟 100% Preenchido • Dados, Odds, Placar & Estatísticas</span>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {onOpenQuickScore && (
+                <button
+                  type="button"
+                  onClick={() => onOpenQuickScore(match)}
+                  className="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white border border-white/40 text-xs font-bold rounded-lg transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                  title="Editar Placar & Odds"
+                >
+                  <Zap className="w-3 h-3 text-amber-300" />
+                  <span>Placar/Odds</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => onOpenStatsModal(match)}
+                className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-emerald-950 border border-white text-xs font-black rounded-lg transition-all shadow-xs cursor-pointer flex items-center gap-1"
+              >
+                <BarChart2 className="w-3 h-3 text-emerald-700" />
+                <span>Ver Stats</span>
+              </button>
+            </div>
+          </div>
+        ) : match.status === 'AGENDADO' ? (
           <div
             className={`${
-              completeness.isComplete
-                ? 'bg-emerald-50/80 border-emerald-200'
-                : 'bg-amber-50/80 border-amber-200'
+              fullComp.isPreMatchComplete
+                ? 'bg-blue-50/90 border-blue-200'
+                : 'bg-amber-50/90 border-amber-200'
             } border rounded-xl p-2.5 flex items-center justify-between gap-2`}
           >
             <div className="flex items-center gap-2 text-xs font-medium">
-              <Calendar
-                className={`w-4 h-4 ${
-                  completeness.isComplete ? 'text-emerald-600' : 'text-amber-600'
-                } shrink-0`}
-              />
+              {fullComp.isPreMatchComplete ? (
+                <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
+              ) : (
+                <FileWarning className="w-4 h-4 text-amber-600 shrink-0" />
+              )}
               <span className="text-slate-800 font-medium">
-                {completeness.isComplete
-                  ? 'Jogo Agendado • Todos os dados preenchidos'
-                  : `Jogo Agendado • Faltando: ${completeness.missingFields.join(', ')}`}
+                {fullComp.isPreMatchComplete
+                  ? 'Jogo Agendado • Dados Pré-Jogo Completos (Aguardando Placar & Stats)'
+                  : `Jogo Agendado • Faltando: ${fullComp.missingPreMatchFields.join(', ')}`}
               </span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
@@ -852,7 +1033,22 @@ export const MatchList: React.FC<MatchListProps> = ({
               </button>
             </div>
           </div>
-        )}
+        ) : !fullComp.hasStats ? (
+          <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-medium text-amber-900">
+              <FileWarning className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Placar registrado, mas <b>estatísticas não foram preenchidas</b>.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => onOpenStatsModal(match)}
+              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-all shadow-xs cursor-pointer flex items-center gap-1 shrink-0"
+            >
+              <BarChart2 className="w-3 h-3" />
+              <span>Preencher Stats</span>
+            </button>
+          </div>
+        ) : null}
 
         {/* Scoreboard Body */}
         <div className="grid grid-cols-7 items-center gap-2 my-2">

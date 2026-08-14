@@ -30,7 +30,7 @@ import {
   LayoutGrid
 } from 'lucide-react';
 import { DbState, Match, MatchStatus } from '../types';
-import { checkMatchCompleteness } from './MatchList';
+import { checkMatchCompleteness, checkMatchFullCompleteness } from './MatchList';
 
 interface DailyMatchesViewProps {
   dbState: DbState;
@@ -670,7 +670,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
 
           <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
             {dailyMatches.map(match => {
-              const completeness = checkMatchCompleteness(match);
+              const fullComp = checkMatchFullCompleteness(match);
               const isExpanded = expandedMatchId === match.id;
               const matchTime = extractTime(match.matchDate);
               const matchYmd = extractYMD(match.matchDate) || '';
@@ -699,13 +699,15 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
               return (
                 <div
                   key={match.id}
-                  className={`bg-white border ${
-                    match.status === 'AGENDADO'
-                      ? completeness.isComplete
-                        ? 'border-emerald-300 hover:border-emerald-400'
-                        : 'border-amber-300 hover:border-amber-400'
-                      : 'border-slate-200 hover:border-blue-300'
-                  } rounded-2xl p-4 sm:p-5 shadow-sm transition-all flex flex-col justify-between space-y-3.5 group`}
+                  className={`${
+                    fullComp.is100PercentComplete
+                      ? 'bg-linear-to-b from-emerald-50/80 via-white to-teal-50/30 border-2 border-emerald-500 shadow-md ring-3 ring-emerald-500/20 hover:border-emerald-600'
+                      : match.status === 'AGENDADO'
+                      ? fullComp.isPreMatchComplete
+                        ? 'bg-white border border-blue-300 hover:border-blue-400 shadow-sm'
+                        : 'bg-white border border-amber-300 hover:border-amber-400 shadow-sm'
+                      : 'bg-white border border-slate-200 hover:border-blue-300 shadow-sm'
+                  } rounded-2xl p-4 sm:p-5 transition-all flex flex-col justify-between space-y-3.5 group`}
                 >
                   {/* Top Bar of Match Card: Time + League + ID + Status */}
                   <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100 flex-wrap">
@@ -724,7 +726,13 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                       )}
 
                       {/* Unique Match ID */}
-                      <span className="font-mono font-bold text-xs bg-blue-600 text-white border border-blue-500 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-2xs">
+                      <span
+                        className={`font-mono font-bold text-xs ${
+                          fullComp.is100PercentComplete
+                            ? 'bg-emerald-700 text-white border-emerald-600'
+                            : 'bg-blue-600 text-white border-blue-500'
+                        } border px-2 py-0.5 rounded-md flex items-center gap-1 shadow-2xs`}
+                      >
                         <Hash className="w-3 h-3" />
                         {match.id}
                       </span>
@@ -762,23 +770,28 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      {/* Completeness Badge for AGENDADO */}
-                      {match.status === 'AGENDADO' && (
-                        completeness.isComplete ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                            <FileCheck className="w-3 h-3 text-emerald-600" />
+                      {/* Completeness Badge */}
+                      {fullComp.is100PercentComplete ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-600 text-white border border-emerald-500 flex items-center gap-1 shadow-xs animate-in fade-in">
+                          <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" />
+                          100% PREENCHIDO
+                        </span>
+                      ) : match.status === 'AGENDADO' ? (
+                        fullComp.isPreMatchComplete ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
+                            <FileCheck className="w-3 h-3 text-blue-600" />
                             Completo
                           </span>
                         ) : (
                           <span
                             className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1"
-                            title={`Faltando: ${completeness.missingFields.join(', ')}`}
+                            title={`Faltando: ${fullComp.missingPreMatchFields.join(', ')}`}
                           >
                             <FileWarning className="w-3 h-3 text-amber-600" />
                             Pendente
                           </span>
                         )
-                      )}
+                      ) : null}
 
                       <div>{getStatusBadge(match.status)}</div>
                     </div>
