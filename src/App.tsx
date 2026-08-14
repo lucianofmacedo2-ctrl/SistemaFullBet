@@ -19,6 +19,7 @@ import { CountryManager } from './components/CountryManager';
 import { LeagueManager } from './components/LeagueManager';
 import { TeamManager } from './components/TeamManager';
 import { StatsDashboard } from './components/StatsDashboard';
+import { DailyMatchesView } from './components/DailyMatchesView';
 import { BackupModal } from './components/BackupModal';
 import { MatchStatsModal } from './components/MatchStatsModal';
 import { ToastNotification } from './components/ToastNotification';
@@ -35,7 +36,7 @@ export default function App() {
   });
 
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'matches' | 'countries' | 'leagues' | 'teams' | 'stats'>('matches');
+  const [activeTab, setActiveTab] = useState<'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats'>('matches');
 
   // Modals state
   const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
@@ -585,6 +586,17 @@ export default function App() {
               />
             )}
           </>
+        )}
+
+        {activeTab === 'schedule' && (
+          <DailyMatchesView
+            dbState={dbState}
+            onEditMatch={handleEditMatch}
+            onDeleteMatch={handleDeleteMatch}
+            onOpenMatchModal={handleOpenNewMatchModal}
+            onOpenStatsModal={handleOpenStatsModal}
+            onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
+          />
         )}
 
         {activeTab === 'countries' && (

@@ -7,16 +7,18 @@ import {
   Database,
   BarChart3,
   ListOrdered,
+  CalendarDays,
   RotateCcw,
   CheckCircle2,
   FileSpreadsheet
 } from 'lucide-react';
 import { DbState } from '../types';
+import { extractYMD, formatDateToYMD } from './DailyMatchesView';
 
 interface NavbarProps {
   dbState: DbState;
-  activeTab: 'matches' | 'countries' | 'leagues' | 'teams' | 'stats';
-  setActiveTab: (tab: 'matches' | 'countries' | 'leagues' | 'teams' | 'stats') => void;
+  activeTab: 'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats';
+  setActiveTab: (tab: 'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats') => void;
   onOpenMatchModal: () => void;
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
   onOpenBulkImportModal?: () => void;
@@ -34,6 +36,21 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenBulkMatchImportModal,
   onOpenBackupModal,
 }) => {
+  // Calculate matches for today, tomorrow, and after tomorrow
+  const today = new Date();
+  const todayYMD = formatDateToYMD(today);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const tomorrowYMD = formatDateToYMD(tomorrow);
+  const afterTomorrow = new Date(today);
+  afterTomorrow.setDate(today.getDate() + 2);
+  const afterTomorrowYMD = formatDateToYMD(afterTomorrow);
+
+  const nextDaysMatchesCount = dbState.matches.filter(m => {
+    const ymd = extractYMD(m.matchDate);
+    return ymd === todayYMD || ymd === tomorrowYMD || ymd === afterTomorrowYMD;
+  }).length;
+
   return (
     <header className="bg-white border-b border-blue-200 text-slate-800 sticky top-0 z-40 shadow-sm">
       {/* Top Bar */}
@@ -127,11 +144,28 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <ListOrdered className="w-3.5 h-3.5" />
-              Partidas
+              Todas Partidas
               <span className={`ml-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${
                 activeTab === 'matches' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
               }`}>
                 {dbState.matches.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('schedule')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                activeTab === 'schedule'
+                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
+                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
+              }`}
+            >
+              <CalendarDays className="w-3.5 h-3.5" />
+              Jogos por Data (Hoje/Amanhã)
+              <span className={`ml-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${
+                activeTab === 'schedule' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
+              }`}>
+                {nextDaysMatchesCount}
               </span>
             </button>
 
