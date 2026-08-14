@@ -24,7 +24,8 @@ import {
   Sparkles,
   BarChart2,
   Eye,
-  Info
+  Info,
+  Zap
 } from 'lucide-react';
 import { DbState, Match, MatchStatus } from '../types';
 import { checkMatchCompleteness } from './MatchList';
@@ -35,6 +36,7 @@ interface DailyMatchesViewProps {
   onDeleteMatch: (matchId: string) => void;
   onOpenMatchModal: () => void;
   onOpenStatsModal: (match: Match) => void;
+  onOpenQuickScore?: (match: Match) => void;
   onOpenBulkMatchImportModal?: () => void;
 }
 
@@ -118,6 +120,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   onDeleteMatch,
   onOpenMatchModal,
   onOpenStatsModal,
+  onOpenQuickScore,
   onOpenBulkMatchImportModal,
 }) => {
   // Base reference date (today)
@@ -773,13 +776,21 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
 
                     {/* Score / VS Pill */}
                     <div className="col-span-1 text-center flex flex-col items-center justify-center">
-                      <div className="px-2.5 py-1 bg-blue-50 border border-blue-200 text-slate-900 rounded-xl font-black text-base sm:text-lg font-mono min-w-[56px] shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onOpenQuickScore) onOpenQuickScore(match);
+                          else onOpenStatsModal(match);
+                        }}
+                        className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-400 text-slate-900 rounded-xl font-black text-base sm:text-lg font-mono min-w-[56px] shadow-2xs transition-all cursor-pointer hover:scale-105"
+                        title="Clique para Lançar/Editar Placar & Odds Rápido"
+                      >
                         {match.homeScore !== null && match.awayScore !== null ? (
                           `${match.homeScore} - ${match.awayScore}`
                         ) : (
                           <span className="text-xs text-slate-400 font-sans uppercase">vs</span>
                         )}
-                      </div>
+                      </button>
                     </div>
 
                     {/* Away Team */}
@@ -846,13 +857,25 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                   {/* Action Buttons Bar */}
                   <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 flex-wrap">
                     <div className="flex items-center gap-1.5">
+                      {onOpenQuickScore && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenQuickScore(match)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold border border-blue-200 transition-all shadow-xs cursor-pointer"
+                          title="Lançar Placar & Odds Rápido"
+                        >
+                          <Zap className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Placar/Odds</span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => onOpenStatsModal(match)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
                       >
                         <BarChart2 className="w-3.5 h-3.5" />
-                        <span>{match.status === 'FINALIZADO' ? 'Ver/Editar Estatísticas' : 'Lançar Placar & Stats'}</span>
+                        <span>{match.status === 'FINALIZADO' ? 'Stats Completas' : 'Lançar Stats'}</span>
                       </button>
 
                       <button

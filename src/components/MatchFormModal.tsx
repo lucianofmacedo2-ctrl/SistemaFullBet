@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Plus, Calendar, Trophy, Globe, Shield, MapPin, Hash, Check, TrendingUp, DollarSign, Clock, Zap } from 'lucide-react';
+import { X, Sparkles, Plus, Calendar, Trophy, Globe, Shield, MapPin, Hash, Check, TrendingUp, DollarSign, Clock, Zap, Table, FileText } from 'lucide-react';
 import { DbState, Match, MatchStatus, MatchOdds, NewEntityCreatedNotification, Team } from '../types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from '../utils/idGenerator';
+import { MultiMatchQuickEntry } from './MultiMatchQuickEntry';
 
 interface MatchFormModalProps {
   isOpen: boolean;
@@ -21,6 +22,9 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
   onSaveMatch,
   editingMatch,
 }) => {
+  // Mode selection: 'multi' (multiple matches fast entry) vs 'single' (full detailed match form)
+  const [entryMode, setEntryMode] = useState<'multi' | 'single'>('multi');
+
   // Country selection
   const [selectedCountryId, setSelectedCountryId] = useState<string>('NEW');
   const [newCountryName, setNewCountryName] = useState<string>('');
@@ -83,6 +87,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
   // Populate form if editing or when opening
   useEffect(() => {
     if (editingMatch) {
+      setEntryMode('single');
       setSelectedCountryId(editingMatch.countryId);
       setSelectedLeagueId(editingMatch.leagueId);
       setSelectedHomeTeamId(editingMatch.homeTeamId);
@@ -514,39 +519,83 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden my-8">
+      <div className={`relative w-full ${entryMode === 'multi' && !editingMatch ? 'max-w-6xl' : 'max-w-2xl'} bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden my-8 transition-all`}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-blue-50 border-b border-blue-100">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg border border-blue-200">
-              <Trophy className="w-5 h-5 text-blue-600" />
+        <div className="px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-blue-100 text-blue-600 rounded-lg border border-blue-200">
+                <Trophy className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  {editingMatch ? 'Editar Jogo' : 'Cadastrar Jogos de Futebol'}
+                </h2>
+                <p className="text-xs text-slate-500">
+                  {entryMode === 'multi' && !editingMatch
+                    ? 'Preencha vários jogos em linhas e cadastre todos de uma só vez.'
+                    : 'Ligas, Países e Times novos recebem IDs Únicos na 1ª vez.'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">
-                {editingMatch ? 'Editar Jogo' : 'Cadastrar Novo Jogo de Futebol'}
-              </h2>
-              <p className="text-xs text-slate-500">
-                Ligas, Países e Times novos recebem IDs Únicos na 1ª vez.
-              </p>
-            </div>
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
-          {errorMsg && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
-              {errorMsg}
+          {/* Mode Switch Tabs (Only when creating new matches) */}
+          {!editingMatch && (
+            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-blue-200/70">
+              <button
+                type="button"
+                onClick={() => setEntryMode('multi')}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  entryMode === 'multi'
+                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20 border border-blue-600'
+                    : 'bg-white hover:bg-blue-50 text-slate-700 border border-slate-200'
+                }`}
+              >
+                <Table className="w-3.5 h-3.5" />
+                <span>⚡ Cadastro Rápido em Linhas (Vários Jogos)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setEntryMode('single')}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  entryMode === 'single'
+                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20 border border-blue-600'
+                    : 'bg-white hover:bg-blue-50 text-slate-700 border border-slate-200'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>📝 Jogo Individual Completo (com Odds & Estatísticas)</span>
+              </button>
             </div>
           )}
+        </div>
 
-          {/* Section 1: País & Liga */}
+        {/* Modal Body */}
+        {entryMode === 'multi' && !editingMatch ? (
+          <div className="p-6 max-h-[80vh] overflow-y-auto">
+            <MultiMatchQuickEntry
+              dbState={dbState}
+              onSaveMatches={onSaveMatch}
+              onClose={onClose}
+            />
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+            {errorMsg && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
+                {errorMsg}
+              </div>
+            )}
+
+            {/* Section 1: País & Liga */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-wider">
@@ -589,6 +638,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                   onChange={(e) => {
                     const val = e.target.value;
                     setSelectedCountryId(val);
+                    setShowAllCountryTeams(false);
                     if (val !== 'NEW') {
                       const cLeagues = dbState.leagues.filter(l => l.countryId === val);
                       if (cLeagues.length > 0) {
@@ -1332,6 +1382,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

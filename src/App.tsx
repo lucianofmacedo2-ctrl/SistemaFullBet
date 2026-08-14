@@ -22,8 +22,9 @@ import { StatsDashboard } from './components/StatsDashboard';
 import { DailyMatchesView } from './components/DailyMatchesView';
 import { BackupModal } from './components/BackupModal';
 import { MatchStatsModal } from './components/MatchStatsModal';
+import { QuickScoreModal } from './components/QuickScoreModal';
 import { ToastNotification } from './components/ToastNotification';
-import { MatchStats, MatchStatus } from './types';
+import { MatchOdds, MatchStats, MatchStatus } from './types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from './utils/idGenerator';
 import { ParsedMatchRow } from './utils/excelHelper';
 
@@ -56,6 +57,10 @@ export default function App() {
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [isBulkTeamModalOpen, setIsBulkTeamModalOpen] = useState(false);
   const [isBulkMatchModalOpen, setIsBulkMatchModalOpen] = useState(false);
+
+  // Quick Score & Odds Modal state
+  const [isQuickScoreModalOpen, setIsQuickScoreModalOpen] = useState(false);
+  const [quickScoreMatch, setQuickScoreMatch] = useState<Match | null>(null);
 
   // Toast notifications for newly created IDs
   const [notifications, setNotifications] = useState<NewEntityCreatedNotification[]>([]);
@@ -590,6 +595,45 @@ export default function App() {
     await saveDatabaseState(newState);
   };
 
+  const handleOpenQuickScore = (match: Match) => {
+    setQuickScoreMatch(match);
+    setIsQuickScoreModalOpen(true);
+  };
+
+  const handleSaveQuickScore = async (
+    matchId: string,
+    homeScore: number | null,
+    awayScore: number | null,
+    status: MatchStatus,
+    odds: MatchOdds,
+    htHomeScore?: number | null,
+    htAwayScore?: number | null
+  ) => {
+    const updatedMatches = dbState.matches.map(m => {
+      if (m.id === matchId) {
+        const existingStats = m.stats || {};
+        const updatedStats: MatchStats = {
+          ...existingStats,
+          halftimeHomeScore: htHomeScore !== undefined ? htHomeScore : existingStats.halftimeHomeScore,
+          halftimeAwayScore: htAwayScore !== undefined ? htAwayScore : existingStats.halftimeAwayScore,
+        };
+
+        return {
+          ...m,
+          homeScore,
+          awayScore,
+          status,
+          odds,
+          stats: updatedStats,
+        };
+      }
+      return m;
+    });
+    const newState = { ...dbState, matches: updatedMatches };
+    setDbState(newState);
+    await saveDatabaseState(newState);
+  };
+
   const handleOpenEntityModal = (type: 'country' | 'league' | 'team' = 'country') => {
     setEntityModalType(type);
     setIsEntityModalOpen(true);
@@ -637,6 +681,7 @@ export default function App() {
                 onDeleteMatch={handleDeleteMatch}
                 onOpenMatchModal={handleOpenNewMatchModal}
                 onOpenStatsModal={handleOpenStatsModal}
+                onOpenQuickScore={handleOpenQuickScore}
                 onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
               />
             )}
@@ -650,6 +695,7 @@ export default function App() {
             onDeleteMatch={handleDeleteMatch}
             onOpenMatchModal={handleOpenNewMatchModal}
             onOpenStatsModal={handleOpenStatsModal}
+            onOpenQuickScore={handleOpenQuickScore}
             onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
           />
         )}
@@ -697,6 +743,18 @@ export default function App() {
         onClose={() => setIsStatsModalOpen(false)}
         match={statsMatch}
         onSaveStats={handleSaveStats}
+      />
+
+      <QuickScoreModal
+        isOpen={isQuickScoreModalOpen}
+        onClose={() => {
+          setIsQuickScoreModalOpen(false);
+          setQuickScoreMatch(null);
+        }}
+        match={quickScoreMatch}
+        allMatches={dbState.matches}
+        onSave={handleSaveQuickScore}
+        onSelectMatch={match => setQuickScoreMatch(match)}
       />
 
       <MatchFormModal

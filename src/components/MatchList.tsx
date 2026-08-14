@@ -40,6 +40,7 @@ interface MatchListProps {
   onDeleteMatch: (matchId: string) => void;
   onOpenMatchModal: () => void;
   onOpenStatsModal: (match: Match) => void;
+  onOpenQuickScore?: (match: Match) => void;
   onOpenBulkMatchImportModal?: () => void;
 }
 
@@ -73,6 +74,7 @@ export const MatchList: React.FC<MatchListProps> = ({
   onDeleteMatch,
   onOpenMatchModal,
   onOpenStatsModal,
+  onOpenQuickScore,
   onOpenBulkMatchImportModal,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -554,6 +556,18 @@ export const MatchList: React.FC<MatchListProps> = ({
                   {agendadosIncompletosCount}
                 </span>
               </button>
+
+              {onOpenQuickScore && incompleteScheduled.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => onOpenQuickScore(incompleteScheduled[0])}
+                  className="px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs flex items-center gap-1.5 transition-all cursor-pointer border border-blue-500"
+                  title="Abre o preenchimento rápido em sequência para os jogos com pendências"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>Preencher em Sequência ({incompleteScheduled.length})</span>
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -777,12 +791,26 @@ export const MatchList: React.FC<MatchListProps> = ({
                   : `Jogo Agendado • Faltando: ${completeness.missingFields.join(', ')}`}
               </span>
             </div>
-            <button
-              onClick={() => onOpenStatsModal(match)}
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all shadow-xs shrink-0"
-            >
-              + Lançar Placar & Stats
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {onOpenQuickScore && (
+                <button
+                  type="button"
+                  onClick={() => onOpenQuickScore(match)}
+                  className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                  title="Lançar Placar & Odds Rápido"
+                >
+                  <Zap className="w-3 h-3" />
+                  <span>Placar/Odds</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => onOpenStatsModal(match)}
+                className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold rounded-lg transition-all shadow-xs cursor-pointer"
+              >
+                + Stats
+              </button>
+            </div>
           </div>
         )}
 
@@ -819,13 +847,21 @@ export const MatchList: React.FC<MatchListProps> = ({
 
           {/* Score Pill */}
           <div className="col-span-1 text-center flex flex-col items-center justify-center">
-            <div className="px-3 py-1.5 bg-blue-50 border border-blue-300 text-blue-950 rounded-xl font-black text-lg sm:text-xl shadow-xs font-mono tracking-wider min-w-[68px]">
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenQuickScore) onOpenQuickScore(match);
+                else onOpenStatsModal(match);
+              }}
+              className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-300 hover:border-blue-500 text-blue-950 rounded-xl font-black text-lg sm:text-xl shadow-xs font-mono tracking-wider min-w-[68px] transition-all cursor-pointer hover:scale-105"
+              title="Clique para Lançar/Editar Placar & Odds Rápido"
+            >
               {match.homeScore !== null && match.awayScore !== null ? (
                 `${match.homeScore} - ${match.awayScore}`
               ) : (
                 <span className="text-xs text-slate-400 font-sans uppercase">vs</span>
               )}
-            </div>
+            </button>
           </div>
 
           {/* Away Team */}
@@ -1048,6 +1084,19 @@ export const MatchList: React.FC<MatchListProps> = ({
                 <BarChart2 className="w-3.5 h-3.5 text-blue-600" />
                 <span>{isExpanded ? 'Ocultar Stats' : 'Ver Stats'}</span>
                 {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            )}
+
+            {/* Quick Score button */}
+            {onOpenQuickScore && (
+              <button
+                type="button"
+                onClick={() => onOpenQuickScore(match)}
+                className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 flex items-center gap-1 transition-all shadow-xs cursor-pointer"
+                title="Lançar Placar & Odds Rápido"
+              >
+                <Zap className="w-3.5 h-3.5 text-blue-600" />
+                <span>Placar/Odds</span>
               </button>
             )}
 
