@@ -17,6 +17,7 @@ import {
   BarChart2,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   Activity,
   Target,
   Flag,
@@ -176,7 +177,33 @@ export const MatchList: React.FC<MatchListProps> = ({
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [futureCompletenessFilter, setFutureCompletenessFilter] = useState<'ALL' | '100_PERCENT' | 'PRE_MATCH_COMPLETE' | 'INCOMPLETE'>('ALL');
   const [viewLayout, setViewLayout] = useState<'single' | 'double'>('single');
+  const [collapsedSections, setCollapsedSections] = useState<{ [key: string]: boolean }>({});
   const [expandedStatsMatchId, setExpandedStatsMatchId] = useState<string | null>(null);
+
+  const toggleSection = (sectionKey: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey],
+    }));
+  };
+
+  const collapseAllSections = () => {
+    setCollapsedSections({
+      full100: true,
+      preMatch: true,
+      incomplete: true,
+      other: true,
+    });
+  };
+
+  const expandAllSections = () => {
+    setCollapsedSections({
+      full100: false,
+      preMatch: false,
+      incomplete: false,
+      other: false,
+    });
+  };
   const [isLeagueDropdownOpen, setIsLeagueDropdownOpen] = useState(false);
   const [leagueSearchTerm, setLeagueSearchTerm] = useState('');
 
@@ -711,10 +738,34 @@ export const MatchList: React.FC<MatchListProps> = ({
         <div className="space-y-8">
           {/* Top Bar for Results & Layout Selection */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-xl border border-blue-100 shadow-2xs">
-            <span className="text-xs text-slate-600 font-medium">
-              Exibindo <b>{filteredMatches.length}</b> de <b>{totalMatches}</b> jogos cadastrados •{' '}
-              <span className="text-emerald-700 font-bold">🌟 {full100MatchesCount} 100% preenchidos</span>
-            </span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-xs text-slate-600 font-medium">
+                Exibindo <b>{filteredMatches.length}</b> de <b>{totalMatches}</b> jogos cadastrados •{' '}
+                <span className="text-emerald-700 font-bold">🌟 {full100MatchesCount} 100% preenchidos</span>
+              </span>
+
+              {/* Quick Actions: Expand/Collapse All */}
+              <div className="flex items-center gap-1.5 border-l border-slate-200 pl-3">
+                <button
+                  type="button"
+                  onClick={expandAllSections}
+                  className="px-2 py-0.5 rounded text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all cursor-pointer flex items-center gap-1"
+                  title="Expandir todas as seções"
+                >
+                  <ChevronDown className="w-3 h-3" />
+                  <span>Expandir Todos</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={collapseAllSections}
+                  className="px-2 py-0.5 rounded text-[11px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all cursor-pointer flex items-center gap-1"
+                  title="Recolher todas as seções"
+                >
+                  <ChevronUp className="w-3 h-3" />
+                  <span>Recolher Todos</span>
+                </button>
+              </div>
+            </div>
 
             {/* Layout Toggle: 1 Coluna (um embaixo do outro) vs 2 Colunas */}
             <div className="inline-flex items-center p-0.5 bg-slate-100 border border-slate-200 rounded-lg">
@@ -750,66 +801,123 @@ export const MatchList: React.FC<MatchListProps> = ({
           {/* Section 1: 🌟 JOGOS 100% PREENCHIDOS (DADOS, PLACAR & ESTATÍSTICAS) */}
           {full100Group.length > 0 && (
             <div className="space-y-3">
-              <div className="bg-linear-to-r from-emerald-500 via-teal-600 to-emerald-600 text-white rounded-xl p-3.5 flex items-center justify-between shadow-sm border border-emerald-400">
-                <div className="flex items-center gap-2 font-black text-sm sm:text-base">
-                  <Trophy className="w-5 h-5 text-amber-300" />
+              <div
+                onClick={() => toggleSection('full100')}
+                className="bg-linear-to-r from-emerald-500 via-teal-600 to-emerald-600 text-white rounded-xl p-3.5 flex items-center justify-between shadow-sm border border-emerald-400 cursor-pointer select-none transition-all hover:brightness-105 group"
+                title={collapsedSections['full100'] ? 'Clique para expandir os jogos' : 'Clique para recolher os jogos'}
+              >
+                <div className="flex items-center gap-2.5 font-black text-sm sm:text-base">
+                  <span className="p-1 rounded-lg bg-white/20 text-white group-hover:bg-white/30 transition-all">
+                    {collapsedSections['full100'] ? (
+                      <ChevronRight className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                  </span>
+                  <Trophy className="w-5 h-5 text-amber-300 shrink-0" />
                   <span>🌟 JOGOS 100% PREENCHIDOS (DADOS, ODDS, PLACAR & ESTATÍSTICAS)</span>
                   <span className="bg-white/20 text-white font-mono text-xs px-2.5 py-0.5 rounded-full border border-white/30 font-black">
                     {full100Group.length} partidas
                   </span>
                 </div>
-                <span className="text-xs text-emerald-100 hidden md:inline font-medium">
-                  Partidas com 100% das informações cadastradas incluindo estatísticas completas.
-                </span>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-emerald-100 hidden md:inline font-medium">
+                    Partidas com 100% das informações cadastradas incluindo estatísticas completas.
+                  </span>
+                  <span className="text-xs font-bold bg-black/20 hover:bg-black/30 text-emerald-50 px-2.5 py-1 rounded-lg border border-white/20 flex items-center gap-1">
+                    {collapsedSections['full100'] ? 'Expandir ▼' : 'Recolher ▲'}
+                  </span>
+                </div>
               </div>
 
-              <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                {full100Group.map(match => renderMatchCard(match))}
-              </div>
+              {!collapsedSections['full100'] && (
+                <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+                  {full100Group.map(match => renderMatchCard(match))}
+                </div>
+              )}
             </div>
           )}
 
           {/* Section 2: Jogos Pré-Jogo Completos (Aguardando Placar/Stats) */}
           {preMatchScheduled.length > 0 && (
             <div className="space-y-3">
-              <div className="bg-blue-50 border-l-4 border-blue-500 border-y border-r border-blue-200 rounded-xl p-3 flex items-center justify-between shadow-xs">
-                <div className="flex items-center gap-2 text-blue-950 font-bold text-sm">
-                  <FileCheck className="w-5 h-5 text-blue-600" />
+              <div
+                onClick={() => toggleSection('preMatch')}
+                className="bg-blue-50 hover:bg-blue-100/80 border-l-4 border-blue-500 border-y border-r border-blue-200 rounded-xl p-3 flex items-center justify-between shadow-xs cursor-pointer select-none transition-all group"
+                title={collapsedSections['preMatch'] ? 'Clique para expandir os jogos' : 'Clique para recolher os jogos'}
+              >
+                <div className="flex items-center gap-2.5 text-blue-950 font-bold text-sm">
+                  <span className="p-1 rounded-lg bg-blue-200/70 text-blue-800 group-hover:bg-blue-300 transition-all">
+                    {collapsedSections['preMatch'] ? (
+                      <ChevronRight className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                  </span>
+                  <FileCheck className="w-5 h-5 text-blue-600 shrink-0" />
                   <span>📋 Jogos Agendados - Pré-Jogo Completo (Aguardando Placar & Estatísticas)</span>
                   <span className="bg-blue-200/60 text-blue-900 font-mono text-xs px-2 py-0.5 rounded-full border border-blue-300">
                     {preMatchScheduled.length} partidas
                   </span>
                 </div>
-                <span className="text-xs text-blue-700 hidden sm:inline">
-                  Partidas com Data, Estádio, Rodada e Odds 1X2 FT preenchidos.
-                </span>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-blue-700 hidden sm:inline">
+                    Partidas com Data, Estádio, Rodada e Odds 1X2 FT preenchidos.
+                  </span>
+                  <span className="text-xs font-bold bg-blue-100 hover:bg-blue-200 text-blue-800 px-2.5 py-1 rounded-lg border border-blue-200 flex items-center gap-1">
+                    {collapsedSections['preMatch'] ? 'Expandir ▼' : 'Recolher ▲'}
+                  </span>
+                </div>
               </div>
 
-              <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                {preMatchScheduled.map(match => renderMatchCard(match))}
-              </div>
+              {!collapsedSections['preMatch'] && (
+                <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+                  {preMatchScheduled.map(match => renderMatchCard(match))}
+                </div>
+              )}
             </div>
           )}
 
           {/* Section 3: Jogos com Pendências / Incompletos */}
           {incompleteScheduled.length > 0 && (
             <div className="space-y-3">
-              <div className="bg-amber-50 border-l-4 border-amber-500 border-y border-r border-amber-200 rounded-xl p-3 flex items-center justify-between shadow-xs">
-                <div className="flex items-center gap-2 text-amber-950 font-bold text-sm">
-                  <FileWarning className="w-5 h-5 text-amber-600" />
+              <div
+                onClick={() => toggleSection('incomplete')}
+                className="bg-amber-50 hover:bg-amber-100/80 border-l-4 border-amber-500 border-y border-r border-amber-200 rounded-xl p-3 flex items-center justify-between shadow-xs cursor-pointer select-none transition-all group"
+                title={collapsedSections['incomplete'] ? 'Clique para expandir os jogos' : 'Clique para recolher os jogos'}
+              >
+                <div className="flex items-center gap-2.5 text-amber-950 font-bold text-sm">
+                  <span className="p-1 rounded-lg bg-amber-200/70 text-amber-900 group-hover:bg-amber-300 transition-all">
+                    {collapsedSections['incomplete'] ? (
+                      <ChevronRight className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                  </span>
+                  <FileWarning className="w-5 h-5 text-amber-600 shrink-0" />
                   <span>⚠️ Jogos com Pendências de Dados Pré-Jogo</span>
                   <span className="bg-amber-200/60 text-amber-900 font-mono text-xs px-2 py-0.5 rounded-full border border-amber-300">
                     {incompleteScheduled.length} partidas
                   </span>
                 </div>
-                <span className="text-xs text-amber-800 hidden sm:inline">
-                  Faltando estádio, rodada ou odds 1X2 FT.
-                </span>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-amber-800 hidden sm:inline">
+                    Faltando estádio, rodada ou odds 1X2 FT.
+                  </span>
+                  <span className="text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1 rounded-lg border border-amber-300 flex items-center gap-1">
+                    {collapsedSections['incomplete'] ? 'Expandir ▼' : 'Recolher ▲'}
+                  </span>
+                </div>
               </div>
 
-              <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                {incompleteScheduled.map(match => renderMatchCard(match))}
-              </div>
+              {!collapsedSections['incomplete'] && (
+                <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+                  {incompleteScheduled.map(match => renderMatchCard(match))}
+                </div>
+              )}
             </div>
           )}
 
@@ -817,20 +925,37 @@ export const MatchList: React.FC<MatchListProps> = ({
           {otherMatches.length > 0 && (
             <div className="space-y-3">
               {(full100Group.length > 0 || preMatchScheduled.length > 0 || incompleteScheduled.length > 0) && (
-                <div className="bg-slate-100 border-l-4 border-slate-600 border-y border-r border-slate-300 rounded-xl p-3 flex items-center justify-between shadow-xs">
-                  <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                    <CheckCircle2 className="w-5 h-5 text-slate-600" />
+                <div
+                  onClick={() => toggleSection('other')}
+                  className="bg-slate-100 hover:bg-slate-200/80 border-l-4 border-slate-600 border-y border-r border-slate-300 rounded-xl p-3 flex items-center justify-between shadow-xs cursor-pointer select-none transition-all group"
+                  title={collapsedSections['other'] ? 'Clique para expandir os jogos' : 'Clique para recolher os jogos'}
+                >
+                  <div className="flex items-center gap-2.5 text-slate-900 font-bold text-sm">
+                    <span className="p-1 rounded-lg bg-slate-200 text-slate-700 group-hover:bg-slate-300 transition-all">
+                      {collapsedSections['other'] ? (
+                        <ChevronRight className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </span>
+                    <CheckCircle2 className="w-5 h-5 text-slate-600 shrink-0" />
                     <span>🏁 Outras Partidas (Faltando Estatísticas ou Ao Vivo)</span>
                     <span className="bg-slate-200 text-slate-900 font-mono text-xs px-2 py-0.5 rounded-full border border-slate-300">
                       {otherMatches.length} partidas
                     </span>
                   </div>
+
+                  <span className="text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-800 px-2.5 py-1 rounded-lg border border-slate-300 flex items-center gap-1">
+                    {collapsedSections['other'] ? 'Expandir ▼' : 'Recolher ▲'}
+                  </span>
                 </div>
               )}
 
-              <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                {otherMatches.map(match => renderMatchCard(match))}
-              </div>
+              {!collapsedSections['other'] && (
+                <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+                  {otherMatches.map(match => renderMatchCard(match))}
+                </div>
+              )}
             </div>
           )}
         </div>
