@@ -298,6 +298,37 @@ export default function App() {
     await saveDatabaseState(newState);
   };
 
+  // Update Team League directly
+  const handleUpdateTeamLeague = async (teamId: string, leagueId: string) => {
+    const league = dbState.leagues.find(l => l.id === leagueId);
+    const updatedTeams = dbState.teams.map(t => {
+      if (t.id === teamId) {
+        if (!leagueId) {
+          return {
+            ...t,
+            leagueId: undefined,
+            leagueName: undefined,
+            leagueIds: [],
+          };
+        }
+        const ids = t.leagueIds ? [...t.leagueIds] : (t.leagueId ? [t.leagueId] : []);
+        if (!ids.includes(leagueId)) {
+          ids.push(leagueId);
+        }
+        return {
+          ...t,
+          leagueId: leagueId,
+          leagueName: league?.name,
+          leagueIds: ids,
+        };
+      }
+      return t;
+    });
+    const newState = { ...dbState, teams: updatedTeams };
+    setDbState(newState);
+    await saveDatabaseState(newState);
+  };
+
   // Bulk import handler for teams
   const handleBulkImportTeams = async (importData: {
     countryId: string;
@@ -650,6 +681,7 @@ export default function App() {
             onOpenBulkImportModal={() => setIsBulkTeamModalOpen(true)}
             onDeleteTeam={handleDeleteTeam}
             onUpdateTeamLogo={handleUpdateTeamLogo}
+            onUpdateTeamLeague={handleUpdateTeamLeague}
             onEditTeam={handleOpenEditTeam}
           />
         )}

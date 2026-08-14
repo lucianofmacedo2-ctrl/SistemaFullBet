@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet } from 'lucide-react';
+import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter } from 'lucide-react';
 import { DbState, Team } from '../types';
 
 interface TeamManagerProps {
@@ -8,6 +8,7 @@ interface TeamManagerProps {
   onOpenBulkImportModal?: () => void;
   onDeleteTeam: (id: string) => void;
   onUpdateTeamLogo?: (teamId: string, logoUrl: string) => void;
+  onUpdateTeamLeague?: (teamId: string, leagueId: string) => void;
   onEditTeam?: (team: Team) => void;
 }
 
@@ -17,17 +18,29 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
   onOpenBulkImportModal,
   onDeleteTeam,
   onUpdateTeamLogo,
+  onUpdateTeamLeague,
   onEditTeam,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCountryFilter, setSelectedCountryFilter] = useState('');
+  const [selectedLeagueFilter, setSelectedLeagueFilter] = useState('');
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editUrl, setEditUrl] = useState('');
+  const [savedSuccessTeamId, setSavedSuccessTeamId] = useState<string | null>(null);
 
-  const teams = dbState.teams.filter(t =>
-    t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.countryName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const teams = dbState.teams.filter(t => {
+    const matchesSearch =
+      t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.countryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (t.leagueName && t.leagueName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (t.stadium && t.stadium.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchesCountry = !selectedCountryFilter || t.countryId === selectedCountryFilter;
+    const matchesLeague = !selectedLeagueFilter || t.leagueId === selectedLeagueFilter || (t.leagueIds && t.leagueIds.includes(selectedLeagueFilter));
+
+    return matchesSearch && matchesCountry && matchesLeague;
+  });
 
   const handleStartEdit = (teamId: string, currentUrl?: string) => {
     setEditingTeamId(teamId);
@@ -41,31 +54,83 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
     setEditingTeamId(null);
   };
 
+  const handleLeagueChange = (teamId: string, newLeagueId: string) => {
+    if (newLeagueId === '__NEW_LEAGUE__') {
+      onOpenEntityModal('league');
+      return;
+    }
+    if (onUpdateTeamLeague) {
+      onUpdateTeamLeague(teamId, newLeagueId);
+      setSavedSuccessTeamId(teamId);
+      setTimeout(() => {
+        setSavedSuccessTeamId((current) => (current === teamId ? null : current));
+      }, 2000);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0e0e0e] border border-white/10 rounded-2xl p-4 shadow-xl">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-[#0e0e0e] border border-white/10 rounded-2xl p-4 shadow-xl">
         <div>
           <h3 className="text-base font-bold text-white flex items-center gap-2">
             <Shield className="w-5 h-5 text-emerald-400" />
             Times de Futebol Cadastrados
           </h3>
           <p className="text-xs text-gray-400">
-            Adicione o escudo/logo de cada time para exibição nos placares e confrontos.
+            Gerencie equipes, vincule ligas diretamente na tabela e adicione escudos.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Search input */}
           <div className="relative">
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
             <input
               type="text"
-              placeholder="Buscar time, país ou ID..."
+              placeholder="Buscar time, país, liga ou ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-[#1a1a1a] border border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+              className="bg-[#1a1a1a] border border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-48 sm:w-56"
             />
           </div>
+
+          {/* Filter by Country */}
+          {dbState.countries.length > 0 && (
+            <select
+              value={selectedCountryFilter}
+              onChange={(e) => {
+                setSelectedCountryFilter(e.target.value);
+                setSelectedLeagueFilter('');
+              }}
+              className="bg-[#1a1a1a] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-emerald-500"
+            >
+              <option value="">Todos os Países</option>
+              {dbState.countries.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Filter by League */}
+          {dbState.leagues.length > 0 && (
+            <select
+              value={selectedLeagueFilter}
+              onChange={(e) => setSelectedLeagueFilter(e.target.value)}
+              className="bg-[#1a1a1a] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-emerald-500"
+            >
+              <option value="">Todas as Ligas</option>
+              {dbState.leagues
+                .filter(l => !selectedCountryFilter || l.countryId === selectedCountryFilter)
+                .map(l => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+            </select>
+          )}
 
           {onOpenBulkImportModal && (
             <button
@@ -74,7 +139,7 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
               title="Importar lista de equipes em massa via arquivo Excel (.xlsx)"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-              <span>Importar Excel</span>
+              <span className="hidden sm:inline">Importar Excel</span>
             </button>
           )}
 
@@ -90,7 +155,7 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
       {/* Table */}
       {teams.length === 0 ? (
         <div className="bg-[#0e0e0e] border border-white/10 rounded-2xl p-8 text-center text-gray-400">
-          Nenhum time cadastrado ainda. Cadastre o primeiro time ou crie-o ao registrar uma partida!
+          Nenhum time encontrado para os filtros selecionados. Cadastre um novo time ou ajuste a busca!
         </div>
       ) : (
         <div className="bg-[#0e0e0e] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
@@ -102,6 +167,7 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                   <th className="py-3 px-4">ID Único</th>
                   <th className="py-3 px-4">Nome do Time</th>
                   <th className="py-3 px-4">País (ID)</th>
+                  <th className="py-3 px-4">Liga Vinculada (Vincular Direto)</th>
                   <th className="py-3 px-4">Estádio Principal</th>
                   <th className="py-3 px-4">Jogos (M/V)</th>
                   <th className="py-3 px-4 text-right">Ações</th>
@@ -113,9 +179,19 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                   const awayCount = dbState.matches.filter(m => m.awayTeamId === t.id).length;
                   const totalMatches = homeCount + awayCount;
                   const isEditing = editingTeamId === t.id;
+                  const isJustSaved = savedSuccessTeamId === t.id;
+
+                  // Find current linked league object
+                  const linkedLeague = t.leagueId
+                    ? dbState.leagues.find(l => l.id === t.leagueId)
+                    : undefined;
+
+                  const countryLeagues = dbState.leagues.filter(l => l.countryId === t.countryId);
+                  const otherLeagues = dbState.leagues.filter(l => l.countryId !== t.countryId);
 
                   return (
                     <tr key={t.id} className="hover:bg-white/[0.02] transition-colors">
+                      {/* Escudo */}
                       <td className="py-3 px-4">
                         {t.logoUrl ? (
                           <img
@@ -132,14 +208,20 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                           </div>
                         )}
                       </td>
+
+                      {/* ID */}
                       <td className="py-3 px-4">
                         <span className="font-mono font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-2 py-0.5 rounded">
                           {t.id}
                         </span>
                       </td>
+
+                      {/* Nome do Time */}
                       <td className="py-3 px-4 font-bold text-white text-sm">
                         {t.name}
                       </td>
+
+                      {/* País */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1.5 text-gray-200">
                           <Globe className="w-3 h-3 text-gray-400" />
@@ -149,6 +231,99 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                           </span>
                         </div>
                       </td>
+
+                      {/* LIGA VINCULADA COM VINCULAÇÃO DIRETA */}
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1.5 min-w-[200px]">
+                          {linkedLeague?.logoUrl ? (
+                            <img
+                              src={linkedLeague.logoUrl}
+                              alt={linkedLeague.name}
+                              className="w-4 h-4 object-contain shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <Trophy
+                              className={`w-3.5 h-3.5 shrink-0 ${
+                                t.leagueId ? 'text-amber-400' : 'text-gray-500'
+                              }`}
+                            />
+                          )}
+
+                          <div className="relative flex-1">
+                            <select
+                              value={t.leagueId || ''}
+                              onChange={(e) => handleLeagueChange(t.id, e.target.value)}
+                              className={`w-full text-xs rounded-lg px-2.5 py-1.5 appearance-none focus:outline-none transition-all cursor-pointer font-medium pr-7 ${
+                                isJustSaved
+                                  ? 'bg-emerald-950 border border-emerald-400 text-emerald-300 ring-1 ring-emerald-400 shadow-md shadow-emerald-500/20'
+                                  : t.leagueId
+                                  ? 'bg-[#151515] hover:bg-[#1f1f1f] border border-amber-500/30 hover:border-amber-400 text-amber-200 shadow-xs'
+                                  : 'bg-[#141414] hover:bg-[#1c1c1c] border border-dashed border-gray-600 hover:border-emerald-500 text-gray-400 hover:text-emerald-300'
+                              }`}
+                              title="Clique para vincular ou trocar a liga diretamente"
+                            >
+                              <option value="" className="bg-[#121212] text-gray-400">
+                                -- Sem Liga Vinculada --
+                              </option>
+
+                              {countryLeagues.length > 0 && (
+                                <optgroup
+                                  label={`Ligas de ${t.countryName}`}
+                                  className="bg-[#121212] text-emerald-400 font-bold"
+                                >
+                                  {countryLeagues.map(l => (
+                                    <option
+                                      key={l.id}
+                                      value={l.id}
+                                      className="bg-[#1a1a1a] text-white font-normal"
+                                    >
+                                      🏆 {l.name} [{l.id}]
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              )}
+
+                              {otherLeagues.length > 0 && (
+                                <optgroup
+                                  label="Outras Ligas Cadastradas"
+                                  className="bg-[#121212] text-gray-400 font-bold"
+                                >
+                                  {otherLeagues.map(l => (
+                                    <option
+                                      key={l.id}
+                                      value={l.id}
+                                      className="bg-[#1a1a1a] text-gray-300 font-normal"
+                                    >
+                                      🏆 {l.name} ({l.countryName}) [{l.id}]
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              )}
+
+                              <option
+                                value="__NEW_LEAGUE__"
+                                className="bg-[#162a1a] text-emerald-300 font-bold"
+                              >
+                                + Cadastrar Nova Liga...
+                              </option>
+                            </select>
+
+                            {/* Dropdown Indicator or Saved Checkmark */}
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                              {isJustSaved ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-400 animate-pulse stroke-[3]" />
+                              ) : (
+                                <span className="text-[9px] text-gray-400 opacity-60">▼</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Estádio */}
                       <td className="py-3 px-4 text-gray-400">
                         {t.stadium ? (
                           <span className="flex items-center gap-1">
@@ -159,11 +334,15 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                           '-'
                         )}
                       </td>
+
+                      {/* Jogos */}
                       <td className="py-3 px-4">
                         <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-gray-300 text-[11px] font-bold">
                           {totalMatches} jogos ({homeCount}M / {awayCount}V)
                         </span>
                       </td>
+
+                      {/* Ações */}
                       <td className="py-3 px-4 text-right">
                         {isEditing ? (
                           <div className="flex items-center justify-end gap-1.5">
@@ -253,3 +432,4 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
     </div>
   );
 };
+
