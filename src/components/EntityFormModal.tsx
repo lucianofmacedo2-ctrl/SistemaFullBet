@@ -25,6 +25,7 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
 
   const [name, setName] = useState<string>('');
   const [countryId, setCountryId] = useState<string>('');
+  const [leagueId, setLeagueId] = useState<string>('');
   const [extraInfo, setExtraInfo] = useState<string>('');
   const [imageUrl, setImageUrl] = useState<string>('');
   const [imageStatus, setImageStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -40,6 +41,18 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
       setImageDims(null);
     }
   }, [imageUrl]);
+
+  // Reset league when country changes
+  useEffect(() => {
+    if (countryId) {
+      const countryLeagues = dbState.leagues.filter(l => l.countryId === countryId);
+      if (countryLeagues.length > 0 && !countryLeagues.some(l => l.id === leagueId)) {
+        setLeagueId(countryLeagues[0].id);
+      }
+    } else {
+      setLeagueId('');
+    }
+  }, [countryId, dbState.leagues]);
 
   if (!isOpen) return null;
 
@@ -119,13 +132,17 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
         return;
       }
 
+      const selectedLeague = dbState.leagues.find(l => l.id === leagueId);
+
       const res = findOrCreateTeam(
         trimmedName,
         selectedCountry.id,
         selectedCountry.name,
         dbState.teams,
         extraInfo,
-        trimmedImageUrl
+        trimmedImageUrl,
+        selectedLeague?.id,
+        selectedLeague?.name
       );
 
       if (!res.isNew) {
@@ -269,6 +286,35 @@ export const EntityFormModal: React.FC<EntityFormModalProps> = ({
                       [{c.id}] {c.name}
                     </option>
                   ))}
+                </select>
+              )}
+            </div>
+          )}
+
+          {/* League selector if Team */}
+          {entityType === 'team' && countryId && (
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Liga / Divisão Principal (Opcional)
+              </label>
+              {dbState.leagues.filter(l => l.countryId === countryId).length === 0 ? (
+                <div className="p-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-500 text-xs">
+                  Nenhuma liga cadastrada para este país ainda. O time poderá ser associado a uma liga ao cadastrar os jogos.
+                </div>
+              ) : (
+                <select
+                  value={leagueId}
+                  onChange={(e) => setLeagueId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
+                >
+                  <option value="">-- Sem liga vinculada inicialmente --</option>
+                  {dbState.leagues
+                    .filter(l => l.countryId === countryId)
+                    .map(l => (
+                      <option key={l.id} value={l.id}>
+                        [{l.id}] {l.name}
+                      </option>
+                    ))}
                 </select>
               )}
             </div>

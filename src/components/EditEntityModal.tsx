@@ -10,7 +10,7 @@ interface EditEntityModalProps {
   dbState: DbState;
   onSaveCountry: (countryId: string, updated: { name: string; code?: string; flagUrl?: string }) => void;
   onSaveLeague: (leagueId: string, updated: { name: string; countryId: string; countryName: string; type?: string; logoUrl?: string }) => void;
-  onSaveTeam: (teamId: string, updated: { name: string; countryId: string; countryName: string; stadium?: string; logoUrl?: string }) => void;
+  onSaveTeam: (teamId: string, updated: { name: string; countryId: string; countryName: string; leagueId?: string; leagueName?: string; stadium?: string; logoUrl?: string }) => void;
 }
 
 export const EditEntityModal: React.FC<EditEntityModalProps> = ({
@@ -25,6 +25,7 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [countryId, setCountryId] = useState('');
+  const [leagueId, setLeagueId] = useState('');
   const [extraInfo, setExtraInfo] = useState('');
   const [imageUrl, setImageUrl] = useState('');
 
@@ -43,14 +44,17 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({
         setExtraInfo(country.code || '');
         setImageUrl(country.flagUrl || '');
         setCountryId('');
+        setLeagueId('');
       } else if (entityType === 'league') {
         const league = entityData as League;
         setCountryId(league.countryId || '');
+        setLeagueId('');
         setExtraInfo(league.type || 'Pontos Corridos');
         setImageUrl(league.logoUrl || '');
       } else if (entityType === 'team') {
         const team = entityData as Team;
         setCountryId(team.countryId || '');
+        setLeagueId(team.leagueId || '');
         setExtraInfo(team.stadium || '');
         setImageUrl(team.logoUrl || '');
       }
@@ -107,10 +111,13 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({
         return;
       }
       const selectedCountry = dbState.countries.find(c => c.id === countryId);
+      const selectedLeague = dbState.leagues.find(l => l.id === leagueId);
       onSaveTeam(entityData.id, {
         name: trimmedName,
         countryId,
         countryName: selectedCountry?.name || '',
+        leagueId: selectedLeague ? selectedLeague.id : undefined,
+        leagueName: selectedLeague ? selectedLeague.name : undefined,
         stadium: extraInfo.trim() || undefined,
         logoUrl: trimmedImageUrl,
       });
@@ -217,6 +224,29 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({
                     {c.name} ({c.id})
                   </option>
                 ))}
+              </select>
+            </div>
+          )}
+
+          {/* League Selection for Teams */}
+          {entityType === 'team' && countryId && (
+            <div>
+              <label className="block text-xs font-medium text-gray-300 mb-1">
+                Liga / Divisão Principal (Opcional)
+              </label>
+              <select
+                value={leagueId}
+                onChange={(e) => setLeagueId(e.target.value)}
+                className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+              >
+                <option value="">-- Sem liga vinculada --</option>
+                {dbState.leagues
+                  .filter(l => l.countryId === countryId)
+                  .map(l => (
+                    <option key={l.id} value={l.id}>
+                      [{l.id}] {l.name}
+                    </option>
+                  ))}
               </select>
             </div>
           )}

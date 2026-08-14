@@ -223,20 +223,28 @@ export default function App() {
 
   const handleSaveEditTeam = async (
     teamId: string,
-    updated: { name: string; countryId: string; countryName: string; stadium?: string; logoUrl?: string }
+    updated: { name: string; countryId: string; countryName: string; leagueId?: string; leagueName?: string; stadium?: string; logoUrl?: string }
   ) => {
-    const updatedTeams = dbState.teams.map(t =>
-      t.id === teamId
-        ? {
-            ...t,
-            name: updated.name,
-            countryId: updated.countryId,
-            countryName: updated.countryName,
-            stadium: updated.stadium,
-            logoUrl: updated.logoUrl,
-          }
-        : t
-    );
+    const updatedTeams = dbState.teams.map(t => {
+      if (t.id === teamId) {
+        const ids = t.leagueIds ? [...t.leagueIds] : (t.leagueId ? [t.leagueId] : []);
+        if (updated.leagueId && !ids.includes(updated.leagueId)) {
+          ids.push(updated.leagueId);
+        }
+        return {
+          ...t,
+          name: updated.name,
+          countryId: updated.countryId,
+          countryName: updated.countryName,
+          leagueId: updated.leagueId,
+          leagueName: updated.leagueName,
+          leagueIds: ids,
+          stadium: updated.stadium,
+          logoUrl: updated.logoUrl,
+        };
+      }
+      return t;
+    });
     const updatedMatches = dbState.matches.map(m => {
       let match = { ...m };
       if (m.homeTeamId === teamId) {
@@ -310,7 +318,9 @@ export default function App() {
         importData.countryName,
         currentTeams,
         teamItem.stadium,
-        teamItem.logoUrl
+        teamItem.logoUrl,
+        importData.leagueId,
+        importData.leagueName
       );
 
       if (res.isNew) {
@@ -322,11 +332,18 @@ export default function App() {
           name: res.team.name,
         });
       } else {
-        // If team already exists, update stadium and logoUrl if provided
+        // If team already exists, update stadium, logoUrl and add league if provided
         currentTeams = currentTeams.map(t => {
           if (t.id === res.team.id) {
+            const ids = t.leagueIds ? [...t.leagueIds] : (t.leagueId ? [t.leagueId] : []);
+            if (!ids.includes(importData.leagueId)) {
+              ids.push(importData.leagueId);
+            }
             return {
               ...t,
+              leagueId: t.leagueId || importData.leagueId,
+              leagueName: t.leagueName || importData.leagueName,
+              leagueIds: ids,
               stadium: teamItem.stadium || t.stadium,
               logoUrl: teamItem.logoUrl || t.logoUrl,
             };
@@ -388,7 +405,10 @@ export default function App() {
         countryRes.country.id,
         countryRes.country.name,
         currentTeams,
-        row.stadium
+        row.stadium,
+        undefined,
+        leagueRes.league.id,
+        leagueRes.league.name
       );
       currentTeams = homeTeamRes.updatedTeams;
       if (homeTeamRes.isNew) {
@@ -404,7 +424,11 @@ export default function App() {
         row.awayTeamName,
         countryRes.country.id,
         countryRes.country.name,
-        currentTeams
+        currentTeams,
+        undefined,
+        undefined,
+        leagueRes.league.id,
+        leagueRes.league.name
       );
       currentTeams = awayTeamRes.updatedTeams;
       if (awayTeamRes.isNew) {

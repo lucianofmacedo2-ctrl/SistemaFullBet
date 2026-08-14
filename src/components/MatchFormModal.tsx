@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Plus, Calendar, Trophy, Globe, Shield, MapPin, Hash, Check, TrendingUp, DollarSign, Clock, Zap } from 'lucide-react';
-import { DbState, Match, MatchStatus, MatchOdds, NewEntityCreatedNotification } from '../types';
+import { DbState, Match, MatchStatus, MatchOdds, NewEntityCreatedNotification, Team } from '../types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from '../utils/idGenerator';
 
 interface MatchFormModalProps {
@@ -76,6 +76,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
   const [isContinental, setIsContinental] = useState<boolean>(false);
   const [homeCountryFilterId, setHomeCountryFilterId] = useState<string>('');
   const [awayCountryFilterId, setAwayCountryFilterId] = useState<string>('');
+  const [showAllCountryTeams, setShowAllCountryTeams] = useState<boolean>(false);
 
   const [errorMsg, setErrorMsg] = useState<string>('');
 
@@ -92,6 +93,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
       setHomeCountryFilterId(hTeam ? hTeam.countryId : '');
       const aTeam = dbState.teams.find(t => t.id === editingMatch.awayTeamId);
       setAwayCountryFilterId(aTeam ? aTeam.countryId : '');
+      setShowAllCountryTeams(false);
 
       setMatchDate(editingMatch.matchDate.substring(0, 16));
       setHomeScore(editingMatch.homeScore !== null ? String(editingMatch.homeScore) : '');
@@ -142,6 +144,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
       setIsContinental(false);
       setHomeCountryFilterId('');
       setAwayCountryFilterId('');
+      setShowAllCountryTeams(false);
       setHomeScore('');
       setAwayScore('');
       setStatus('FINALIZADO');
@@ -199,6 +202,19 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
     ? dbState.leagues.filter(l => l.countryId === selectedCountryId)
     : dbState.leagues;
 
+  const selectedLeagueObj = dbState.leagues.find(l => l.id === selectedLeagueId);
+  const selectedCountryObj = countries.find(c => c.id === selectedCountryId);
+
+  // Helper to test if a team belongs to a league
+  const isTeamInSelectedLeague = (team: Team, leagueId: string) => {
+    if (!leagueId || leagueId === 'NEW') return true;
+    if (team.leagueId === leagueId) return true;
+    if (team.leagueIds && team.leagueIds.includes(leagueId)) return true;
+    return dbState.matches.some(
+      m => m.leagueId === leagueId && (m.homeTeamId === team.id || m.awayTeamId === team.id)
+    );
+  };
+
   // Function to filter teams per side (Home or Away)
   const getFilteredTeamsForSide = (countryFilterId: string) => {
     if (isContinental) {
@@ -208,27 +224,17 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
       return dbState.teams;
     }
 
-    return dbState.teams.filter(t => {
-      if (selectedCountryId && selectedCountryId !== 'NEW') {
-        if (t.countryId !== selectedCountryId) {
-          const playedInCountry = dbState.matches.some(
-            m => m.countryId === selectedCountryId && (m.homeTeamId === t.id || m.awayTeamId === t.id)
-          );
-          if (!playedInCountry) return false;
-        }
-      }
-      if (selectedLeagueId && selectedLeagueId !== 'NEW') {
-        const league = dbState.leagues.find(l => l.id === selectedLeagueId);
-        if (league) {
-          const sameCountry = t.countryId === league.countryId;
-          const playedInLeague = dbState.matches.some(
-            m => m.leagueId === selectedLeagueId && (m.homeTeamId === t.id || m.awayTeamId === t.id)
-          );
-          if (!sameCountry && !playedInLeague) return false;
-        }
-      }
-      return true;
-    });
+    // If specific league is selected and toggle is not active
+    if (selectedLeagueId && selectedLeagueId !== 'NEW' && !showAllCountryTeams) {
+      return dbState.teams.filter(t => isTeamInSelectedLeague(t, selectedLeagueId));
+    }
+
+    // If country is selected (or showAllCountryTeams is true)
+    if (selectedCountryId && selectedCountryId !== 'NEW') {
+      return dbState.teams.filter(t => t.countryId === selectedCountryId);
+    }
+
+    return dbState.teams;
   };
 
   const filteredHomeTeams = getFilteredTeamsForSide(homeCountryFilterId);
@@ -343,7 +349,10 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
       homeCountryIdToUse,
       homeCountryNameToUse,
       currentTeams,
-      stadium
+      stadium,
+      undefined,
+      leagueRes.league.id,
+      leagueRes.league.name
     );
     currentTeams = homeTeamRes.updatedTeams;
     if (homeTeamRes.isNew) {
@@ -369,7 +378,11 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
       finalAwayTeamName,
       awayCountryIdToUse,
       awayCountryNameToUse,
-      currentTeams
+      currentTeams,
+      undefined,
+      undefined,
+      leagueRes.league.id,
+      leagueRes.league.name
     );
     currentTeams = awayTeamRes.updatedTeams;
     if (awayTeamRes.isNew) {
@@ -573,7 +586,22 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                 </label>
                 <select
                   value={selectedCountryId}
-                  onChange={(e) => setSelectedCountryId(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedCountryId(val);
+                    if (val !== 'NEW') {
+                      const cLeagues = dbState.leagues.filter(l => l.countryId === val);
+                      if (cLeagues.length > 0) {
+                        setSelectedLeagueId(cLeagues[0].id);
+                      } else {
+                        setSelectedLeagueId('NEW');
+                      }
+                    } else {
+                      setSelectedLeagueId('NEW');
+                    }
+                    setSelectedHomeTeamId('NEW');
+                    setSelectedAwayTeamId('NEW');
+                  }}
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-blue-500 shadow-xs"
                 >
                   <option value="NEW">+ Cadastrar Novo País</option>
@@ -603,12 +631,30 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
 
               {/* League Field */}
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                  Liga / Campeonato
+                <label className="block text-xs font-medium text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>Liga / Campeonato</span>
+                  {selectedCountryId !== 'NEW' && (
+                    <span className="text-[10px] text-blue-600 font-normal">
+                      {filteredLeagues.length} liga(s) neste país
+                    </span>
+                  )}
                 </label>
                 <select
                   value={selectedLeagueId}
-                  onChange={(e) => setSelectedLeagueId(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedLeagueId(val);
+                    if (val !== 'NEW') {
+                      const hTeam = dbState.teams.find(t => t.id === selectedHomeTeamId);
+                      if (hTeam && !isTeamInSelectedLeague(hTeam, val)) {
+                        setSelectedHomeTeamId('NEW');
+                      }
+                      const aTeam = dbState.teams.find(t => t.id === selectedAwayTeamId);
+                      if (aTeam && !isTeamInSelectedLeague(aTeam, val)) {
+                        setSelectedAwayTeamId('NEW');
+                      }
+                    }
+                  }}
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:border-blue-500 shadow-xs"
                 >
                   <option value="NEW">+ Cadastrar Nova Liga</option>
@@ -623,7 +669,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                   <div className="mt-2">
                     <input
                       type="text"
-                      placeholder="Ex: Champions League, Libertadores, Mundial de Clubes..."
+                      placeholder="Ex: Champions League, Libertadores, Brasileirão Série A..."
                       value={newLeagueName}
                       onChange={(e) => setNewLeagueName(e.target.value)}
                       className="w-full bg-white border border-slate-300 focus:border-blue-500 rounded-lg px-3 py-1.5 text-sm text-slate-900 placeholder-slate-400 shadow-xs"
@@ -640,24 +686,67 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
 
           {/* Section 2: Teams (Mandante x Visitante) */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-wider">
                 <Shield className="w-3.5 h-3.5" />
                 <span>2. Times Confrontantes</span>
               </div>
-              {isContinental && (
-                <span className="text-[10px] bg-blue-100 text-blue-800 border border-blue-300 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                  <Globe className="w-3 h-3 text-blue-600" /> Seleção por País Ativa
-                </span>
-              )}
+              
+              <div className="flex items-center gap-2">
+                {selectedLeagueId && selectedLeagueId !== 'NEW' && !isContinental && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllCountryTeams(!showAllCountryTeams)}
+                    className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium transition-all ${
+                      showAllCountryTeams
+                        ? 'bg-amber-100 text-amber-800 border-amber-300'
+                        : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                    }`}
+                  >
+                    {showAllCountryTeams
+                      ? '🔄 Mostrando todos do País (Clique p/ filtrar só a Liga)'
+                      : `🔍 Filtrando só times de "${selectedLeagueObj?.name || 'Liga'}"`}
+                  </button>
+                )}
+
+                {isContinental && (
+                  <span className="text-[10px] bg-blue-100 text-blue-800 border border-blue-300 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                    <Globe className="w-3 h-3 text-blue-600" /> Seleção por País Ativa
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* Info notice about active league filter */}
+            {selectedLeagueId && selectedLeagueId !== 'NEW' && !isContinental && (
+              <div className="px-3 py-2 bg-blue-50/70 border border-blue-200/80 rounded-lg text-xs text-blue-900 flex items-center justify-between">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <Trophy className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  {showAllCountryTeams ? (
+                    <span>Exibindo todos os <strong>{filteredHomeTeams.length}</strong> times de {selectedCountryObj?.name || 'país'}</span>
+                  ) : (
+                    <span>Exibindo apenas os <strong>{filteredHomeTeams.length}</strong> times da liga: <strong>{selectedLeagueObj?.name}</strong></span>
+                  )}
+                </span>
+                {filteredHomeTeams.length === 0 && !showAllCountryTeams && (
+                  <span className="text-[11px] text-amber-700 font-semibold">
+                    (0 times encontrados - cadastre abaixo ou mostre todos do país)
+                  </span>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Home Team */}
               <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-3 shadow-xs">
-                <label className="block text-xs font-bold text-blue-700">
-                  🏠 Time Mandante (Casa)
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-blue-700">
+                    🏠 Time Mandante (Casa)
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {filteredHomeTeams.length} opções
+                  </span>
+                </div>
 
                 {/* Country Filter for Home Team if Continental */}
                 {isContinental && (
@@ -693,7 +782,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                     <option value="NEW">+ Cadastrar Novo Time</option>
                     {filteredHomeTeams.map(t => (
                       <option key={t.id} value={t.id}>
-                        [{t.id}] {t.name} ({t.countryName})
+                        [{t.id}] {t.name} {t.leagueName ? `(${t.leagueName})` : `(${t.countryName})`}
                       </option>
                     ))}
                   </select>
@@ -718,9 +807,14 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
 
               {/* Away Team */}
               <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-3 shadow-xs">
-                <label className="block text-xs font-bold text-blue-700">
-                  ✈️ Time Visitante (Fora)
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-blue-700">
+                    ✈️ Time Visitante (Fora)
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {filteredAwayTeams.length} opções
+                  </span>
+                </div>
 
                 {/* Country Filter for Away Team if Continental */}
                 {isContinental && (
@@ -756,7 +850,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
                     <option value="NEW">+ Cadastrar Novo Time</option>
                     {filteredAwayTeams.map(t => (
                       <option key={t.id} value={t.id}>
-                        [{t.id}] {t.name} ({t.countryName})
+                        [{t.id}] {t.name} {t.leagueName ? `(${t.leagueName})` : `(${t.countryName})`}
                       </option>
                     ))}
                   </select>

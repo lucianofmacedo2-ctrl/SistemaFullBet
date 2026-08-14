@@ -90,6 +90,9 @@ export interface Team {
   name: string;
   countryId: string;
   countryName: string;
+  leagueId?: string; // e.g. "LIGA-001"
+  leagueName?: string;
+  leagueIds?: string[]; // Multiple leagues (e.g. domestic league + cup + continental)
   stadium?: string;
   logoUrl?: string;
   createdAt: string;

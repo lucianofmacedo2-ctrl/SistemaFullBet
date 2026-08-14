@@ -100,7 +100,9 @@ export function findOrCreateTeam(
   countryName: string,
   teams: Team[],
   stadium?: string,
-  logoUrl?: string
+  logoUrl?: string,
+  leagueId?: string,
+  leagueName?: string
 ): { team: Team; isNew: boolean; updatedTeams: Team[] } {
   const trimmedName = teamName.trim();
   const existing = teams.find(
@@ -108,8 +110,32 @@ export function findOrCreateTeam(
   );
 
   if (existing) {
-    if (logoUrl && !existing.logoUrl) {
-      existing.logoUrl = logoUrl;
+    let updated = false;
+    const cloned: Team = { ...existing };
+    if (logoUrl && !cloned.logoUrl) {
+      cloned.logoUrl = logoUrl;
+      updated = true;
+    }
+    if (stadium && !cloned.stadium) {
+      cloned.stadium = stadium;
+      updated = true;
+    }
+    if (leagueId) {
+      if (!cloned.leagueId) {
+        cloned.leagueId = leagueId;
+        cloned.leagueName = leagueName;
+        updated = true;
+      }
+      const ids = cloned.leagueIds ? [...cloned.leagueIds] : (cloned.leagueId ? [cloned.leagueId] : []);
+      if (!ids.includes(leagueId)) {
+        ids.push(leagueId);
+        cloned.leagueIds = ids;
+        updated = true;
+      }
+    }
+    if (updated) {
+      const updatedTeams = teams.map(t => t.id === cloned.id ? cloned : t);
+      return { team: cloned, isNew: false, updatedTeams };
     }
     return { team: existing, isNew: false, updatedTeams: teams };
   }
@@ -120,6 +146,9 @@ export function findOrCreateTeam(
     name: trimmedName,
     countryId,
     countryName,
+    leagueId: leagueId || undefined,
+    leagueName: leagueName || undefined,
+    leagueIds: leagueId ? [leagueId] : [],
     stadium: stadium || '',
     logoUrl: logoUrl || undefined,
     createdAt: new Date().toISOString(),
