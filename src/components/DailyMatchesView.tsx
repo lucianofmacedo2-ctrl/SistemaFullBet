@@ -810,6 +810,19 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                             Pendente
                           </span>
                         )
+                      ) : !fullComp.hasStats ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+                          <FileWarning className="w-3 h-3 text-amber-600" />
+                          Falta Stats
+                        </span>
+                      ) : !fullComp.hasPressureData ? (
+                        <span
+                          className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1"
+                          title="Falta fazer o upload da imagem do gráfico de pressão para obter o selo 100%"
+                        >
+                          <FileWarning className="w-3 h-3 text-amber-600" />
+                          Falta Imagem
+                        </span>
                       ) : null}
 
                       <div>{getStatusBadge(match.status)}</div>

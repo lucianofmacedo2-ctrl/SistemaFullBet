@@ -33,7 +33,8 @@ import {
   FileCheck,
   FileWarning,
   LayoutList,
-  LayoutGrid
+  LayoutGrid,
+  Upload
 } from 'lucide-react';
 import { DbState, Match, MatchStatus } from '../types';
 import { PressureChartViewer } from './PressureChartViewer';
@@ -59,6 +60,7 @@ export interface MatchFullCompleteness {
   isPreMatchComplete: boolean;
   hasScore: boolean;
   hasStats: boolean;
+  hasPressureData: boolean;
   missingFields: string[];
   missingPreMatchFields: string[];
   filledStatsSummary: string[];
@@ -143,13 +145,23 @@ export function checkMatchFullCompleteness(match: Match): MatchFullCompleteness 
     missingAll.push('Estatísticas da Partida');
   }
 
-  const is100PercentComplete = isPreMatchComplete && hasScore && hasStats;
+  // 7. Imagem / Gráfico de Pressão (Requisito obrigatório para o selo 100% PREENCHIDO)
+  const hasPressureData = Boolean(
+    match.pressureData &&
+    ((match.pressureData.timeline && match.pressureData.timeline.length > 0) || match.pressureData.sourceImageUrl)
+  );
+  if (!hasPressureData) {
+    missingAll.push('Upload da Imagem do Gráfico de Pressão');
+  }
+
+  const is100PercentComplete = isPreMatchComplete && hasScore && hasStats && hasPressureData;
 
   return {
     is100PercentComplete,
     isPreMatchComplete,
     hasScore,
     hasStats,
+    hasPressureData,
     missingFields: missingAll,
     missingPreMatchFields: missingPreMatch,
     filledStatsSummary,
@@ -1101,6 +1113,11 @@ export const MatchList: React.FC<MatchListProps> = ({
                 <FileWarning className="w-3 h-3 text-amber-600" />
                 Falta Stats
               </span>
+            ) : !fullComp.hasPressureData ? (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1" title="Faça o upload do print do gráfico de pressão para liberar o selo 100%">
+                <FileWarning className="w-3 h-3 text-amber-600" />
+                Falta Imagem
+              </span>
             ) : null}
 
             <div>{getStatusBadge(match.status)}</div>
@@ -1112,7 +1129,7 @@ export const MatchList: React.FC<MatchListProps> = ({
           <div className="bg-linear-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white border border-emerald-500 rounded-xl p-2.5 sm:p-3 flex items-center justify-between gap-2 shadow-sm">
             <div className="flex items-center gap-2 text-xs font-bold">
               <Trophy className="w-4 h-4 text-amber-300 shrink-0" />
-              <span>🌟 100% Preenchido • Dados, Odds, Placar & Estatísticas</span>
+              <span>🌟 100% Preenchido • Dados, Odds, Placar, Stats & Gráfico de Pressão</span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               {onOpenQuickScore && (
@@ -1152,7 +1169,7 @@ export const MatchList: React.FC<MatchListProps> = ({
               )}
               <span className="text-slate-800 font-medium">
                 {fullComp.isPreMatchComplete
-                  ? 'Jogo Agendado • Dados Pré-Jogo Completos (Aguardando Placar & Stats)'
+                  ? 'Jogo Agendado • Dados Pré-Jogo Completos (Aguardando Placar, Stats & Imagem)'
                   : `Jogo Agendado • Faltando: ${fullComp.missingPreMatchFields.join(', ')}`}
               </span>
             </div>
@@ -1190,6 +1207,21 @@ export const MatchList: React.FC<MatchListProps> = ({
             >
               <BarChart2 className="w-3 h-3" />
               <span>Preencher Stats</span>
+            </button>
+          </div>
+        ) : !fullComp.hasPressureData ? (
+          <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-medium text-amber-900">
+              <FileWarning className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Estatísticas preenchidas, mas <b>falta subir a imagem do gráfico de pressão</b> para liberar o selo 100%.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => onOpenStatsModal(match)}
+              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-all shadow-xs cursor-pointer flex items-center gap-1 shrink-0"
+            >
+              <Upload className="w-3 h-3" />
+              <span>Subir Imagem</span>
             </button>
           </div>
         ) : null}

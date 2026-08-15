@@ -798,6 +798,7 @@ export default function App() {
         match={statsMatch}
         onSaveStats={handleSaveStats}
         onOpenPressureChartModal={handleOpenPressureChartModal}
+        onSavePressureData={handleSavePressureData}
       />
 
       <PressureChartImportModal
