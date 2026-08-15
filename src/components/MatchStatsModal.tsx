@@ -188,49 +188,56 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
       const parsed = parsePressureCsvText(pressureCsvText, match.homeTeamName, match.awayTeamName);
       setParsedPressureData(parsed);
 
-      let msg = `✅ ${parsed.intervals.length} intervalos processados com sucesso! Domínio: ${match.homeTeamName} (${parsed.homeDominancePct}%) x ${match.awayTeamName} (${parsed.awayDominancePct}%).`;
+      const itemsUpdated: string[] = [];
 
+      // 1. Escanteios (Corners)
       if (parsed.cornersSummary && parsed.cornersSummary.total > 0) {
-        msg += ` 🚩 Escanteios: ${parsed.cornersSummary.homeFT}x${parsed.cornersSummary.awayFT}.`;
-        if (!cornersHomeFT && !cornersAwayFT) {
-          setCornersHomeFT(String(parsed.cornersSummary.homeFT));
-          setCornersAwayFT(String(parsed.cornersSummary.awayFT));
-          setCornersHomeHT(String(parsed.cornersSummary.homeHT));
-          setCornersAwayHT(String(parsed.cornersSummary.awayHT));
-        }
+        setCornersHomeFT(String(parsed.cornersSummary.homeFT));
+        setCornersAwayFT(String(parsed.cornersSummary.awayFT));
+        setCornersHomeHT(String(parsed.cornersSummary.homeHT));
+        setCornersAwayHT(String(parsed.cornersSummary.awayHT));
+        itemsUpdated.push(`🚩 Escanteios: ${parsed.cornersSummary.homeFT}x${parsed.cornersSummary.awayFT} (HT: ${parsed.cornersSummary.homeHT}x${parsed.cornersSummary.awayHT})`);
       }
 
+      // 2. Cartões (Cards)
       if (parsed.cardsSummary && parsed.cardsSummary.total > 0) {
-        msg += ` 🟨 Cartões: ${parsed.cardsSummary.yellowHomeFT + parsed.cardsSummary.redHomeFT}x${parsed.cardsSummary.yellowAwayFT + parsed.cardsSummary.redAwayFT}.`;
-        if (!yellowHomeFT && !yellowAwayFT) {
-          setYellowHomeFT(String(parsed.cardsSummary.yellowHomeFT));
-          setYellowAwayFT(String(parsed.cardsSummary.yellowAwayFT));
-          setYellowHomeHT(String(parsed.cardsSummary.yellowHomeHT));
-          setYellowAwayHT(String(parsed.cardsSummary.yellowAwayHT));
+        setYellowHomeFT(String(parsed.cardsSummary.yellowHomeFT));
+        setYellowAwayFT(String(parsed.cardsSummary.yellowAwayFT));
+        setYellowHomeHT(String(parsed.cardsSummary.yellowHomeHT));
+        setYellowAwayHT(String(parsed.cardsSummary.yellowAwayHT));
+        setRedHomeFT(String(parsed.cardsSummary.redHomeFT));
+        setRedAwayFT(String(parsed.cardsSummary.redAwayFT));
+        itemsUpdated.push(`🟨🟥 Cartões: ${parsed.cardsSummary.yellowHomeFT + parsed.cardsSummary.redHomeFT}x${parsed.cardsSummary.yellowAwayFT + parsed.cardsSummary.redAwayFT}`);
+      }
+
+      // 3. Gols, Placar e Minutos dos Primeiros Gols
+      if (parsed.goalsSummary) {
+        const gs = parsed.goalsSummary;
+        setHomeScore(String(gs.homeFT));
+        setAwayScore(String(gs.awayFT));
+        setHtHome(String(gs.homeHT));
+        setHtAway(String(gs.awayHT));
+
+        setGoalMinutesHome(gs.goalMinutesHome.join(', '));
+        setGoalMinutesAway(gs.goalMinutesAway.join(', '));
+
+        setFirstGoalMinHome(gs.firstGoalMinHome !== null ? String(gs.firstGoalMinHome) : '');
+        setFirstGoalMinAway(gs.firstGoalMinAway !== null ? String(gs.firstGoalMinAway) : '');
+        setFirstGoalMinMatch(gs.firstGoalMinMatch !== null ? String(gs.firstGoalMinMatch) : '');
+
+        if (status === 'AGENDADO') {
+          setStatus('FINALIZADO');
         }
-        if (!redHomeFT && !redAwayFT) {
-          setRedHomeFT(String(parsed.cardsSummary.redHomeFT));
-          setRedAwayFT(String(parsed.cardsSummary.redAwayFT));
+
+        itemsUpdated.push(`⚽ Placar: ${gs.homeFT}x${gs.awayFT} (HT: ${gs.homeHT}x${gs.awayHT})`);
+        if (gs.firstGoalMinMatch) {
+          itemsUpdated.push(`⏱️ 1º Gol: ${gs.firstGoalMinMatch}'`);
         }
       }
 
-      // Check if goals exist in parsed events and can be autofilled
-      if (parsed.events && parsed.events.length > 0) {
-        const homeGoals = parsed.events.filter((e) => e.type === 'goal' && e.team === 'home');
-        const awayGoals = parsed.events.filter((e) => e.type === 'goal' && e.team === 'away');
-
-        if (homeGoals.length > 0 && !goalMinutesHome) {
-          setGoalMinutesHome(homeGoals.map((g) => `${g.minute}'`).join(', '));
-          if (!firstGoalMinHome) setFirstGoalMinHome(String(homeGoals[0].minute));
-        }
-        if (awayGoals.length > 0 && !goalMinutesAway) {
-          setGoalMinutesAway(awayGoals.map((g) => `${g.minute}'`).join(', '));
-          if (!firstGoalMinAway) setFirstGoalMinAway(String(awayGoals[0].minute));
-        }
-        const allGoals = [...parsed.events.filter((e) => e.type === 'goal')].sort((a, b) => a.minute - b.minute);
-        if (allGoals.length > 0 && !firstGoalMinMatch) {
-          setFirstGoalMinMatch(String(allGoals[0].minute));
-        }
+      let msg = `✅ ${parsed.intervals.length} intervalos processados! Domínio: ${match.homeTeamName} (${parsed.homeDominancePct}%) x ${match.awayTeamName} (${parsed.awayDominancePct}%).`;
+      if (itemsUpdated.length > 0) {
+        msg += ` Preenchimento automático: ${itemsUpdated.join(' | ')}.`;
       }
 
       setPressureSuccessMsg(msg);

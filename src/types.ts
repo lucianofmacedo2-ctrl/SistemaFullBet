@@ -159,6 +159,17 @@ export interface MatchPressureData {
     redAwayFT: number;
     total: number;
   };
+  goalsSummary?: {
+    homeFT: number;
+    awayFT: number;
+    homeHT: number;
+    awayHT: number;
+    goalMinutesHome: string[];
+    goalMinutesAway: string[];
+    firstGoalMinHome: number | null;
+    firstGoalMinAway: number | null;
+    firstGoalMinMatch: number | null;
+  };
   extractedTeams?: {
     homeCode?: string;
     awayCode?: string;

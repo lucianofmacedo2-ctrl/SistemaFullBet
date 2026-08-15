@@ -11,17 +11,36 @@ function detectTeam(
   awayCode?: string,
   defaultTeam: 'home' | 'away' = 'home'
 ): 'home' | 'away' {
-  const lower = text.toLowerCase();
-  const hCode = (homeCode || homeTeamName.substring(0, 3)).toLowerCase();
-  const aCode = (awayCode || awayTeamName.substring(0, 3)).toLowerCase();
-  const hName = homeTeamName.toLowerCase();
-  const aName = awayTeamName.toLowerCase();
+  const clean = (s: string) =>
+    s ? s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim() : '';
+
+  const target = clean(text);
+  const hCode = clean(homeCode || homeTeamName.substring(0, 3));
+  const aCode = clean(awayCode || awayTeamName.substring(0, 3));
+  const hName = clean(homeTeamName);
+  const aName = clean(awayTeamName);
 
   // Exact code checks
-  if (lower.includes(hCode) || lower.includes(hName) || lower.includes('mandante') || lower.includes('fur')) {
+  if (hCode && target.includes(hCode)) return 'home';
+  if (aCode && target.includes(aCode)) return 'away';
+  if (hName && target.includes(hName)) return 'home';
+  if (aName && target.includes(aName)) return 'away';
+
+  // Check word tokens in team names (e.g., "Hertha", "Heidenheim", "Greuther", "Nürnberg")
+  const hTokens = hName.split(/[\s\-_]+/).filter((t) => t.length >= 3);
+  const aTokens = aName.split(/[\s\-_]+/).filter((t) => t.length >= 3);
+
+  for (const t of hTokens) {
+    if (target.includes(t)) return 'home';
+  }
+  for (const t of aTokens) {
+    if (target.includes(t)) return 'away';
+  }
+
+  if (target.includes('mandante') || target.includes('casa') || target.includes('home')) {
     return 'home';
   }
-  if (lower.includes(aCode) || lower.includes(aName) || lower.includes('visitante') || lower.includes('nur')) {
+  if (target.includes('visitante') || target.includes('fora') || target.includes('away')) {
     return 'away';
   }
 
@@ -361,6 +380,23 @@ export function parsePressureCsvText(
   const redHomeFT = redEvents.filter(e => e.team === 'home').length;
   const redAwayFT = redEvents.filter(e => e.team === 'away').length;
 
+  // Calculate summary for Goals
+  const goalEvents = events.filter(e => e.type === 'goal').sort((a, b) => a.minute - b.minute);
+  const homeGoalEvents = goalEvents.filter(e => e.team === 'home');
+  const awayGoalEvents = goalEvents.filter(e => e.team === 'away');
+
+  const goalsHomeFT = homeGoalEvents.length;
+  const goalsAwayFT = awayGoalEvents.length;
+  const goalsHomeHT = homeGoalEvents.filter(e => e.minute <= 45).length;
+  const goalsAwayHT = awayGoalEvents.filter(e => e.minute <= 45).length;
+
+  const goalMinutesHome = homeGoalEvents.map(g => `${g.minute}'`);
+  const goalMinutesAway = awayGoalEvents.map(g => `${g.minute}'`);
+
+  const firstGoalMinHome = homeGoalEvents.length > 0 ? homeGoalEvents[0].minute : null;
+  const firstGoalMinAway = awayGoalEvents.length > 0 ? awayGoalEvents[0].minute : null;
+  const firstGoalMinMatch = goalEvents.length > 0 ? goalEvents[0].minute : null;
+
   const result: MatchPressureData = {
     timeline,
     homeDominancePct,
@@ -384,6 +420,17 @@ export function parsePressureCsvText(
       redHomeFT,
       redAwayFT,
       total: yellowHomeFT + yellowAwayFT + redHomeFT + redAwayFT,
+    },
+    goalsSummary: {
+      homeFT: goalsHomeFT,
+      awayFT: goalsAwayFT,
+      homeHT: goalsHomeHT,
+      awayHT: goalsAwayHT,
+      goalMinutesHome,
+      goalMinutesAway,
+      firstGoalMinHome,
+      firstGoalMinAway,
+      firstGoalMinMatch,
     },
     extractedTeams: {
       homeCode,
