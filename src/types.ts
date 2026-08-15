@@ -113,10 +113,14 @@ export interface PressureTimelinePoint {
 }
 
 export interface PressureInterval {
-  interval: string; // e.g. "0-15'", "16-30'", "31-45'+", "46-60'", "61-75'", "76-90'+"
-  homeAvg: number; // 0-100
-  awayAvg: number; // 0-100
-  dominantTeam: 'home' | 'away' | 'balanced';
+  interval: string; // e.g. "01' - 05'", "06' - 10'", "86' - 90'+"
+  homePressure?: number; // 0 to 100 (Pressão Mandante)
+  awayPressure?: number; // 0 to 100 (Pressão Visitante)
+  netIndex?: number; // -100 to +100 (Índice Líquido: Positivo Mandante, Negativo Visitante)
+  dominantTeam: 'home' | 'away' | 'balanced' | string; // FUR, NUR, Equilibrado
+  contextHighlight?: string; // Evento / Contexto Destacado (ex: "⚽ GOL do NUR (~27')")
+  homeAvg?: number; // 0-100 (retrocompatibilidade)
+  awayAvg?: number; // 0-100 (retrocompatibilidade)
   homeAttackingVolume?: number;
   awayAttackingVolume?: number;
 }
@@ -145,6 +149,7 @@ export interface MatchPressureData {
   totalMinutes?: number;
   tacticalSummary?: string;
   sourceImageUrl?: string;
+  rawCsvText?: string;
   importedAt?: string;
 }
 

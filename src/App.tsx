@@ -579,7 +579,8 @@ export default function App() {
     homeScore: number | null,
     awayScore: number | null,
     status: MatchStatus,
-    stats: MatchStats
+    stats: MatchStats,
+    pressureData?: MatchPressureData | null
   ) => {
     const updatedMatches = dbState.matches.map(m => {
       if (m.id === matchId) {
@@ -589,6 +590,7 @@ export default function App() {
           awayScore,
           status,
           stats,
+          ...(pressureData !== undefined ? { pressureData: pressureData || undefined } : {}),
         };
       }
       return m;
@@ -798,7 +800,6 @@ export default function App() {
         match={statsMatch}
         onSaveStats={handleSaveStats}
         onOpenPressureChartModal={handleOpenPressureChartModal}
-        onSavePressureData={handleSavePressureData}
       />
 
       <PressureChartImportModal

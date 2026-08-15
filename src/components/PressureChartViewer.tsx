@@ -318,59 +318,131 @@ export const PressureChartViewer: React.FC<PressureChartViewerProps> = ({
           </div>
         )}
 
-        {/* 15-Minute Intervals Breakdown Section */}
+        {/* Detailed 5-Minute Net Index Intervals Breakdown Section */}
         {pressureData.intervals && pressureData.intervals.length > 0 && (
           <div className="pt-2">
             <button
               onClick={() => setShowIntervals(!showIntervals)}
-              className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 transition-colors"
+              className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 transition-colors cursor-pointer"
             >
               <span className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-blue-600" />
-                Domínio por Intervalo de 15 Minutos ({pressureData.intervals.length} Períodos)
+                <span>Tabela Detalhada de Pressão & Índice Líquido ({pressureData.intervals.length} Intervalos)</span>
               </span>
-              {showIntervals ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-normal text-slate-500 hidden sm:inline">
+                  Intervalos de 5 min (-100 a +100)
+                </span>
+                {showIntervals ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
             </button>
 
             {showIntervals && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mt-3">
-                {pressureData.intervals.map((it, i) => {
-                  const isHomeDominant = it.dominantTeam === 'home' || it.homeAvg > it.awayAvg;
-                  const isAwayDominant = it.dominantTeam === 'away' || it.awayAvg > it.homeAvg;
+              <div className="mt-3 space-y-3">
+                {/* 5-Min Table */}
+                <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-xs">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-900 text-white font-mono text-[11px] uppercase tracking-wider">
+                        <th className="py-2.5 px-3 font-bold">Intervalo</th>
+                        <th className="py-2.5 px-3 font-bold text-blue-300 text-center">Pressão {homeCode}</th>
+                        <th className="py-2.5 px-3 font-bold text-amber-300 text-center">Pressão {awayCode}</th>
+                        <th className="py-2.5 px-3 font-bold text-center">Índice Líquido</th>
+                        <th className="py-2.5 px-3 font-bold text-center">Time Dominante</th>
+                        <th className="py-2.5 px-3 font-bold">Evento / Contexto Destacado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {pressureData.intervals.map((it, idx) => {
+                        const hVal = it.homePressure !== undefined ? it.homePressure : it.homeAvg || 0;
+                        const aVal = it.awayPressure !== undefined ? it.awayPressure : it.awayAvg || 0;
+                        const net = it.netIndex !== undefined ? it.netIndex : (hVal - aVal);
+                        const isHomeDom = net > 0 || it.dominantTeam === 'home' || it.dominantTeam === homeCode;
+                        const isAwayDom = net < 0 || it.dominantTeam === 'away' || it.dominantTeam === awayCode;
+                        const isGoal = it.contextHighlight && /gol|goal|⚽/i.test(it.contextHighlight) && !/anulado/i.test(it.contextHighlight);
 
-                  return (
-                    <div
-                      key={i}
-                      className={`p-3 rounded-xl border text-xs text-center space-y-1.5 transition-all ${
-                        isHomeDominant
-                          ? 'bg-slate-900 text-white border-slate-800 shadow-sm'
-                          : isAwayDominant
-                          ? 'bg-slate-100 text-slate-900 border-slate-300'
-                          : 'bg-white text-slate-800 border-slate-200'
-                      }`}
-                    >
-                      <span className="block font-mono font-black text-[11px] opacity-80">
-                        {it.interval}
-                      </span>
+                        return (
+                          <tr
+                            key={idx}
+                            className={`transition-colors hover:bg-slate-50/80 ${
+                              isGoal ? 'bg-amber-50/60 font-medium' : idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
+                            }`}
+                          >
+                            {/* Interval */}
+                            <td className="py-2.5 px-3 font-mono font-bold text-slate-800 whitespace-nowrap">
+                              {it.interval}
+                            </td>
 
-                      <div className="text-xs font-black">
-                        {isHomeDominant ? (
-                          <span className="text-blue-400">Domínio {homeCode}</span>
-                        ) : isAwayDominant ? (
-                          <span className="text-indigo-600 font-bold">Domínio {awayCode}</span>
-                        ) : (
-                          <span className="text-slate-500">Equilibrado</span>
-                        )}
-                      </div>
+                            {/* Home Pressure */}
+                            <td className="py-2.5 px-3 text-center font-mono font-bold text-blue-700">
+                              <span className="inline-block px-2 py-0.5 rounded bg-blue-50 border border-blue-200">
+                                {hVal}
+                              </span>
+                            </td>
 
-                      <div className="flex items-center justify-center gap-1 font-mono text-[10px] opacity-90 pt-1 border-t border-current/10">
-                        <span>{homeCode}: <strong>{Math.round(it.homeAvg)}%</strong></span>
-                        <span>•</span>
-                        <span>{awayCode}: <strong>{Math.round(it.awayAvg)}%</strong></span>
-                      </div>
-                    </div>
-                  );
-                })}
+                            {/* Away Pressure */}
+                            <td className="py-2.5 px-3 text-center font-mono font-bold text-amber-700">
+                              <span className="inline-block px-2 py-0.5 rounded bg-amber-50 border border-amber-200">
+                                {aVal}
+                              </span>
+                            </td>
+
+                            {/* Net Index */}
+                            <td className="py-2.5 px-3 text-center">
+                              <div className="inline-flex items-center gap-1.5 font-mono font-black text-xs">
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-xs font-mono font-black ${
+                                    net > 0
+                                      ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                                      : net < 0
+                                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                      : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                  }`}
+                                >
+                                  {net > 0 ? `+${net}` : net}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Dominant Team */}
+                            <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                              {isHomeDom ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-600 text-white shadow-2xs">
+                                  {typeof it.dominantTeam === 'string' && it.dominantTeam !== 'home' ? it.dominantTeam : homeCode}
+                                </span>
+                              ) : isAwayDom ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-600 text-white shadow-2xs">
+                                  {typeof it.dominantTeam === 'string' && it.dominantTeam !== 'away' ? it.dominantTeam : awayCode}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                  Equilibrado
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Context & Events */}
+                            <td className="py-2.5 px-3 text-slate-700 text-xs">
+                              {it.contextHighlight ? (
+                                <span
+                                  className={`inline-flex items-center gap-1 ${
+                                    isGoal
+                                      ? 'font-bold text-amber-900 bg-amber-100/90 px-2 py-0.5 rounded-md border border-amber-300'
+                                      : 'text-slate-700'
+                                  }`}
+                                >
+                                  {it.contextHighlight}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 text-[11px] italic">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

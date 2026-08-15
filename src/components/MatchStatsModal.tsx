@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   BarChart2,
@@ -13,24 +13,29 @@ import {
   Zap,
   TrendingUp,
   Sparkles,
-  Upload,
-  Loader2,
+  ClipboardPaste,
+  FileText,
   AlertCircle,
   CheckCircle2,
-  ExternalLink,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
 } from 'lucide-react';
 import { Match, MatchStats, MatchStatus, MatchPressureData } from '../types';
-import { PressureChartViewer } from './PressureChartViewer';
+import { parsePressureCsvText } from '../utils/pressureParser';
 
 interface MatchStatsModalProps {
   isOpen: boolean;
   onClose: () => void;
   match: Match | null;
-  onSaveStats: (matchId: string, homeScore: number | null, awayScore: number | null, status: MatchStatus, stats: MatchStats) => void;
+  onSaveStats: (
+    matchId: string,
+    homeScore: number | null,
+    awayScore: number | null,
+    status: MatchStatus,
+    stats: MatchStats,
+    pressureData?: MatchPressureData | null
+  ) => void;
   onOpenPressureChartModal?: (matchId: string) => void;
-  onSavePressureData?: (matchId: string, pressureData: MatchPressureData, autoFillGoalStats?: boolean) => void;
 }
 
 export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
@@ -39,20 +44,10 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
   match,
   onSaveStats,
   onOpenPressureChartModal,
-  onSavePressureData,
 }) => {
   const [homeScore, setHomeScore] = useState<string>('');
   const [awayScore, setAwayScore] = useState<string>('');
   const [status, setStatus] = useState<MatchStatus>('FINALIZADO');
-
-  // Direct Image Upload State for Pressure Chart
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadSuccessMessage, setUploadSuccessMessage] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [showPressurePreview, setShowPressurePreview] = useState(false);
-  const [currentPressureData, setCurrentPressureData] = useState<MatchPressureData | undefined>(match?.pressureData);
 
   // Gols & Minutos
   const [htHome, setHtHome] = useState<string>('');
@@ -99,11 +94,16 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
   const [shotsHomeHT, setShotsHomeHT] = useState<string>('');
   const [shotsAwayHT, setShotsAwayHT] = useState<string>('');
 
+  // Tabela de Pressão & Índice Líquido (5 em 5 minutos)
+  const [pressureCsvText, setPressureCsvText] = useState<string>('');
+  const [parsedPressureData, setParsedPressureData] = useState<MatchPressureData | null>(null);
+  const [pressureParseError, setPressureParseError] = useState<string | null>(null);
+  const [pressureSuccessMsg, setPressureSuccessMsg] = useState<string | null>(null);
+  const [isPressureSectionOpen, setIsPressureSectionOpen] = useState<boolean>(true);
+  const [showPressureTable, setShowPressureTable] = useState<boolean>(true);
+
   useEffect(() => {
     if (match) {
-      setCurrentPressureData(match.pressureData);
-      setUploadError(null);
-      setUploadSuccessMessage(null);
       setHomeScore(match.homeScore !== null ? String(match.homeScore) : '');
       setAwayScore(match.awayScore !== null ? String(match.awayScore) : '');
       setStatus(match.status === 'AGENDADO' && (match.homeScore !== null || match.awayScore !== null) ? 'FINALIZADO' : match.status);
@@ -147,103 +147,21 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
       setShotsAwayFT(st.shotsAwayFT != null ? String(st.shotsAwayFT) : (st.shotsAway != null ? String(st.shotsAway) : ''));
       setShotsHomeHT(st.shotsHomeHT != null ? String(st.shotsHomeHT) : '');
       setShotsAwayHT(st.shotsAwayHT != null ? String(st.shotsAwayHT) : '');
+
+      // Load existing pressure data if present
+      if (match.pressureData) {
+        setParsedPressureData(match.pressureData);
+        setPressureCsvText(match.pressureData.rawCsvText || '');
+        setPressureParseError(null);
+        setPressureSuccessMsg(null);
+      } else {
+        setParsedPressureData(null);
+        setPressureCsvText('');
+        setPressureParseError(null);
+        setPressureSuccessMsg(null);
+      }
     }
   }, [match, isOpen]);
-
-  // Global paste handler when modal is open
-  useEffect(() => {
-    if (!isOpen || !match) return;
-
-    const handlePaste = (e: ClipboardEvent) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.startsWith('image/')) {
-          const file = items[i].getAsFile();
-          if (file) {
-            handleProcessImageFile(file);
-            break;
-          }
-        }
-      }
-    };
-
-    window.addEventListener('paste', handlePaste);
-    return () => window.removeEventListener('paste', handlePaste);
-  }, [isOpen, match]);
-
-  const handleProcessImageFile = async (file: File) => {
-    if (!match) return;
-    setIsUploadingImage(true);
-    setUploadError(null);
-    setUploadSuccessMessage(null);
-
-    try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-      });
-      reader.readAsDataURL(file);
-      const base64Data = await base64Promise;
-
-      const response = await fetch('/api/ai/parse-pressure-chart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageBase64: base64Data,
-          homeTeamName: match.homeTeamName,
-          awayTeamName: match.awayTeamName,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Falha ao analisar a imagem do gráfico.');
-      }
-
-      const pData: MatchPressureData = result.pressureData;
-      pData.sourceImageUrl = base64Data;
-      setCurrentPressureData(pData);
-
-      if (onSavePressureData) {
-        onSavePressureData(match.id, pData, true);
-      }
-
-      // Auto-fill goal minutes if empty
-      if (pData.events && pData.events.length > 0) {
-        const homeGoals = pData.events.filter(e => e.type === 'goal' && e.team === 'home');
-        const awayGoals = pData.events.filter(e => e.type === 'goal' && e.team === 'away');
-
-        if (homeGoals.length > 0 && !goalMinutesHome) {
-          setGoalMinutesHome(homeGoals.map(g => `${g.minute}'`).join(', '));
-          if (!firstGoalMinHome) setFirstGoalMinHome(String(homeGoals[0].minute));
-        }
-        if (awayGoals.length > 0 && !goalMinutesAway) {
-          setGoalMinutesAway(awayGoals.map(g => `${g.minute}'`).join(', '));
-          if (!firstGoalMinAway) setFirstGoalMinAway(String(awayGoals[0].minute));
-        }
-        const allGoals = [...pData.events.filter(e => e.type === 'goal')].sort((a, b) => a.minute - b.minute);
-        if (allGoals.length > 0 && !firstGoalMinMatch) {
-          setFirstGoalMinMatch(String(allGoals[0].minute));
-        }
-      }
-
-      setUploadSuccessMessage(
-        `Imagem analisada com sucesso! Domínio: ${pData.homeDominancePct}% x ${pData.awayDominancePct}%. Selo 100% elegível!`
-      );
-      setShowPressurePreview(true);
-    } catch (err: any) {
-      setUploadError(err.message || 'Erro ao processar imagem.');
-    } finally {
-      setIsUploadingImage(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
 
   if (!isOpen || !match) return null;
 
@@ -255,6 +173,88 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
     if (status === 'AGENDADO' && val !== '') {
       setStatus('FINALIZADO');
     }
+  };
+
+  const handleParsePressureText = () => {
+    setPressureParseError(null);
+    setPressureSuccessMsg(null);
+
+    if (!pressureCsvText.trim()) {
+      setPressureParseError('Por favor, cole os dados no campo de texto antes de processar.');
+      return;
+    }
+
+    try {
+      const parsed = parsePressureCsvText(pressureCsvText, match.homeTeamName, match.awayTeamName);
+      setParsedPressureData(parsed);
+      setPressureSuccessMsg(
+        `✅ ${parsed.intervals.length} intervalos processados com sucesso! Domínio: ${match.homeTeamName} (${parsed.homeDominancePct}%) x ${match.awayTeamName} (${parsed.awayDominancePct}%).`
+      );
+
+      // Check if goals exist in parsed events and can be autofilled
+      if (parsed.events && parsed.events.length > 0) {
+        const homeGoals = parsed.events.filter((e) => e.type === 'goal' && e.team === 'home');
+        const awayGoals = parsed.events.filter((e) => e.type === 'goal' && e.team === 'away');
+
+        if (homeGoals.length > 0 && !goalMinutesHome) {
+          setGoalMinutesHome(homeGoals.map((g) => `${g.minute}'`).join(', '));
+          if (!firstGoalMinHome) setFirstGoalMinHome(String(homeGoals[0].minute));
+        }
+        if (awayGoals.length > 0 && !goalMinutesAway) {
+          setGoalMinutesAway(awayGoals.map((g) => `${g.minute}'`).join(', '));
+          if (!firstGoalMinAway) setFirstGoalMinAway(String(awayGoals[0].minute));
+        }
+        const allGoals = [...parsed.events.filter((e) => e.type === 'goal')].sort((a, b) => a.minute - b.minute);
+        if (allGoals.length > 0 && !firstGoalMinMatch) {
+          setFirstGoalMinMatch(String(allGoals[0].minute));
+        }
+      }
+    } catch (err: any) {
+      setPressureParseError(err.message || 'Erro ao processar o texto da pressão. Verifique o formato das colunas.');
+    }
+  };
+
+  const handleLoadExampleData = () => {
+    const homeCode = match.homeTeamName.substring(0, 3).toUpperCase();
+    const awayCode = match.awayTeamName.substring(0, 3).toUpperCase();
+
+    const sample = `Intervalo,Pressão ${homeCode},Pressão ${awayCode},Índice Líquido,Time Dominante,Evento / Contexto Destacado
+01' - 05',25,10,+15,${homeCode},Estudo de jogo / leve iniciativa do ${homeCode}
+06' - 10',15,15,0,Equilibrado,Jogo truncado no meio-campo
+11' - 15',65,5,+60,${homeCode},Crescimento do volume do ${homeCode}
+16' - 20',80,0,+80,${homeCode},Pico de pressão do ${homeCode} no 1º tempo
+21' - 25',30,20,+10,${homeCode},⚽ Gol Anulado (${homeCode} ~22')
+26' - 30',0,80,-80,${awayCode},⚽ GOL do ${awayCode} (~27')
+31' - 35',10,50,-40,${awayCode},${awayCode} controla o ritmo após abrir o placar
+36' - 40',75,25,+50,${homeCode},⚽ GOL do ${homeCode} (~38')
+41' - 45',55,20,+35,${homeCode},${homeCode} pressiona na reta final do 1º tempo
+45'+,10,70,-60,${awayCode},⚽ GOL do ${awayCode} (~47') nos acréscimos
+46' - 50',0,65,-65,${awayCode},${awayCode} volta do intervalo impondo ritmo
+51' - 55',0,40,-40,${awayCode},${awayCode} mantém controle da posse/ataque
+56' - 60',20,55,-35,${awayCode},⚽ GOL do ${awayCode} (~56')
+61' - 65',80,10,+70,${homeCode},Reação imediata e forte pressão do ${homeCode}
+66' - 70',35,10,+25,${homeCode},${homeCode} tenta manter a posse no campo de ataque
+71' - 75',10,85,-75,${awayCode},⚽ GOL do ${awayCode} (~74')
+76' - 80',70,15,+55,${homeCode},${homeCode} se lança ao ataque
+81' - 85',35,5,+30,${homeCode},Pressão constante do ${homeCode}
+86' - 90'+,100,10,+90,${homeCode},Maior pico de pressão do jogo (${homeCode} no abafa)`;
+
+    setPressureCsvText(sample);
+    try {
+      const parsed = parsePressureCsvText(sample, match.homeTeamName, match.awayTeamName);
+      setParsedPressureData(parsed);
+      setPressureParseError(null);
+      setPressureSuccessMsg(`Exemplo carregado com ${parsed.intervals.length} intervalos!`);
+    } catch (e: any) {
+      setPressureParseError(e.message);
+    }
+  };
+
+  const handleClearPressureData = () => {
+    setPressureCsvText('');
+    setParsedPressureData(null);
+    setPressureParseError(null);
+    setPressureSuccessMsg(null);
   };
 
   const parseNum = (val: string): number | null => {
@@ -328,30 +328,13 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
       scorersAway: goalMinutesAway.trim() || undefined,
     };
 
-    onSaveStats(match.id, parsedHomeScore, parsedAwayScore, status, statsObj);
+    onSaveStats(match.id, parsedHomeScore, parsedAwayScore, status, statsObj, parsedPressureData);
     onClose();
   };
-
-  const hasPressureImage = Boolean(
-    currentPressureData &&
-    ((currentPressureData.timeline && currentPressureData.timeline.length > 0) || currentPressureData.sourceImageUrl)
-  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-y-auto">
       <div className="relative w-full max-w-3xl bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden my-8">
-        {/* Hidden file input for direct upload */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleProcessImageFile(file);
-          }}
-        />
-
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200">
           <div className="flex items-center gap-2.5">
@@ -377,149 +360,184 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
 
         {/* Body Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
-          {/* Pressure Chart AI Direct Upload Section (Required for 100% seal) */}
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setIsDragging(false);
-              const file = e.dataTransfer.files?.[0];
-              if (file && file.type.startsWith('image/')) {
-                handleProcessImageFile(file);
-              }
-            }}
-            className={`p-4 rounded-xl border transition-all ${
-              hasPressureImage
-                ? 'bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-slate-700 text-white shadow-md'
-                : isDragging
-                ? 'bg-blue-50 border-2 border-dashed border-blue-500 text-slate-800 ring-4 ring-blue-100'
-                : 'bg-amber-50/70 border-2 border-dashed border-amber-300 text-slate-800 shadow-xs'
-            }`}
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <div
-                  className={`p-2.5 rounded-xl border shrink-0 ${
-                    hasPressureImage
-                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-400/30'
-                      : 'bg-amber-500/20 text-amber-700 border-amber-400/40'
-                  }`}
-                >
-                  {isUploadingImage ? (
-                    <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
-                  ) : hasPressureImage ? (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                  ) : (
-                    <Upload className="w-5 h-5 text-amber-600" />
-                  )}
+          {/* Section: Tabela de Pressão & Índice Líquido (Campo de Texto / CSV) */}
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 rounded-xl border border-slate-700 shadow-md space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-blue-500/20 border border-blue-400/30 rounded-lg text-blue-400">
+                  <TrendingUp className="w-4 h-4" />
                 </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs font-black uppercase tracking-wider ${hasPressureImage ? 'text-white' : 'text-slate-900'}`}>
-                      Upload da Imagem do Gráfico de Pressão
-                    </span>
-                    {hasPressureImage ? (
-                      <span className="px-2 py-0.5 bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 text-[10px] font-black rounded-full flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" />
-                        100% ELEGÍVEL ({currentPressureData?.homeDominancePct}% x {currentPressureData?.awayDominancePct}%)
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 bg-amber-500/20 text-amber-800 border border-amber-300 text-[10px] font-black rounded-full flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3 text-amber-600" />
-                        Obrigatório para Selo 100%
-                      </span>
-                    )}
-                  </div>
-
-                  <p className={`text-[11px] leading-relaxed ${hasPressureImage ? 'text-slate-300' : 'text-slate-600 font-medium'}`}>
-                    {isUploadingImage
-                      ? '🤖 A Inteligência Artificial Vision está analisando a imagem e extraindo minuto a minuto...'
-                      : hasPressureImage
-                      ? `Imagem do gráfico processada (${currentPressureData?.timeline?.length || 0} pontos, ${currentPressureData?.events?.length || 0} eventos extraídos).`
-                      : 'Faça upload ou cole (Ctrl+V) o print do gráfico de pressão para liberar o selo de 100% PREENCHIDO.'}
+                <div>
+                  <span className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+                    📊 Lançar Tabela de Pressão & Índice Líquido (-100 a +100)
+                  </span>
+                  <p className="text-[11px] text-slate-300">
+                    Cole os dados formatados em texto ou tabela de 5 em 5 minutos para estudos táticos futuros.
                   </p>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0">
+              <div className="flex items-center gap-2">
+                {parsedPressureData && (
+                  <span className="px-2 py-0.5 bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-black rounded-full flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    {parsedPressureData.intervals?.length || 0} Intervalos Carregados
+                  </span>
+                )}
                 <button
                   type="button"
-                  disabled={isUploadingImage}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer ${
-                    hasPressureImage
-                      ? 'bg-slate-700 hover:bg-slate-600 text-white border border-slate-600'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow'
-                  }`}
+                  onClick={() => setIsPressureSectionOpen(!isPressureSectionOpen)}
+                  className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
                 >
-                  {isUploadingImage ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Analisando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-3.5 h-3.5 text-amber-300" />
-                      <span>{hasPressureImage ? 'Trocar Imagem' : 'Fazer Upload da Imagem'}</span>
-                    </>
-                  )}
+                  {isPressureSectionOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
-
-                {hasPressureImage && (
-                  <button
-                    type="button"
-                    onClick={() => setShowPressurePreview(!showPressurePreview)}
-                    className="inline-flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700 transition-colors cursor-pointer"
-                  >
-                    <span>{showPressurePreview ? 'Ocultar' : 'Ver Gráfico'}</span>
-                    {showPressurePreview ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                  </button>
-                )}
-
-                {onOpenPressureChartModal && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onOpenPressureChartModal(match.id);
-                    }}
-                    className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-700/50 transition-colors cursor-pointer"
-                    title="Abrir editor completo do gráfico de pressão"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
-                )}
               </div>
             </div>
 
-            {/* Error or Success feedback banner */}
-            {uploadError && (
-              <div className="mt-3 p-2.5 bg-rose-500/20 border border-rose-500/40 rounded-lg text-rose-200 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-                <span>{uploadError}</span>
-              </div>
-            )}
-            {uploadSuccessMessage && (
-              <div className="mt-3 p-2.5 bg-emerald-500/20 border border-emerald-500/40 rounded-lg text-emerald-200 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
-                <span>{uploadSuccessMessage}</span>
-              </div>
-            )}
+            {isPressureSectionOpen && (
+              <div className="space-y-3 pt-2 border-t border-slate-700/60">
+                {/* Textarea for pasting data */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] text-slate-300">
+                    <span className="font-semibold flex items-center gap-1">
+                      <ClipboardPaste className="w-3.5 h-3.5 text-blue-400" />
+                      Cole o texto da planilha (CSV ou Tabulado):
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleLoadExampleData}
+                        className="text-[10px] font-bold text-amber-300 hover:text-amber-200 underline cursor-pointer"
+                      >
+                        Carregar Modelo Exemplo
+                      </button>
+                      {pressureCsvText && (
+                        <button
+                          type="button"
+                          onClick={handleClearPressureData}
+                          className="text-[10px] font-bold text-slate-400 hover:text-rose-300 underline cursor-pointer"
+                        >
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
-            {/* Inline Pressure Chart Viewer Preview */}
-            {hasPressureImage && showPressurePreview && currentPressureData && (
-              <div className="mt-3 pt-3 border-t border-slate-700 bg-slate-900/60 p-3 rounded-lg">
-                <PressureChartViewer
-                  pressureData={currentPressureData}
-                  homeTeamName={match.homeTeamName}
-                  awayTeamName={match.awayTeamName}
-                />
+                  <textarea
+                    rows={6}
+                    value={pressureCsvText}
+                    onChange={(e) => setPressureCsvText(e.target.value)}
+                    placeholder={`Intervalo,Pressão Mandante,Pressão Visitante,Índice Líquido,Time Dominante,Evento / Contexto Destacado\n01' - 05',25,10,+15,Mandante,Estudo de jogo\n06' - 10',15,15,0,Equilibrado,Jogo truncado\n11' - 15',65,5,+60,Mandante,Pressão Mandante...`}
+                    className="w-full bg-slate-950/80 border border-slate-700 rounded-xl p-3 text-xs text-slate-100 font-mono focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 placeholder:text-slate-600 leading-relaxed resize-y"
+                  />
+                </div>
+
+                {/* Feedback messages */}
+                {pressureParseError && (
+                  <div className="p-2.5 bg-rose-500/20 border border-rose-500/40 rounded-lg text-rose-200 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                    <span>{pressureParseError}</span>
+                  </div>
+                )}
+                {pressureSuccessMsg && (
+                  <div className="p-2.5 bg-emerald-500/20 border border-emerald-500/40 rounded-lg text-emerald-200 text-xs flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                    <span>{pressureSuccessMsg}</span>
+                  </div>
+                )}
+
+                {/* Actions Row */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleParsePressureText}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-colors shadow-xs cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    <span>Processar Texto da Tabela</span>
+                  </button>
+
+                  {parsedPressureData && parsedPressureData.intervals && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPressureTable(!showPressureTable)}
+                      className="inline-flex items-center gap-1 text-xs text-slate-300 hover:text-white font-medium cursor-pointer"
+                    >
+                      <span>{showPressureTable ? 'Ocultar Prévia da Tabela' : 'Ver Prévia da Tabela'}</span>
+                      {showPressureTable ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </button>
+                  )}
+                </div>
+
+                {/* Parsed Table Live Preview */}
+                {parsedPressureData && parsedPressureData.intervals && showPressureTable && (
+                  <div className="mt-3 pt-3 border-t border-slate-700/60 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-300">
+                      <span>Prévia Estruturada: {parsedPressureData.intervals.length} Intervalos de 5 Minutos</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-400">{match.homeTeamName}: {parsedPressureData.homeDominancePct}%</span>
+                        <span>•</span>
+                        <span className="text-amber-400">{match.awayTeamName}: {parsedPressureData.awayDominancePct}%</span>
+                      </div>
+                    </div>
+
+                    <div className="max-h-56 overflow-y-auto rounded-lg border border-slate-700 bg-slate-950/90">
+                      <table className="w-full text-left text-[11px] border-collapse font-sans">
+                        <thead className="bg-slate-900 text-slate-300 font-mono text-[10px] uppercase sticky top-0 border-b border-slate-800">
+                          <tr>
+                            <th className="p-2 font-bold">Intervalo</th>
+                            <th className="p-2 text-center text-blue-400 font-bold">Mandante</th>
+                            <th className="p-2 text-center text-amber-400 font-bold">Visitante</th>
+                            <th className="p-2 text-center font-bold">Índice Líquido</th>
+                            <th className="p-2 text-center font-bold">Dominância</th>
+                            <th className="p-2 font-bold">Evento / Contexto</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/80 text-slate-200">
+                          {parsedPressureData.intervals.map((it, idx) => {
+                            const net = it.netIndex !== undefined ? it.netIndex : ((it.homePressure || 0) - (it.awayPressure || 0));
+                            const isGoal = it.contextHighlight && /gol|goal|⚽/i.test(it.contextHighlight) && !/anulado/i.test(it.contextHighlight);
+
+                            return (
+                              <tr key={idx} className={isGoal ? 'bg-amber-500/10' : idx % 2 === 0 ? 'bg-transparent' : 'bg-slate-900/40'}>
+                                <td className="p-2 font-mono font-bold text-slate-300 whitespace-nowrap">{it.interval}</td>
+                                <td className="p-2 text-center font-mono font-bold text-blue-300">{it.homePressure}</td>
+                                <td className="p-2 text-center font-mono font-bold text-amber-300">{it.awayPressure}</td>
+                                <td className="p-2 text-center font-mono font-bold">
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded text-[10px] ${
+                                      net > 0
+                                        ? 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
+                                        : net < 0
+                                        ? 'bg-amber-500/20 text-amber-300 border border-amber-400/30'
+                                        : 'bg-slate-700 text-slate-300'
+                                    }`}
+                                  >
+                                    {net > 0 ? `+${net}` : net}
+                                  </span>
+                                </td>
+                                <td className="p-2 text-center whitespace-nowrap">
+                                  <span className="text-[10px] font-bold text-slate-300">
+                                    {it.dominantTeam}
+                                  </span>
+                                </td>
+                                <td className="p-2 text-slate-300 text-[10px]">
+                                  {it.contextHighlight ? (
+                                    <span className={isGoal ? 'text-amber-300 font-bold' : 'text-slate-300'}>
+                                      {it.contextHighlight}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-600">-</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
