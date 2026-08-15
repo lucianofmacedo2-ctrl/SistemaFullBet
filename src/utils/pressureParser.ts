@@ -92,99 +92,95 @@ function extractSubEvents(
   const foundEvents: PressureEvent[] = [];
   const defaultMin = Math.round((startMin + endMin) / 2);
 
-  // Normalize separators between contiguous events (e.g. "🚩 Escanteio Hertha (~44')🟨 Cartão Amarelo...")
-  const normalizedText = rawText
-    .replace(/(🚩|🟨|🟥|⚽)/g, ' ||| $1')
-    .replace(/(?:\b)(escanteio|canto|corner|cart[aã]o\s+amarelo|cart[aã]o\s+vermelho|expuls[aã]o|gol(?:\s+do|\s+da|\s+de)?|goal)\b/gi, ' ||| $1');
+  // 1. Match Goals
+  // e.g.: ⚽ GOL do Hertha Berlin (~4') or GOL do Heidenheim (~45'+) nos acréscimos
+  const goalRegex = /(?:⚽\s*|(?:\b|^)(?:gol(?:\s+do|\s+da|\s+de)?|goal)\s+)([^🚩🟨🟥⚽;\n\r]+)/gi;
+  let match: RegExpExecArray | null;
 
-  const segments = normalizedText.split('|||').map(s => s.trim()).filter(Boolean);
-
-  for (const seg of segments) {
-    // 1. Check for Goal
-    if (/⚽|gol(?:\s+do|\s+da|\s+de)?|goal/i.test(seg)) {
-      if (/anulado|var|impedimento|irregular/i.test(seg)) {
-        continue;
-      }
-      const minute = parseMinuteFromSnippet(seg, defaultMin);
-      // Clean team snippet
-      const cleanTeamSnippet = seg
-        .replace(/⚽/g, '')
-        .replace(/gol(?:\s+do|\s+da|\s+de)?|goal/gi, '')
-        .replace(/\(.*?\)/g, '')
-        .replace(/nos acr[eé]scimos|acr[eé]scimos|contra|p[eê]nalti|de cabe[cç]a/gi, '')
-        .trim();
-
-      const team = detectTeam(cleanTeamSnippet || seg, homeTeamName, awayTeamName, homeCode, awayCode, 'home');
-      foundEvents.push({
-        minute,
-        type: 'goal',
-        team,
-        description: seg.trim(),
-      });
+  while ((match = goalRegex.exec(rawText)) !== null) {
+    const snippet = match[0];
+    const details = match[1] || '';
+    if (/anulado|var|impedimento|irregular/i.test(snippet)) {
       continue;
     }
+    const minute = parseMinuteFromSnippet(details, defaultMin);
+    const cleanTeamSnippet = details
+      .replace(/\(.*?\)/g, '')
+      .replace(/nos acr[eé]scimos|acr[eé]scimos|contra|p[eê]nalti|de cabe[cç]a/gi, '')
+      .trim();
 
-    // 2. Check for Red Card
-    if (/🟥|cart[aã]o\s+vermelho|vermelho|red\s+card|expuls[aã]o/i.test(seg)) {
-      const minute = parseMinuteFromSnippet(seg, defaultMin);
-      const cleanTeamSnippet = seg
-        .replace(/🟥/g, '')
-        .replace(/cart[aã]o\s+vermelho|vermelho|red\s+card|expuls[aã]o/gi, '')
-        .replace(/\(.*?\)/g, '')
-        .replace(/nos acr[eé]scimos|acr[eé]scimos/gi, '')
-        .trim();
+    const team = detectTeam(cleanTeamSnippet || details, homeTeamName, awayTeamName, homeCode, awayCode, 'home');
+    foundEvents.push({
+      minute,
+      type: 'goal',
+      team,
+      description: snippet.trim(),
+    });
+  }
 
-      const team = detectTeam(cleanTeamSnippet || seg, homeTeamName, awayTeamName, homeCode, awayCode, 'away');
-      foundEvents.push({
-        minute,
-        type: 'red_card',
-        cardType: 'red',
-        team,
-        description: seg.trim(),
-      });
-      continue;
-    }
+  // 2. Match Red Cards
+  // e.g.: 🟥 Cartão Vermelho Hertha (~88') or Cartão Vermelho Hertha
+  const redRegex = /(?:🟥\s*|(?:\b|^)(?:cart[aã]o\s+vermelho|vermelho|red\s+card|expuls[aã]o)\s*)([^🚩🟨🟥⚽;\n\r]+)/gi;
+  while ((match = redRegex.exec(rawText)) !== null) {
+    const snippet = match[0];
+    const details = match[1] || '';
+    const minute = parseMinuteFromSnippet(details, defaultMin);
+    const cleanTeamSnippet = details
+      .replace(/\(.*?\)/g, '')
+      .replace(/nos acr[eé]scimos|acr[eé]scimos/gi, '')
+      .trim();
 
-    // 3. Check for Yellow Card
-    if (/🟨|cart[aã]o\s+amarelo|amarelo|yellow\s+card/i.test(seg)) {
-      const minute = parseMinuteFromSnippet(seg, defaultMin);
-      const cleanTeamSnippet = seg
-        .replace(/🟨/g, '')
-        .replace(/cart[aã]o\s+amarelo|amarelo|yellow\s+card/gi, '')
-        .replace(/\(.*?\)/g, '')
-        .replace(/nos acr[eé]scimos|acr[eé]scimos/gi, '')
-        .trim();
+    const team = detectTeam(cleanTeamSnippet || details, homeTeamName, awayTeamName, homeCode, awayCode, 'away');
+    foundEvents.push({
+      minute,
+      type: 'red_card',
+      cardType: 'red',
+      team,
+      description: snippet.trim(),
+    });
+  }
 
-      const team = detectTeam(cleanTeamSnippet || seg, homeTeamName, awayTeamName, homeCode, awayCode, 'away');
-      foundEvents.push({
-        minute,
-        type: 'card',
-        cardType: 'yellow',
-        team,
-        description: seg.trim(),
-      });
-      continue;
-    }
+  // 3. Match Yellow Cards
+  // e.g.: 🟨 Cartão Amarelo Heidenheim (~36') or Cartão Amarelo Heidenheim
+  const yellowRegex = /(?:🟨\s*|(?:\b|^)(?:cart[aã]o\s+amarelo|amarelo|yellow\s+card)\s*)([^🚩🟨🟥⚽;\n\r]+)/gi;
+  while ((match = yellowRegex.exec(rawText)) !== null) {
+    const snippet = match[0];
+    const details = match[1] || '';
+    const minute = parseMinuteFromSnippet(details, defaultMin);
+    const cleanTeamSnippet = details
+      .replace(/\(.*?\)/g, '')
+      .replace(/nos acr[eé]scimos|acr[eé]scimos/gi, '')
+      .trim();
 
-    // 4. Check for Corner
-    if (/🚩|escanteio|canto|corner/i.test(seg)) {
-      const minute = parseMinuteFromSnippet(seg, defaultMin);
-      const cleanTeamSnippet = seg
-        .replace(/🚩/g, '')
-        .replace(/escanteio|canto|corner/gi, '')
-        .replace(/\(.*?\)/g, '')
-        .replace(/nos acr[eé]scimos|acr[eé]scimos/gi, '')
-        .trim();
+    const team = detectTeam(cleanTeamSnippet || details, homeTeamName, awayTeamName, homeCode, awayCode, 'away');
+    foundEvents.push({
+      minute,
+      type: 'card',
+      cardType: 'yellow',
+      team,
+      description: snippet.trim(),
+    });
+  }
 
-      const team = detectTeam(cleanTeamSnippet || seg, homeTeamName, awayTeamName, homeCode, awayCode, 'home');
-      foundEvents.push({
-        minute,
-        type: 'corner',
-        team,
-        description: seg.trim(),
-      });
-      continue;
-    }
+  // 4. Match Corners
+  // e.g.: 🚩 Escanteio Hertha (~9') or Escanteio Heidenheim (~59')
+  const cornerRegex = /(?:🚩\s*|(?:\b|^)(?:escanteio|canto|corner)\s*)([^🚩🟨🟥⚽;\n\r]+)/gi;
+  while ((match = cornerRegex.exec(rawText)) !== null) {
+    const snippet = match[0];
+    const details = match[1] || '';
+    const minute = parseMinuteFromSnippet(details, defaultMin);
+    const cleanTeamSnippet = details
+      .replace(/\(.*?\)/g, '')
+      .replace(/nos acr[eé]scimos|acr[eé]scimos/gi, '')
+      .trim();
+
+    const team = detectTeam(cleanTeamSnippet || details, homeTeamName, awayTeamName, homeCode, awayCode, 'home');
+    foundEvents.push({
+      minute,
+      type: 'corner',
+      team,
+      description: snippet.trim(),
+    });
   }
 
   return foundEvents;
@@ -351,11 +347,16 @@ export function parsePressureCsvText(
       endMin = intervals.length * 5;
     }
 
-    // Extract sub-events (Corners, Yellow/Red cards, Goals) from all text columns
-    const extractedCornersCards = extractSubEvents(cornersAndCards, startMin, endMin, homeTeamName, awayTeamName, homeCode, awayCode);
-    const extractedGoals = extractSubEvents(goalsAndHighlights || combinedContext, startMin, endMin, homeTeamName, awayTeamName, homeCode, awayCode);
+    // Extract sub-events (Corners, Yellow/Red cards, Goals)
+    let lineEvents: PressureEvent[] = [];
+    if (parts.length >= 7) {
+      const extractedCornersCards = extractSubEvents(cornersAndCards, startMin, endMin, homeTeamName, awayTeamName, homeCode, awayCode);
+      const extractedGoals = extractSubEvents(goalsAndHighlights, startMin, endMin, homeTeamName, awayTeamName, homeCode, awayCode);
+      lineEvents = [...extractedCornersCards, ...extractedGoals];
+    } else {
+      lineEvents = extractSubEvents(combinedContext, startMin, endMin, homeTeamName, awayTeamName, homeCode, awayCode);
+    }
 
-    const lineEvents = [...extractedCornersCards, ...extractedGoals];
     events.push(...lineEvents);
 
     // Build timeline points for each minute in the interval
