@@ -10,7 +10,8 @@ import {
   CalendarDays,
   RotateCcw,
   CheckCircle2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  TrendingUp,
 } from 'lucide-react';
 import { DbState } from '../types';
 import { extractYMD, formatDateToYMD } from './DailyMatchesView';
@@ -23,6 +24,7 @@ interface NavbarProps {
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
   onOpenBulkImportModal?: () => void;
   onOpenBulkMatchImportModal?: () => void;
+  onOpenPressureImportModal?: () => void;
   onOpenBackupModal: () => void;
 }
 
@@ -34,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenEntityModal,
   onOpenBulkImportModal,
   onOpenBulkMatchImportModal,
+  onOpenPressureImportModal,
   onOpenBackupModal,
 }) => {
   // Calculate matches for today, tomorrow, and after tomorrow
@@ -87,6 +90,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Plus className="w-4 h-4 stroke-[3]" />
               <span className="hidden xs:inline">Cadastrar</span> Jogo
             </button>
+
+            {onOpenPressureImportModal && (
+              <button
+                onClick={onOpenPressureImportModal}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm rounded-xl shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] border border-blue-500"
+                title="Importar Dados via Print do Gráfico de Pressão / Termômetro (IA)"
+              >
+                <TrendingUp className="w-4 h-4 text-amber-300" />
+                <span className="hidden sm:inline">Gráfico de Pressão</span>
+                <span className="px-1.5 py-0.2 bg-white/20 rounded text-[10px] font-mono uppercase">IA</span>
+              </button>
+            )}
 
             {onOpenBulkMatchImportModal && (
               <button

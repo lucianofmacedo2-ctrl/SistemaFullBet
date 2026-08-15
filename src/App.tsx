@@ -23,8 +23,9 @@ import { DailyMatchesView } from './components/DailyMatchesView';
 import { BackupModal } from './components/BackupModal';
 import { MatchStatsModal } from './components/MatchStatsModal';
 import { QuickScoreModal } from './components/QuickScoreModal';
+import { PressureChartImportModal } from './components/PressureChartImportModal';
 import { ToastNotification } from './components/ToastNotification';
-import { MatchOdds, MatchStats, MatchStatus } from './types';
+import { MatchOdds, MatchStats, MatchStatus, MatchPressureData } from './types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from './utils/idGenerator';
 import { ParsedMatchRow } from './utils/excelHelper';
 
@@ -57,6 +58,8 @@ export default function App() {
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [isBulkTeamModalOpen, setIsBulkTeamModalOpen] = useState(false);
   const [isBulkMatchModalOpen, setIsBulkMatchModalOpen] = useState(false);
+  const [isPressureModalOpen, setIsPressureModalOpen] = useState(false);
+  const [pressureSelectedMatchId, setPressureSelectedMatchId] = useState<string | null>(null);
 
   // Quick Score & Odds Modal state
   const [isQuickScoreModalOpen, setIsQuickScoreModalOpen] = useState(false);
@@ -634,6 +637,54 @@ export default function App() {
     await saveDatabaseState(newState);
   };
 
+  const handleOpenPressureChartModal = (matchId?: string | null) => {
+    setPressureSelectedMatchId(matchId || null);
+    setIsPressureModalOpen(true);
+  };
+
+  const handleSavePressureData = async (
+    matchId: string,
+    pressureData: MatchPressureData,
+    autoFillGoalStats: boolean = true
+  ) => {
+    const updatedMatches = dbState.matches.map(m => {
+      if (m.id === matchId) {
+        const existingStats = m.stats || {};
+        const stats: MatchStats = { ...existingStats };
+
+        if (autoFillGoalStats && pressureData.events && pressureData.events.length > 0) {
+          const homeGoals = pressureData.events.filter(e => e.type === 'goal' && e.team === 'home');
+          const awayGoals = pressureData.events.filter(e => e.type === 'goal' && e.team === 'away');
+
+          if (homeGoals.length > 0 && !stats.goalMinutesHome) {
+            stats.goalMinutesHome = homeGoals.map(g => `${g.minute}'`).join(', ');
+            stats.firstGoalMinuteHome = homeGoals[0].minute;
+          }
+          if (awayGoals.length > 0 && !stats.goalMinutesAway) {
+            stats.goalMinutesAway = awayGoals.map(g => `${g.minute}'`).join(', ');
+            stats.firstGoalMinuteAway = awayGoals[0].minute;
+          }
+
+          const allGoals = [...pressureData.events.filter(e => e.type === 'goal')].sort((a, b) => a.minute - b.minute);
+          if (allGoals.length > 0 && !stats.firstGoalMinuteMatch) {
+            stats.firstGoalMinuteMatch = allGoals[0].minute;
+          }
+        }
+
+        return {
+          ...m,
+          pressureData,
+          stats,
+        };
+      }
+      return m;
+    });
+
+    const newState = { ...dbState, matches: updatedMatches };
+    setDbState(newState);
+    await saveDatabaseState(newState);
+  };
+
   const handleOpenEntityModal = (type: 'country' | 'league' | 'team' = 'country') => {
     setEntityModalType(type);
     setIsEntityModalOpen(true);
@@ -661,6 +712,7 @@ export default function App() {
         onOpenEntityModal={handleOpenEntityModal}
         onOpenBulkImportModal={() => setIsBulkTeamModalOpen(true)}
         onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
+        onOpenPressureImportModal={() => handleOpenPressureChartModal(null)}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
       />
 
@@ -683,6 +735,7 @@ export default function App() {
                 onOpenStatsModal={handleOpenStatsModal}
                 onOpenQuickScore={handleOpenQuickScore}
                 onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
+                onOpenPressureChartModal={handleOpenPressureChartModal}
               />
             )}
           </>
@@ -697,6 +750,7 @@ export default function App() {
             onOpenStatsModal={handleOpenStatsModal}
             onOpenQuickScore={handleOpenQuickScore}
             onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
+            onOpenPressureChartModal={handleOpenPressureChartModal}
           />
         )}
 
@@ -743,6 +797,18 @@ export default function App() {
         onClose={() => setIsStatsModalOpen(false)}
         match={statsMatch}
         onSaveStats={handleSaveStats}
+        onOpenPressureChartModal={handleOpenPressureChartModal}
+      />
+
+      <PressureChartImportModal
+        isOpen={isPressureModalOpen}
+        onClose={() => {
+          setIsPressureModalOpen(false);
+          setPressureSelectedMatchId(null);
+        }}
+        matches={dbState.matches}
+        selectedMatchId={pressureSelectedMatchId}
+        onSavePressureData={handleSavePressureData}
       />
 
       <QuickScoreModal

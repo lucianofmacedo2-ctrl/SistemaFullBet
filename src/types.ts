@@ -103,6 +103,51 @@ export interface MinuteAndOdd {
   odd?: number | null;
 }
 
+export interface PressureTimelinePoint {
+  minute: number; // 1 to 90+
+  value: number; // -100 to +100 (positive: home team pressure, negative: away team pressure)
+  team: 'home' | 'away' | 'neutral';
+  isPeak?: boolean; // Reached high intensity / critical attack threshold
+  event?: 'goal_home' | 'goal_away' | 'yellow_home' | 'yellow_away' | 'red_home' | 'red_away' | 'none';
+  eventDescription?: string;
+}
+
+export interface PressureInterval {
+  interval: string; // e.g. "0-15'", "16-30'", "31-45'+", "46-60'", "61-75'", "76-90'+"
+  homeAvg: number; // 0-100
+  awayAvg: number; // 0-100
+  dominantTeam: 'home' | 'away' | 'balanced';
+  homeAttackingVolume?: number;
+  awayAttackingVolume?: number;
+}
+
+export interface PressureEvent {
+  minute: number;
+  type: 'goal' | 'card' | 'red_card' | 'sub';
+  team: 'home' | 'away';
+  description?: string;
+}
+
+export interface MatchPressureData {
+  timeline: PressureTimelinePoint[];
+  homeDominancePct: number; // 0 to 100
+  awayDominancePct: number; // 0 to 100
+  homePeakCount: number; // count of dangerous attacks above threshold
+  awayPeakCount: number;
+  intervals: PressureInterval[];
+  events: PressureEvent[];
+  extractedTeams?: {
+    homeCode?: string;
+    awayCode?: string;
+    homeName?: string;
+    awayName?: string;
+  };
+  totalMinutes?: number;
+  tacticalSummary?: string;
+  sourceImageUrl?: string;
+  importedAt?: string;
+}
+
 export interface MatchOdds {
   // Odds FT (Full Time)
   homeFT?: number | null;
@@ -150,6 +195,7 @@ export interface Match {
   notes?: string;
   stats?: MatchStats;
   odds?: MatchOdds;
+  pressureData?: MatchPressureData;
   isContinental?: boolean;
   createdAt: string;
 }

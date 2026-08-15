@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { DbState, Match, MatchStatus } from '../types';
 import { checkMatchCompleteness, checkMatchFullCompleteness } from './MatchList';
+import { PressureChartViewer } from './PressureChartViewer';
 
 interface DailyMatchesViewProps {
   dbState: DbState;
@@ -40,6 +41,7 @@ interface DailyMatchesViewProps {
   onOpenStatsModal: (match: Match) => void;
   onOpenQuickScore?: (match: Match) => void;
   onOpenBulkMatchImportModal?: () => void;
+  onOpenPressureChartModal?: (matchId: string) => void;
 }
 
 export type DaySelectionMode = 'TODAY' | 'TOMORROW' | 'AFTER_TOMORROW' | 'THREE_DAYS' | 'CUSTOM';
@@ -124,6 +126,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   onOpenStatsModal,
   onOpenQuickScore,
   onOpenBulkMatchImportModal,
+  onOpenPressureChartModal,
 }) => {
   // Base reference date (today)
   const today = useMemo(() => new Date(), []);
@@ -769,7 +772,23 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {/* Pressure Chart Badge if available */}
+                      {match.pressureData && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onOpenPressureChartModal) onOpenPressureChartModal(match.id);
+                          }}
+                          className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
+                          title="Clique para ver o Gráfico de Pressão"
+                        >
+                          <TrendingUp className="w-3 h-3 text-amber-600" />
+                          <span>Pressão ({match.pressureData.homeDominancePct}% x {match.pressureData.awayDominancePct}%)</span>
+                        </button>
+                      )}
+
                       {/* Completeness Badge */}
                       {fullComp.is100PercentComplete ? (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-600 text-white border border-emerald-500 flex items-center gap-1 shadow-xs animate-in fade-in">
@@ -929,6 +948,22 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                         <span>{match.status === 'FINALIZADO' ? 'Stats Completas' : 'Lançar Stats'}</span>
                       </button>
 
+                      {onOpenPressureChartModal && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenPressureChartModal(match.id)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer ${
+                            match.pressureData
+                              ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300'
+                              : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                          }`}
+                          title={match.pressureData ? 'Ver / Editar Gráfico de Pressão' : 'Importar Print do Gráfico de Pressão via IA'}
+                        >
+                          <TrendingUp className={`w-3.5 h-3.5 ${match.pressureData ? 'text-amber-600' : 'text-slate-500'}`} />
+                          <span>{match.pressureData ? 'Gráfico de Pressão' : 'Gráfico IA'}</span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => setExpandedMatchId(isExpanded ? null : match.id)}
@@ -965,6 +1000,32 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                       <span className="font-bold text-slate-800 uppercase text-[10px] tracking-wider block">
                         Cotações & Marcadores Detalhados
                       </span>
+
+                      {/* Pressure Chart if available */}
+                      {match.pressureData && (
+                        <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-800 uppercase text-[10px] tracking-wider flex items-center gap-1.5">
+                              <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
+                              Gráfico de Pressão & Domínio Extraído (IA)
+                            </span>
+                            {onOpenPressureChartModal && (
+                              <button
+                                type="button"
+                                onClick={() => onOpenPressureChartModal(match.id)}
+                                className="text-[11px] font-bold text-blue-600 hover:underline"
+                              >
+                                Abrir Detalhado
+                              </button>
+                            )}
+                          </div>
+                          <PressureChartViewer
+                            pressureData={match.pressureData}
+                            homeTeamName={match.homeTeamName}
+                            awayTeamName={match.awayTeamName}
+                          />
+                        </div>
+                      )}
 
                       {/* Scorers */}
                       {(match.stats?.scorersHome || match.stats?.scorersAway) && (

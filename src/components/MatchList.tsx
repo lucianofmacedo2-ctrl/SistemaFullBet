@@ -36,6 +36,7 @@ import {
   LayoutGrid
 } from 'lucide-react';
 import { DbState, Match, MatchStatus } from '../types';
+import { PressureChartViewer } from './PressureChartViewer';
 
 interface MatchListProps {
   dbState: DbState;
@@ -45,6 +46,7 @@ interface MatchListProps {
   onOpenStatsModal: (match: Match) => void;
   onOpenQuickScore?: (match: Match) => void;
   onOpenBulkMatchImportModal?: () => void;
+  onOpenPressureChartModal?: (matchId: string) => void;
 }
 
 export interface CompletenessResult {
@@ -170,6 +172,7 @@ export const MatchList: React.FC<MatchListProps> = ({
   onOpenStatsModal,
   onOpenQuickScore,
   onOpenBulkMatchImportModal,
+  onOpenPressureChartModal,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCountryId, setFilterCountryId] = useState('');
@@ -1055,7 +1058,23 @@ export const MatchList: React.FC<MatchListProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Pressure Chart Badge */}
+            {match.pressureData && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onOpenPressureChartModal) onOpenPressureChartModal(match.id);
+                }}
+                className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
+                title="Clique para abrir o Gráfico de Pressão"
+              >
+                <TrendingUp className="w-3 h-3 text-amber-600" />
+                <span>Pressão ({match.pressureData.homeDominancePct}% x {match.pressureData.awayDominancePct}%)</span>
+              </button>
+            )}
+
             {/* Completeness Badge */}
             {fullComp.is100PercentComplete ? (
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-600 text-white border border-emerald-500 flex items-center gap-1 shadow-xs animate-in fade-in">
@@ -1364,35 +1383,65 @@ export const MatchList: React.FC<MatchListProps> = ({
           )}
 
         {/* Expandable Match Stats Section */}
-        {isExpanded && match.stats && (
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-3 text-xs animate-in fade-in duration-200">
-            <div className="flex items-center justify-between text-slate-700 font-bold text-[11px] uppercase border-b border-slate-200 pb-1.5">
-              <span>Estatísticas da Partida (FT & HT)</span>
-              {match.stats.halftimeHomeScore !== undefined && match.stats.halftimeHomeScore !== null && (
-                <span className="text-blue-900 font-mono font-bold bg-blue-100 px-2 py-0.5 rounded border border-blue-200">
-                  1º Tempo (HT): {match.stats.halftimeHomeScore} - {match.stats.halftimeAwayScore}
-                </span>
-              )}
-            </div>
+        {isExpanded && (
+          <div className="space-y-3 animate-in fade-in duration-200">
+            {/* Pressure Chart if present */}
+            {match.pressureData && (
+              <div className="bg-white p-3 rounded-xl border border-blue-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-800 uppercase text-[10px] tracking-wider flex items-center gap-1.5">
+                    <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
+                    Gráfico de Pressão & Domínio Extraído (IA)
+                  </span>
+                  {onOpenPressureChartModal && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenPressureChartModal(match.id)}
+                      className="text-[11px] font-bold text-blue-600 hover:underline"
+                    >
+                      Abrir Detalhado
+                    </button>
+                  )}
+                </div>
+                <PressureChartViewer
+                  pressureData={match.pressureData}
+                  homeTeamName={match.homeTeamName}
+                  awayTeamName={match.awayTeamName}
+                />
+              </div>
+            )}
 
-            {/* Posse de bola bar */}
-            {(match.stats.possessionHomeFT ?? match.stats.possessionHome) != null && (
-              <div className="space-y-1">
-                <div className="flex justify-between text-[11px] text-slate-700 font-medium">
-                  <span>{match.stats.possessionHomeFT ?? match.stats.possessionHome}% Posse FT</span>
-                  <span className="text-slate-500 font-bold">Posse de Bola</span>
-                  <span>{match.stats.possessionAwayFT ?? match.stats.possessionAway}% Posse FT</span>
+            {match.stats && (
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-3 text-xs">
+                <div className="flex items-center justify-between text-slate-700 font-bold text-[11px] uppercase border-b border-slate-200 pb-1.5">
+                  <span>Estatísticas da Partida (FT & HT)</span>
+                  {match.stats.halftimeHomeScore !== undefined && match.stats.halftimeHomeScore !== null && (
+                    <span className="text-blue-900 font-mono font-bold bg-blue-100 px-2 py-0.5 rounded border border-blue-200">
+                      1º Tempo (HT): {match.stats.halftimeHomeScore} - {match.stats.halftimeAwayScore}
+                    </span>
+                  )}
                 </div>
-                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden flex">
-                  <div
-                    className="bg-blue-600 h-full transition-all"
-                    style={{ width: `${match.stats.possessionHomeFT ?? match.stats.possessionHome}%` }}
-                  />
-                  <div
-                    className="bg-blue-400 h-full transition-all"
-                    style={{ width: `${match.stats.possessionAwayFT ?? match.stats.possessionAway}%` }}
-                  />
-                </div>
+
+                {/* Posse de bola bar */}
+                {(match.stats.possessionHomeFT ?? match.stats.possessionHome) != null && (
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px] text-slate-700 font-medium">
+                      <span>{match.stats.possessionHomeFT ?? match.stats.possessionHome}% Posse FT</span>
+                      <span className="text-slate-500 font-bold">Posse de Bola</span>
+                      <span>{match.stats.possessionAwayFT ?? match.stats.possessionAway}% Posse FT</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden flex">
+                      <div
+                        className="bg-blue-600 h-full transition-all"
+                        style={{ width: `${match.stats.possessionHomeFT ?? match.stats.possessionHome}%` }}
+                      />
+                      <div
+                        className="bg-blue-400 h-full transition-all"
+                        style={{ width: `${match.stats.possessionAwayFT ?? match.stats.possessionAway}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1436,15 +1485,32 @@ export const MatchList: React.FC<MatchListProps> = ({
           </span>
 
           <div className="flex items-center gap-2">
-            {/* Expand stats toggle if stats exist */}
-            {hasStats && (
+            {/* Expand stats toggle if stats or pressureData exist */}
+            {(hasStats || match.pressureData) && (
               <button
                 onClick={() => setExpandedStatsMatchId(isExpanded ? null : match.id)}
                 className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold flex items-center gap-1 border border-blue-200 transition-colors"
               >
                 <BarChart2 className="w-3.5 h-3.5 text-blue-600" />
-                <span>{isExpanded ? 'Ocultar Stats' : 'Ver Stats'}</span>
+                <span>{isExpanded ? 'Ocultar Detalhes' : 'Ver Detalhes'}</span>
                 {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            )}
+
+            {/* Pressure Chart button */}
+            {onOpenPressureChartModal && (
+              <button
+                type="button"
+                onClick={() => onOpenPressureChartModal(match.id)}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1 transition-all shadow-xs cursor-pointer ${
+                  match.pressureData
+                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+                title={match.pressureData ? 'Ver / Editar Gráfico de Pressão' : 'Importar Gráfico de Pressão via IA'}
+              >
+                <TrendingUp className={`w-3.5 h-3.5 ${match.pressureData ? 'text-amber-600' : 'text-slate-500'}`} />
+                <span>{match.pressureData ? 'Gráfico' : 'Gráfico IA'}</span>
               </button>
             )}
 
