@@ -714,7 +714,6 @@ export default function App() {
         onOpenEntityModal={handleOpenEntityModal}
         onOpenBulkImportModal={() => setIsBulkTeamModalOpen(true)}
         onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
-        onOpenPressureImportModal={() => handleOpenPressureChartModal(null)}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
       />
 

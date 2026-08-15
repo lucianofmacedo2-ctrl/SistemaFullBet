@@ -187,9 +187,32 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
     try {
       const parsed = parsePressureCsvText(pressureCsvText, match.homeTeamName, match.awayTeamName);
       setParsedPressureData(parsed);
-      setPressureSuccessMsg(
-        `✅ ${parsed.intervals.length} intervalos processados com sucesso! Domínio: ${match.homeTeamName} (${parsed.homeDominancePct}%) x ${match.awayTeamName} (${parsed.awayDominancePct}%).`
-      );
+
+      let msg = `✅ ${parsed.intervals.length} intervalos processados com sucesso! Domínio: ${match.homeTeamName} (${parsed.homeDominancePct}%) x ${match.awayTeamName} (${parsed.awayDominancePct}%).`;
+
+      if (parsed.cornersSummary && parsed.cornersSummary.total > 0) {
+        msg += ` 🚩 Escanteios: ${parsed.cornersSummary.homeFT}x${parsed.cornersSummary.awayFT}.`;
+        if (!cornersHomeFT && !cornersAwayFT) {
+          setCornersHomeFT(String(parsed.cornersSummary.homeFT));
+          setCornersAwayFT(String(parsed.cornersSummary.awayFT));
+          setCornersHomeHT(String(parsed.cornersSummary.homeHT));
+          setCornersAwayHT(String(parsed.cornersSummary.awayHT));
+        }
+      }
+
+      if (parsed.cardsSummary && parsed.cardsSummary.total > 0) {
+        msg += ` 🟨 Cartões: ${parsed.cardsSummary.yellowHomeFT + parsed.cardsSummary.redHomeFT}x${parsed.cardsSummary.yellowAwayFT + parsed.cardsSummary.redAwayFT}.`;
+        if (!yellowHomeFT && !yellowAwayFT) {
+          setYellowHomeFT(String(parsed.cardsSummary.yellowHomeFT));
+          setYellowAwayFT(String(parsed.cardsSummary.yellowAwayFT));
+          setYellowHomeHT(String(parsed.cardsSummary.yellowHomeHT));
+          setYellowAwayHT(String(parsed.cardsSummary.yellowAwayHT));
+        }
+        if (!redHomeFT && !redAwayFT) {
+          setRedHomeFT(String(parsed.cardsSummary.redHomeFT));
+          setRedAwayFT(String(parsed.cardsSummary.redAwayFT));
+        }
+      }
 
       // Check if goals exist in parsed events and can be autofilled
       if (parsed.events && parsed.events.length > 0) {
@@ -209,6 +232,8 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
           setFirstGoalMinMatch(String(allGoals[0].minute));
         }
       }
+
+      setPressureSuccessMsg(msg);
     } catch (err: any) {
       setPressureParseError(err.message || 'Erro ao processar o texto da pressão. Verifique o formato das colunas.');
     }
@@ -218,33 +243,33 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
     const homeCode = match.homeTeamName.substring(0, 3).toUpperCase();
     const awayCode = match.awayTeamName.substring(0, 3).toUpperCase();
 
-    const sample = `Intervalo,Pressão ${homeCode},Pressão ${awayCode},Índice Líquido,Time Dominante,Evento / Contexto Destacado
-01' - 05',25,10,+15,${homeCode},Estudo de jogo / leve iniciativa do ${homeCode}
-06' - 10',15,15,0,Equilibrado,Jogo truncado no meio-campo
-11' - 15',65,5,+60,${homeCode},Crescimento do volume do ${homeCode}
-16' - 20',80,0,+80,${homeCode},Pico de pressão do ${homeCode} no 1º tempo
-21' - 25',30,20,+10,${homeCode},⚽ Gol Anulado (${homeCode} ~22')
-26' - 30',0,80,-80,${awayCode},⚽ GOL do ${awayCode} (~27')
-31' - 35',10,50,-40,${awayCode},${awayCode} controla o ritmo após abrir o placar
-36' - 40',75,25,+50,${homeCode},⚽ GOL do ${homeCode} (~38')
-41' - 45',55,20,+35,${homeCode},${homeCode} pressiona na reta final do 1º tempo
-45'+,10,70,-60,${awayCode},⚽ GOL do ${awayCode} (~47') nos acréscimos
-46' - 50',0,65,-65,${awayCode},${awayCode} volta do intervalo impondo ritmo
-51' - 55',0,40,-40,${awayCode},${awayCode} mantém controle da posse/ataque
-56' - 60',20,55,-35,${awayCode},⚽ GOL do ${awayCode} (~56')
-61' - 65',80,10,+70,${homeCode},Reação imediata e forte pressão do ${homeCode}
-66' - 70',35,10,+25,${homeCode},${homeCode} tenta manter a posse no campo de ataque
-71' - 75',10,85,-75,${awayCode},⚽ GOL do ${awayCode} (~74')
-76' - 80',70,15,+55,${homeCode},${homeCode} se lança ao ataque
-81' - 85',35,5,+30,${homeCode},Pressão constante do ${homeCode}
-86' - 90'+,100,10,+90,${homeCode},Maior pico de pressão do jogo (${homeCode} no abafa)`;
+    const sample = `Intervalo,Pressão ${homeCode} (0-100),Pressão ${awayCode} (0-100),Índice Líquido,Dominância,Escanteios & Cartões,Gols & Destaques
+01' - 05',25,10,+15,${homeCode},-,Estudo de jogo inicial
+06' - 10',15,15,0,Equilibrado,🚩 Escanteio ${homeCode} (~10'),Início equilibrado
+11' - 15',65,5,+60,${homeCode},🚩 Escanteio ${homeCode} (~14'),${homeCode} assume o controle do meio
+16' - 20',80,0,+80,${homeCode},🚩 Escanteio ${homeCode} (~17'),Maior volume ofensivo do ${homeCode} no 1º tempo
+21' - 25',30,20,+10,${homeCode},-,⚽ Gol Anulado / Variável ${homeCode} (~22')
+26' - 30',0,80,-80,${awayCode},🟨 Cartão Amarelo ${awayCode} (~29'),⚽ GOL do ${awayCode} (~27')
+31' - 35',10,50,-40,${awayCode},-,${awayCode} controla após o primeiro gol
+36' - 40',75,25,+50,${homeCode},🚩 Escanteio ${homeCode} (~36'),⚽ GOL do ${homeCode} (~38')
+41' - 45',55,20,+35,${homeCode},-,${homeCode} em busca do segundo gol
+45'+ (HT),10,70,-60,${awayCode},🟨 Cartão Amarelo ${awayCode} (~45'+),⚽ GOL do ${awayCode} (~47') nos acréscimos
+46' - 50',0,65,-65,${awayCode},🟨 Cartão Amarelo ${awayCode} (~51'),${awayCode} volta superior
+51' - 55',0,40,-40,${awayCode},-,Controle de jogo do ${awayCode}
+56' - 60',20,55,-35,${awayCode},🟨 Cartão Amarelo ${awayCode} (~61'),⚽ GOL do ${awayCode} (~56')
+61' - 65',80,10,+70,${homeCode},🚩 Escanteio ${awayCode} (~65'),${homeCode} pressiona forte em resposta ao gol
+66' - 70',35,10,+25,${homeCode},-,${homeCode} mantém posse ofensiva
+71' - 75',10,85,-75,${awayCode},🚩 Escanteio ${awayCode} (~73')🟨 Cartão Amarelo ${awayCode} (~76'),⚽ GOL do ${awayCode} (~74') no contra-ataque
+76' - 80',70,15,+55,${homeCode},🚩 Escanteio ${awayCode} (~81'),${homeCode} se lança ao ataque
+81' - 85',35,5,+30,${homeCode},-,Pressão do ${homeCode} na reta final
+86' - 90'+,100,10,+90,${homeCode},🟨 Cartão Amarelo ${homeCode} (~86')🚩 Escanteio ${homeCode} (~90'+),Pressão total do ${homeCode} no abafa final`;
 
     setPressureCsvText(sample);
     try {
       const parsed = parsePressureCsvText(sample, match.homeTeamName, match.awayTeamName);
       setParsedPressureData(parsed);
       setPressureParseError(null);
-      setPressureSuccessMsg(`Exemplo carregado com ${parsed.intervals.length} intervalos!`);
+      setPressureSuccessMsg(`Exemplo com 7 colunas (Escanteios, Cartões e Gols) carregado com ${parsed.intervals.length} intervalos!`);
     } catch (e: any) {
       setPressureParseError(e.message);
     }
@@ -490,13 +515,16 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
                             <th className="p-2 text-center text-amber-400 font-bold">Visitante</th>
                             <th className="p-2 text-center font-bold">Índice Líquido</th>
                             <th className="p-2 text-center font-bold">Dominância</th>
-                            <th className="p-2 font-bold">Evento / Contexto</th>
+                            <th className="p-2 font-bold text-emerald-400">🚩 Escanteios & Cartões</th>
+                            <th className="p-2 font-bold text-amber-300">⚽ Gols & Destaques</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800/80 text-slate-200">
                           {parsedPressureData.intervals.map((it, idx) => {
                             const net = it.netIndex !== undefined ? it.netIndex : ((it.homePressure || 0) - (it.awayPressure || 0));
-                            const isGoal = it.contextHighlight && /gol|goal|⚽/i.test(it.contextHighlight) && !/anulado/i.test(it.contextHighlight);
+                            const cornersCardsText = it.cornersAndCards || (it.contextHighlight && /🚩|escanteio|🟨|amarelo|🟥|vermelho/i.test(it.contextHighlight) ? it.contextHighlight : '');
+                            const goalsHighlightsText = it.goalsAndHighlights || (it.contextHighlight && !it.cornersAndCards ? it.contextHighlight : '');
+                            const isGoal = goalsHighlightsText && /gol|goal|⚽/i.test(goalsHighlightsText) && !/anulado/i.test(goalsHighlightsText);
 
                             return (
                               <tr key={idx} className={isGoal ? 'bg-amber-500/10' : idx % 2 === 0 ? 'bg-transparent' : 'bg-slate-900/40'}>
@@ -521,10 +549,19 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
                                     {it.dominantTeam}
                                   </span>
                                 </td>
+                                <td className="p-2 text-emerald-300 text-[10px]">
+                                  {cornersCardsText && cornersCardsText !== '-' ? (
+                                    <span className="bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 px-1.5 py-0.5 rounded">
+                                      {cornersCardsText}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-600">-</span>
+                                  )}
+                                </td>
                                 <td className="p-2 text-slate-300 text-[10px]">
-                                  {it.contextHighlight ? (
+                                  {goalsHighlightsText && goalsHighlightsText !== '-' ? (
                                     <span className={isGoal ? 'text-amber-300 font-bold' : 'text-slate-300'}>
-                                      {it.contextHighlight}
+                                      {goalsHighlightsText}
                                     </span>
                                   ) : (
                                     <span className="text-slate-600">-</span>

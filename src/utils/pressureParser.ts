@@ -1,12 +1,143 @@
 import { MatchPressureData, PressureInterval, PressureTimelinePoint, PressureEvent } from '../types';
 
 /**
- * Parses raw CSV / TSV / Semicolon-delimited text containing 5-minute pressure data.
- * Format example:
- * Intervalo,Pressão Mandante,Pressão Visitante,Índice Líquido,Time Dominante,Evento / Contexto Destacado
- * 01' - 05',25,10,+15,FUR,Estudo de jogo / leve iniciativa do FUR
- * 06' - 10',15,15,0,Equilibrado,Jogo truncado no meio-campo
- * ...
+ * Helper to determine team from text context or codes.
+ */
+function detectTeam(
+  text: string,
+  homeTeamName: string,
+  awayTeamName: string,
+  homeCode?: string,
+  awayCode?: string,
+  defaultTeam: 'home' | 'away' = 'home'
+): 'home' | 'away' {
+  const lower = text.toLowerCase();
+  const hCode = (homeCode || homeTeamName.substring(0, 3)).toLowerCase();
+  const aCode = (awayCode || awayTeamName.substring(0, 3)).toLowerCase();
+  const hName = homeTeamName.toLowerCase();
+  const aName = awayTeamName.toLowerCase();
+
+  // Exact code checks
+  if (lower.includes(hCode) || lower.includes(hName) || lower.includes('mandante') || lower.includes('fur')) {
+    return 'home';
+  }
+  if (lower.includes(aCode) || lower.includes(aName) || lower.includes('visitante') || lower.includes('nur')) {
+    return 'away';
+  }
+
+  return defaultTeam;
+}
+
+/**
+ * Extracts all items matching a regex pattern with their minute and team.
+ */
+function extractSubEvents(
+  rawText: string,
+  startMin: number,
+  endMin: number,
+  homeTeamName: string,
+  awayTeamName: string,
+  homeCode?: string,
+  awayCode?: string
+): PressureEvent[] {
+  if (!rawText || rawText === '-' || rawText === '–') return [];
+
+  const foundEvents: PressureEvent[] = [];
+
+  // Match corners: 🚩 Escanteio [TEAM] (~[MIN]') or Escanteio [TEAM]
+  const cornerRegex = /(?:🚩\s*)?(?:escanteio|canto|corner)\s+([A-Za-zÀ-ÿ0-9_\-\s]+?)(?:\s*\(~?(\d+)'?\))?(?=(?:🚩|🟨|🟥|⚽|;|,|$))/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = cornerRegex.exec(rawText)) !== null) {
+    const teamSnippet = match[1] || '';
+    const minSnippet = match[2];
+    let minute = Math.round((startMin + endMin) / 2);
+    if (minSnippet) {
+      const parsedMin = parseInt(minSnippet, 10);
+      if (parsedMin >= 1 && parsedMin <= 130) minute = parsedMin;
+    }
+
+    const team = detectTeam(teamSnippet, homeTeamName, awayTeamName, homeCode, awayCode, 'home');
+    foundEvents.push({
+      minute,
+      type: 'corner',
+      team,
+      description: match[0].trim(),
+    });
+  }
+
+  // Match Yellow cards: 🟨 Cartão Amarelo [TEAM] (~[MIN]') or Cartão Amarelo [TEAM]
+  const yellowRegex = /(?:🟨\s*)?(?:cart[aã]o\s+amarelo|amarelo|yellow\s+card)\s+([A-Za-zÀ-ÿ0-9_\-\s]+?)(?:\s*\(~?(\d+)'?\))?(?=(?:🚩|🟨|🟥|⚽|;|,|$))/gi;
+  while ((match = yellowRegex.exec(rawText)) !== null) {
+    const teamSnippet = match[1] || '';
+    const minSnippet = match[2];
+    let minute = Math.round((startMin + endMin) / 2);
+    if (minSnippet) {
+      const parsedMin = parseInt(minSnippet, 10);
+      if (parsedMin >= 1 && parsedMin <= 130) minute = parsedMin;
+    }
+
+    const team = detectTeam(teamSnippet, homeTeamName, awayTeamName, homeCode, awayCode, 'away');
+    foundEvents.push({
+      minute,
+      type: 'card',
+      cardType: 'yellow',
+      team,
+      description: match[0].trim(),
+    });
+  }
+
+  // Match Red cards: 🟥 Cartão Vermelho [TEAM] (~[MIN]')
+  const redRegex = /(?:🟥\s*)?(?:cart[aã]o\s+vermelho|vermelho|red\s+card|expuls[aã]o)\s+([A-Za-zÀ-ÿ0-9_\-\s]+?)(?:\s*\(~?(\d+)'?\))?(?=(?:🚩|🟨|🟥|⚽|;|,|$))/gi;
+  while ((match = redRegex.exec(rawText)) !== null) {
+    const teamSnippet = match[1] || '';
+    const minSnippet = match[2];
+    let minute = Math.round((startMin + endMin) / 2);
+    if (minSnippet) {
+      const parsedMin = parseInt(minSnippet, 10);
+      if (parsedMin >= 1 && parsedMin <= 130) minute = parsedMin;
+    }
+
+    const team = detectTeam(teamSnippet, homeTeamName, awayTeamName, homeCode, awayCode, 'away');
+    foundEvents.push({
+      minute,
+      type: 'red_card',
+      cardType: 'red',
+      team,
+      description: match[0].trim(),
+    });
+  }
+
+  // Match Goals: ⚽ GOL do [TEAM] (~[MIN]') - exclude anulado/var
+  const goalRegex = /(?:⚽\s*)?(?:gol(?:\s+do)?|goal)\s+([A-Za-zÀ-ÿ0-9_\-\s]+?)(?:\s*\(~?(\d+)'?\))?(?=(?:🚩|🟨|🟥|⚽|;|,|$))/gi;
+  while ((match = goalRegex.exec(rawText)) !== null) {
+    const fullMatched = match[0];
+    if (/anulado|var|impedimento/i.test(fullMatched) || /anulado|var|impedimento/i.test(rawText)) {
+      continue;
+    }
+    const teamSnippet = match[1] || '';
+    const minSnippet = match[2];
+    let minute = Math.round((startMin + endMin) / 2);
+    if (minSnippet) {
+      const parsedMin = parseInt(minSnippet, 10);
+      if (parsedMin >= 1 && parsedMin <= 130) minute = parsedMin;
+    }
+
+    const team = detectTeam(teamSnippet, homeTeamName, awayTeamName, homeCode, awayCode, 'home');
+    foundEvents.push({
+      minute,
+      type: 'goal',
+      team,
+      description: fullMatched.trim(),
+    });
+  }
+
+  return foundEvents;
+}
+
+/**
+ * Parses raw CSV / TSV / Semicolon-delimited text containing 5-minute pressure data,
+ * supporting both the 6-column format and the 7-column format with Escanteios & Cartões + Gols & Destaques.
  */
 export function parsePressureCsvText(
   text: string,
@@ -31,6 +162,26 @@ export function parsePressureCsvText(
   let homePeakCount = 0;
   let awayPeakCount = 0;
 
+  // Extracted codes from header or names
+  let homeCode = homeTeamName.substring(0, 3).toUpperCase();
+  let awayCode = awayTeamName.substring(0, 3).toUpperCase();
+
+  // Try to detect codes from first header line if available
+  const headerLine = rawLines.find(l => {
+    const low = l.toLowerCase();
+    return low.includes('pressão') || low.includes('pressao') || low.includes('intervalo');
+  });
+
+  if (headerLine) {
+    const codeMatches = headerLine.match(/press[aã]o\s+([A-Za-z0-9_-]{2,5})/gi);
+    if (codeMatches && codeMatches.length >= 2) {
+      const c1 = codeMatches[0].replace(/press[aã]o\s+/i, '').trim().toUpperCase();
+      const c2 = codeMatches[1].replace(/press[aã]o\s+/i, '').trim().toUpperCase();
+      if (c1) homeCode = c1;
+      if (c2) awayCode = c2;
+    }
+  }
+
   for (let lineIndex = 0; lineIndex < rawLines.length; lineIndex++) {
     const line = rawLines[lineIndex];
 
@@ -42,19 +193,20 @@ export function parsePressureCsvText(
       lowerLine.includes('pressão') ||
       lowerLine.includes('indice') ||
       lowerLine.includes('índice') ||
+      lowerLine.includes('dominância') ||
+      lowerLine.includes('dominancia') ||
       lowerLine.includes('time dominante')
     ) {
       continue;
     }
 
-    // Split by comma, tab, semicolon or pipe (handling CSV quotes if any)
+    // Split by comma, tab, semicolon handling potential quotes
     let parts: string[] = [];
     if (line.includes('\t')) {
       parts = line.split('\t');
     } else if (line.includes(';') && !line.includes(',')) {
       parts = line.split(';');
     } else {
-      // Split by comma handling potential quotes
       parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
     }
 
@@ -73,17 +225,38 @@ export function parsePressureCsvText(
       netIndex = homeVal - awayVal;
     }
 
-    let dominantTeamStr = parts[4] || (netIndex > 0 ? homeTeamName : netIndex < 0 ? awayTeamName : 'Equilibrado');
-    const contextHighlight = parts.slice(5).join(', ') || parts[5] || '';
+    const dominantTeamStr = parts[4] || (netIndex > 0 ? homeCode : netIndex < 0 ? awayCode : 'Equilibrado');
+
+    // Check columns 5 and 6
+    // If 7 columns: col 5 is "Escanteios & Cartões", col 6 is "Gols & Destaques"
+    // If 6 columns: col 5 is "Evento / Contexto Destacado"
+    let cornersAndCards = '';
+    let goalsAndHighlights = '';
+    let combinedContext = '';
+
+    if (parts.length >= 7) {
+      cornersAndCards = parts[5] || '';
+      goalsAndHighlights = parts.slice(6).join(', ') || parts[6] || '';
+      combinedContext = [cornersAndCards !== '-' ? cornersAndCards : '', goalsAndHighlights].filter(Boolean).join(' • ');
+    } else if (parts.length === 6) {
+      combinedContext = parts[5] || '';
+      // Check if parts[5] has corners/cards vs goals
+      if (/🚩|escanteio|🟨|amarelo|🟥|vermelho/i.test(parts[5])) {
+        cornersAndCards = parts[5];
+      }
+      if (/⚽|gol|anulado/i.test(parts[5]) || !cornersAndCards) {
+        goalsAndHighlights = parts[5];
+      }
+    }
 
     // Standardize dominant team
     let dominantTeam: 'home' | 'away' | 'balanced' | string = dominantTeamStr;
     const domLower = dominantTeamStr.toLowerCase();
     if (domLower.includes('equilibrado') || domLower.includes('empate') || domLower === '0' || netIndex === 0) {
       dominantTeam = 'balanced';
-    } else if (domLower.includes('home') || domLower.includes('mandante') || netIndex > 0) {
+    } else if (domLower.includes('home') || domLower.includes('mandante') || domLower.includes(homeCode.toLowerCase()) || netIndex > 0) {
       dominantTeam = 'home';
-    } else if (domLower.includes('away') || domLower.includes('visitante') || netIndex < 0) {
+    } else if (domLower.includes('away') || domLower.includes('visitante') || domLower.includes(awayCode.toLowerCase()) || netIndex < 0) {
       dominantTeam = 'away';
     }
 
@@ -98,15 +271,17 @@ export function parsePressureCsvText(
       homePressure: homeVal,
       awayPressure: awayVal,
       netIndex,
-      dominantTeam: dominantTeamStr || (dominantTeam === 'home' ? homeTeamName : dominantTeam === 'away' ? awayTeamName : 'Equilibrado'),
-      contextHighlight: contextHighlight.trim(),
+      dominantTeam: dominantTeamStr || (dominantTeam === 'home' ? homeCode : dominantTeam === 'away' ? awayCode : 'Equilibrado'),
+      contextHighlight: combinedContext.trim() || undefined,
+      cornersAndCards: cornersAndCards && cornersAndCards !== '-' ? cornersAndCards.trim() : undefined,
+      goalsAndHighlights: goalsAndHighlights && goalsAndHighlights !== '-' ? goalsAndHighlights.trim() : undefined,
       homeAvg: homeVal,
       awayAvg: awayVal,
       homeAttackingVolume: homeVal,
       awayAttackingVolume: awayVal,
     });
 
-    // Parse start and end minutes from interval (e.g., "01' - 05'", "45'+", "86' - 90'+")
+    // Parse start and end minutes from interval (e.g., "01' - 05'", "45'+ (HT)", "86' - 90'+")
     const minuteMatches = intervalStr.match(/\d+/g);
     let startMin = 1;
     let endMin = 5;
@@ -121,56 +296,27 @@ export function parsePressureCsvText(
       endMin = intervals.length * 5;
     }
 
-    // Check for events in the context text (e.g. goals, cards)
-    if (contextHighlight) {
-      const isGoal = /gol|goal|⚽/i.test(contextHighlight) && !/anulado|var|impedimento/i.test(contextHighlight);
-      const isRed = /vermelho|red card|expuls/i.test(contextHighlight);
-      const isYellow = /amarelo|yellow card/i.test(contextHighlight);
+    // Extract sub-events (Corners, Yellow/Red cards, Goals) from all text columns
+    const extractedCornersCards = extractSubEvents(cornersAndCards, startMin, endMin, homeTeamName, awayTeamName, homeCode, awayCode);
+    const extractedGoals = extractSubEvents(goalsAndHighlights || combinedContext, startMin, endMin, homeTeamName, awayTeamName, homeCode, awayCode);
 
-      // Try to find explicit minute like (~27') or (27')
-      const explicitMinMatch = contextHighlight.match(/\(?~?(\d+)'?\)?/);
-      let eventMin = Math.round((startMin + endMin) / 2);
-      if (explicitMinMatch && explicitMinMatch[1]) {
-        const parsedMin = parseInt(explicitMinMatch[1], 10);
-        if (parsedMin >= 1 && parsedMin <= 120) {
-          eventMin = parsedMin;
-        }
-      }
-
-      if (isGoal) {
-        // Check which team scored
-        let goalTeam: 'home' | 'away' = netIndex >= 0 ? 'home' : 'away';
-        const ctxLower = contextHighlight.toLowerCase();
-        if (ctxLower.includes('nur') || ctxLower.includes('visitante') || ctxLower.includes(awayTeamName.toLowerCase())) {
-          goalTeam = 'away';
-        } else if (ctxLower.includes('fur') || ctxLower.includes('mandante') || ctxLower.includes(homeTeamName.toLowerCase())) {
-          goalTeam = 'home';
-        }
-
-        events.push({
-          minute: eventMin,
-          type: 'goal',
-          team: goalTeam,
-          description: contextHighlight,
-        });
-      } else if (isRed) {
-        const redTeam: 'home' | 'away' = netIndex >= 0 ? 'home' : 'away';
-        events.push({
-          minute: eventMin,
-          type: 'red_card',
-          team: redTeam,
-          description: contextHighlight,
-        });
-      }
-    }
+    const lineEvents = [...extractedCornersCards, ...extractedGoals];
+    events.push(...lineEvents);
 
     // Build timeline points for each minute in the interval
     for (let m = startMin; m <= endMin; m++) {
       let eventType: PressureTimelinePoint['event'] = 'none';
-      const eventAtMin = events.find(e => e.minute === m);
+      const eventAtMin = lineEvents.find(e => e.minute === m);
       if (eventAtMin) {
-        if (eventAtMin.type === 'goal') eventType = eventAtMin.team === 'home' ? 'goal_home' : 'goal_away';
-        else if (eventAtMin.type === 'red_card') eventType = eventAtMin.team === 'home' ? 'red_home' : 'red_away';
+        if (eventAtMin.type === 'goal') {
+          eventType = eventAtMin.team === 'home' ? 'goal_home' : 'goal_away';
+        } else if (eventAtMin.type === 'red_card') {
+          eventType = eventAtMin.team === 'home' ? 'red_home' : 'red_away';
+        } else if (eventAtMin.type === 'card' && eventAtMin.cardType === 'yellow') {
+          eventType = eventAtMin.team === 'home' ? 'yellow_home' : 'yellow_away';
+        } else if (eventAtMin.type === 'corner') {
+          eventType = eventAtMin.team === 'home' ? 'corner_home' : 'corner_away';
+        }
       }
 
       timeline.push({
@@ -179,7 +325,7 @@ export function parsePressureCsvText(
         team: netIndex > 0 ? 'home' : netIndex < 0 ? 'away' : 'neutral',
         isPeak: Math.abs(netIndex) >= 60 || homeVal >= 75 || awayVal >= 75,
         event: eventType,
-        eventDescription: contextHighlight || undefined,
+        eventDescription: combinedContext || undefined,
       });
     }
   }
@@ -197,6 +343,24 @@ export function parsePressureCsvText(
     awayDominancePct = 100 - homeDominancePct;
   }
 
+  // Calculate summary for Corners and Cards
+  const cornerEvents = events.filter(e => e.type === 'corner');
+  const yellowEvents = events.filter(e => e.type === 'card' && e.cardType === 'yellow');
+  const redEvents = events.filter(e => e.type === 'red_card');
+
+  const cornersHomeFT = cornerEvents.filter(e => e.team === 'home').length;
+  const cornersAwayFT = cornerEvents.filter(e => e.team === 'away').length;
+  const cornersHomeHT = cornerEvents.filter(e => e.team === 'home' && e.minute <= 45).length;
+  const cornersAwayHT = cornerEvents.filter(e => e.team === 'away' && e.minute <= 45).length;
+
+  const yellowHomeFT = yellowEvents.filter(e => e.team === 'home').length;
+  const yellowAwayFT = yellowEvents.filter(e => e.team === 'away').length;
+  const yellowHomeHT = yellowEvents.filter(e => e.team === 'home' && e.minute <= 45).length;
+  const yellowAwayHT = yellowEvents.filter(e => e.team === 'away' && e.minute <= 45).length;
+
+  const redHomeFT = redEvents.filter(e => e.team === 'home').length;
+  const redAwayFT = redEvents.filter(e => e.team === 'away').length;
+
   const result: MatchPressureData = {
     timeline,
     homeDominancePct,
@@ -205,12 +369,30 @@ export function parsePressureCsvText(
     awayPeakCount,
     intervals,
     events,
+    cornersSummary: {
+      homeFT: cornersHomeFT,
+      awayFT: cornersAwayFT,
+      homeHT: cornersHomeHT,
+      awayHT: cornersAwayHT,
+      total: cornersHomeFT + cornersAwayFT,
+    },
+    cardsSummary: {
+      yellowHomeFT,
+      yellowAwayFT,
+      yellowHomeHT,
+      yellowAwayHT,
+      redHomeFT,
+      redAwayFT,
+      total: yellowHomeFT + yellowAwayFT + redHomeFT + redAwayFT,
+    },
     extractedTeams: {
+      homeCode,
+      awayCode,
       homeName: homeTeamName,
       awayName: awayTeamName,
     },
     totalMinutes: timeline.length > 0 ? timeline[timeline.length - 1].minute : 90,
-    tacticalSummary: `Análise estruturada de ${intervals.length} blocos com Índice Líquido: ${homeTeamName} (${homeDominancePct}%) vs ${awayTeamName} (${awayDominancePct}%).`,
+    tacticalSummary: `Análise de ${intervals.length} blocos com Índice Líquido: ${homeTeamName} (${homeDominancePct}%) vs ${awayTeamName} (${awayDominancePct}%). Escanteios: ${cornersHomeFT}x${cornersAwayFT} | Cartões: ${yellowHomeFT + redHomeFT}x${yellowAwayFT + redAwayFT}.`,
     rawCsvText: text,
     importedAt: new Date().toISOString(),
   };

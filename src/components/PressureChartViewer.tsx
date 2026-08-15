@@ -100,9 +100,9 @@ export const PressureChartViewer: React.FC<PressureChartViewerProps> = ({
           </div>
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-slate-700/40 text-center text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-3 pt-3 border-t border-slate-700/40 text-center text-xs">
             <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/30">
-              <span className="text-[10px] text-slate-400 block font-medium">Picos Críticos (Mandante)</span>
+              <span className="text-[10px] text-slate-400 block font-medium">Picos Mandante</span>
               <span className="text-sm font-black text-blue-400 font-mono flex items-center justify-center gap-1">
                 <Flame className="w-3.5 h-3.5 text-blue-400" />
                 {pressureData.homePeakCount}
@@ -110,7 +110,7 @@ export const PressureChartViewer: React.FC<PressureChartViewerProps> = ({
             </div>
 
             <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/30">
-              <span className="text-[10px] text-slate-400 block font-medium">Picos Críticos (Visitante)</span>
+              <span className="text-[10px] text-slate-400 block font-medium">Picos Visitante</span>
               <span className="text-sm font-black text-slate-300 font-mono flex items-center justify-center gap-1">
                 <Flame className="w-3.5 h-3.5 text-slate-400" />
                 {pressureData.awayPeakCount}
@@ -118,16 +118,42 @@ export const PressureChartViewer: React.FC<PressureChartViewerProps> = ({
             </div>
 
             <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/30">
-              <span className="text-[10px] text-slate-400 block font-medium">Total de Gols Detectados</span>
-              <span className="text-sm font-black text-emerald-400 font-mono flex items-center justify-center gap-1">
-                ⚽ {pressureData.events?.filter((e) => e.type === 'goal').length || 0}
+              <span className="text-[10px] text-slate-400 block font-medium">🚩 Escanteios</span>
+              <span className="text-xs font-black text-emerald-400 font-mono flex items-center justify-center gap-1">
+                {pressureData.cornersSummary ? (
+                  <span>
+                    <strong className="text-blue-300">{pressureData.cornersSummary.homeFT}</strong> x <strong className="text-amber-300">{pressureData.cornersSummary.awayFT}</strong> ({pressureData.cornersSummary.total})
+                  </span>
+                ) : (
+                  <span>{pressureData.events?.filter((e) => e.type === 'corner').length || 0}</span>
+                )}
               </span>
             </div>
 
             <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/30">
-              <span className="text-[10px] text-slate-400 block font-medium">Minutos Monitorados</span>
-              <span className="text-sm font-black text-amber-400 font-mono flex items-center justify-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-[10px] text-slate-400 block font-medium">🟨🟥 Cartões</span>
+              <span className="text-xs font-black text-amber-300 font-mono flex items-center justify-center gap-1">
+                {pressureData.cardsSummary ? (
+                  <span>
+                    <strong className="text-blue-300">{pressureData.cardsSummary.yellowHomeFT + pressureData.cardsSummary.redHomeFT}</strong> x <strong className="text-amber-300">{pressureData.cardsSummary.yellowAwayFT + pressureData.cardsSummary.redAwayFT}</strong>
+                  </span>
+                ) : (
+                  <span>{pressureData.events?.filter((e) => e.type === 'card' || e.type === 'red_card').length || 0}</span>
+                )}
+              </span>
+            </div>
+
+            <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/30">
+              <span className="text-[10px] text-slate-400 block font-medium">⚽ Gols Detectados</span>
+              <span className="text-sm font-black text-emerald-400 font-mono flex items-center justify-center gap-1">
+                {pressureData.events?.filter((e) => e.type === 'goal').length || 0}
+              </span>
+            </div>
+
+            <div className="bg-slate-900/60 p-2 rounded-lg border border-slate-700/30">
+              <span className="text-[10px] text-slate-400 block font-medium">Tempo Monitorado</span>
+              <span className="text-sm font-black text-slate-200 font-mono flex items-center justify-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
                 {maxMinute}'
               </span>
             </div>
@@ -348,8 +374,9 @@ export const PressureChartViewer: React.FC<PressureChartViewerProps> = ({
                         <th className="py-2.5 px-3 font-bold text-blue-300 text-center">Pressão {homeCode}</th>
                         <th className="py-2.5 px-3 font-bold text-amber-300 text-center">Pressão {awayCode}</th>
                         <th className="py-2.5 px-3 font-bold text-center">Índice Líquido</th>
-                        <th className="py-2.5 px-3 font-bold text-center">Time Dominante</th>
-                        <th className="py-2.5 px-3 font-bold">Evento / Contexto Destacado</th>
+                        <th className="py-2.5 px-3 font-bold text-center">Dominância</th>
+                        <th className="py-2.5 px-3 font-bold text-emerald-300">🚩 Escanteios & Cartões</th>
+                        <th className="py-2.5 px-3 font-bold text-amber-300">⚽ Gols & Destaques</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
@@ -359,7 +386,10 @@ export const PressureChartViewer: React.FC<PressureChartViewerProps> = ({
                         const net = it.netIndex !== undefined ? it.netIndex : (hVal - aVal);
                         const isHomeDom = net > 0 || it.dominantTeam === 'home' || it.dominantTeam === homeCode;
                         const isAwayDom = net < 0 || it.dominantTeam === 'away' || it.dominantTeam === awayCode;
-                        const isGoal = it.contextHighlight && /gol|goal|⚽/i.test(it.contextHighlight) && !/anulado/i.test(it.contextHighlight);
+
+                        const cornersCardsText = it.cornersAndCards || (it.contextHighlight && /🚩|escanteio|🟨|amarelo|🟥|vermelho/i.test(it.contextHighlight) ? it.contextHighlight : '');
+                        const goalsHighlightsText = it.goalsAndHighlights || (it.contextHighlight && !it.cornersAndCards ? it.contextHighlight : '');
+                        const isGoal = goalsHighlightsText && /gol|goal|⚽/i.test(goalsHighlightsText) && !/anulado/i.test(goalsHighlightsText);
 
                         return (
                           <tr
@@ -421,17 +451,28 @@ export const PressureChartViewer: React.FC<PressureChartViewerProps> = ({
                               )}
                             </td>
 
-                            {/* Context & Events */}
+                            {/* Escanteios & Cartões */}
+                            <td className="py-2.5 px-3 text-slate-800 text-xs">
+                              {cornersCardsText && cornersCardsText !== '-' ? (
+                                <span className="inline-flex flex-wrap items-center gap-1 font-medium text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                  {cornersCardsText}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 text-[11px] italic">-</span>
+                              )}
+                            </td>
+
+                            {/* Gols & Destaques */}
                             <td className="py-2.5 px-3 text-slate-700 text-xs">
-                              {it.contextHighlight ? (
+                              {goalsHighlightsText && goalsHighlightsText !== '-' ? (
                                 <span
                                   className={`inline-flex items-center gap-1 ${
                                     isGoal
                                       ? 'font-bold text-amber-900 bg-amber-100/90 px-2 py-0.5 rounded-md border border-amber-300'
-                                      : 'text-slate-700'
+                                      : 'text-slate-700 font-medium'
                                   }`}
                                 >
-                                  {it.contextHighlight}
+                                  {goalsHighlightsText}
                                 </span>
                               ) : (
                                 <span className="text-slate-400 text-[11px] italic">-</span>

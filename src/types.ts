@@ -108,7 +108,7 @@ export interface PressureTimelinePoint {
   value: number; // -100 to +100 (positive: home team pressure, negative: away team pressure)
   team: 'home' | 'away' | 'neutral';
   isPeak?: boolean; // Reached high intensity / critical attack threshold
-  event?: 'goal_home' | 'goal_away' | 'yellow_home' | 'yellow_away' | 'red_home' | 'red_away' | 'none';
+  event?: 'goal_home' | 'goal_away' | 'yellow_home' | 'yellow_away' | 'red_home' | 'red_away' | 'corner_home' | 'corner_away' | 'none';
   eventDescription?: string;
 }
 
@@ -118,7 +118,9 @@ export interface PressureInterval {
   awayPressure?: number; // 0 to 100 (Pressão Visitante)
   netIndex?: number; // -100 to +100 (Índice Líquido: Positivo Mandante, Negativo Visitante)
   dominantTeam: 'home' | 'away' | 'balanced' | string; // FUR, NUR, Equilibrado
-  contextHighlight?: string; // Evento / Contexto Destacado (ex: "⚽ GOL do NUR (~27')")
+  contextHighlight?: string; // Evento / Contexto Destacado ou Destaques
+  cornersAndCards?: string; // Escanteios & Cartões (ex: "🚩 Escanteio FUR (~14')", "🟨 Cartão Amarelo NUR (~29')")
+  goalsAndHighlights?: string; // Gols & Destaques (ex: "⚽ GOL do Nürnberg (~27')")
   homeAvg?: number; // 0-100 (retrocompatibilidade)
   awayAvg?: number; // 0-100 (retrocompatibilidade)
   homeAttackingVolume?: number;
@@ -127,9 +129,10 @@ export interface PressureInterval {
 
 export interface PressureEvent {
   minute: number;
-  type: 'goal' | 'card' | 'red_card' | 'sub';
+  type: 'goal' | 'card' | 'red_card' | 'corner' | 'sub';
   team: 'home' | 'away';
   description?: string;
+  cardType?: 'yellow' | 'red';
 }
 
 export interface MatchPressureData {
@@ -140,6 +143,22 @@ export interface MatchPressureData {
   awayPeakCount: number;
   intervals: PressureInterval[];
   events: PressureEvent[];
+  cornersSummary?: {
+    homeFT: number;
+    awayFT: number;
+    homeHT: number;
+    awayHT: number;
+    total: number;
+  };
+  cardsSummary?: {
+    yellowHomeFT: number;
+    yellowAwayFT: number;
+    yellowHomeHT: number;
+    yellowAwayHT: number;
+    redHomeFT: number;
+    redAwayFT: number;
+    total: number;
+  };
   extractedTeams?: {
     homeCode?: string;
     awayCode?: string;
