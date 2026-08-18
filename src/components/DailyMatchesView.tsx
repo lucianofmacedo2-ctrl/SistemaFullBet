@@ -41,6 +41,7 @@ interface DailyMatchesViewProps {
   onOpenStatsModal: (match: Match) => void;
   onOpenQuickScore?: (match: Match) => void;
   onOpenBulkMatchImportModal?: () => void;
+  onOpenBulkMatchUpdateModal?: () => void;
   onOpenPressureChartModal?: (matchId: string) => void;
 }
 
@@ -126,6 +127,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   onOpenStatsModal,
   onOpenQuickScore,
   onOpenBulkMatchImportModal,
+  onOpenBulkMatchUpdateModal,
   onOpenPressureChartModal,
 }) => {
   // Base reference date (today)

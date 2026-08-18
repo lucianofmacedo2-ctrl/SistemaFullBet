@@ -47,6 +47,7 @@ interface MatchListProps {
   onOpenStatsModal: (match: Match) => void;
   onOpenQuickScore?: (match: Match) => void;
   onOpenBulkMatchImportModal?: () => void;
+  onOpenBulkMatchUpdateModal?: () => void;
   onOpenPressureChartModal?: (matchId: string) => void;
 }
 
@@ -179,6 +180,7 @@ export const MatchList: React.FC<MatchListProps> = ({
   onOpenStatsModal,
   onOpenQuickScore,
   onOpenBulkMatchImportModal,
+  onOpenBulkMatchUpdateModal,
   onOpenPressureChartModal,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -715,6 +717,18 @@ export const MatchList: React.FC<MatchListProps> = ({
                 {incompleteCount}
               </span>
             </button>
+
+            {onOpenBulkMatchUpdateModal && (
+              <button
+                type="button"
+                onClick={onOpenBulkMatchUpdateModal}
+                className="px-3 py-1 rounded-lg text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Baixar planilha de jogos incompletos e subir dados em massa"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Subir Dados em Massa (Excel)</span>
+              </button>
+            )}
 
             {onOpenQuickScore && incompleteScheduled.length > 0 && (
               <button

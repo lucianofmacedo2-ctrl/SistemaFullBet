@@ -12,9 +12,12 @@ import {
   CheckCircle2,
   FileSpreadsheet,
   TrendingUp,
+  UploadCloud,
+  FileEdit,
 } from 'lucide-react';
 import { DbState } from '../types';
 import { extractYMD, formatDateToYMD } from './DailyMatchesView';
+import { isMatchComplete } from '../utils/excelHelper';
 
 interface NavbarProps {
   dbState: DbState;
@@ -24,6 +27,7 @@ interface NavbarProps {
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
   onOpenBulkImportModal?: () => void;
   onOpenBulkMatchImportModal?: () => void;
+  onOpenBulkMatchUpdateModal?: () => void;
   onOpenBackupModal: () => void;
 }
 
@@ -35,6 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenEntityModal,
   onOpenBulkImportModal,
   onOpenBulkMatchImportModal,
+  onOpenBulkMatchUpdateModal,
   onOpenBackupModal,
 }) => {
   // Calculate matches for today, tomorrow, and after tomorrow
@@ -51,6 +56,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     const ymd = extractYMD(m.matchDate);
     return ymd === todayYMD || ymd === tomorrowYMD || ymd === afterTomorrowYMD;
   }).length;
+
+  const incompleteMatchesCount = dbState.matches.filter(m => !isMatchComplete(m)).length;
 
   return (
     <header className="bg-white border-b border-blue-200 text-slate-800 sticky top-0 z-40 shadow-sm">
@@ -89,6 +96,22 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden xs:inline">Cadastrar</span> Jogo
             </button>
 
+            {onOpenBulkMatchUpdateModal && (
+              <button
+                onClick={onOpenBulkMatchUpdateModal}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-sm rounded-xl transition-all shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                title="Baixar planilha com jogos incompletos, preencher dados e subir em massa"
+              >
+                <UploadCloud className="w-4 h-4 text-indigo-600" />
+                <span className="hidden sm:inline">Subir Dados em Massa</span>
+                {incompleteMatchesCount > 0 && (
+                  <span className="px-1.5 py-0.2 bg-amber-500 text-white text-[10px] font-bold rounded-full ml-0.5 animate-pulse" title={`${incompleteMatchesCount} jogo(s) incompleto(s)`}>
+                    {incompleteMatchesCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             {onOpenBulkMatchImportModal && (
               <button
                 onClick={onOpenBulkMatchImportModal}
@@ -96,7 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 title="Cadastrar Jogos Futuros em Massa via Excel (.xlsx)"
               >
                 <FileSpreadsheet className="w-4 h-4 text-blue-600" />
-                <span className="hidden sm:inline">Importar Jogos Excel</span>
+                <span className="hidden sm:inline">Importar Futuros</span>
               </button>
             )}
 

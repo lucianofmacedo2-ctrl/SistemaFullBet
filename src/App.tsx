@@ -15,6 +15,7 @@ import { EntityFormModal } from './components/EntityFormModal';
 import { EditEntityModal } from './components/EditEntityModal';
 import { BulkTeamImportModal } from './components/BulkTeamImportModal';
 import { BulkMatchImportModal } from './components/BulkMatchImportModal';
+import { BulkMatchUpdateModal } from './components/BulkMatchUpdateModal';
 import { CountryManager } from './components/CountryManager';
 import { LeagueManager } from './components/LeagueManager';
 import { TeamManager } from './components/TeamManager';
@@ -27,7 +28,7 @@ import { PressureChartImportModal } from './components/PressureChartImportModal'
 import { ToastNotification } from './components/ToastNotification';
 import { MatchOdds, MatchStats, MatchStatus, MatchPressureData } from './types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from './utils/idGenerator';
-import { ParsedMatchRow } from './utils/excelHelper';
+import { ParsedMatchRow, ParsedMatchUpdateRow } from './utils/excelHelper';
 
 export default function App() {
   const [dbState, setDbState] = useState<DbState>({
@@ -58,6 +59,7 @@ export default function App() {
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [isBulkTeamModalOpen, setIsBulkTeamModalOpen] = useState(false);
   const [isBulkMatchModalOpen, setIsBulkMatchModalOpen] = useState(false);
+  const [isBulkMatchUpdateModalOpen, setIsBulkMatchUpdateModalOpen] = useState(false);
   const [isPressureModalOpen, setIsPressureModalOpen] = useState(false);
   const [pressureSelectedMatchId, setPressureSelectedMatchId] = useState<string | null>(null);
 
@@ -543,6 +545,266 @@ export default function App() {
     }
   };
 
+  // Bulk Update Matches (Complete Missing Data)
+  const handleBulkUpdateMatches = async (rows: ParsedMatchUpdateRow[]) => {
+    let currentCountries = [...dbState.countries];
+    let currentLeagues = [...dbState.leagues];
+    let currentTeams = [...dbState.teams];
+    let currentMatches = [...dbState.matches];
+    const newNotifs: NewEntityCreatedNotification[] = [];
+
+    for (const row of rows) {
+      if (!row.isValid) continue;
+
+      // Check if this row matches an existing match (by matchedMatch or matchId)
+      const existingMatchIndex = currentMatches.findIndex(
+        m => (row.matchId && m.id === row.matchId) || (row.matchedMatch && m.id === row.matchedMatch.id)
+      );
+
+      if (existingMatchIndex !== -1) {
+        const existing = currentMatches[existingMatchIndex];
+        const existingStats = existing.stats || {};
+        const existingOdds = existing.odds || {
+          homeFT: null,
+          drawFT: null,
+          awayFT: null,
+          over25FT: null,
+          under25FT: null,
+          bttsFT: null,
+          homeHT: null,
+          drawHT: null,
+          awayHT: null,
+          over05HT: null,
+          under05HT: null,
+          bttsHT: null,
+        };
+
+        // Determine new scores
+        const homeScore = row.homeScore !== null ? row.homeScore : existing.homeScore;
+        const awayScore = row.awayScore !== null ? row.awayScore : existing.awayScore;
+
+        // Determine status
+        let newStatus = existing.status;
+        if (row.status) {
+          newStatus = row.status;
+        } else if (homeScore !== null && awayScore !== null) {
+          newStatus = 'FINALIZADO';
+        }
+
+        // Updated Stats merge
+        const updatedStats: MatchStats = {
+          ...existingStats,
+          halftimeHomeScore: row.halftimeHomeScore !== null ? row.halftimeHomeScore : existingStats.halftimeHomeScore,
+          halftimeAwayScore: row.halftimeAwayScore !== null ? row.halftimeAwayScore : existingStats.halftimeAwayScore,
+          goalMinutesHome: row.goalMinutesHome !== undefined ? row.goalMinutesHome : existingStats.goalMinutesHome,
+          goalMinutesAway: row.goalMinutesAway !== undefined ? row.goalMinutesAway : existingStats.goalMinutesAway,
+          firstGoalMinuteMatch: row.firstGoalMinuteMatch !== null ? row.firstGoalMinuteMatch : existingStats.firstGoalMinuteMatch,
+          firstGoalMinuteHome: row.firstGoalMinuteHome !== null ? row.firstGoalMinuteHome : existingStats.firstGoalMinuteHome,
+          firstGoalMinuteAway: row.firstGoalMinuteAway !== null ? row.firstGoalMinuteAway : existingStats.firstGoalMinuteAway,
+          cornersHomeFT: row.cornersHomeFT !== null ? row.cornersHomeFT : (existingStats.cornersHomeFT ?? existingStats.cornersHome),
+          cornersAwayFT: row.cornersAwayFT !== null ? row.cornersAwayFT : (existingStats.cornersAwayFT ?? existingStats.cornersAway),
+          cornersHomeHT: row.cornersHomeHT !== null ? row.cornersHomeHT : existingStats.cornersHomeHT,
+          cornersAwayHT: row.cornersAwayHT !== null ? row.cornersAwayHT : existingStats.cornersAwayHT,
+          possessionHomeFT: row.possessionHomeFT !== null ? row.possessionHomeFT : (existingStats.possessionHomeFT ?? existingStats.possessionHome),
+          possessionAwayFT: row.possessionAwayFT !== null ? row.possessionAwayFT : (existingStats.possessionAwayFT ?? existingStats.possessionAway),
+          possessionHomeHT: row.possessionHomeHT !== null ? row.possessionHomeHT : existingStats.possessionHomeHT,
+          possessionAwayHT: row.possessionAwayHT !== null ? row.possessionAwayHT : existingStats.possessionAwayHT,
+          yellowCardsHomeFT: row.yellowCardsHomeFT !== null ? row.yellowCardsHomeFT : (existingStats.yellowCardsHomeFT ?? existingStats.yellowCardsHome),
+          yellowCardsAwayFT: row.yellowCardsAwayFT !== null ? row.yellowCardsAwayFT : (existingStats.yellowCardsAwayFT ?? existingStats.yellowCardsAway),
+          yellowCardsHomeHT: row.yellowCardsHomeHT !== null ? row.yellowCardsHomeHT : existingStats.yellowCardsHomeHT,
+          yellowCardsAwayHT: row.yellowCardsAwayHT !== null ? row.yellowCardsAwayHT : existingStats.yellowCardsAwayHT,
+          redCardsHomeFT: row.redCardsHomeFT !== null ? row.redCardsHomeFT : (existingStats.redCardsHomeFT ?? existingStats.redCardsHome),
+          redCardsAwayFT: row.redCardsAwayFT !== null ? row.redCardsAwayFT : (existingStats.redCardsAwayFT ?? existingStats.redCardsAway),
+          redCardsHomeHT: row.redCardsHomeHT !== null ? row.redCardsHomeHT : existingStats.redCardsHomeHT,
+          redCardsAwayHT: row.redCardsAwayHT !== null ? row.redCardsAwayHT : existingStats.redCardsAwayHT,
+          shotsHomeFT: row.shotsHomeFT !== null ? row.shotsHomeFT : (existingStats.shotsHomeFT ?? existingStats.shotsHome),
+          shotsAwayFT: row.shotsAwayFT !== null ? row.shotsAwayFT : (existingStats.shotsAwayFT ?? existingStats.shotsAway),
+          shotsHomeHT: row.shotsHomeHT !== null ? row.shotsHomeHT : existingStats.shotsHomeHT,
+          shotsAwayHT: row.shotsAwayHT !== null ? row.shotsAwayHT : existingStats.shotsAwayHT,
+          shotsOnTargetHomeFT: row.shotsOnTargetHomeFT !== null ? row.shotsOnTargetHomeFT : (existingStats.shotsOnTargetHomeFT ?? existingStats.shotsOnTargetHome),
+          shotsOnTargetAwayFT: row.shotsOnTargetAwayFT !== null ? row.shotsOnTargetAwayFT : (existingStats.shotsOnTargetAwayFT ?? existingStats.shotsOnTargetAway),
+          shotsOnTargetHomeHT: row.shotsOnTargetHomeHT !== null ? row.shotsOnTargetHomeHT : existingStats.shotsOnTargetHomeHT,
+          shotsOnTargetAwayHT: row.shotsOnTargetAwayHT !== null ? row.shotsOnTargetAwayHT : existingStats.shotsOnTargetAwayHT,
+        };
+
+        // Auto-calculate firstGoalMinuteMatch if missing but team minutes available
+        if (updatedStats.firstGoalMinuteMatch == null) {
+          const homeM = updatedStats.firstGoalMinuteHome;
+          const awayM = updatedStats.firstGoalMinuteAway;
+          if (homeM != null && awayM != null) {
+            updatedStats.firstGoalMinuteMatch = Math.min(homeM, awayM);
+          } else if (homeM != null) {
+            updatedStats.firstGoalMinuteMatch = homeM;
+          } else if (awayM != null) {
+            updatedStats.firstGoalMinuteMatch = awayM;
+          }
+        }
+
+        // Updated Odds merge
+        const updatedOdds: MatchOdds = {
+          homeFT: row.oddHomeFT !== null ? row.oddHomeFT : existingOdds.homeFT,
+          drawFT: row.oddDrawFT !== null ? row.oddDrawFT : existingOdds.drawFT,
+          awayFT: row.oddAwayFT !== null ? row.oddAwayFT : existingOdds.awayFT,
+          over25FT: row.oddOver25FT !== null ? row.oddOver25FT : existingOdds.over25FT,
+          under25FT: row.oddUnder25FT !== null ? row.oddUnder25FT : existingOdds.under25FT,
+          bttsFT: row.oddBttsFT !== null ? row.oddBttsFT : existingOdds.bttsFT,
+          homeHT: row.oddHomeHT !== null ? row.oddHomeHT : existingOdds.homeHT,
+          drawHT: row.oddDrawHT !== null ? row.oddDrawHT : existingOdds.drawHT,
+          awayHT: row.oddAwayHT !== null ? row.oddAwayHT : existingOdds.awayHT,
+          over05HT: row.oddOver05HT !== null ? row.oddOver05HT : existingOdds.over05HT,
+          under05HT: row.oddUnder05HT !== null ? row.oddUnder05HT : existingOdds.under05HT,
+          bttsHT: row.oddBttsHT !== null ? row.oddBttsHT : existingOdds.bttsHT,
+        };
+
+        const updatedMatch: Match = {
+          ...existing,
+          matchDate: row.matchDate || existing.matchDate,
+          round: row.round || existing.round,
+          stadium: row.stadium || existing.stadium,
+          referee: row.referee || existing.referee,
+          notes: row.notes !== undefined && row.notes !== '' ? row.notes : existing.notes,
+          homeScore,
+          awayScore,
+          status: newStatus,
+          stats: updatedStats,
+          odds: updatedOdds,
+        };
+
+        currentMatches[existingMatchIndex] = updatedMatch;
+      } else {
+        // New match creation flow (if row is completely new)
+        const countryRes = findOrCreateCountry(row.countryName || 'Outro', currentCountries);
+        currentCountries = countryRes.updatedCountries;
+
+        const leagueRes = findOrCreateLeague(
+          row.leagueName || 'Liga',
+          countryRes.country.id,
+          countryRes.country.name,
+          currentLeagues
+        );
+        currentLeagues = leagueRes.updatedLeagues;
+
+        const homeTeamRes = findOrCreateTeam(
+          row.homeTeamName,
+          countryRes.country.id,
+          countryRes.country.name,
+          currentTeams,
+          row.stadium,
+          undefined,
+          leagueRes.league.id,
+          leagueRes.league.name
+        );
+        currentTeams = homeTeamRes.updatedTeams;
+
+        const awayTeamRes = findOrCreateTeam(
+          row.awayTeamName,
+          countryRes.country.id,
+          countryRes.country.name,
+          currentTeams,
+          undefined,
+          undefined,
+          leagueRes.league.id,
+          leagueRes.league.name
+        );
+        currentTeams = awayTeamRes.updatedTeams;
+
+        const matchId = row.matchId || getNextUniqueId('JOGO', currentMatches.map(m => m.id));
+        const newMatch: Match = {
+          id: matchId,
+          countryId: countryRes.country.id,
+          countryName: countryRes.country.name,
+          countryFlagUrl: countryRes.country.flagUrl,
+          leagueId: leagueRes.league.id,
+          leagueName: leagueRes.league.name,
+          leagueLogoUrl: leagueRes.league.logoUrl,
+          homeTeamId: homeTeamRes.team.id,
+          homeTeamName: homeTeamRes.team.name,
+          homeTeamLogoUrl: homeTeamRes.team.logoUrl,
+          awayTeamId: awayTeamRes.team.id,
+          awayTeamName: awayTeamRes.team.name,
+          awayTeamLogoUrl: awayTeamRes.team.logoUrl,
+          homeScore: row.homeScore,
+          awayScore: row.awayScore,
+          matchDate: row.matchDate || new Date().toISOString(),
+          round: row.round || 'Rodada 1',
+          stadium: row.stadium || homeTeamRes.team.stadium || '',
+          referee: row.referee || '',
+          status: row.status || (row.homeScore !== null && row.awayScore !== null ? 'FINALIZADO' : 'AGENDADO'),
+          notes: row.notes || '',
+          odds: {
+            homeFT: row.oddHomeFT ?? null,
+            drawFT: row.oddDrawFT ?? null,
+            awayFT: row.oddAwayFT ?? null,
+            over25FT: row.oddOver25FT ?? null,
+            under25FT: row.oddUnder25FT ?? null,
+            bttsFT: row.oddBttsFT ?? null,
+            homeHT: row.oddHomeHT ?? null,
+            drawHT: row.oddDrawHT ?? null,
+            awayHT: row.oddAwayHT ?? null,
+            over05HT: row.oddOver05HT ?? null,
+            under05HT: row.oddUnder05HT ?? null,
+            bttsHT: row.oddBttsHT ?? null,
+          },
+          stats: {
+            halftimeHomeScore: row.halftimeHomeScore ?? null,
+            halftimeAwayScore: row.halftimeAwayScore ?? null,
+            goalMinutesHome: row.goalMinutesHome,
+            goalMinutesAway: row.goalMinutesAway,
+            firstGoalMinuteMatch: row.firstGoalMinuteMatch ?? null,
+            firstGoalMinuteHome: row.firstGoalMinuteHome ?? null,
+            firstGoalMinuteAway: row.firstGoalMinuteAway ?? null,
+            cornersHomeFT: row.cornersHomeFT ?? null,
+            cornersAwayFT: row.cornersAwayFT ?? null,
+            cornersHomeHT: row.cornersHomeHT ?? null,
+            cornersAwayHT: row.cornersAwayHT ?? null,
+            possessionHomeFT: row.possessionHomeFT ?? null,
+            possessionAwayFT: row.possessionAwayFT ?? null,
+            possessionHomeHT: row.possessionHomeHT ?? null,
+            possessionAwayHT: row.possessionAwayHT ?? null,
+            yellowCardsHomeFT: row.yellowCardsHomeFT ?? null,
+            yellowCardsAwayFT: row.yellowCardsAwayFT ?? null,
+            yellowCardsHomeHT: row.yellowCardsHomeHT ?? null,
+            yellowCardsAwayHT: row.yellowCardsAwayHT ?? null,
+            redCardsHomeFT: row.redCardsHomeFT ?? null,
+            redCardsAwayFT: row.redCardsAwayFT ?? null,
+            redCardsHomeHT: row.redCardsHomeHT ?? null,
+            redCardsAwayHT: row.redCardsAwayHT ?? null,
+            shotsHomeFT: row.shotsHomeFT ?? null,
+            shotsAwayFT: row.shotsAwayFT ?? null,
+            shotsHomeHT: row.shotsHomeHT ?? null,
+            shotsAwayHT: row.shotsAwayHT ?? null,
+            shotsOnTargetHomeFT: row.shotsOnTargetHomeFT ?? null,
+            shotsOnTargetAwayFT: row.shotsOnTargetAwayFT ?? null,
+            shotsOnTargetHomeHT: row.shotsOnTargetHomeHT ?? null,
+            shotsOnTargetAwayHT: row.shotsOnTargetAwayHT ?? null,
+          },
+          createdAt: new Date().toISOString(),
+        };
+
+        currentMatches.push(newMatch);
+        newNotifs.push({
+          type: 'match',
+          id: matchId,
+          name: `${homeTeamRes.team.name} x ${awayTeamRes.team.name}`,
+        });
+      }
+    }
+
+    const newState: DbState = {
+      countries: currentCountries,
+      leagues: currentLeagues,
+      teams: currentTeams,
+      matches: currentMatches,
+    };
+
+    setDbState(newState);
+    await saveDatabaseState(newState);
+
+    if (newNotifs.length > 0) {
+      setNotifications(prev => [...prev, ...newNotifs]);
+    }
+  };
+
   // Import Database
   const handleImportDb = async (importedState: DbState) => {
     setDbState(importedState);
@@ -714,6 +976,7 @@ export default function App() {
         onOpenEntityModal={handleOpenEntityModal}
         onOpenBulkImportModal={() => setIsBulkTeamModalOpen(true)}
         onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
+        onOpenBulkMatchUpdateModal={() => setIsBulkMatchUpdateModalOpen(true)}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
       />
 
@@ -736,6 +999,7 @@ export default function App() {
                 onOpenStatsModal={handleOpenStatsModal}
                 onOpenQuickScore={handleOpenQuickScore}
                 onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
+                onOpenBulkMatchUpdateModal={() => setIsBulkMatchUpdateModalOpen(true)}
                 onOpenPressureChartModal={handleOpenPressureChartModal}
               />
             )}
@@ -751,6 +1015,7 @@ export default function App() {
             onOpenStatsModal={handleOpenStatsModal}
             onOpenQuickScore={handleOpenQuickScore}
             onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
+            onOpenBulkMatchUpdateModal={() => setIsBulkMatchUpdateModalOpen(true)}
             onOpenPressureChartModal={handleOpenPressureChartModal}
           />
         )}
@@ -872,6 +1137,13 @@ export default function App() {
         onClose={() => setIsBulkMatchModalOpen(false)}
         dbState={dbState}
         onBulkImportMatches={handleBulkImportMatches}
+      />
+
+      <BulkMatchUpdateModal
+        isOpen={isBulkMatchUpdateModalOpen}
+        onClose={() => setIsBulkMatchUpdateModalOpen(false)}
+        dbState={dbState}
+        onBulkUpdateMatches={handleBulkUpdateMatches}
       />
 
       {/* Unique ID Toast Notifications */}
