@@ -16,27 +16,27 @@ export interface SyncResult {
 }
 
 export const LIGAS_INFO = [
-  { countryCode: 'ING', leagueName: 'Premier League', url: 'https://www.football-data.co.uk/mmz4281/2627/E0.csv' },
-  { countryCode: 'ING', leagueName: 'Championship', url: 'https://www.football-data.co.uk/mmz4281/2627/E1.csv' },
-  { countryCode: 'ING', leagueName: 'League 1', url: 'https://www.football-data.co.uk/mmz4281/2627/E2.csv' },
-  { countryCode: 'ING', leagueName: 'League 2', url: 'https://www.football-data.co.uk/mmz4281/2627/E3.csv' },
-  { countryCode: 'ESC', leagueName: 'Premiere League', url: 'https://www.football-data.co.uk/mmz4281/2627/SC0.csv' },
-  { countryCode: 'ESC', leagueName: 'Division 1', url: 'https://www.football-data.co.uk/mmz4281/2627/SC1.csv' },
-  { countryCode: 'ESC', leagueName: 'Division 2', url: 'https://www.football-data.co.uk/mmz4281/2627/SC2.csv' },
-  { countryCode: 'ESC', leagueName: 'Division 3', url: 'https://www.football-data.co.uk/mmz4281/2627/SC3.csv' },
-  { countryCode: 'ALE', leagueName: 'Bundesliga 1', url: 'https://www.football-data.co.uk/mmz4281/2627/D1.csv' },
-  { countryCode: 'ALE', leagueName: 'Bundesliga 2', url: 'https://www.football-data.co.uk/mmz4281/2627/D2.csv' },
-  { countryCode: 'ITA', leagueName: 'Serie A', url: 'https://www.football-data.co.uk/mmz4281/2627/I1.csv' },
-  { countryCode: 'ITA', leagueName: 'Serie B', url: 'https://www.football-data.co.uk/mmz4281/2627/I2.csv' },
-  { countryCode: 'ESP', leagueName: 'La Liga 1', url: 'https://www.football-data.co.uk/mmz4281/2627/SP1.csv' },
-  { countryCode: 'ESP', leagueName: 'La Liga 2', url: 'https://www.football-data.co.uk/mmz4281/2627/SP2.csv' },
-  { countryCode: 'FRA', leagueName: 'Le Championnat', url: 'https://www.football-data.co.uk/mmz4281/2627/F1.csv' },
-  { countryCode: 'FRA', leagueName: 'Division 2', url: 'https://www.football-data.co.uk/mmz4281/2627/F2.csv' },
-  { countryCode: 'HOL', leagueName: 'Eredivisie', url: 'https://www.football-data.co.uk/mmz4281/2627/N1.csv' },
-  { countryCode: 'BEL', leagueName: 'Jupiler League', url: 'https://www.football-data.co.uk/mmz4281/2627/B1.csv' },
-  { countryCode: 'POR', leagueName: 'Liga I', url: 'https://www.football-data.co.uk/mmz4281/2627/P1.csv' },
-  { countryCode: 'TUR', leagueName: 'Futbol Ligi 1', url: 'https://www.football-data.co.uk/mmz4281/2627/T1.csv' },
-  { countryCode: 'GRE', leagueName: 'Ethniki Katigoria', url: 'https://www.football-data.co.uk/mmz4281/2526/G1.csv' },
+  { countryCode: 'ING', leagueName: 'Premier League ING', url: 'https://www.football-data.co.uk/mmz4281/2627/E0.csv' },
+  { countryCode: 'ING', leagueName: 'Championship ING', url: 'https://www.football-data.co.uk/mmz4281/2627/E1.csv' },
+  { countryCode: 'ING', leagueName: 'League 1 ING', url: 'https://www.football-data.co.uk/mmz4281/2627/E2.csv' },
+  { countryCode: 'ING', leagueName: 'League 2 ING', url: 'https://www.football-data.co.uk/mmz4281/2627/E3.csv' },
+  { countryCode: 'ESC', leagueName: 'Premiere League ESC', url: 'https://www.football-data.co.uk/mmz4281/2627/SC0.csv' },
+  { countryCode: 'ESC', leagueName: 'Division 1 ESC', url: 'https://www.football-data.co.uk/mmz4281/2627/SC1.csv' },
+  { countryCode: 'ESC', leagueName: 'Division 2 ESC', url: 'https://www.football-data.co.uk/mmz4281/2627/SC2.csv' },
+  { countryCode: 'ESC', leagueName: 'Division 3 ESC', url: 'https://www.football-data.co.uk/mmz4281/2627/SC3.csv' },
+  { countryCode: 'ALE', leagueName: 'Bundesliga 1 ALE', url: 'https://www.football-data.co.uk/mmz4281/2627/D1.csv' },
+  { countryCode: 'ALE', leagueName: 'Bundesliga 2 ALE', url: 'https://www.football-data.co.uk/mmz4281/2627/D2.csv' },
+  { countryCode: 'ITA', leagueName: 'Serie A ITA', url: 'https://www.football-data.co.uk/mmz4281/2627/I1.csv' },
+  { countryCode: 'ITA', leagueName: 'Serie B ITA', url: 'https://www.football-data.co.uk/mmz4281/2627/I2.csv' },
+  { countryCode: 'ESP', leagueName: 'La Liga 1 ESP', url: 'https://www.football-data.co.uk/mmz4281/2627/SP1.csv' },
+  { countryCode: 'ESP', leagueName: 'La Liga 2 ESP', url: 'https://www.football-data.co.uk/mmz4281/2627/SP2.csv' },
+  { countryCode: 'FRA', leagueName: 'Le Championnat FRA', url: 'https://www.football-data.co.uk/mmz4281/2627/F1.csv' },
+  { countryCode: 'FRA', leagueName: 'Division 2 FRA', url: 'https://www.football-data.co.uk/mmz4281/2627/F2.csv' },
+  { countryCode: 'HOL', leagueName: 'Eredivisie HOL', url: 'https://www.football-data.co.uk/mmz4281/2627/N1.csv' },
+  { countryCode: 'BEL', leagueName: 'Jupiler League BEL', url: 'https://www.football-data.co.uk/mmz4281/2627/B1.csv' },
+  { countryCode: 'POR', leagueName: 'Liga I POR', url: 'https://www.football-data.co.uk/mmz4281/2627/P1.csv' },
+  { countryCode: 'TUR', leagueName: 'Futbol Ligi 1 TUR', url: 'https://www.football-data.co.uk/mmz4281/2627/T1.csv' },
+  { countryCode: 'GRE', leagueName: 'Ethniki Katigoria GRE', url: 'https://www.football-data.co.uk/mmz4281/2627/G1.csv' },
 ];
 
 export const COUNTRY_NAMES: Record<string, string> = {
@@ -51,6 +51,30 @@ export const COUNTRY_NAMES: Record<string, string> = {
   POR: 'Portugal',
   TUR: 'Turquia',
   GRE: 'Grécia',
+};
+
+export const DIV_MAP: Record<string, { countryCode: string; leagueName: string }> = {
+  E0: { countryCode: 'ING', leagueName: 'Premier League ING' },
+  E1: { countryCode: 'ING', leagueName: 'Championship ING' },
+  E2: { countryCode: 'ING', leagueName: 'League 1 ING' },
+  E3: { countryCode: 'ING', leagueName: 'League 2 ING' },
+  SC0: { countryCode: 'ESC', leagueName: 'Premiere League ESC' },
+  SC1: { countryCode: 'ESC', leagueName: 'Division 1 ESC' },
+  SC2: { countryCode: 'ESC', leagueName: 'Division 2 ESC' },
+  SC3: { countryCode: 'ESC', leagueName: 'Division 3 ESC' },
+  D1: { countryCode: 'ALE', leagueName: 'Bundesliga 1 ALE' },
+  D2: { countryCode: 'ALE', leagueName: 'Bundesliga 2 ALE' },
+  I1: { countryCode: 'ITA', leagueName: 'Serie A ITA' },
+  I2: { countryCode: 'ITA', leagueName: 'Serie B ITA' },
+  SP1: { countryCode: 'ESP', leagueName: 'La Liga 1 ESP' },
+  SP2: { countryCode: 'ESP', leagueName: 'La Liga 2 ESP' },
+  F1: { countryCode: 'FRA', leagueName: 'Le Championnat FRA' },
+  F2: { countryCode: 'FRA', leagueName: 'Division 2 FRA' },
+  N1: { countryCode: 'HOL', leagueName: 'Eredivisie HOL' },
+  B1: { countryCode: 'BEL', leagueName: 'Jupiler League BEL' },
+  P1: { countryCode: 'POR', leagueName: 'Liga I POR' },
+  T1: { countryCode: 'TUR', leagueName: 'Futbol Ligi 1 TUR' },
+  G1: { countryCode: 'GRE', leagueName: 'Ethniki Katigoria GRE' },
 };
 
 function parseDate(dateStr?: string, timeStr?: string): string {
@@ -83,11 +107,30 @@ function parseDate(dateStr?: string, timeStr?: string): string {
   return d.toISOString();
 }
 
+function parseCsvRow(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim().replace(/^["']|["']$/g, ''));
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim().replace(/^["']|["']$/g, ''));
+  return result;
+}
+
 function parseCsvLines(csvText: string): Record<string, string>[] {
   const lines = csvText.split(/\r?\n/).filter(l => l.trim().length > 0);
   if (lines.length < 2) return [];
 
-  // Simple robust CSV parser for football-data format
   const headers = parseCsvRow(lines[0]);
   const results: Record<string, string>[] = [];
 
@@ -103,30 +146,10 @@ function parseCsvLines(csvText: string): Record<string, string>[] {
   return results;
 }
 
-function parseCsvRow(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  result.push(current.trim());
-  return result;
-}
-
-function safeNum(val: any): number | undefined {
-  if (val === undefined || val === null || val === '') return undefined;
+function safeNum(val: any): number | null {
+  if (val === undefined || val === null || val === '') return null;
   const num = parseFloat(String(val).replace(',', '.'));
-  return isNaN(num) ? undefined : num;
+  return isNaN(num) ? null : num;
 }
 
 export function processMatchRows(
@@ -144,24 +167,29 @@ export function processMatchRows(
 
   const countriesMap = new Map<string, any>();
   countries.forEach(c => {
-    countriesMap.set(c.code?.toUpperCase() || c.name?.toUpperCase(), c);
-    countriesMap.set(c.name?.toUpperCase(), c);
+    if (c.code) countriesMap.set(c.code.toUpperCase(), c);
+    if (c.name) countriesMap.set(c.name.toUpperCase(), c);
+    countriesMap.set(c.id, c);
   });
 
   const leaguesMap = new Map<string, any>();
   leagues.forEach(l => {
-    leaguesMap.set(`${l.countryId}_${l.name?.toUpperCase()}`, l);
+    leaguesMap.set(`${l.countryId}_${l.name.toUpperCase()}`, l);
+    leaguesMap.set(l.name.toUpperCase(), l);
   });
 
   const teamsMap = new Map<string, any>();
   teams.forEach(t => {
-    teamsMap.set(`${t.countryId}_${t.name?.toUpperCase()}`, t);
+    teamsMap.set(`${t.countryId}_${t.name.toUpperCase()}`, t);
+    teamsMap.set(t.name.toUpperCase(), t);
   });
 
   const matchesMap = new Map<string, any>();
   matches.forEach(m => {
-    const dateKey = m.date ? m.date.substring(0, 10) : '';
+    const dateKey = m.matchDate ? m.matchDate.substring(0, 10) : '';
     matchesMap.set(`${dateKey}_${m.homeTeamId}_${m.awayTeamId}`, m);
+    matchesMap.set(`${m.homeTeamId}_${m.awayTeamId}`, m);
+    matchesMap.set(m.id, m);
   });
 
   let newCountries = 0;
@@ -169,23 +197,35 @@ export function processMatchRows(
   let newTeams = 0;
   let newMatches = 0;
 
-  for (const item of rows) {
-    const { countryCode, leagueName, row } = item;
-    const homeName = (row['HomeTeam'] || row['Home'] || row['MANDANTE'] || '').trim();
-    const awayName = (row['AwayTeam'] || row['Away'] || row['VISITANTE'] || '').trim();
+  for (const { countryCode, leagueName: defaultLeagueName, row } of rows) {
+    const homeName = (row['Mandante'] || row['HomeTeam'] || row['Home'] || row['MANDANTE'] || '').trim();
+    const awayName = (row['Visitante'] || row['AwayTeam'] || row['Away'] || row['VISITANTE'] || '').trim();
 
     if (!homeName || !awayName) continue;
 
+    let cCode = (row['Pais'] || row['PAIS'] || countryCode || '').trim();
+    let lName = (row['Liga'] || row['LIGA'] || defaultLeagueName || '').trim();
+
+    const div = (row['Div'] || row['DIV'] || row['ï»¿Div'] || '').trim();
+    if (div && DIV_MAP[div]) {
+      if (!cCode) cCode = DIV_MAP[div].countryCode;
+      if (!lName) lName = DIV_MAP[div].leagueName;
+    }
+
+    if (!cCode) cCode = 'INT';
+    const friendlyCountryName = COUNTRY_NAMES[cCode.toUpperCase()] || cCode;
+    if (!lName) lName = `Liga Principal ${cCode}`;
+
     // 1. Ensure Country
-    const cKey = countryCode.toUpperCase();
-    let country = countriesMap.get(cKey) || countriesMap.get((COUNTRY_NAMES[countryCode] || countryCode).toUpperCase());
+    const cKey = cCode.toUpperCase();
+    let country = countriesMap.get(cKey) || countriesMap.get(friendlyCountryName.toUpperCase());
     if (!country) {
       const nextNum = countries.length + 1;
       const id = `PAIS-${String(nextNum).padStart(3, '0')}`;
       country = {
         id,
-        name: COUNTRY_NAMES[countryCode] || countryCode,
-        code: countryCode,
+        name: friendlyCountryName,
+        code: cCode.length <= 3 ? cCode.toUpperCase() : undefined,
         createdAt: new Date().toISOString(),
       };
       countries.push(country);
@@ -195,14 +235,14 @@ export function processMatchRows(
     }
 
     // 2. Ensure League
-    const lKey = `${country.id}_${leagueName.toUpperCase()}`;
-    let league = leaguesMap.get(lKey);
+    const lKey = `${country.id}_${lName.toUpperCase()}`;
+    let league = leaguesMap.get(lKey) || leaguesMap.get(lName.toUpperCase());
     if (!league) {
       const nextNum = leagues.length + 1;
       const id = `LIGA-${String(nextNum).padStart(3, '0')}`;
       league = {
         id,
-        name: leagueName,
+        name: lName,
         countryId: country.id,
         countryName: country.name,
         createdAt: new Date().toISOString(),
@@ -214,7 +254,7 @@ export function processMatchRows(
 
     // 3. Ensure Home Team
     const htKey = `${country.id}_${homeName.toUpperCase()}`;
-    let homeTeam = teamsMap.get(htKey);
+    let homeTeam = teamsMap.get(htKey) || teamsMap.get(homeName.toUpperCase());
     if (!homeTeam) {
       const nextNum = teams.length + 1;
       const id = `TIME-${String(nextNum).padStart(3, '0')}`;
@@ -229,12 +269,13 @@ export function processMatchRows(
       };
       teams.push(homeTeam);
       teamsMap.set(htKey, homeTeam);
+      teamsMap.set(homeName.toUpperCase(), homeTeam);
       newTeams++;
     }
 
     // 4. Ensure Away Team
     const atKey = `${country.id}_${awayName.toUpperCase()}`;
-    let awayTeam = teamsMap.get(atKey);
+    let awayTeam = teamsMap.get(atKey) || teamsMap.get(awayName.toUpperCase());
     if (!awayTeam) {
       const nextNum = teams.length + 1;
       const id = `TIME-${String(nextNum).padStart(3, '0')}`;
@@ -249,84 +290,82 @@ export function processMatchRows(
       };
       teams.push(awayTeam);
       teamsMap.set(atKey, awayTeam);
+      teamsMap.set(awayName.toUpperCase(), awayTeam);
       newTeams++;
     }
 
-    // 5. Match Processing
-    const dateStr = row['Date'] || row['DATE'] || row['DATA'] || '';
-    const timeStr = row['Time'] || row['TIME'] || row['HORA'] || '';
+    // 5. Match details
+    const dateStr = row['Data'] || row['Date'] || row['DATE'] || row['DATA'] || '';
+    const timeStr = row['Hora'] || row['Time'] || row['TIME'] || row['HORA'] || '';
     const isoDate = parseDate(dateStr, timeStr);
     const dateKey = isoDate.substring(0, 10);
     const mKey = `${dateKey}_${homeTeam.id}_${awayTeam.id}`;
 
-    const fthg = safeNum(row['FTHG'] ?? row['HG'] ?? row['GOLS_MANDANTE']);
-    const ftag = safeNum(row['FTAG'] ?? row['AG'] ?? row['GOLS_VISITANTE']);
-    const hthg = safeNum(row['HTHG']);
-    const htag = safeNum(row['HTAG']);
+    const fthg = safeNum(row['Placar_Mandante_FT'] ?? row['FTHG'] ?? row['HG']);
+    const ftag = safeNum(row['Placar_Visitante_FT'] ?? row['FTAG'] ?? row['AG']);
+    const hthg = safeNum(row['Placar_Mandante_HT'] ?? row['HTHG']);
+    const htag = safeNum(row['Placar_Visitante_HT'] ?? row['HTAG']);
+    const referee = (row['Arbitro'] || row['Referee'] || '').trim() || undefined;
 
-    const isFinished = fthg !== undefined && ftag !== undefined;
-    const status = isFinished ? 'FINISHED' : 'SCHEDULED';
+    const isFinished = fthg !== null && ftag !== null;
+    const status = isFinished ? 'FINALIZADO' : 'AGENDADO';
 
-    const hs = safeNum(row['HS'] ?? row['CHUTES_MANDANTE']);
-    const as = safeNum(row['AS'] ?? row['CHUTES_VISITANTE']);
-    const hst = safeNum(row['HST'] ?? row['CHUTES_GOL_MANDANTE']);
-    const ast = safeNum(row['AST'] ?? row['CHUTES_GOL_VISITANTE']);
-    const hc = safeNum(row['HC'] ?? row['ESCANTEIOS_MANDANTE']);
-    const ac = safeNum(row['AC'] ?? row['ESCANTEIOS_VISITANTE']);
-    const hy = safeNum(row['HY'] ?? row['AMARELOS_MANDANTE']);
-    const ay = safeNum(row['AY'] ?? row['AMARELOS_VISITANTE']);
-    const hr = safeNum(row['HR'] ?? row['VERMELHOS_MANDANTE']);
-    const ar = safeNum(row['AR'] ?? row['VERMELHOS_VISITANTE']);
-    const hf = safeNum(row['HF'] ?? row['FALTAS_MANDANTE']);
-    const af = safeNum(row['AF'] ?? row['FALTAS_VISITANTE']);
-
+    // Stats
     const statsObj = {
-      shotsHome: hs,
-      shotsAway: as,
-      shotsOnTargetHome: hst,
-      shotsOnTargetAway: ast,
-      cornersHome: hc,
-      cornersAway: ac,
-      yellowCardsHome: hy,
-      yellowCardsAway: ay,
-      redCardsHome: hr,
-      redCardsAway: ar,
-      foulsHome: hf,
-      foulsAway: af,
+      halftimeHomeScore: hthg,
+      halftimeAwayScore: htag,
+      xgHomeFT: safeNum(row['xG_Mandante_FT'] ?? row['HxG']),
+      xgAwayFT: safeNum(row['xG_Visitante_FT'] ?? row['AxG']),
+      shotsHomeFT: safeNum(row['Finalizacoes_Mandante_FT'] ?? row['HS']),
+      shotsAwayFT: safeNum(row['Finalizacoes_Visitante_FT'] ?? row['AS']),
+      shotsOnTargetHomeFT: safeNum(row['Chutes_Gol_Mandante_FT'] ?? row['HST']),
+      shotsOnTargetAwayFT: safeNum(row['Chutes_Gol_Visitante_FT'] ?? row['AST']),
+      foulsHomeFT: safeNum(row['Faltas_Mandante_FT'] ?? row['HF']),
+      foulsAwayFT: safeNum(row['Faltas_Visitante_FT'] ?? row['AF']),
+      cornersHomeFT: safeNum(row['Escanteios_Mandante_FT'] ?? row['HC']),
+      cornersAwayFT: safeNum(row['Escanteios_Visitante_FT'] ?? row['AC']),
+      yellowCardsHomeFT: safeNum(row['Cartao_Amarelo_Mandante_FT'] ?? row['HY']),
+      yellowCardsAwayFT: safeNum(row['Cartao_Amarelo_Visitante_FT'] ?? row['AY']),
+      redCardsHomeFT: safeNum(row['Cartao_Vermelho_Mandante_FT'] ?? row['HR']),
+      redCardsAwayFT: safeNum(row['Cartao_Vermelho_Visitante_FT'] ?? row['AR']),
     };
 
-    const b365H = safeNum(row['B365H'] ?? row['ODD_H']);
-    const b365D = safeNum(row['B365D'] ?? row['ODD_D']);
-    const b365A = safeNum(row['B365A'] ?? row['ODD_A']);
-    const over25 = safeNum(row['B365>2.5'] ?? row['BbAv>2.5'] ?? row['ODD_OVER25']);
-    const under25 = safeNum(row['B365<2.5'] ?? row['BbAv<2.5'] ?? row['ODD_UNDER25']);
+    // Odds & Asian Handicap
+    const ahHomeLine = safeNum(row['Linha_Handicap_Asiático_Mandante_FT'] ?? row['AHh']);
+    const ahHomeOdd = safeNum(row['Odd_Handicap_Asiático_Mandante_FT'] ?? row['B365AHH']);
+    let ahAwayLine = safeNum(row['Linha_Handicap_Asiático_Visitante_FT'] ?? row['AHa']);
+    if (ahAwayLine === null && ahHomeLine !== null) {
+      ahAwayLine = -ahHomeLine;
+    }
+    const ahAwayOdd = safeNum(row['Odd_Handicap_Asiático_Visitante_FT'] ?? row['B365AHA']);
 
     const oddsObj = {
-      homeWin: b365H,
-      draw: b365D,
-      awayWin: b365A,
-      over25,
-      under25,
+      homeFT: safeNum(row['Odd_Home_FT'] ?? row['B365H']),
+      drawFT: safeNum(row['Odd_Draw_FT'] ?? row['B365D']),
+      awayFT: safeNum(row['Odd_Away_FT'] ?? row['B365A']),
+      over25FT: safeNum(row['Odd_Over25_FT'] ?? row['B365>2.5']),
+      under25FT: safeNum(row['Odd_Under25_FT'] ?? row['B365<2.5']),
+      asianHandicapHomeLine: ahHomeLine,
+      asianHandicapHomeOdd: ahHomeOdd,
+      asianHandicapAwayLine: ahAwayLine,
+      asianHandicapAwayOdd: ahAwayOdd,
     };
 
     let existingMatch = matchesMap.get(mKey);
     if (existingMatch) {
-      // Update existing match
-      existingMatch.date = isoDate;
+      existingMatch.matchDate = isoDate;
       existingMatch.status = status;
-      if (fthg !== undefined) existingMatch.homeScore = fthg;
-      if (ftag !== undefined) existingMatch.awayScore = ftag;
-      if (hthg !== undefined) existingMatch.halftimeHomeScore = hthg;
-      if (htag !== undefined) existingMatch.halftimeAwayScore = htag;
+      if (fthg !== null) existingMatch.homeScore = fthg;
+      if (ftag !== null) existingMatch.awayScore = ftag;
+      if (referee) existingMatch.referee = referee;
       existingMatch.stats = { ...(existingMatch.stats || {}), ...statsObj };
       existingMatch.odds = { ...(existingMatch.odds || {}), ...oddsObj };
     } else {
-      // Create new match
       const nextNum = matches.length + 1;
       const matchId = `JOGO-${String(nextNum).padStart(3, '0')}`;
       const newMatch = {
         id: matchId,
-        date: isoDate,
+        matchDate: isoDate,
         status,
         countryId: country.id,
         countryName: country.name,
@@ -340,8 +379,7 @@ export function processMatchRows(
         awayTeamLogoUrl: awayTeam.logoUrl || undefined,
         homeScore: fthg,
         awayScore: ftag,
-        halftimeHomeScore: hthg,
-        halftimeAwayScore: htag,
+        referee,
         stats: statsObj,
         odds: oddsObj,
         createdAt: new Date().toISOString(),
@@ -352,13 +390,15 @@ export function processMatchRows(
     }
   }
 
+  const updatedDb = {
+    countries,
+    leagues,
+    teams,
+    matches,
+  };
+
   return {
-    updatedDb: {
-      countries,
-      leagues,
-      teams,
-      matches,
-    },
+    updatedDb,
     stats: {
       newCountries,
       newLeagues,
@@ -368,63 +408,19 @@ export function processMatchRows(
   };
 }
 
-export const DIV_MAP: Record<string, { countryCode: string; leagueName: string }> = {
-  E0: { countryCode: 'ING', leagueName: 'Premier League' },
-  E1: { countryCode: 'ING', leagueName: 'Championship' },
-  E2: { countryCode: 'ING', leagueName: 'League 1' },
-  E3: { countryCode: 'ING', leagueName: 'League 2' },
-  SC0: { countryCode: 'ESC', leagueName: 'Premiere League' },
-  SC1: { countryCode: 'ESC', leagueName: 'Division 1' },
-  SC2: { countryCode: 'ESC', leagueName: 'Division 2' },
-  SC3: { countryCode: 'ESC', leagueName: 'Division 3' },
-  D1: { countryCode: 'ALE', leagueName: 'Bundesliga 1' },
-  D2: { countryCode: 'ALE', leagueName: 'Bundesliga 2' },
-  I1: { countryCode: 'ITA', leagueName: 'Serie A' },
-  I2: { countryCode: 'ITA', leagueName: 'Serie B' },
-  SP1: { countryCode: 'ESP', leagueName: 'La Liga 1' },
-  SP2: { countryCode: 'ESP', leagueName: 'La Liga 2' },
-  F1: { countryCode: 'FRA', leagueName: 'Le Championnat' },
-  F2: { countryCode: 'FRA', leagueName: 'Division 2' },
-  N1: { countryCode: 'HOL', leagueName: 'Eredivisie' },
-  B1: { countryCode: 'BEL', leagueName: 'Jupiler League' },
-  P1: { countryCode: 'POR', leagueName: 'Liga I' },
-  T1: { countryCode: 'TUR', leagueName: 'Futbol Ligi 1' },
-  G1: { countryCode: 'GRE', leagueName: 'Ethniki Katigoria' },
-};
-
-export function importCustomCsvText(
-  csvText: string,
-  currentDb: any
-): { updatedDb: any; result: SyncResult } {
+export function importCustomCsvText(csvText: string, currentDb: any): { updatedDb: any; result: SyncResult } {
   const parsedRows = parseCsvLines(csvText);
-  const rows: Array<{ countryCode: string; leagueName: string; row: Record<string, string> }> = [];
+  const rowsToProcess = parsedRows.map(row => ({
+    countryCode: row['Pais'] || row['PAIS'] || row['Country'] || '',
+    leagueName: row['Liga'] || row['LIGA'] || row['League'] || '',
+    row,
+  }));
 
-  for (const r of parsedRows) {
-    let countryCode = (r['PAIS'] || r['Pais'] || r['Country'] || r['COUNTRY'] || '').trim();
-    let leagueName = (r['LIGA'] || r['Liga'] || r['League'] || r['LEAGUE'] || '').trim();
-
-    // If Div code is present (e.g. E0, SP1, D1)
-    const div = (r['Div'] || r['DIV'] || '').trim();
-    if (div && DIV_MAP[div]) {
-      if (!countryCode) countryCode = DIV_MAP[div].countryCode;
-      if (!leagueName) leagueName = DIV_MAP[div].leagueName;
-    }
-
-    if (!countryCode) countryCode = 'INT';
-    if (!leagueName) leagueName = 'Liga Geral';
-
-    rows.push({
-      countryCode,
-      leagueName,
-      row: r,
-    });
-  }
-
-  const { updatedDb, stats } = processMatchRows(rows, currentDb);
+  const { updatedDb, stats } = processMatchRows(rowsToProcess, currentDb);
 
   const result: SyncResult = {
-    success: rows.length > 0,
-    message: `Importação manual do CSV concluída: ${stats.newTeams} novos times, ${stats.newLeagues} novas ligas, ${stats.newCountries} novos países e ${stats.newMatches} partidas processadas/cadastradas!`,
+    success: parsedRows.length > 0,
+    message: `Importação manual concluída: +${stats.newTeams} times, +${stats.newLeagues} ligas, +${stats.newCountries} países e +${stats.newMatches} jogos consolidados!`,
     totalCountries: updatedDb.countries.length,
     totalLeagues: updatedDb.leagues.length,
     totalTeams: updatedDb.teams.length,
@@ -442,26 +438,31 @@ export async function syncOnlineFootballData(currentDb: any): Promise<{ updatedD
   const allRows: Array<{ countryCode: string; leagueName: string; row: Record<string, string> }> = [];
   const errors: string[] = [];
 
-  for (const league of LIGAS_INFO) {
+  for (const item of LIGAS_INFO) {
     try {
-      const response = await fetch(league.url, {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
+      const resp = await fetch(item.url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        },
       });
-      if (!response.ok) {
-        errors.push(`Falha ao baixar ${league.leagueName} (${league.countryCode}): HTTP ${response.status}`);
+
+      if (!resp.ok) {
+        errors.push(`${item.countryCode} - ${item.leagueName}: HTTP ${resp.status}`);
         continue;
       }
-      const csvText = await response.text();
+
+      const csvText = await resp.text();
       const parsed = parseCsvLines(csvText);
-      for (const r of parsed) {
+
+      parsed.forEach(row => {
         allRows.push({
-          countryCode: league.countryCode,
-          leagueName: league.leagueName,
-          row: r,
+          countryCode: item.countryCode,
+          leagueName: item.leagueName,
+          row,
         });
-      }
+      });
     } catch (err: any) {
-      errors.push(`Erro em ${league.leagueName}: ${err.message || String(err)}`);
+      errors.push(`${item.countryCode} - ${item.leagueName}: ${err.message || String(err)}`);
     }
   }
 
@@ -469,7 +470,7 @@ export async function syncOnlineFootballData(currentDb: any): Promise<{ updatedD
 
   const result: SyncResult = {
     success: allRows.length > 0,
-    message: `Sincronização concluída: ${stats.newTeams} novos times, ${stats.newLeagues} novas ligas, ${stats.newCountries} novos países e ${stats.newMatches} novas partidas cadastradas!`,
+    message: `Sincronização concluída: +${stats.newTeams} times, +${stats.newLeagues} ligas, +${stats.newCountries} países e +${stats.newMatches} jogos consolidados!`,
     totalCountries: updatedDb.countries.length,
     totalLeagues: updatedDb.leagues.length,
     totalTeams: updatedDb.teams.length,

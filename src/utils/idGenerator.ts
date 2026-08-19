@@ -99,7 +99,7 @@ export function findOrCreateTeam(
   countryId: string,
   countryName: string,
   teams: Team[],
-  stadium?: string,
+  stadiumUnused?: string,
   logoUrl?: string,
   leagueId?: string,
   leagueName?: string
@@ -114,10 +114,6 @@ export function findOrCreateTeam(
     const cloned: Team = { ...existing };
     if (logoUrl && !cloned.logoUrl) {
       cloned.logoUrl = logoUrl;
-      updated = true;
-    }
-    if (stadium && !cloned.stadium) {
-      cloned.stadium = stadium;
       updated = true;
     }
     if (leagueId) {
@@ -149,7 +145,6 @@ export function findOrCreateTeam(
     leagueId: leagueId || undefined,
     leagueName: leagueName || undefined,
     leagueIds: leagueId ? [leagueId] : [],
-    stadium: stadium || '',
     logoUrl: logoUrl || undefined,
     createdAt: new Date().toISOString(),
   };

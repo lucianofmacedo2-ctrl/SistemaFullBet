@@ -283,7 +283,6 @@ export default function App() {
         match.homeTeamName = updated.name;
         match.countryId = updated.countryId;
         match.countryName = updated.countryName;
-        if (updated.stadium) match.stadium = updated.stadium;
         if (updated.logoUrl !== undefined) match.homeTeamLogoUrl = updated.logoUrl;
       }
       if (m.awayTeamId === teamId) {
@@ -468,7 +467,7 @@ export default function App() {
         countryRes.country.id,
         countryRes.country.name,
         currentTeams,
-        row.stadium,
+        undefined,
         undefined,
         leagueRes.league.id,
         leagueRes.league.name
@@ -521,8 +520,6 @@ export default function App() {
         homeScore: null,
         awayScore: null,
         matchDate: row.matchDate || new Date().toISOString(),
-        round: row.round || 'Rodada 1',
-        stadium: row.stadium || homeTeamRes.team.stadium || '',
         referee: row.referee || '',
         status: 'AGENDADO',
         notes: row.notes || '',
@@ -532,13 +529,10 @@ export default function App() {
           awayFT: row.oddAwayFT ?? null,
           over25FT: row.oddOver25FT ?? null,
           under25FT: row.oddUnder25FT ?? null,
-          bttsFT: row.oddBttsFT ?? null,
-          homeHT: row.oddHomeHT ?? null,
-          drawHT: row.oddDrawHT ?? null,
-          awayHT: row.oddAwayHT ?? null,
-          over05HT: row.oddOver05HT ?? null,
-          under05HT: row.oddUnder05HT ?? null,
-          bttsHT: row.oddBttsHT ?? null,
+          asianHandicapHomeLine: row.asianHandicapHomeLine ?? null,
+          asianHandicapHomeOdd: row.asianHandicapHomeOdd ?? null,
+          asianHandicapAwayLine: row.asianHandicapAwayLine ?? null,
+          asianHandicapAwayOdd: row.asianHandicapAwayOdd ?? null,
         },
         createdAt: new Date().toISOString(),
       };
@@ -592,13 +586,10 @@ export default function App() {
           awayFT: null,
           over25FT: null,
           under25FT: null,
-          bttsFT: null,
-          homeHT: null,
-          drawHT: null,
-          awayHT: null,
-          over05HT: null,
-          under05HT: null,
-          bttsHT: null,
+          asianHandicapHomeLine: null,
+          asianHandicapHomeOdd: null,
+          asianHandicapAwayLine: null,
+          asianHandicapAwayOdd: null,
         };
 
         // Determine new scores
@@ -618,49 +609,21 @@ export default function App() {
           ...existingStats,
           halftimeHomeScore: row.halftimeHomeScore !== null ? row.halftimeHomeScore : existingStats.halftimeHomeScore,
           halftimeAwayScore: row.halftimeAwayScore !== null ? row.halftimeAwayScore : existingStats.halftimeAwayScore,
-          goalMinutesHome: row.goalMinutesHome !== undefined ? row.goalMinutesHome : existingStats.goalMinutesHome,
-          goalMinutesAway: row.goalMinutesAway !== undefined ? row.goalMinutesAway : existingStats.goalMinutesAway,
-          firstGoalMinuteMatch: row.firstGoalMinuteMatch !== null ? row.firstGoalMinuteMatch : existingStats.firstGoalMinuteMatch,
-          firstGoalMinuteHome: row.firstGoalMinuteHome !== null ? row.firstGoalMinuteHome : existingStats.firstGoalMinuteHome,
-          firstGoalMinuteAway: row.firstGoalMinuteAway !== null ? row.firstGoalMinuteAway : existingStats.firstGoalMinuteAway,
-          cornersHomeFT: row.cornersHomeFT !== null ? row.cornersHomeFT : (existingStats.cornersHomeFT ?? existingStats.cornersHome),
-          cornersAwayFT: row.cornersAwayFT !== null ? row.cornersAwayFT : (existingStats.cornersAwayFT ?? existingStats.cornersAway),
-          cornersHomeHT: row.cornersHomeHT !== null ? row.cornersHomeHT : existingStats.cornersHomeHT,
-          cornersAwayHT: row.cornersAwayHT !== null ? row.cornersAwayHT : existingStats.cornersAwayHT,
-          possessionHomeFT: row.possessionHomeFT !== null ? row.possessionHomeFT : (existingStats.possessionHomeFT ?? existingStats.possessionHome),
-          possessionAwayFT: row.possessionAwayFT !== null ? row.possessionAwayFT : (existingStats.possessionAwayFT ?? existingStats.possessionAway),
-          possessionHomeHT: row.possessionHomeHT !== null ? row.possessionHomeHT : existingStats.possessionHomeHT,
-          possessionAwayHT: row.possessionAwayHT !== null ? row.possessionAwayHT : existingStats.possessionAwayHT,
-          yellowCardsHomeFT: row.yellowCardsHomeFT !== null ? row.yellowCardsHomeFT : (existingStats.yellowCardsHomeFT ?? existingStats.yellowCardsHome),
-          yellowCardsAwayFT: row.yellowCardsAwayFT !== null ? row.yellowCardsAwayFT : (existingStats.yellowCardsAwayFT ?? existingStats.yellowCardsAway),
-          yellowCardsHomeHT: row.yellowCardsHomeHT !== null ? row.yellowCardsHomeHT : existingStats.yellowCardsHomeHT,
-          yellowCardsAwayHT: row.yellowCardsAwayHT !== null ? row.yellowCardsAwayHT : existingStats.yellowCardsAwayHT,
-          redCardsHomeFT: row.redCardsHomeFT !== null ? row.redCardsHomeFT : (existingStats.redCardsHomeFT ?? existingStats.redCardsHome),
-          redCardsAwayFT: row.redCardsAwayFT !== null ? row.redCardsAwayFT : (existingStats.redCardsAwayFT ?? existingStats.redCardsAway),
-          redCardsHomeHT: row.redCardsHomeHT !== null ? row.redCardsHomeHT : existingStats.redCardsHomeHT,
-          redCardsAwayHT: row.redCardsAwayHT !== null ? row.redCardsAwayHT : existingStats.redCardsAwayHT,
-          shotsHomeFT: row.shotsHomeFT !== null ? row.shotsHomeFT : (existingStats.shotsHomeFT ?? existingStats.shotsHome),
-          shotsAwayFT: row.shotsAwayFT !== null ? row.shotsAwayFT : (existingStats.shotsAwayFT ?? existingStats.shotsAway),
-          shotsHomeHT: row.shotsHomeHT !== null ? row.shotsHomeHT : existingStats.shotsHomeHT,
-          shotsAwayHT: row.shotsAwayHT !== null ? row.shotsAwayHT : existingStats.shotsAwayHT,
-          shotsOnTargetHomeFT: row.shotsOnTargetHomeFT !== null ? row.shotsOnTargetHomeFT : (existingStats.shotsOnTargetHomeFT ?? existingStats.shotsOnTargetHome),
-          shotsOnTargetAwayFT: row.shotsOnTargetAwayFT !== null ? row.shotsOnTargetAwayFT : (existingStats.shotsOnTargetAwayFT ?? existingStats.shotsOnTargetAway),
-          shotsOnTargetHomeHT: row.shotsOnTargetHomeHT !== null ? row.shotsOnTargetHomeHT : existingStats.shotsOnTargetHomeHT,
-          shotsOnTargetAwayHT: row.shotsOnTargetAwayHT !== null ? row.shotsOnTargetAwayHT : existingStats.shotsOnTargetAwayHT,
+          xgHomeFT: row.xgHomeFT !== null && row.xgHomeFT !== undefined ? row.xgHomeFT : existingStats.xgHomeFT,
+          xgAwayFT: row.xgAwayFT !== null && row.xgAwayFT !== undefined ? row.xgAwayFT : existingStats.xgAwayFT,
+          shotsHomeFT: row.shotsHomeFT !== null && row.shotsHomeFT !== undefined ? row.shotsHomeFT : existingStats.shotsHomeFT,
+          shotsAwayFT: row.shotsAwayFT !== null && row.shotsAwayFT !== undefined ? row.shotsAwayFT : existingStats.shotsAwayFT,
+          shotsOnTargetHomeFT: row.shotsOnTargetHomeFT !== null && row.shotsOnTargetHomeFT !== undefined ? row.shotsOnTargetHomeFT : existingStats.shotsOnTargetHomeFT,
+          shotsOnTargetAwayFT: row.shotsOnTargetAwayFT !== null && row.shotsOnTargetAwayFT !== undefined ? row.shotsOnTargetAwayFT : existingStats.shotsOnTargetAwayFT,
+          foulsHomeFT: row.foulsHomeFT !== null && row.foulsHomeFT !== undefined ? row.foulsHomeFT : existingStats.foulsHomeFT,
+          foulsAwayFT: row.foulsAwayFT !== null && row.foulsAwayFT !== undefined ? row.foulsAwayFT : existingStats.foulsAwayFT,
+          cornersHomeFT: row.cornersHomeFT !== null && row.cornersHomeFT !== undefined ? row.cornersHomeFT : existingStats.cornersHomeFT,
+          cornersAwayFT: row.cornersAwayFT !== null && row.cornersAwayFT !== undefined ? row.cornersAwayFT : existingStats.cornersAwayFT,
+          yellowCardsHomeFT: row.yellowCardsHomeFT !== null && row.yellowCardsHomeFT !== undefined ? row.yellowCardsHomeFT : existingStats.yellowCardsHomeFT,
+          yellowCardsAwayFT: row.yellowCardsAwayFT !== null && row.yellowCardsAwayFT !== undefined ? row.yellowCardsAwayFT : existingStats.yellowCardsAwayFT,
+          redCardsHomeFT: row.redCardsHomeFT !== null && row.redCardsHomeFT !== undefined ? row.redCardsHomeFT : existingStats.redCardsHomeFT,
+          redCardsAwayFT: row.redCardsAwayFT !== null && row.redCardsAwayFT !== undefined ? row.redCardsAwayFT : existingStats.redCardsAwayFT,
         };
-
-        // Auto-calculate firstGoalMinuteMatch if missing but team minutes available
-        if (updatedStats.firstGoalMinuteMatch == null) {
-          const homeM = updatedStats.firstGoalMinuteHome;
-          const awayM = updatedStats.firstGoalMinuteAway;
-          if (homeM != null && awayM != null) {
-            updatedStats.firstGoalMinuteMatch = Math.min(homeM, awayM);
-          } else if (homeM != null) {
-            updatedStats.firstGoalMinuteMatch = homeM;
-          } else if (awayM != null) {
-            updatedStats.firstGoalMinuteMatch = awayM;
-          }
-        }
 
         // Updated Odds merge
         const updatedOdds: MatchOdds = {
@@ -669,20 +632,15 @@ export default function App() {
           awayFT: row.oddAwayFT !== null ? row.oddAwayFT : existingOdds.awayFT,
           over25FT: row.oddOver25FT !== null ? row.oddOver25FT : existingOdds.over25FT,
           under25FT: row.oddUnder25FT !== null ? row.oddUnder25FT : existingOdds.under25FT,
-          bttsFT: row.oddBttsFT !== null ? row.oddBttsFT : existingOdds.bttsFT,
-          homeHT: row.oddHomeHT !== null ? row.oddHomeHT : existingOdds.homeHT,
-          drawHT: row.oddDrawHT !== null ? row.oddDrawHT : existingOdds.drawHT,
-          awayHT: row.oddAwayHT !== null ? row.oddAwayHT : existingOdds.awayHT,
-          over05HT: row.oddOver05HT !== null ? row.oddOver05HT : existingOdds.over05HT,
-          under05HT: row.oddUnder05HT !== null ? row.oddUnder05HT : existingOdds.under05HT,
-          bttsHT: row.oddBttsHT !== null ? row.oddBttsHT : existingOdds.bttsHT,
+          asianHandicapHomeLine: row.asianHandicapHomeLine !== null ? row.asianHandicapHomeLine : existingOdds.asianHandicapHomeLine,
+          asianHandicapHomeOdd: row.asianHandicapHomeOdd !== null ? row.asianHandicapHomeOdd : existingOdds.asianHandicapHomeOdd,
+          asianHandicapAwayLine: row.asianHandicapAwayLine !== null ? row.asianHandicapAwayLine : existingOdds.asianHandicapAwayLine,
+          asianHandicapAwayOdd: row.asianHandicapAwayOdd !== null ? row.asianHandicapAwayOdd : existingOdds.asianHandicapAwayOdd,
         };
 
         const updatedMatch: Match = {
           ...existing,
           matchDate: row.matchDate || existing.matchDate,
-          round: row.round || existing.round,
-          stadium: row.stadium || existing.stadium,
           referee: row.referee || existing.referee,
           notes: row.notes !== undefined && row.notes !== '' ? row.notes : existing.notes,
           homeScore,
@@ -711,7 +669,7 @@ export default function App() {
           countryRes.country.id,
           countryRes.country.name,
           currentTeams,
-          row.stadium,
+          undefined,
           undefined,
           leagueRes.league.id,
           leagueRes.league.name
@@ -748,8 +706,6 @@ export default function App() {
           homeScore: row.homeScore,
           awayScore: row.awayScore,
           matchDate: row.matchDate || new Date().toISOString(),
-          round: row.round || 'Rodada 1',
-          stadium: row.stadium || homeTeamRes.team.stadium || '',
           referee: row.referee || '',
           status: row.status || (row.homeScore !== null && row.awayScore !== null ? 'FINALIZADO' : 'AGENDADO'),
           notes: row.notes || '',
@@ -759,46 +715,28 @@ export default function App() {
             awayFT: row.oddAwayFT ?? null,
             over25FT: row.oddOver25FT ?? null,
             under25FT: row.oddUnder25FT ?? null,
-            bttsFT: row.oddBttsFT ?? null,
-            homeHT: row.oddHomeHT ?? null,
-            drawHT: row.oddDrawHT ?? null,
-            awayHT: row.oddAwayHT ?? null,
-            over05HT: row.oddOver05HT ?? null,
-            under05HT: row.oddUnder05HT ?? null,
-            bttsHT: row.oddBttsHT ?? null,
+            asianHandicapHomeLine: row.asianHandicapHomeLine ?? null,
+            asianHandicapHomeOdd: row.asianHandicapHomeOdd ?? null,
+            asianHandicapAwayLine: row.asianHandicapAwayLine ?? null,
+            asianHandicapAwayOdd: row.asianHandicapAwayOdd ?? null,
           },
           stats: {
             halftimeHomeScore: row.halftimeHomeScore ?? null,
             halftimeAwayScore: row.halftimeAwayScore ?? null,
-            goalMinutesHome: row.goalMinutesHome,
-            goalMinutesAway: row.goalMinutesAway,
-            firstGoalMinuteMatch: row.firstGoalMinuteMatch ?? null,
-            firstGoalMinuteHome: row.firstGoalMinuteHome ?? null,
-            firstGoalMinuteAway: row.firstGoalMinuteAway ?? null,
-            cornersHomeFT: row.cornersHomeFT ?? null,
-            cornersAwayFT: row.cornersAwayFT ?? null,
-            cornersHomeHT: row.cornersHomeHT ?? null,
-            cornersAwayHT: row.cornersAwayHT ?? null,
-            possessionHomeFT: row.possessionHomeFT ?? null,
-            possessionAwayFT: row.possessionAwayFT ?? null,
-            possessionHomeHT: row.possessionHomeHT ?? null,
-            possessionAwayHT: row.possessionAwayHT ?? null,
-            yellowCardsHomeFT: row.yellowCardsHomeFT ?? null,
-            yellowCardsAwayFT: row.yellowCardsAwayFT ?? null,
-            yellowCardsHomeHT: row.yellowCardsHomeHT ?? null,
-            yellowCardsAwayHT: row.yellowCardsAwayHT ?? null,
-            redCardsHomeFT: row.redCardsHomeFT ?? null,
-            redCardsAwayFT: row.redCardsAwayFT ?? null,
-            redCardsHomeHT: row.redCardsHomeHT ?? null,
-            redCardsAwayHT: row.redCardsAwayHT ?? null,
+            xgHomeFT: row.xgHomeFT ?? null,
+            xgAwayFT: row.xgAwayFT ?? null,
             shotsHomeFT: row.shotsHomeFT ?? null,
             shotsAwayFT: row.shotsAwayFT ?? null,
-            shotsHomeHT: row.shotsHomeHT ?? null,
-            shotsAwayHT: row.shotsAwayHT ?? null,
             shotsOnTargetHomeFT: row.shotsOnTargetHomeFT ?? null,
             shotsOnTargetAwayFT: row.shotsOnTargetAwayFT ?? null,
-            shotsOnTargetHomeHT: row.shotsOnTargetHomeHT ?? null,
-            shotsOnTargetAwayHT: row.shotsOnTargetAwayHT ?? null,
+            foulsHomeFT: row.foulsHomeFT ?? null,
+            foulsAwayFT: row.foulsAwayFT ?? null,
+            cornersHomeFT: row.cornersHomeFT ?? null,
+            cornersAwayFT: row.cornersAwayFT ?? null,
+            yellowCardsHomeFT: row.yellowCardsHomeFT ?? null,
+            yellowCardsAwayFT: row.yellowCardsAwayFT ?? null,
+            redCardsHomeFT: row.redCardsHomeFT ?? null,
+            redCardsAwayFT: row.redCardsAwayFT ?? null,
           },
           createdAt: new Date().toISOString(),
         };
@@ -936,36 +874,13 @@ export default function App() {
   const handleSavePressureData = async (
     matchId: string,
     pressureData: MatchPressureData,
-    autoFillGoalStats: boolean = true
+    _autoFillGoalStats: boolean = true
   ) => {
     const updatedMatches = dbState.matches.map(m => {
       if (m.id === matchId) {
-        const existingStats = m.stats || {};
-        const stats: MatchStats = { ...existingStats };
-
-        if (autoFillGoalStats && pressureData.events && pressureData.events.length > 0) {
-          const homeGoals = pressureData.events.filter(e => e.type === 'goal' && e.team === 'home');
-          const awayGoals = pressureData.events.filter(e => e.type === 'goal' && e.team === 'away');
-
-          if (homeGoals.length > 0 && !stats.goalMinutesHome) {
-            stats.goalMinutesHome = homeGoals.map(g => `${g.minute}'`).join(', ');
-            stats.firstGoalMinuteHome = homeGoals[0].minute;
-          }
-          if (awayGoals.length > 0 && !stats.goalMinutesAway) {
-            stats.goalMinutesAway = awayGoals.map(g => `${g.minute}'`).join(', ');
-            stats.firstGoalMinuteAway = awayGoals[0].minute;
-          }
-
-          const allGoals = [...pressureData.events.filter(e => e.type === 'goal')].sort((a, b) => a.minute - b.minute);
-          if (allGoals.length > 0 && !stats.firstGoalMinuteMatch) {
-            stats.firstGoalMinuteMatch = allGoals[0].minute;
-          }
-        }
-
         return {
           ...m,
           pressureData,
-          stats,
         };
       }
       return m;

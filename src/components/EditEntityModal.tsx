@@ -55,7 +55,7 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({
         const team = entityData as Team;
         setCountryId(team.countryId || '');
         setLeagueId(team.leagueId || '');
-        setExtraInfo(team.stadium || '');
+        setExtraInfo('');
         setImageUrl(team.logoUrl || '');
       }
     }
@@ -118,7 +118,6 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({
         countryName: selectedCountry?.name || '',
         leagueId: selectedLeague ? selectedLeague.id : undefined,
         leagueName: selectedLeague ? selectedLeague.name : undefined,
-        stadium: extraInfo.trim() || undefined,
         logoUrl: trimmedImageUrl,
       });
     }
@@ -251,22 +250,22 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({
             </div>
           )}
 
-          {/* Extra Info Input */}
-          <div>
-            <label className="block text-xs font-medium text-gray-300 mb-1">
-              {entityType === 'country'
-                ? 'Sigla / Código do País (Ex: BRA, ARG)'
-                : entityType === 'league'
-                ? 'Tipo de Campeonato (Ex: Pontos Corridos, Copa, Eliminatória)'
-                : 'Nome do Estádio Principal'}
-            </label>
-            <input
-              type="text"
-              value={extraInfo}
-              onChange={(e) => setExtraInfo(e.target.value)}
-              className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 text-xs"
-            />
-          </div>
+          {/* Extra Info Input for Country and League */}
+          {(entityType === 'country' || entityType === 'league') && (
+            <div>
+              <label className="block text-xs font-medium text-gray-300 mb-1">
+                {entityType === 'country'
+                  ? 'Sigla / Código do País (Ex: BRA, ARG)'
+                  : 'Tipo de Campeonato (Ex: Pontos Corridos, Copa, Eliminatória)'}
+              </label>
+              <input
+                type="text"
+                value={extraInfo}
+                onChange={(e) => setExtraInfo(e.target.value)}
+                className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 text-xs"
+              />
+            </div>
+          )}
 
           {/* Image URL Input + Live Preview */}
           <div className="space-y-2">

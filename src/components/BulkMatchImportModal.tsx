@@ -243,7 +243,7 @@ export const BulkMatchImportModal: React.FC<BulkMatchImportModalProps> = ({
                       <th className="p-2.5">País</th>
                       <th className="p-2.5">Liga</th>
                       <th className="p-2.5">Partida (Mandante x Visitante)</th>
-                      <th className="p-2.5">Estádio / Árbitro</th>
+                      <th className="p-2.5">Árbitro</th>
                       <th className="p-2.5 text-center">Status</th>
                       <th className="p-2.5 text-center">Ações</th>
                     </tr>
@@ -267,9 +267,7 @@ export const BulkMatchImportModal: React.FC<BulkMatchImportModalProps> = ({
                           <span className="text-slate-700">{row.awayTeamName}</span>
                         </td>
                         <td className="p-2.5 text-slate-500 text-[11px]">
-                          {row.stadium && <div>🏟️ {row.stadium}</div>}
-                          {row.referee && <div>🧑‍⚖️ {row.referee}</div>}
-                          {!row.stadium && !row.referee && '-'}
+                          {row.referee ? <div>🧑‍⚖️ {row.referee}</div> : '-'}
                         </td>
                         <td className="p-2.5 text-center">
                           {row.isValid ? (

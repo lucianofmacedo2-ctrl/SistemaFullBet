@@ -77,19 +77,7 @@ export function checkMatchFullCompleteness(match: Match): MatchFullCompleteness 
     missingAll.push('Data/Hora');
   }
 
-  // 2. Estádio
-  if (!match.stadium || !match.stadium.trim()) {
-    missingPreMatch.push('Estádio');
-    missingAll.push('Estádio');
-  }
-
-  // 3. Rodada
-  if (!match.round || !match.round.trim()) {
-    missingPreMatch.push('Rodada');
-    missingAll.push('Rodada');
-  }
-
-  // 4. Odds 1X2 FT
+  // 2. Odds 1X2 FT
   if (
     !match.odds ||
     match.odds.homeFT == null ||
@@ -102,43 +90,36 @@ export function checkMatchFullCompleteness(match: Match): MatchFullCompleteness 
 
   const isPreMatchComplete = missingPreMatch.length === 0;
 
-  // 5. Placar Final
+  // 3. Placar Final
   const hasScore = match.homeScore !== null && match.awayScore !== null;
   if (!hasScore) {
     missingAll.push('Placar Final');
   }
 
-  // 6. Estatísticas
+  // 4. Estatísticas
   const st = match.stats || {};
   const filledStatsSummary: string[] = [];
 
   if (st.halftimeHomeScore != null && st.halftimeAwayScore != null) {
     filledStatsSummary.push('Placar HT');
   }
-  if (st.cornersHomeFT != null || st.cornersHome != null) {
+  if (st.cornersHomeFT != null) {
     filledStatsSummary.push('Escanteios');
   }
-  if (st.possessionHomeFT != null || st.possessionHome != null) {
+  if (st.possessionHomeFT != null) {
     filledStatsSummary.push('Posse %');
   }
   if (
     st.shotsHomeFT != null ||
-    st.shotsHome != null ||
-    st.shotsOnTargetHomeFT != null ||
-    st.shotsOnTargetHome != null
+    st.shotsOnTargetHomeFT != null
   ) {
     filledStatsSummary.push('Finalizações');
   }
   if (
     st.yellowCardsHomeFT != null ||
-    st.yellowCardsHome != null ||
-    st.redCardsHomeFT != null ||
-    st.redCardsHome != null
+    st.redCardsHomeFT != null
   ) {
     filledStatsSummary.push('Cartões');
-  }
-  if (st.goalMinutesHome || st.goalMinutesAway || st.scorersHome || st.scorersAway) {
-    filledStatsSummary.push('Minutos dos Gols');
   }
 
   const hasStats = filledStatsSummary.length > 0;
@@ -268,7 +249,7 @@ export const MatchList: React.FC<MatchListProps> = ({
       match.countryName.toLowerCase().includes(searchLower) ||
       match.homeTeamId.toLowerCase().includes(searchLower) ||
       match.awayTeamId.toLowerCase().includes(searchLower) ||
-      (match.stadium && match.stadium.toLowerCase().includes(searchLower));
+      (match.referee && match.referee.toLowerCase().includes(searchLower));
 
     const matchesCountry = filterCountryId ? match.countryId === filterCountryId : true;
     
@@ -1295,24 +1276,6 @@ export const MatchList: React.FC<MatchListProps> = ({
           </div>
         </div>
 
-        {/* Goalscorers preview if available */}
-        {(match.stats?.scorersHome || match.stats?.scorersAway) && (
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 text-[11px] text-slate-700 space-y-1">
-            {match.stats?.scorersHome && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-blue-600 font-bold">⚽ {match.homeTeamName}:</span>
-                <span className="text-slate-900 font-medium">{match.stats.scorersHome}</span>
-              </div>
-            )}
-            {match.stats?.scorersAway && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-blue-600 font-bold">⚽ {match.awayTeamName}:</span>
-                <span className="text-slate-900 font-medium">{match.stats.scorersAway}</span>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Odds & Cotações Badge Strip */}
         {match.odds &&
           (match.odds.homeFT != null ||
@@ -1320,12 +1283,8 @@ export const MatchList: React.FC<MatchListProps> = ({
             match.odds.awayFT != null ||
             match.odds.over25FT != null ||
             match.odds.under25FT != null ||
-            match.odds.bttsFT != null ||
-            match.odds.homeHT != null ||
-            match.odds.over05HT != null ||
-            match.odds.firstGoalHome?.minute != null ||
-            match.odds.firstGoalAway?.minute != null ||
-            match.odds.earlyGameGoal?.minute != null) && (
+            match.odds.asianHandicapHomeLine != null ||
+            match.odds.asianHandicapAwayLine != null) && (
             <div className="bg-blue-50/60 p-2.5 rounded-xl border border-blue-100 space-y-2 text-xs">
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
                 <span className="flex items-center gap-1 text-blue-700 uppercase tracking-wider font-extrabold">
@@ -1344,7 +1303,7 @@ export const MatchList: React.FC<MatchListProps> = ({
                 )}
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 text-[11px] font-mono">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px] font-mono">
                 {match.odds.over25FT != null && (
                   <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
                     <span className="text-slate-500 font-sans">Over 2,5 FT:</span>
@@ -1357,46 +1316,16 @@ export const MatchList: React.FC<MatchListProps> = ({
                     <span className="text-blue-700 font-bold">{match.odds.under25FT}</span>
                   </div>
                 )}
-                {match.odds.bttsFT != null && (
+                {match.odds.asianHandicapHomeLine != null && (
                   <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
-                    <span className="text-slate-500 font-sans">Ambos FT:</span>
-                    <span className="text-blue-700 font-bold">{match.odds.bttsFT}</span>
+                    <span className="text-slate-500 font-sans">HA Mand ({match.odds.asianHandicapHomeLine > 0 ? `+${match.odds.asianHandicapHomeLine}` : match.odds.asianHandicapHomeLine}):</span>
+                    <span className="text-blue-700 font-bold">{match.odds.asianHandicapHomeOdd ?? '-'}</span>
                   </div>
                 )}
-                {match.odds.homeHT != null && (
+                {match.odds.asianHandicapAwayLine != null && (
                   <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
-                    <span className="text-slate-500 font-sans">Mandante HT:</span>
-                    <span className="text-blue-700 font-bold">{match.odds.homeHT}</span>
-                  </div>
-                )}
-                {match.odds.drawHT != null && (
-                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
-                    <span className="text-slate-500 font-sans">Empate HT:</span>
-                    <span className="text-amber-700 font-bold">{match.odds.drawHT}</span>
-                  </div>
-                )}
-                {match.odds.awayHT != null && (
-                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
-                    <span className="text-slate-500 font-sans">Visitante HT:</span>
-                    <span className="text-blue-700 font-bold">{match.odds.awayHT}</span>
-                  </div>
-                )}
-                {match.odds.over05HT != null && (
-                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
-                    <span className="text-slate-500 font-sans">Over 0,5 HT:</span>
-                    <span className="text-blue-700 font-bold">{match.odds.over05HT}</span>
-                  </div>
-                )}
-                {match.odds.under05HT != null && (
-                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
-                    <span className="text-slate-500 font-sans">Under 0,5 HT:</span>
-                    <span className="text-blue-700 font-bold">{match.odds.under05HT}</span>
-                  </div>
-                )}
-                {match.odds.bttsHT != null && (
-                  <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
-                    <span className="text-slate-500 font-sans">Ambos HT:</span>
-                    <span className="text-blue-700 font-bold">{match.odds.bttsHT}</span>
+                    <span className="text-slate-500 font-sans">HA Vis ({match.odds.asianHandicapAwayLine > 0 ? `+${match.odds.asianHandicapAwayLine}` : match.odds.asianHandicapAwayLine}):</span>
+                    <span className="text-blue-700 font-bold">{match.odds.asianHandicapAwayOdd ?? '-'}</span>
                   </div>
                 )}
               </div>
@@ -1444,25 +1373,98 @@ export const MatchList: React.FC<MatchListProps> = ({
                 </div>
 
                 {/* Posse de bola bar */}
-                {(match.stats.possessionHomeFT ?? match.stats.possessionHome) != null && (
+                {match.stats.possessionHomeFT != null && (
                   <div className="space-y-1">
                     <div className="flex justify-between text-[11px] text-slate-700 font-medium">
-                      <span>{match.stats.possessionHomeFT ?? match.stats.possessionHome}% Posse FT</span>
+                      <span>{match.stats.possessionHomeFT}% Posse FT</span>
                       <span className="text-slate-500 font-bold">Posse de Bola</span>
-                      <span>{match.stats.possessionAwayFT ?? match.stats.possessionAway}% Posse FT</span>
+                      <span>{match.stats.possessionAwayFT ?? (100 - match.stats.possessionHomeFT)}% Posse FT</span>
                     </div>
                     <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden flex">
                       <div
                         className="bg-blue-600 h-full transition-all"
-                        style={{ width: `${match.stats.possessionHomeFT ?? match.stats.possessionHome}%` }}
+                        style={{ width: `${match.stats.possessionHomeFT}%` }}
                       />
                       <div
                         className="bg-blue-400 h-full transition-all"
-                        style={{ width: `${match.stats.possessionAwayFT ?? match.stats.possessionAway}%` }}
+                        style={{ width: `${match.stats.possessionAwayFT ?? (100 - match.stats.possessionHomeFT)}%` }}
                       />
                     </div>
                   </div>
                 )}
+
+                {/* Métricas Detalhadas da Planilha */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 pt-1 font-mono text-[11px]">
+                  {/* xG FT */}
+                  {(match.stats.xgHomeFT != null || match.stats.xgAwayFT != null) && (
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="block text-[10px] font-bold text-slate-500 font-sans uppercase">xG (Gols Esperados)</span>
+                      <span className="text-slate-900 font-bold">
+                        <span className="text-blue-600">{match.stats.xgHomeFT ?? '-'}</span> x <span className="text-blue-600">{match.stats.xgAwayFT ?? '-'}</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Finalizações FT */}
+                  {(match.stats.shotsHomeFT != null || match.stats.shotsAwayFT != null) && (
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="block text-[10px] font-bold text-slate-500 font-sans uppercase">Finalizações FT</span>
+                      <span className="text-slate-900 font-bold">
+                        <span className="text-blue-600">{match.stats.shotsHomeFT ?? '-'}</span> x <span className="text-blue-600">{match.stats.shotsAwayFT ?? '-'}</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Chutes no Alvo FT */}
+                  {(match.stats.shotsOnTargetHomeFT != null || match.stats.shotsOnTargetAwayFT != null) && (
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="block text-[10px] font-bold text-slate-500 font-sans uppercase">Chutes ao Gol FT</span>
+                      <span className="text-slate-900 font-bold">
+                        <span className="text-blue-600">{match.stats.shotsOnTargetHomeFT ?? '-'}</span> x <span className="text-blue-600">{match.stats.shotsOnTargetAwayFT ?? '-'}</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Escanteios FT */}
+                  {(match.stats.cornersHomeFT != null || match.stats.cornersAwayFT != null) && (
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="block text-[10px] font-bold text-slate-500 font-sans uppercase">🚩 Escanteios FT</span>
+                      <span className="text-slate-900 font-bold">
+                        <span className="text-blue-600">{match.stats.cornersHomeFT ?? '-'}</span> x <span className="text-blue-600">{match.stats.cornersAwayFT ?? '-'}</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Faltas FT */}
+                  {(match.stats.foulsHomeFT != null || match.stats.foulsAwayFT != null) && (
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="block text-[10px] font-bold text-slate-500 font-sans uppercase">Faltas FT</span>
+                      <span className="text-slate-900 font-bold">
+                        <span className="text-blue-600">{match.stats.foulsHomeFT ?? '-'}</span> x <span className="text-blue-600">{match.stats.foulsAwayFT ?? '-'}</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Cartões Amarelos FT */}
+                  {(match.stats.yellowCardsHomeFT != null || match.stats.yellowCardsAwayFT != null) && (
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="block text-[10px] font-bold text-slate-500 font-sans uppercase">🟨 Cartões Amarelos</span>
+                      <span className="text-slate-900 font-bold">
+                        <span className="text-amber-600">{match.stats.yellowCardsHomeFT ?? '-'}</span> x <span className="text-amber-600">{match.stats.yellowCardsAwayFT ?? '-'}</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Cartões Vermelhos FT */}
+                  {(match.stats.redCardsHomeFT != null || match.stats.redCardsAwayFT != null) && (
+                    <div className="bg-white p-2 rounded-lg border border-slate-200">
+                      <span className="block text-[10px] font-bold text-slate-500 font-sans uppercase">🟥 Cartões Vermelhos</span>
+                      <span className="text-slate-900 font-bold">
+                        <span className="text-rose-600">{match.stats.redCardsHomeFT ?? '-'}</span> x <span className="text-rose-600">{match.stats.redCardsAwayFT ?? '-'}</span>
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1483,13 +1485,6 @@ export const MatchList: React.FC<MatchListProps> = ({
           </div>
 
           <div className="flex items-center gap-3 text-slate-600 text-[11px] font-sans flex-wrap font-medium">
-            {match.round && <span>{match.round}</span>}
-            {match.stadium && (
-              <span className="flex items-center gap-1 text-slate-600">
-                <MapPin className="w-3 h-3 text-blue-600" />
-                {match.stadium}
-              </span>
-            )}
             {match.referee && (
               <span className="flex items-center gap-1 text-blue-900 font-bold bg-blue-100 px-2 py-0.5 rounded border border-blue-200">
                 👨‍⚖️ Árbitro: {match.referee}

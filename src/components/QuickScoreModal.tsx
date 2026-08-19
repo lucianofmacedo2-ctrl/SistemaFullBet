@@ -5,15 +5,9 @@ import {
   CheckCircle2,
   TrendingUp,
   DollarSign,
-  Clock,
-  Sparkles,
-  ArrowRight,
-  Shield,
-  Calendar,
-  Layers,
   ChevronRight
 } from 'lucide-react';
-import { Match, MatchStatus, MatchOdds, DbState } from '../types';
+import { Match, MatchStatus, MatchOdds } from '../types';
 
 interface QuickScoreModalProps {
   isOpen: boolean;
@@ -52,10 +46,10 @@ export const QuickScoreModal: React.FC<QuickScoreModalProps> = ({
   const [oddAwayFT, setOddAwayFT] = useState<string>('');
   const [oddOver25FT, setOddOver25FT] = useState<string>('');
   const [oddUnder25FT, setOddUnder25FT] = useState<string>('');
-  const [oddBttsFT, setOddBttsFT] = useState<string>('');
-
-  // Odds HT
-  const [oddOver05HT, setOddOver05HT] = useState<string>('');
+  const [haHomeLine, setHaHomeLine] = useState<string>('');
+  const [haHomeOdd, setHaHomeOdd] = useState<string>('');
+  const [haAwayLine, setHaAwayLine] = useState<string>('');
+  const [haAwayOdd, setHaAwayOdd] = useState<string>('');
 
   useEffect(() => {
     if (match) {
@@ -85,14 +79,15 @@ export const QuickScoreModal: React.FC<QuickScoreModalProps> = ({
       setOddAwayFT(o.awayFT != null ? String(o.awayFT) : '');
       setOddOver25FT(o.over25FT != null ? String(o.over25FT) : '');
       setOddUnder25FT(o.under25FT != null ? String(o.under25FT) : '');
-      setOddBttsFT(o.bttsFT != null ? String(o.bttsFT) : '');
-      setOddOver05HT(o.over05HT != null ? String(o.over05HT) : '');
+      setHaHomeLine(o.asianHandicapHomeLine != null ? String(o.asianHandicapHomeLine) : '');
+      setHaHomeOdd(o.asianHandicapHomeOdd != null ? String(o.asianHandicapHomeOdd) : '');
+      setHaAwayLine(o.asianHandicapAwayLine != null ? String(o.asianHandicapAwayLine) : '');
+      setHaAwayOdd(o.asianHandicapAwayOdd != null ? String(o.asianHandicapAwayOdd) : '');
     }
   }, [match, isOpen]);
 
   if (!isOpen || !match) return null;
 
-  // Find next pending match in list to allow fast sequence filling
   const pendingMatches = allMatches.filter(
     m => m.id !== match.id && (m.status === 'AGENDADO' || m.homeScore === null || !m.odds?.homeFT)
   );
@@ -106,13 +101,15 @@ export const QuickScoreModal: React.FC<QuickScoreModalProps> = ({
 
     const updatedOdds: MatchOdds = {
       ...(match.odds || {}),
-      homeFT: oddHomeFT.trim() !== '' ? parseFloat(oddHomeFT) : null,
-      drawFT: oddDrawFT.trim() !== '' ? parseFloat(oddDrawFT) : null,
-      awayFT: oddAwayFT.trim() !== '' ? parseFloat(oddAwayFT) : null,
-      over25FT: oddOver25FT.trim() !== '' ? parseFloat(oddOver25FT) : null,
-      under25FT: oddUnder25FT.trim() !== '' ? parseFloat(oddUnder25FT) : null,
-      bttsFT: oddBttsFT.trim() !== '' ? parseFloat(oddBttsFT) : null,
-      over05HT: oddOver05HT.trim() !== '' ? parseFloat(oddOver05HT) : null,
+      homeFT: oddHomeFT.trim() !== '' ? parseFloat(oddHomeFT.replace(',', '.')) : null,
+      drawFT: oddDrawFT.trim() !== '' ? parseFloat(oddDrawFT.replace(',', '.')) : null,
+      awayFT: oddAwayFT.trim() !== '' ? parseFloat(oddAwayFT.replace(',', '.')) : null,
+      over25FT: oddOver25FT.trim() !== '' ? parseFloat(oddOver25FT.replace(',', '.')) : null,
+      under25FT: oddUnder25FT.trim() !== '' ? parseFloat(oddUnder25FT.replace(',', '.')) : null,
+      asianHandicapHomeLine: haHomeLine.trim() !== '' ? parseFloat(haHomeLine.replace(',', '.')) : null,
+      asianHandicapHomeOdd: haHomeOdd.trim() !== '' ? parseFloat(haHomeOdd.replace(',', '.')) : null,
+      asianHandicapAwayLine: haAwayLine.trim() !== '' ? parseFloat(haAwayLine.replace(',', '.')) : null,
+      asianHandicapAwayOdd: haAwayOdd.trim() !== '' ? parseFloat(haAwayOdd.replace(',', '.')) : null,
     };
 
     onSaveQuickData(
@@ -142,7 +139,6 @@ export const QuickScoreModal: React.FC<QuickScoreModalProps> = ({
               <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/20 text-white">
                 {match.countryName} • {match.leagueName}
               </span>
-              <span className="text-xs text-blue-100 font-mono">{match.round || 'Rodada'}</span>
             </div>
             <h2 className="text-base font-extrabold mt-1">
               ⚡ Preenchimento Rápido: Placar & Odds
@@ -256,7 +252,7 @@ export const QuickScoreModal: React.FC<QuickScoreModalProps> = ({
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-blue-800">
               <DollarSign className="w-4 h-4 text-blue-600" />
-              <span>Odds Principais do Jogo (1X2 & Gols)</span>
+              <span>Odds Principais do Jogo (1X2, Over/Under & Handicap FT)</span>
             </div>
 
             <div className="grid grid-cols-3 gap-2.5">
@@ -306,7 +302,7 @@ export const QuickScoreModal: React.FC<QuickScoreModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2.5 pt-1">
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
               {/* Over 2.5 */}
               <div>
                 <label className="block text-[10px] text-slate-600 font-semibold mb-0.5">
@@ -336,20 +332,56 @@ export const QuickScoreModal: React.FC<QuickScoreModalProps> = ({
                   className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-mono text-slate-900 focus:border-blue-500 text-center"
                 />
               </div>
+            </div>
 
-              {/* BTTS */}
+            {/* Handicap Asiático */}
+            <div className="grid grid-cols-2 gap-2.5 pt-1 border-t border-slate-200">
               <div>
                 <label className="block text-[10px] text-slate-600 font-semibold mb-0.5">
-                  Ambas Marcam
+                  Handicap Mandante (Linha / Odd)
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="ex: 1.75"
-                  value={oddBttsFT}
-                  onChange={(e) => setOddBttsFT(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-mono text-slate-900 focus:border-blue-500 text-center"
-                />
+                <div className="grid grid-cols-2 gap-1">
+                  <input
+                    type="number"
+                    step="0.25"
+                    placeholder="Linha (-0.5)"
+                    value={haHomeLine}
+                    onChange={(e) => setHaHomeLine(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-1.5 py-1.5 text-[11px] font-mono text-slate-900 text-center"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Odd (1.90)"
+                    value={haHomeOdd}
+                    onChange={(e) => setHaHomeOdd(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-1.5 py-1.5 text-[11px] font-mono text-slate-900 text-center"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-slate-600 font-semibold mb-0.5">
+                  Handicap Visitante (Linha / Odd)
+                </label>
+                <div className="grid grid-cols-2 gap-1">
+                  <input
+                    type="number"
+                    step="0.25"
+                    placeholder="Linha (+0.5)"
+                    value={haAwayLine}
+                    onChange={(e) => setHaAwayLine(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-1.5 py-1.5 text-[11px] font-mono text-slate-900 text-center"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Odd (1.95)"
+                    value={haAwayOdd}
+                    onChange={(e) => setHaAwayOdd(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-1.5 py-1.5 text-[11px] font-mono text-slate-900 text-center"
+                  />
+                </div>
               </div>
             </div>
           </div>

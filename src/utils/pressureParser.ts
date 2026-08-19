@@ -326,8 +326,6 @@ export function parsePressureCsvText(
       contextHighlight: combinedContext.trim() || undefined,
       cornersAndCards: cornersAndCards && cornersAndCards !== '-' ? cornersAndCards.trim() : undefined,
       goalsAndHighlights: goalsAndHighlights && goalsAndHighlights !== '-' ? goalsAndHighlights.trim() : undefined,
-      homeAvg: homeVal,
-      awayAvg: awayVal,
       homeAttackingVolume: homeVal,
       awayAttackingVolume: awayVal,
     });

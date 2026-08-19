@@ -213,7 +213,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
           m.awayTeamName.toLowerCase().includes(s) ||
           m.leagueName.toLowerCase().includes(s) ||
           m.countryName.toLowerCase().includes(s) ||
-          (m.stadium && m.stadium.toLowerCase().includes(s));
+          (m.referee && m.referee.toLowerCase().includes(s));
         if (!matchesSearch) return false;
       }
 
@@ -897,20 +897,9 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Match Location, Round & Referee Info */}
+                  {/* Match Location & Referee Info */}
                   <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-200 gap-2">
                     <div className="flex items-center gap-3 flex-wrap">
-                      {match.round && (
-                        <span className="font-semibold text-slate-800">
-                          🏆 {match.round}
-                        </span>
-                      )}
-                      {match.stadium && (
-                        <span className="flex items-center gap-1 truncate text-slate-700">
-                          <MapPin className="w-3 h-3 text-blue-600 shrink-0" />
-                          {match.stadium}
-                        </span>
-                      )}
                       {match.referee && (
                         <span className="text-slate-600">
                           🧑‍⚖️ {match.referee}
@@ -1057,26 +1046,30 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px] font-mono">
                           {match.odds.over25FT != null && (
                             <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
-                              <span className="text-slate-500 font-sans">Over 2.5:</span>
+                              <span className="text-slate-500 font-sans">Over 2.5 FT:</span>
                               <span className="font-bold text-blue-700">{match.odds.over25FT}</span>
                             </div>
                           )}
                           {match.odds.under25FT != null && (
                             <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
-                              <span className="text-slate-500 font-sans">Under 2.5:</span>
+                              <span className="text-slate-500 font-sans">Under 2.5 FT:</span>
                               <span className="font-bold text-blue-700">{match.odds.under25FT}</span>
                             </div>
                           )}
-                          {match.odds.bttsFT != null && (
+                          {(match.odds.asianHandicapHomeLine != null || match.odds.asianHandicapHomeOdd != null) && (
                             <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
-                              <span className="text-slate-500 font-sans">Ambos Marcam:</span>
-                              <span className="font-bold text-blue-700">{match.odds.bttsFT}</span>
+                              <span className="text-slate-500 font-sans">HA Mand:</span>
+                              <span className="font-bold text-blue-700">
+                                {match.odds.asianHandicapHomeLine ?? '-'} ({match.odds.asianHandicapHomeOdd ?? '-'})
+                              </span>
                             </div>
                           )}
-                          {match.odds.over05HT != null && (
+                          {(match.odds.asianHandicapAwayLine != null || match.odds.asianHandicapAwayOdd != null) && (
                             <div className="bg-white p-1 rounded border border-blue-100 flex justify-between">
-                              <span className="text-slate-500 font-sans">Over 0.5 HT:</span>
-                              <span className="font-bold text-blue-700">{match.odds.over05HT}</span>
+                              <span className="text-slate-500 font-sans">HA Vis:</span>
+                              <span className="font-bold text-blue-700">
+                                {match.odds.asianHandicapAwayLine ?? '-'} ({match.odds.asianHandicapAwayOdd ?? '-'})
+                              </span>
                             </div>
                           )}
                         </div>
