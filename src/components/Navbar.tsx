@@ -20,6 +20,7 @@ import {
 import { DbState } from '../types';
 import { extractYMD, formatDateToYMD } from './DailyMatchesView';
 import { isMatchComplete } from '../utils/excelHelper';
+import { isValidImageUrl } from '../utils/imageHelper';
 
 interface NavbarProps {
   dbState: DbState;
@@ -68,9 +69,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const incompleteMatchesCount = dbState.matches.filter(m => !isMatchComplete(m)).length;
 
   const pendingLogosCount =
-    dbState.teams.filter(t => !t.logoUrl?.trim()).length +
-    dbState.leagues.filter(l => !l.logoUrl?.trim()).length +
-    dbState.countries.filter(c => !c.flagUrl?.trim()).length;
+    dbState.teams.filter(t => !isValidImageUrl(t.logoUrl)).length +
+    dbState.leagues.filter(l => !isValidImageUrl(l.logoUrl)).length +
+    dbState.countries.filter(c => !isValidImageUrl(c.flagUrl)).length;
 
   return (
     <header className="bg-white border-b border-blue-200 text-slate-800 sticky top-0 z-40 shadow-sm">

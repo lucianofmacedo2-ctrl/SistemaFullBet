@@ -21,6 +21,7 @@ import {
 import { DbState, Country, League } from '../types';
 import { parseExcelOrCsvFile, downloadTeamImportTemplate, ParsedTeamRow } from '../utils/excelHelper';
 import { findOrCreateCountry, findOrCreateLeague } from '../utils/idGenerator';
+import { sanitizeImageUrl } from '../utils/imageHelper';
 
 interface BulkTeamImportModalProps {
   isOpen: boolean;
@@ -171,7 +172,7 @@ export const BulkTeamImportModal: React.FC<BulkTeamImportModalProps> = ({
       .map(r => ({
         name: r.time.trim(),
         stadium: r.estadio.trim(),
-        logoUrl: r.urlEscudo.trim(),
+        logoUrl: sanitizeImageUrl(r.urlEscudo) || '',
       }));
 
     if (validTeams.length === 0) {

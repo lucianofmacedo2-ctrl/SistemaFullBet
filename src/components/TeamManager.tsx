@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter } from 'lucide-react';
+import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter, AlertTriangle } from 'lucide-react';
 import { DbState, Team } from '../types';
+import { isValidImageUrl, sanitizeImageUrl } from '../utils/imageHelper';
 
 interface TeamManagerProps {
   dbState: DbState;
@@ -28,18 +29,18 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editUrl, setEditUrl] = useState('');
   const [savedSuccessTeamId, setSavedSuccessTeamId] = useState<string | null>(null);
+  const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
 
   const teams = dbState.teams.filter(t => {
     const matchesSearch =
       t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t.countryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (t.leagueName && t.leagueName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (t.stadium && t.stadium.toLowerCase().includes(searchTerm.toLowerCase()));
+      (t.leagueName && t.leagueName.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesCountry = !selectedCountryFilter || t.countryId === selectedCountryFilter;
     const matchesLeague = !selectedLeagueFilter || t.leagueId === selectedLeagueFilter || (t.leagueIds && t.leagueIds.includes(selectedLeagueFilter));
-    const matchesLogo = !onlyWithoutLogo || !t.logoUrl || !t.logoUrl.trim();
+    const matchesLogo = !onlyWithoutLogo || !isValidImageUrl(t.logoUrl);
 
     return matchesSearch && matchesCountry && matchesLeague && matchesLogo;
   });
@@ -51,7 +52,8 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
 
   const handleSaveUrl = (teamId: string) => {
     if (onUpdateTeamLogo) {
-      onUpdateTeamLogo(teamId, editUrl.trim());
+      const cleanUrl = sanitizeImageUrl(editUrl) || '';
+      onUpdateTeamLogo(teamId, cleanUrl);
     }
     setEditingTeamId(null);
   };
@@ -184,7 +186,6 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                   <th className="py-3 px-4">Nome do Time</th>
                   <th className="py-3 px-4">País (ID)</th>
                   <th className="py-3 px-4">Liga Vinculada (Vincular Direto)</th>
-                  <th className="py-3 px-4">Estádio Principal</th>
                   <th className="py-3 px-4">Jogos (M/V)</th>
                   <th className="py-3 px-4 text-right">Ações</th>
                 </tr>
@@ -196,6 +197,8 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                   const totalMatches = homeCount + awayCount;
                   const isEditing = editingTeamId === t.id;
                   const isJustSaved = savedSuccessTeamId === t.id;
+                  const hasLogo = isValidImageUrl(t.logoUrl);
+                  const isBroken = brokenImages[t.id];
 
                   // Find current linked league object
                   const linkedLeague = t.leagueId
@@ -209,19 +212,35 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                     <tr key={t.id} className="hover:bg-white/[0.02] transition-colors">
                       {/* Escudo */}
                       <td className="py-3 px-4">
-                        {t.logoUrl ? (
+                        {hasLogo && !isBroken ? (
                           <img
                             src={t.logoUrl}
                             alt={t.name}
-                            className="w-7 h-7 object-contain rounded bg-black/40 border border-white/10 p-0.5 shadow-sm"
-                            onError={(e) => {
-                              (e.target as HTMLElement).style.display = 'none';
+                            className="w-7 h-7 object-contain rounded bg-black/40 border border-white/10 p-0.5 shadow-sm cursor-pointer hover:scale-110 transition-transform"
+                            onClick={() => handleStartEdit(t.id, t.logoUrl)}
+                            title="Clique para editar a URL do escudo"
+                            onError={() => {
+                              setBrokenImages(prev => ({ ...prev, [t.id]: true }));
                             }}
                           />
+                        ) : isBroken ? (
+                          <button
+                            onClick={() => handleStartEdit(t.id, t.logoUrl)}
+                            className="px-2 py-0.5 rounded bg-red-950/80 border border-red-500/40 text-red-400 text-[10px] font-bold flex items-center gap-1 hover:bg-red-900 transition-colors"
+                            title="URL de imagem corrompida ou inacessível. Clique para corrigir."
+                          >
+                            <AlertTriangle className="w-3 h-3 text-red-400" />
+                            <span>Quebrado</span>
+                          </button>
                         ) : (
-                          <div className="w-7 h-7 rounded bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xs text-emerald-400">
-                            🛡️
-                          </div>
+                          <button
+                            onClick={() => handleStartEdit(t.id, '')}
+                            className="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 text-amber-300 text-[10px] font-bold flex items-center gap-1 hover:bg-amber-900 transition-colors"
+                            title="Time sem escudo cadastrado. Clique para adicionar."
+                          >
+                            <span>🛡️</span>
+                            <span>Sem Escudo</span>
+                          </button>
                         )}
                       </td>
 
@@ -337,18 +356,6 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                             </div>
                           </div>
                         </div>
-                      </td>
-
-                      {/* Estádio */}
-                      <td className="py-3 px-4 text-gray-400">
-                        {t.stadium ? (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-gray-500" />
-                            {t.stadium}
-                          </span>
-                        ) : (
-                          '-'
-                        )}
                       </td>
 
                       {/* Jogos */}

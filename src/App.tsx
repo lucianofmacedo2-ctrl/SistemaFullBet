@@ -33,6 +33,7 @@ import { ToastNotification } from './components/ToastNotification';
 import { MatchOdds, MatchStats, MatchStatus, MatchPressureData } from './types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from './utils/idGenerator';
 import { ParsedMatchRow, ParsedMatchUpdateRow } from './utils/excelHelper';
+import { sanitizeDbImages, sanitizeImageUrl } from './utils/imageHelper';
 
 export default function App() {
   const [dbState, setDbState] = useState<DbState>({
@@ -97,7 +98,8 @@ export default function App() {
     async function initDb() {
       setIsLoading(true);
       const data = await fetchDatabaseState();
-      setDbState(data);
+      const cleanData = sanitizeDbImages(data);
+      setDbState(cleanData);
       setIsLoading(false);
     }
     initDb();
@@ -299,8 +301,9 @@ export default function App() {
 
   // Update Country Flag
   const handleUpdateCountryFlag = async (countryId: string, flagUrl: string) => {
-    const updatedCountries = dbState.countries.map(c => c.id === countryId ? { ...c, flagUrl } : c);
-    const updatedMatches = dbState.matches.map(m => m.countryId === countryId ? { ...m, countryFlagUrl: flagUrl } : m);
+    const cleanUrl = sanitizeImageUrl(flagUrl);
+    const updatedCountries = dbState.countries.map(c => c.id === countryId ? { ...c, flagUrl: cleanUrl } : c);
+    const updatedMatches = dbState.matches.map(m => m.countryId === countryId ? { ...m, countryFlagUrl: cleanUrl } : m);
     const newState = { ...dbState, countries: updatedCountries, matches: updatedMatches };
     setDbState(newState);
     await saveDatabaseState(newState);
@@ -308,8 +311,9 @@ export default function App() {
 
   // Update League Logo
   const handleUpdateLeagueLogo = async (leagueId: string, logoUrl: string) => {
-    const updatedLeagues = dbState.leagues.map(l => l.id === leagueId ? { ...l, logoUrl } : l);
-    const updatedMatches = dbState.matches.map(m => m.leagueId === leagueId ? { ...m, leagueLogoUrl: logoUrl } : m);
+    const cleanUrl = sanitizeImageUrl(logoUrl);
+    const updatedLeagues = dbState.leagues.map(l => l.id === leagueId ? { ...l, logoUrl: cleanUrl } : l);
+    const updatedMatches = dbState.matches.map(m => m.leagueId === leagueId ? { ...m, leagueLogoUrl: cleanUrl } : m);
     const newState = { ...dbState, leagues: updatedLeagues, matches: updatedMatches };
     setDbState(newState);
     await saveDatabaseState(newState);
@@ -317,11 +321,12 @@ export default function App() {
 
   // Update Team Logo
   const handleUpdateTeamLogo = async (teamId: string, logoUrl: string) => {
-    const updatedTeams = dbState.teams.map(t => t.id === teamId ? { ...t, logoUrl } : t);
+    const cleanUrl = sanitizeImageUrl(logoUrl);
+    const updatedTeams = dbState.teams.map(t => t.id === teamId ? { ...t, logoUrl: cleanUrl } : t);
     const updatedMatches = dbState.matches.map(m => {
       let updated = { ...m };
-      if (m.homeTeamId === teamId) updated.homeTeamLogoUrl = logoUrl;
-      if (m.awayTeamId === teamId) updated.awayTeamLogoUrl = logoUrl;
+      if (m.homeTeamId === teamId) updated.homeTeamLogoUrl = cleanUrl;
+      if (m.awayTeamId === teamId) updated.awayTeamLogoUrl = cleanUrl;
       return updated;
     });
     const newState = { ...dbState, teams: updatedTeams, matches: updatedMatches };
@@ -337,40 +342,55 @@ export default function App() {
   }) => {
     const { countryUpdates = {}, leagueUpdates = {}, teamUpdates = {} } = updates;
 
+    const cleanCountryUpdates: Record<string, string | undefined> = {};
+    Object.entries(countryUpdates).forEach(([k, v]) => {
+      cleanCountryUpdates[k] = sanitizeImageUrl(v);
+    });
+
+    const cleanLeagueUpdates: Record<string, string | undefined> = {};
+    Object.entries(leagueUpdates).forEach(([k, v]) => {
+      cleanLeagueUpdates[k] = sanitizeImageUrl(v);
+    });
+
+    const cleanTeamUpdates: Record<string, string | undefined> = {};
+    Object.entries(teamUpdates).forEach(([k, v]) => {
+      cleanTeamUpdates[k] = sanitizeImageUrl(v);
+    });
+
     const updatedCountries = dbState.countries.map(c => {
-      if (countryUpdates[c.id]) {
-        return { ...c, flagUrl: countryUpdates[c.id] };
+      if (cleanCountryUpdates[c.id] !== undefined) {
+        return { ...c, flagUrl: cleanCountryUpdates[c.id] };
       }
       return c;
     });
 
     const updatedLeagues = dbState.leagues.map(l => {
-      if (leagueUpdates[l.id]) {
-        return { ...l, logoUrl: leagueUpdates[l.id] };
+      if (cleanLeagueUpdates[l.id] !== undefined) {
+        return { ...l, logoUrl: cleanLeagueUpdates[l.id] };
       }
       return l;
     });
 
     const updatedTeams = dbState.teams.map(t => {
-      if (teamUpdates[t.id]) {
-        return { ...t, logoUrl: teamUpdates[t.id] };
+      if (cleanTeamUpdates[t.id] !== undefined) {
+        return { ...t, logoUrl: cleanTeamUpdates[t.id] };
       }
       return t;
     });
 
     const updatedMatches = dbState.matches.map(m => {
       let match = { ...m };
-      if (m.countryId && countryUpdates[m.countryId]) {
-        match.countryFlagUrl = countryUpdates[m.countryId];
+      if (m.countryId && cleanCountryUpdates[m.countryId] !== undefined) {
+        match.countryFlagUrl = cleanCountryUpdates[m.countryId];
       }
-      if (m.leagueId && leagueUpdates[m.leagueId]) {
-        match.leagueLogoUrl = leagueUpdates[m.leagueId];
+      if (m.leagueId && cleanLeagueUpdates[m.leagueId] !== undefined) {
+        match.leagueLogoUrl = cleanLeagueUpdates[m.leagueId];
       }
-      if (m.homeTeamId && teamUpdates[m.homeTeamId]) {
-        match.homeTeamLogoUrl = teamUpdates[m.homeTeamId];
+      if (m.homeTeamId && cleanTeamUpdates[m.homeTeamId] !== undefined) {
+        match.homeTeamLogoUrl = cleanTeamUpdates[m.homeTeamId];
       }
-      if (m.awayTeamId && teamUpdates[m.awayTeamId]) {
-        match.awayTeamLogoUrl = teamUpdates[m.awayTeamId];
+      if (m.awayTeamId && cleanTeamUpdates[m.awayTeamId] !== undefined) {
+        match.awayTeamLogoUrl = cleanTeamUpdates[m.awayTeamId];
       }
       return match;
     });
