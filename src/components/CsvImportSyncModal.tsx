@@ -16,6 +16,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { DbState } from '../types';
+import { parseAndSyncCsvLocally } from '../utils/csvSyncParser';
+import { saveDatabaseState } from '../services/dbService';
 
 interface CsvImportSyncModalProps {
   isOpen: boolean;
@@ -133,31 +135,23 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
     setStatusMessage(null);
 
     try {
-      const response = await fetch('/api/sync/import-csv', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ csvText: csvContent }),
-      });
+      // 1. Process local CSV parsing and auto-creation of countries, leagues, teams, matches
+      const { updatedDb, result } = parseAndSyncCsvLocally(csvContent, dbState);
 
-      const resData = await response.json();
-      if (!response.ok || !resData.success) {
-        throw new Error(resData.error || 'Erro ao processar arquivo CSV.');
+      if (!result.success) {
+        throw new Error('Nenhuma linha de jogo válida foi encontrada no arquivo CSV.');
       }
 
-      const freshDb = resData.db;
-      const resStats = resData.result;
+      // 2. Persist to server and local storage
+      await saveDatabaseState(updatedDb);
 
       setStatusMessage({
         type: 'success',
-        text: resStats?.message || 'Arquivo CSV importado com sucesso!',
-        stats: resStats,
+        text: result.message,
+        stats: result,
       });
 
-      onImportSuccess(
-        freshDb,
-        resStats?.message ||
-          `CSV importado: ${resStats?.newTeamsCount || 0} novos times e ${resStats?.newMatchesCount || 0} partidas processadas.`
-      );
+      onImportSuccess(updatedDb, result.message);
     } catch (err: any) {
       setStatusMessage({
         type: 'error',
