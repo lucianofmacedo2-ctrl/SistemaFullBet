@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
+import { syncOnlineFootballData, processMatchRows } from './server/syncEngine';
 
 const app = express();
 const PORT = 3000;
@@ -74,6 +75,28 @@ function saveDb(data: DbData) {
 app.get('/api/db', (req, res) => {
   const db = loadDb();
   res.json(db);
+});
+
+app.post('/api/sync/run', async (req, res) => {
+  try {
+    const currentDb = loadDb();
+    const { updatedDb, result } = await syncOnlineFootballData(currentDb);
+    saveDb(updatedDb);
+    res.json({ success: true, result, db: updatedDb });
+  } catch (err: any) {
+    console.error('Error running online sync:', err);
+    res.status(500).json({ success: false, error: err.message || String(err) });
+  }
+});
+
+app.get('/api/sync/status', (req, res) => {
+  const db = loadDb();
+  res.json({
+    countries: db.countries.length,
+    leagues: db.leagues.length,
+    teams: db.teams.length,
+    matches: db.matches.length,
+  });
 });
 
 app.post('/api/db/save', (req, res) => {

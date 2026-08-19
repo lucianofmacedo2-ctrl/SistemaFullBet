@@ -4,7 +4,10 @@ const STORAGE_KEY = 'football_db_v1';
 
 export async function fetchDatabaseState(): Promise<DbState> {
   try {
-    const response = await fetch('/api/db');
+    const response = await fetch('/api/db', {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+    });
     if (response.ok) {
       const data = await response.json();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -24,13 +27,25 @@ export async function fetchDatabaseState(): Promise<DbState> {
     }
   }
 
-  // Initial state is strictly empty as requested by user
   return {
     countries: [],
     leagues: [],
     teams: [],
     matches: [],
   };
+}
+
+export async function syncDatabaseFromServer(): Promise<DbState> {
+  const response = await fetch('/api/db', {
+    cache: 'no-store',
+    headers: { 'Cache-Control': 'no-cache' },
+  });
+  if (response.ok) {
+    const data = await response.json();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return data;
+  }
+  throw new Error('Falha ao obter dados do servidor.');
 }
 
 export async function saveDatabaseState(state: DbState): Promise<boolean> {

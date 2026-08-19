@@ -31,6 +31,7 @@ interface NavbarProps {
   onOpenBulkMatchImportModal?: () => void;
   onOpenBulkMatchUpdateModal?: () => void;
   onOpenBackupModal: () => void;
+  onOpenSyncModal?: () => void;
   onOpenResetModal?: () => void;
 }
 
@@ -44,6 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenBulkMatchImportModal,
   onOpenBulkMatchUpdateModal,
   onOpenBackupModal,
+  onOpenSyncModal,
   onOpenResetModal,
 }) => {
   // Calculate matches for today, tomorrow, and after tomorrow
