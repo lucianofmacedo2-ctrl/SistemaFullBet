@@ -329,6 +329,62 @@ export default function App() {
     await saveDatabaseState(newState);
   };
 
+  // Bulk update logos/flags for countries, leagues, and teams in one batch
+  const handleBulkUpdateLogos = async (updates: {
+    countryUpdates?: Record<string, string>;
+    leagueUpdates?: Record<string, string>;
+    teamUpdates?: Record<string, string>;
+  }) => {
+    const { countryUpdates = {}, leagueUpdates = {}, teamUpdates = {} } = updates;
+
+    const updatedCountries = dbState.countries.map(c => {
+      if (countryUpdates[c.id]) {
+        return { ...c, flagUrl: countryUpdates[c.id] };
+      }
+      return c;
+    });
+
+    const updatedLeagues = dbState.leagues.map(l => {
+      if (leagueUpdates[l.id]) {
+        return { ...l, logoUrl: leagueUpdates[l.id] };
+      }
+      return l;
+    });
+
+    const updatedTeams = dbState.teams.map(t => {
+      if (teamUpdates[t.id]) {
+        return { ...t, logoUrl: teamUpdates[t.id] };
+      }
+      return t;
+    });
+
+    const updatedMatches = dbState.matches.map(m => {
+      let match = { ...m };
+      if (m.countryId && countryUpdates[m.countryId]) {
+        match.countryFlagUrl = countryUpdates[m.countryId];
+      }
+      if (m.leagueId && leagueUpdates[m.leagueId]) {
+        match.leagueLogoUrl = leagueUpdates[m.leagueId];
+      }
+      if (m.homeTeamId && teamUpdates[m.homeTeamId]) {
+        match.homeTeamLogoUrl = teamUpdates[m.homeTeamId];
+      }
+      if (m.awayTeamId && teamUpdates[m.awayTeamId]) {
+        match.awayTeamLogoUrl = teamUpdates[m.awayTeamId];
+      }
+      return match;
+    });
+
+    const newState = {
+      countries: updatedCountries,
+      leagues: updatedLeagues,
+      teams: updatedTeams,
+      matches: updatedMatches,
+    };
+    setDbState(newState);
+    await saveDatabaseState(newState);
+  };
+
   // Update Team League directly
   const handleUpdateTeamLeague = async (teamId: string, leagueId: string) => {
     const league = dbState.leagues.find(l => l.id === leagueId);
@@ -1008,6 +1064,7 @@ export default function App() {
             onUpdateTeamLogo={handleUpdateTeamLogo}
             onUpdateLeagueLogo={handleUpdateLeagueLogo}
             onUpdateCountryFlag={handleUpdateCountryFlag}
+            onBulkUpdateLogos={handleBulkUpdateLogos}
           />
         )}
       </main>

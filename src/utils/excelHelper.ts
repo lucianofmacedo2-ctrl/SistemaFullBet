@@ -479,3 +479,118 @@ export async function parseBulkMatchUpdateExcel(
 
   return parsedRows;
 }
+
+export interface PendingLogoItem {
+  type: 'TEAM' | 'LEAGUE' | 'COUNTRY';
+  id: string;
+  name: string;
+  context: string;
+  url: string;
+}
+
+export interface ParsedPendingLogoRow {
+  rowIndex: number;
+  type: 'TEAM' | 'LEAGUE' | 'COUNTRY' | 'UNKNOWN';
+  id?: string;
+  name?: string;
+  url: string;
+  isValid: boolean;
+}
+
+export async function exportPendingLogosToExcel(
+  items: PendingLogoItem[],
+  fileNameSuffix: string = 'pendencias_imagens'
+): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Imagens_Pendentes');
+
+  worksheet.columns = [
+    { header: 'Tipo', key: 'type', width: 14 },
+    { header: 'ID', key: 'id', width: 16 },
+    { header: 'Nome', key: 'name', width: 30 },
+    { header: 'Contexto_Pais_Liga', key: 'context', width: 30 },
+    { header: 'URL_Imagem', key: 'url', width: 60 },
+  ];
+
+  items.forEach(item => {
+    worksheet.addRow({
+      type: item.type,
+      id: item.id,
+      name: item.name,
+      context: item.context,
+      url: item.url || '',
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${fileNameSuffix}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export async function parsePendingLogosExcelFile(file: File): Promise<ParsedPendingLogoRow[]> {
+  const arrayBuffer = await file.arrayBuffer();
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(arrayBuffer);
+  const worksheet = workbook.worksheets[0];
+  if (!worksheet) return [];
+
+  const rows: ParsedPendingLogoRow[] = [];
+  const headers: string[] = [];
+  const headerRow = worksheet.getRow(1);
+  headerRow.eachCell((cell, colNumber) => {
+    headers[colNumber] = String(cell.value || '').trim();
+  });
+
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const rowData: Record<string, any> = {};
+    row.eachCell((cell, colNumber) => {
+      const header = headers[colNumber];
+      if (header) {
+        rowData[header] = cell.value;
+      }
+    });
+
+    const typeRaw = String(rowData['Tipo'] || row.getCell(1).value || '').trim().toUpperCase();
+    const id = String(rowData['ID'] || row.getCell(2).value || '').trim();
+    const name = String(rowData['Nome'] || row.getCell(3).value || '').trim();
+    const url = String(
+      rowData['URL_Imagem'] || rowData['URL'] || row.getCell(5).value || row.getCell(4).value || ''
+    ).trim();
+
+    let type: 'TEAM' | 'LEAGUE' | 'COUNTRY' | 'UNKNOWN' = 'UNKNOWN';
+    if (typeRaw.includes('TIME') || typeRaw.includes('TEAM') || id.startsWith('TIME')) {
+      type = 'TEAM';
+    } else if (typeRaw.includes('LIGA') || typeRaw.includes('LEAGUE') || id.startsWith('LIGA')) {
+      type = 'LEAGUE';
+    } else if (
+      typeRaw.includes('PAIS') ||
+      typeRaw.includes('PAÍS') ||
+      typeRaw.includes('COUNTRY') ||
+      id.startsWith('PAIS')
+    ) {
+      type = 'COUNTRY';
+    }
+
+    if (url && (id || name)) {
+      rows.push({
+        rowIndex: rowNumber,
+        type,
+        id: id || undefined,
+        name: name || undefined,
+        url,
+        isValid: true,
+      });
+    }
+  });
+
+  return rows;
+}
+
