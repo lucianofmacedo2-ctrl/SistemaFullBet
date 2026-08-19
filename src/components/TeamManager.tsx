@@ -24,6 +24,7 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCountryFilter, setSelectedCountryFilter] = useState('');
   const [selectedLeagueFilter, setSelectedLeagueFilter] = useState('');
+  const [onlyWithoutLogo, setOnlyWithoutLogo] = useState(false);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editUrl, setEditUrl] = useState('');
   const [savedSuccessTeamId, setSavedSuccessTeamId] = useState<string | null>(null);
@@ -38,8 +39,9 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
 
     const matchesCountry = !selectedCountryFilter || t.countryId === selectedCountryFilter;
     const matchesLeague = !selectedLeagueFilter || t.leagueId === selectedLeagueFilter || (t.leagueIds && t.leagueIds.includes(selectedLeagueFilter));
+    const matchesLogo = !onlyWithoutLogo || !t.logoUrl || !t.logoUrl.trim();
 
-    return matchesSearch && matchesCountry && matchesLeague;
+    return matchesSearch && matchesCountry && matchesLeague && matchesLogo;
   });
 
   const handleStartEdit = (teamId: string, currentUrl?: string) => {
@@ -131,6 +133,20 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                 ))}
             </select>
           )}
+
+          {/* Toggle only without logo */}
+          <button
+            onClick={() => setOnlyWithoutLogo(prev => !prev)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+              onlyWithoutLogo
+                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
+                : 'bg-[#1a1a1a] text-gray-300 hover:text-white border-white/10'
+            }`}
+            title="Exibir apenas clubes sem URL de escudo"
+          >
+            <Shield className="w-3.5 h-3.5" />
+            <span>Sem Escudo</span>
+          </button>
 
           {onOpenBulkImportModal && (
             <button

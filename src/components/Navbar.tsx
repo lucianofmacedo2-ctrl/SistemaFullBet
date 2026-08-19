@@ -15,6 +15,7 @@ import {
   UploadCloud,
   FileEdit,
   Trash2,
+  Image,
 } from 'lucide-react';
 import { DbState } from '../types';
 import { extractYMD, formatDateToYMD } from './DailyMatchesView';
@@ -22,8 +23,8 @@ import { isMatchComplete } from '../utils/excelHelper';
 
 interface NavbarProps {
   dbState: DbState;
-  activeTab: 'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats';
-  setActiveTab: (tab: 'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats') => void;
+  activeTab: 'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats' | 'pending_logos';
+  setActiveTab: (tab: 'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats' | 'pending_logos') => void;
   onOpenMatchModal: () => void;
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
   onOpenBulkImportModal?: () => void;
@@ -61,6 +62,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   }).length;
 
   const incompleteMatchesCount = dbState.matches.filter(m => !isMatchComplete(m)).length;
+
+  const pendingLogosCount =
+    dbState.teams.filter(t => !t.logoUrl?.trim()).length +
+    dbState.leagues.filter(l => !l.logoUrl?.trim()).length +
+    dbState.countries.filter(c => !c.flagUrl?.trim()).length;
 
   return (
     <header className="bg-white border-b border-blue-200 text-slate-800 sticky top-0 z-40 shadow-sm">
@@ -269,6 +275,25 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <BarChart3 className="w-3.5 h-3.5" />
               Estatísticas
+            </button>
+
+            <button
+              onClick={() => setActiveTab('pending_logos')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                activeTab === 'pending_logos'
+                  ? 'bg-amber-500 text-slate-950 border border-amber-500 shadow-sm shadow-amber-500/20'
+                  : 'text-amber-800 hover:text-amber-950 hover:bg-amber-100/70'
+              }`}
+            >
+              <Image className="w-3.5 h-3.5" />
+              Escudos Pendentes
+              {pendingLogosCount > 0 && (
+                <span className={`ml-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${
+                  activeTab === 'pending_logos' ? 'bg-slate-950 text-white' : 'bg-amber-500 text-slate-950 animate-pulse'
+                }`}>
+                  {pendingLogosCount}
+                </span>
+              )}
             </button>
           </nav>
 
