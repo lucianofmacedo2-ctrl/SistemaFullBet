@@ -136,6 +136,127 @@ function normalizeHeader(header: string): string {
 }
 
 /**
+ * Splits any date/time string into distinct Brazilian date (DD/MM/YYYY) and time (HH:mm) strings
+ */
+export function splitDateTimeForExcel(dateStr: string | null | undefined): { date: string; time: string } {
+  if (!dateStr) return { date: '', time: '' };
+  
+  const str = dateStr.trim();
+  let date = '';
+  let time = '';
+
+  // 1. Try ISO pattern YYYY-MM-DD or YYYY-MM-DDTHH:mm
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{1,2}):(\d{2}))?/);
+  if (isoMatch) {
+    const [, y, m, d, h, min] = isoMatch;
+    date = `${d}/${m}/${y}`;
+    if (h !== undefined && min !== undefined) {
+      time = `${h.padStart(2, '0')}:${min}`;
+    }
+    return { date, time };
+  }
+
+  // 2. Try Brazilian pattern DD/MM/YYYY HH:mm or DD-MM-YYYY HH:mm
+  const dmyMatch = str.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})(?:[T\s](\d{1,2}):(\d{2}))?/);
+  if (dmyMatch) {
+    const [, d, m, y, h, min] = dmyMatch;
+    const fullYear = y.length === 2 ? `20${y}` : y;
+    date = `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${fullYear}`;
+    if (h !== undefined && min !== undefined) {
+      time = `${h.padStart(2, '0')}:${min}`;
+    }
+    return { date, time };
+  }
+
+  // Fallback
+  return { date: str, time: '' };
+}
+
+/**
+ * Combines separate date and time values from Excel / CSV into a standardized ISO date string (YYYY-MM-DDTHH:mm:00)
+ */
+export function combineDateAndTime(dateVal: any, timeVal: any): string {
+  let dateStr = '';
+  let timeStr = '';
+
+  // 1. Extract Date component
+  if (dateVal instanceof Date && !isNaN(dateVal.getTime())) {
+    const y = dateVal.getFullYear();
+    const m = String(dateVal.getMonth() + 1).padStart(2, '0');
+    const d = String(dateVal.getDate()).padStart(2, '0');
+    dateStr = `${y}-${m}-${d}`;
+
+    const h = String(dateVal.getHours()).padStart(2, '0');
+    const min = String(dateVal.getMinutes()).padStart(2, '0');
+    if (h !== '00' || min !== '00') {
+      timeStr = `${h}:${min}`;
+    }
+  } else if (dateVal !== null && dateVal !== undefined) {
+    const rawDate = String(dateVal).trim();
+    if (rawDate) {
+      const ymdMatch = rawDate.match(/^(\d{4})[/.-](\d{1,2})[/.-](\d{1,2})/);
+      if (ymdMatch) {
+        dateStr = `${ymdMatch[1]}-${ymdMatch[2].padStart(2, '0')}-${ymdMatch[3].padStart(2, '0')}`;
+      } else {
+        const dmyMatch = rawDate.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})/);
+        if (dmyMatch) {
+          const d = dmyMatch[1].padStart(2, '0');
+          const m = dmyMatch[2].padStart(2, '0');
+          const y = dmyMatch[3].length === 2 ? `20${dmyMatch[3]}` : dmyMatch[3];
+          dateStr = `${y}-${m}-${d}`;
+        }
+      }
+
+      const embeddedTimeMatch = rawDate.match(/[T\s](\d{1,2}):(\d{2})/);
+      if (embeddedTimeMatch) {
+        timeStr = `${embeddedTimeMatch[1].padStart(2, '0')}:${embeddedTimeMatch[2]}`;
+      }
+    }
+  }
+
+  // 2. Extract Time component (overrides embedded time if present)
+  if (timeVal instanceof Date && !isNaN(timeVal.getTime())) {
+    const h = String(timeVal.getHours()).padStart(2, '0');
+    const min = String(timeVal.getMinutes()).padStart(2, '0');
+    timeStr = `${h}:${min}`;
+  } else if (typeof timeVal === 'number' && !isNaN(timeVal)) {
+    if (timeVal > 0 && timeVal < 1) {
+      const totalMinutes = Math.round(timeVal * 24 * 60);
+      const h = String(Math.floor(totalMinutes / 60) % 24).padStart(2, '0');
+      const min = String(totalMinutes % 60).padStart(2, '0');
+      timeStr = `${h}:${min}`;
+    } else if (timeVal >= 1 && timeVal <= 24) {
+      const h = String(Math.floor(timeVal)).padStart(2, '0');
+      const min = String(Math.round((timeVal % 1) * 60)).padStart(2, '0');
+      timeStr = `${h}:${min}`;
+    }
+  } else if (timeVal !== null && timeVal !== undefined) {
+    const rawTime = String(timeVal).trim();
+    if (rawTime) {
+      const tmMatch = rawTime.match(/(\d{1,2})[:hH](\d{2})/);
+      if (tmMatch) {
+        timeStr = `${tmMatch[1].padStart(2, '0')}:${tmMatch[2]}`;
+      } else {
+        const hourOnlyMatch = rawTime.match(/^(\d{1,2})$/);
+        if (hourOnlyMatch) {
+          timeStr = `${hourOnlyMatch[1].padStart(2, '0')}:00`;
+        }
+      }
+    }
+  }
+
+  if (!dateStr) {
+    if (dateVal) {
+      return String(dateVal).trim();
+    }
+    return '';
+  }
+
+  const finalTime = timeStr || '00:00';
+  return `${dateStr}T${finalTime}:00`;
+}
+
+/**
  * Parse an Excel file (.xlsx, .xls) or CSV file into team rows
  */
 export async function parseExcelOrCsvFile(file: File): Promise<ParsedTeamRow[]> {
@@ -329,14 +450,15 @@ export async function downloadTeamImportTemplate(leagueName = 'Liga', season = '
 }
 
 /**
- * Downloads a pre-formatted Excel template for Future Matches (.xlsx)
+ * Downloads a pre-formatted Excel template for Future Matches (.xlsx) with distinct Date and Time columns
  */
 export async function downloadMatchImportTemplate() {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Jogos_Futuros');
 
   worksheet.columns = [
-    { header: 'Data_Hora', key: 'matchDate', width: 20 },
+    { header: 'Data', key: 'matchDate', width: 15 },
+    { header: 'Hora', key: 'matchTime', width: 12 },
     { header: 'Pais', key: 'countryName', width: 18 },
     { header: 'Liga', key: 'leagueName', width: 24 },
     { header: 'Mandante', key: 'homeTeamName', width: 22 },
@@ -369,10 +491,11 @@ export async function downloadMatchImportTemplate() {
   };
   headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
-  // Sample data rows
+  // Sample data rows with separated Date and Time
   worksheet.addRows([
     {
-      matchDate: '15/09/2026 16:00',
+      matchDate: '15/09/2026',
+      matchTime: '16:00',
       countryName: 'Brasil',
       leagueName: 'Brasileirão Série A',
       homeTeamName: 'Flamengo',
@@ -395,7 +518,8 @@ export async function downloadMatchImportTemplate() {
       oddBttsHT: 4.50,
     },
     {
-      matchDate: '16/09/2026 21:00',
+      matchDate: '16/09/2026',
+      matchTime: '21:00',
       countryName: 'Espanha',
       leagueName: 'La Liga',
       homeTeamName: 'Real Madrid',
@@ -418,7 +542,8 @@ export async function downloadMatchImportTemplate() {
       oddBttsHT: 4.00,
     },
     {
-      matchDate: '18/09/2026 16:00',
+      matchDate: '18/09/2026',
+      matchTime: '16:00',
       countryName: 'Inglaterra',
       leagueName: 'Premier League',
       homeTeamName: 'Arsenal',
@@ -565,7 +690,10 @@ async function parseMatchXlsxFile(file: File): Promise<ParsedMatchRow[]> {
           else if (val.includes('over05_ht') || val.includes('over0.5_ht') || val.includes('over_05_ht')) colMap.oddOver05HT = colNumber;
           else if (val.includes('under05_ht') || val.includes('under0.5_ht') || val.includes('under_05_ht')) colMap.oddUnder05HT = colNumber;
           else if (val.includes('btts_ht') || val.includes('ambos_ht') || val.includes('ambas_ht')) colMap.oddBttsHT = colNumber;
-        } else if (val.includes('data') || val.includes('date') || val.includes('horar') || val.includes('time_jogo')) {
+        } else if (val === 'hora' || val.includes('horario') || val === 'hora_jogo' || val === 'time') {
+          containsHeaderKeywords = true;
+          colMap.matchTime = colNumber;
+        } else if (val === 'data' || val === 'date' || val === 'dia' || val === 'data_jogo' || val.includes('data_hora')) {
           containsHeaderKeywords = true;
           colMap.matchDate = colNumber;
         } else if (val.includes('pais') || val.includes('country') || val.includes('nacao')) {
@@ -601,26 +729,11 @@ async function parseMatchXlsxFile(file: File): Promise<ParsedMatchRow[]> {
 
         // Apply column position defaults if specific headers weren't found
         if (!colMap.matchDate) colMap.matchDate = 1;
-        if (!colMap.countryName) colMap.countryName = 2;
-        if (!colMap.leagueName) colMap.leagueName = 3;
-        if (!colMap.homeTeamName) colMap.homeTeamName = 4;
-        if (!colMap.awayTeamName) colMap.awayTeamName = 5;
-        if (!colMap.round) colMap.round = 6;
-        if (!colMap.stadium) colMap.stadium = 7;
-        if (!colMap.referee) colMap.referee = 8;
-        if (!colMap.notes) colMap.notes = 9;
-        if (!colMap.oddHomeFT) colMap.oddHomeFT = 10;
-        if (!colMap.oddDrawFT) colMap.oddDrawFT = 11;
-        if (!colMap.oddAwayFT) colMap.oddAwayFT = 12;
-        if (!colMap.oddOver25FT) colMap.oddOver25FT = 13;
-        if (!colMap.oddUnder25FT) colMap.oddUnder25FT = 14;
-        if (!colMap.oddBttsFT) colMap.oddBttsFT = 15;
-        if (!colMap.oddHomeHT) colMap.oddHomeHT = 16;
-        if (!colMap.oddDrawHT) colMap.oddDrawHT = 17;
-        if (!colMap.oddAwayHT) colMap.oddAwayHT = 18;
-        if (!colMap.oddOver05HT) colMap.oddOver05HT = 19;
-        if (!colMap.oddUnder05HT) colMap.oddUnder05HT = 20;
-        if (!colMap.oddBttsHT) colMap.oddBttsHT = 21;
+        if (!colMap.matchTime && !colMap.countryName) {
+          // If matchTime not explicitly mapped by header name
+          // check if second column is Hora
+        }
+        if (!colMap.countryName) colMap.countryName = colMap.matchTime ? 3 : 2;
         return;
       }
     }
@@ -630,15 +743,20 @@ async function parseMatchXlsxFile(file: File): Promise<ParsedMatchRow[]> {
       return;
     }
 
-    const matchDateStr = getVal(row.getCell(colMap.matchDate));
-    const countryName = getVal(row.getCell(colMap.countryName));
-    const leagueName = getVal(row.getCell(colMap.leagueName));
-    const homeTeamName = getVal(row.getCell(colMap.homeTeamName));
-    const awayTeamName = getVal(row.getCell(colMap.awayTeamName));
-    const round = getVal(row.getCell(colMap.round)) || 'Rodada 1';
-    const stadium = getVal(row.getCell(colMap.stadium));
-    const referee = getVal(row.getCell(colMap.referee));
-    const notes = getVal(row.getCell(colMap.notes));
+    const rawDateCell = colMap.matchDate ? row.getCell(colMap.matchDate) : null;
+    const rawTimeCell = colMap.matchTime ? row.getCell(colMap.matchTime) : null;
+    const dateVal = rawDateCell ? (rawDateCell.value instanceof Date ? rawDateCell.value : getVal(rawDateCell)) : '';
+    const timeVal = rawTimeCell ? (rawTimeCell.value instanceof Date ? rawTimeCell.value : getVal(rawTimeCell)) : '';
+
+    const matchDateStr = combineDateAndTime(dateVal, timeVal);
+    const countryName = colMap.countryName ? getVal(row.getCell(colMap.countryName)) : '';
+    const leagueName = colMap.leagueName ? getVal(row.getCell(colMap.leagueName)) : '';
+    const homeTeamName = colMap.homeTeamName ? getVal(row.getCell(colMap.homeTeamName)) : '';
+    const awayTeamName = colMap.awayTeamName ? getVal(row.getCell(colMap.awayTeamName)) : '';
+    const round = colMap.round ? getVal(row.getCell(colMap.round)) : 'Rodada 1';
+    const stadium = colMap.stadium ? getVal(row.getCell(colMap.stadium)) : '';
+    const referee = colMap.referee ? getVal(row.getCell(colMap.referee)) : '';
+    const notes = colMap.notes ? getVal(row.getCell(colMap.notes)) : '';
 
     if (!countryName && !leagueName && !homeTeamName && !awayTeamName) {
       return;
@@ -671,22 +789,22 @@ async function parseMatchXlsxFile(file: File): Promise<ParsedMatchRow[]> {
       leagueName,
       homeTeamName,
       awayTeamName,
-      round,
+      round: round || 'Rodada 1',
       stadium,
       referee,
       notes,
-      oddHomeFT: parseNum(row.getCell(colMap.oddHomeFT)),
-      oddDrawFT: parseNum(row.getCell(colMap.oddDrawFT)),
-      oddAwayFT: parseNum(row.getCell(colMap.oddAwayFT)),
-      oddOver25FT: parseNum(row.getCell(colMap.oddOver25FT)),
-      oddUnder25FT: parseNum(row.getCell(colMap.oddUnder25FT)),
-      oddBttsFT: parseNum(row.getCell(colMap.oddBttsFT)),
-      oddHomeHT: parseNum(row.getCell(colMap.oddHomeHT)),
-      oddDrawHT: parseNum(row.getCell(colMap.oddDrawHT)),
-      oddAwayHT: parseNum(row.getCell(colMap.oddAwayHT)),
-      oddOver05HT: parseNum(row.getCell(colMap.oddOver05HT)),
-      oddUnder05HT: parseNum(row.getCell(colMap.oddUnder05HT)),
-      oddBttsHT: parseNum(row.getCell(colMap.oddBttsHT)),
+      oddHomeFT: colMap.oddHomeFT ? parseNum(row.getCell(colMap.oddHomeFT)) : null,
+      oddDrawFT: colMap.oddDrawFT ? parseNum(row.getCell(colMap.oddDrawFT)) : null,
+      oddAwayFT: colMap.oddAwayFT ? parseNum(row.getCell(colMap.oddAwayFT)) : null,
+      oddOver25FT: colMap.oddOver25FT ? parseNum(row.getCell(colMap.oddOver25FT)) : null,
+      oddUnder25FT: colMap.oddUnder25FT ? parseNum(row.getCell(colMap.oddUnder25FT)) : null,
+      oddBttsFT: colMap.oddBttsFT ? parseNum(row.getCell(colMap.oddBttsFT)) : null,
+      oddHomeHT: colMap.oddHomeHT ? parseNum(row.getCell(colMap.oddHomeHT)) : null,
+      oddDrawHT: colMap.oddDrawHT ? parseNum(row.getCell(colMap.oddDrawHT)) : null,
+      oddAwayHT: colMap.oddAwayHT ? parseNum(row.getCell(colMap.oddAwayHT)) : null,
+      oddOver05HT: colMap.oddOver05HT ? parseNum(row.getCell(colMap.oddOver05HT)) : null,
+      oddUnder05HT: colMap.oddUnder05HT ? parseNum(row.getCell(colMap.oddUnder05HT)) : null,
+      oddBttsHT: colMap.oddBttsHT ? parseNum(row.getCell(colMap.oddBttsHT)) : null,
       isValid,
       validationError: isValid ? undefined : validationError,
     });
@@ -704,34 +822,35 @@ async function parseMatchCsvFile(file: File): Promise<ParsedMatchRow[]> {
   const delimiter = lines[0].includes(';') ? ';' : ',';
   const headers = lines[0].split(delimiter).map(h => normalizeHeader(h));
 
-  const getIdx = (keywords: string[], fallback: number) => {
-    const idx = headers.findIndex(h => keywords.some(k => h.includes(k)));
+  const getIdx = (keywords: string[], fallback = -1) => {
+    const idx = headers.findIndex(h => keywords.some(k => h === k || h.includes(k)));
     return idx !== -1 ? idx : fallback;
   };
 
-  const matchDateIdx = getIdx(['data', 'date', 'horar'], 0);
-  const countryNameIdx = getIdx(['pais', 'country'], 1);
-  const leagueNameIdx = getIdx(['liga', 'league', 'campeonato'], 2);
-  const homeTeamNameIdx = getIdx(['mandante', 'home'], 3);
-  const awayTeamNameIdx = getIdx(['visitante', 'away'], 4);
-  const roundIdx = getIdx(['rodada', 'round'], 5);
-  const stadiumIdx = getIdx(['estadio', 'arena'], 6);
-  const refereeIdx = getIdx(['arbitro', 'juiz'], 7);
-  const notesIdx = getIdx(['obs', 'note'], 8);
+  const matchDateIdx = getIdx(['data', 'date', 'dia', 'data_hora']);
+  const matchTimeIdx = getIdx(['hora', 'horario', 'hora_jogo', 'time']);
+  const countryNameIdx = getIdx(['pais', 'country']);
+  const leagueNameIdx = getIdx(['liga', 'league', 'campeonato']);
+  const homeTeamNameIdx = getIdx(['mandante', 'home']);
+  const awayTeamNameIdx = getIdx(['visitante', 'away']);
+  const roundIdx = getIdx(['rodada', 'round']);
+  const stadiumIdx = getIdx(['estadio', 'arena']);
+  const refereeIdx = getIdx(['arbitro', 'juiz']);
+  const notesIdx = getIdx(['obs', 'note']);
 
-  const oddHomeFTIdx = getIdx(['home_ft', 'mandante_ft', '1_ft'], 9);
-  const oddDrawFTIdx = getIdx(['draw_ft', 'empate_ft', 'x_ft'], 10);
-  const oddAwayFTIdx = getIdx(['away_ft', 'visitante_ft', '2_ft'], 11);
-  const oddOver25FTIdx = getIdx(['over25_ft', 'over2.5_ft'], 12);
-  const oddUnder25FTIdx = getIdx(['under25_ft', 'under2.5_ft'], 13);
-  const oddBttsFTIdx = getIdx(['btts_ft', 'ambos_ft'], 14);
+  const oddHomeFTIdx = getIdx(['home_ft', 'mandante_ft', '1_ft']);
+  const oddDrawFTIdx = getIdx(['draw_ft', 'empate_ft', 'x_ft']);
+  const oddAwayFTIdx = getIdx(['away_ft', 'visitante_ft', '2_ft']);
+  const oddOver25FTIdx = getIdx(['over25_ft', 'over2.5_ft']);
+  const oddUnder25FTIdx = getIdx(['under25_ft', 'under2.5_ft']);
+  const oddBttsFTIdx = getIdx(['btts_ft', 'ambos_ft']);
 
-  const oddHomeHTIdx = getIdx(['home_ht', 'mandante_ht', '1_ht'], 15);
-  const oddDrawHTIdx = getIdx(['draw_ht', 'empate_ht', 'x_ht'], 16);
-  const oddAwayHTIdx = getIdx(['away_ht', 'visitante_ht', '2_ht'], 17);
-  const oddOver05HTIdx = getIdx(['over05_ht', 'over0.5_ht'], 18);
-  const oddUnder05HTIdx = getIdx(['under05_ht', 'under0.5_ht'], 19);
-  const oddBttsHTIdx = getIdx(['btts_ht', 'ambos_ht'], 20);
+  const oddHomeHTIdx = getIdx(['home_ht', 'mandante_ht', '1_ht']);
+  const oddDrawHTIdx = getIdx(['draw_ht', 'empate_ht', 'x_ht']);
+  const oddAwayHTIdx = getIdx(['away_ht', 'visitante_ht', '2_ht']);
+  const oddOver05HTIdx = getIdx(['over05_ht', 'over0.5_ht']);
+  const oddUnder05HTIdx = getIdx(['under05_ht', 'under0.5_ht']);
+  const oddBttsHTIdx = getIdx(['btts_ht', 'ambos_ht']);
 
   const rows: ParsedMatchRow[] = [];
 
@@ -741,18 +860,26 @@ async function parseMatchCsvFile(file: File): Promise<ParsedMatchRow[]> {
     return isNaN(n) ? null : n;
   };
 
+  const getCol = (cols: string[], idx: number): string => {
+    if (idx === -1 || !cols[idx]) return '';
+    return cols[idx].replace(/^["']|["']$/g, '').trim();
+  };
+
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(delimiter).map(c => c.replace(/^["']|["']$/g, '').trim());
 
-    const matchDateStr = cols[matchDateIdx] || '';
-    const countryName = cols[countryNameIdx] || '';
-    const leagueName = cols[leagueNameIdx] || '';
-    const homeTeamName = cols[homeTeamNameIdx] || '';
-    const awayTeamName = cols[awayTeamNameIdx] || '';
-    const round = cols[roundIdx] || 'Rodada 1';
-    const stadium = cols[stadiumIdx] || '';
-    const referee = cols[refereeIdx] || '';
-    const notes = cols[notesIdx] || '';
+    const dateVal = matchDateIdx !== -1 ? getCol(cols, matchDateIdx) : getCol(cols, 0);
+    const timeVal = matchTimeIdx !== -1 ? getCol(cols, matchTimeIdx) : '';
+    const matchDateStr = combineDateAndTime(dateVal, timeVal);
+
+    const countryName = countryNameIdx !== -1 ? getCol(cols, countryNameIdx) : getCol(cols, 1);
+    const leagueName = leagueNameIdx !== -1 ? getCol(cols, leagueNameIdx) : getCol(cols, 2);
+    const homeTeamName = homeTeamNameIdx !== -1 ? getCol(cols, homeTeamNameIdx) : getCol(cols, 3);
+    const awayTeamName = awayTeamNameIdx !== -1 ? getCol(cols, awayTeamNameIdx) : getCol(cols, 4);
+    const round = roundIdx !== -1 ? getCol(cols, roundIdx) : 'Rodada 1';
+    const stadium = stadiumIdx !== -1 ? getCol(cols, stadiumIdx) : '';
+    const referee = refereeIdx !== -1 ? getCol(cols, refereeIdx) : '';
+    const notes = notesIdx !== -1 ? getCol(cols, notesIdx) : '';
 
     if (!countryName && !leagueName && !homeTeamName && !awayTeamName) continue;
 
@@ -783,22 +910,22 @@ async function parseMatchCsvFile(file: File): Promise<ParsedMatchRow[]> {
       leagueName,
       homeTeamName,
       awayTeamName,
-      round,
+      round: round || 'Rodada 1',
       stadium,
       referee,
       notes,
-      oddHomeFT: parseNum(cols[oddHomeFTIdx]),
-      oddDrawFT: parseNum(cols[oddDrawFTIdx]),
-      oddAwayFT: parseNum(cols[oddAwayFTIdx]),
-      oddOver25FT: parseNum(cols[oddOver25FTIdx]),
-      oddUnder25FT: parseNum(cols[oddUnder25FTIdx]),
-      oddBttsFT: parseNum(cols[oddBttsFTIdx]),
-      oddHomeHT: parseNum(cols[oddHomeHTIdx]),
-      oddDrawHT: parseNum(cols[oddDrawHTIdx]),
-      oddAwayHT: parseNum(cols[oddAwayHTIdx]),
-      oddOver05HT: parseNum(cols[oddOver05HTIdx]),
-      oddUnder05HT: parseNum(cols[oddUnder05HTIdx]),
-      oddBttsHT: parseNum(cols[oddBttsHTIdx]),
+      oddHomeFT: parseNum(getCol(cols, oddHomeFTIdx)),
+      oddDrawFT: parseNum(getCol(cols, oddDrawFTIdx)),
+      oddAwayFT: parseNum(getCol(cols, oddAwayFTIdx)),
+      oddOver25FT: parseNum(getCol(cols, oddOver25FTIdx)),
+      oddUnder25FT: parseNum(getCol(cols, oddUnder25FTIdx)),
+      oddBttsFT: parseNum(getCol(cols, oddBttsFTIdx)),
+      oddHomeHT: parseNum(getCol(cols, oddHomeHTIdx)),
+      oddDrawHT: parseNum(getCol(cols, oddDrawHTIdx)),
+      oddAwayHT: parseNum(getCol(cols, oddAwayHTIdx)),
+      oddOver05HT: parseNum(getCol(cols, oddOver05HTIdx)),
+      oddUnder05HT: parseNum(getCol(cols, oddUnder05HTIdx)),
+      oddBttsHT: parseNum(getCol(cols, oddBttsHTIdx)),
       isValid,
       validationError: isValid ? undefined : validationError,
     });
@@ -851,7 +978,8 @@ export async function downloadIncompleteMatchesTemplate(
   worksheet.columns = [
     // 1. Identificação Geral
     { header: 'ID_Jogo', key: 'id', width: 14 },
-    { header: 'Data_Hora', key: 'matchDate', width: 18 },
+    { header: 'Data', key: 'matchDate', width: 15 },
+    { header: 'Hora', key: 'matchTime', width: 12 },
     { header: 'Pais', key: 'countryName', width: 16 },
     { header: 'Liga', key: 'leagueName', width: 22 },
     { header: 'Mandante', key: 'homeTeamName', width: 22 },
@@ -936,20 +1064,12 @@ export async function downloadIncompleteMatchesTemplate(
   targetMatches.forEach(m => {
     const st = m.stats || {};
     const od = m.odds || {};
-
-    let formattedDate = m.matchDate || '';
-    if (m.matchDate && m.matchDate.includes('T')) {
-      const [d, t] = m.matchDate.split('T');
-      const parts = d.split('-');
-      if (parts.length === 3) {
-        const timePart = t ? ` ${t.substring(0, 5)}` : '';
-        formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}${timePart}`;
-      }
-    }
+    const { date, time } = splitDateTimeForExcel(m.matchDate);
 
     worksheet.addRow({
       id: m.id,
-      matchDate: formattedDate,
+      matchDate: date,
+      matchTime: time,
       countryName: m.countryName,
       leagueName: m.leagueName,
       homeTeamName: m.homeTeamName,
@@ -1217,7 +1337,8 @@ async function parseMatchUpdateXlsxFile(
         else if (val.includes('odd_btts_ht')) { colMap.oddBttsHT = colNumber; isHeader = true; }
 
         // Core fields
-        else if (val.includes('data') || val.includes('date') || val.includes('horar')) { colMap.matchDate = colNumber; isHeader = true; }
+        else if (val === 'hora' || val.includes('horario') || val === 'hora_jogo' || val === 'time') { colMap.matchTime = colNumber; isHeader = true; }
+        else if (val === 'data' || val === 'date' || val === 'dia' || val === 'data_jogo' || val.includes('data_hora')) { colMap.matchDate = colNumber; isHeader = true; }
         else if (val.includes('pais') || val.includes('country')) { colMap.countryName = colNumber; isHeader = true; }
         else if (val.includes('liga') || val.includes('league')) { colMap.leagueName = colNumber; isHeader = true; }
         else if (val.includes('mandante') || val === 'home') { colMap.homeTeamName = colNumber; isHeader = true; }
@@ -1242,7 +1363,13 @@ async function parseMatchUpdateXlsxFile(
     if (rowNumber <= headerRowIndex) return;
 
     const matchId = colMap.matchId ? getVal(row.getCell(colMap.matchId)) : '';
-    const matchDateStr = colMap.matchDate ? getVal(row.getCell(colMap.matchDate)) : '';
+
+    const rawDateCell = colMap.matchDate ? row.getCell(colMap.matchDate) : null;
+    const rawTimeCell = colMap.matchTime ? row.getCell(colMap.matchTime) : null;
+    const dateVal = rawDateCell ? (rawDateCell.value instanceof Date ? rawDateCell.value : getVal(rawDateCell)) : '';
+    const timeVal = rawTimeCell ? (rawTimeCell.value instanceof Date ? rawTimeCell.value : getVal(rawTimeCell)) : '';
+    const matchDateStr = combineDateAndTime(dateVal, timeVal);
+
     const countryName = colMap.countryName ? getVal(row.getCell(colMap.countryName)) : '';
     const leagueName = colMap.leagueName ? getVal(row.getCell(colMap.leagueName)) : '';
     const homeTeamName = colMap.homeTeamName ? getVal(row.getCell(colMap.homeTeamName)) : '';
@@ -1432,7 +1559,8 @@ async function parseMatchUpdateCsvFile(
   };
 
   const matchIdIdx = getIdx(['id_jogo', 'id', 'codigo']);
-  const matchDateIdx = getIdx(['data', 'date', 'horar']);
+  const matchDateIdx = getIdx(['data', 'date', 'dia', 'data_hora']);
+  const matchTimeIdx = getIdx(['hora', 'horario', 'hora_jogo', 'time']);
   const countryNameIdx = getIdx(['pais', 'country']);
   const leagueNameIdx = getIdx(['liga', 'league']);
   const homeTeamNameIdx = getIdx(['mandante', 'home']);
@@ -1516,7 +1644,10 @@ async function parseMatchUpdateCsvFile(
     const cols = lines[i].split(delimiter);
 
     const matchId = getCol(cols, matchIdIdx);
-    const matchDateStr = getCol(cols, matchDateIdx);
+    const dateVal = getCol(cols, matchDateIdx);
+    const timeVal = getCol(cols, matchTimeIdx);
+    const matchDateStr = combineDateAndTime(dateVal, timeVal);
+
     const countryName = getCol(cols, countryNameIdx);
     const leagueName = getCol(cols, leagueNameIdx);
     const homeTeamName = getCol(cols, homeTeamNameIdx);

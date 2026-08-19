@@ -22,6 +22,7 @@ import { TeamManager } from './components/TeamManager';
 import { StatsDashboard } from './components/StatsDashboard';
 import { DailyMatchesView } from './components/DailyMatchesView';
 import { BackupModal } from './components/BackupModal';
+import { ResetDatabaseModal } from './components/ResetDatabaseModal';
 import { MatchStatsModal } from './components/MatchStatsModal';
 import { QuickScoreModal } from './components/QuickScoreModal';
 import { PressureChartImportModal } from './components/PressureChartImportModal';
@@ -57,6 +58,7 @@ export default function App() {
   const [editEntityData, setEditEntityData] = useState<Country | League | Team | null>(null);
 
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isBulkTeamModalOpen, setIsBulkTeamModalOpen] = useState(false);
   const [isBulkMatchModalOpen, setIsBulkMatchModalOpen] = useState(false);
   const [isBulkMatchUpdateModalOpen, setIsBulkMatchUpdateModalOpen] = useState(false);
@@ -811,8 +813,13 @@ export default function App() {
     await saveDatabaseState(importedState);
   };
 
-  // Clear Database
+  // Clear Database with security confirmation
   const handleClearDb = async () => {
+    const emptyState = await clearDatabase();
+    setDbState(emptyState);
+  };
+
+  const handleConfirmResetDatabase = async () => {
     const emptyState = await clearDatabase();
     setDbState(emptyState);
   };
@@ -978,6 +985,7 @@ export default function App() {
         onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
         onOpenBulkMatchUpdateModal={() => setIsBulkMatchUpdateModalOpen(true)}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
+        onOpenResetModal={() => setIsResetModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -1122,6 +1130,14 @@ export default function App() {
         dbState={dbState}
         onImportDb={handleImportDb}
         onClearDb={handleClearDb}
+        onOpenResetModal={() => setIsResetModalOpen(true)}
+      />
+
+      <ResetDatabaseModal
+        isOpen={isResetModalOpen}
+        onClose={() => setIsResetModalOpen(false)}
+        dbState={dbState}
+        onConfirmReset={handleConfirmResetDatabase}
       />
 
       <BulkTeamImportModal

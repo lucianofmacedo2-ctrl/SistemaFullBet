@@ -14,6 +14,7 @@ import {
   TrendingUp,
   UploadCloud,
   FileEdit,
+  Trash2,
 } from 'lucide-react';
 import { DbState } from '../types';
 import { extractYMD, formatDateToYMD } from './DailyMatchesView';
@@ -29,6 +30,7 @@ interface NavbarProps {
   onOpenBulkMatchImportModal?: () => void;
   onOpenBulkMatchUpdateModal?: () => void;
   onOpenBackupModal: () => void;
+  onOpenResetModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -41,6 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenBulkMatchImportModal,
   onOpenBulkMatchUpdateModal,
   onOpenBackupModal,
+  onOpenResetModal,
 }) => {
   // Calculate matches for today, tomorrow, and after tomorrow
   const today = new Date();
@@ -151,6 +154,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Database className="w-4 h-4 text-blue-600" />
               <span className="hidden lg:inline">Banco & Backup</span>
             </button>
+
+            {onOpenResetModal && (
+              <button
+                onClick={onOpenResetModal}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 hover:border-red-300 font-bold text-sm rounded-xl transition-all shadow-xs cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                title="Resetar banco de dados e limpar tudo (requer senha)"
+              >
+                <Trash2 className="w-4 h-4 text-red-600" />
+                <span className="hidden xl:inline">Resetar Banco</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

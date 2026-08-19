@@ -8,6 +8,7 @@ interface BackupModalProps {
   dbState: DbState;
   onImportDb: (state: DbState) => void;
   onClearDb: () => void;
+  onOpenResetModal?: () => void;
 }
 
 export const BackupModal: React.FC<BackupModalProps> = ({
@@ -16,6 +17,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
   dbState,
   onImportDb,
   onClearDb,
+  onOpenResetModal,
 }) => {
   const [jsonText, setJsonText] = useState('');
   const [copied, setCopied] = useState(false);
@@ -193,13 +195,17 @@ export const BackupModal: React.FC<BackupModalProps> = ({
             </div>
 
             <button
+              type="button"
               onClick={() => {
-                if (confirm('ATENÇÃO: Tem certeza absoluta que deseja ZERAR todo o banco de dados? Esta ação não pode ser desfeita.')) {
+                if (onOpenResetModal) {
+                  onClose();
+                  onOpenResetModal();
+                } else {
                   onClearDb();
                   onClose();
                 }
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/40 text-xs font-bold rounded-lg shrink-0 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/40 text-xs font-bold rounded-lg shrink-0 transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Zerar Banco
