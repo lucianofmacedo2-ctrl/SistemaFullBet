@@ -1,12 +1,17 @@
 import React from 'react';
-import { Plus, Trophy, Globe, Shield, Sparkles, Database } from 'lucide-react';
+import { Plus, Trophy, Globe, Shield, Sparkles, Database, UploadCloud } from 'lucide-react';
 
 interface EmptyStateProps {
   onOpenMatchModal: () => void;
   onOpenEntityModal: () => void;
+  onOpenCsvImportModal?: () => void;
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({ onOpenMatchModal, onOpenEntityModal }) => {
+export const EmptyState: React.FC<EmptyStateProps> = ({
+  onOpenMatchModal,
+  onOpenEntityModal,
+  onOpenCsvImportModal,
+}) => {
   return (
     <div className="max-w-4xl mx-auto my-8 px-4">
       <div className="bg-[#0f1325] border border-[#2C3EC4]/30 rounded-2xl p-8 sm:p-12 text-center shadow-2xl relative overflow-hidden">
@@ -42,9 +47,19 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onOpenMatchModal, onOpen
 
           {/* Action buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            {onOpenCsvImportModal && (
+              <button
+                onClick={onOpenCsvImportModal}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10 cursor-pointer"
+              >
+                <UploadCloud className="w-5 h-5 stroke-[2.5]" />
+                Subir jogos_consolidados.csv
+              </button>
+            )}
+
             <button
               onClick={onOpenMatchModal}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#2C3EC4] hover:bg-[#2231A8] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#2C3EC4]/30 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#2C3EC4] hover:bg-[#2231A8] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#2C3EC4]/30 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10 cursor-pointer"
             >
               <Plus className="w-5 h-5 stroke-[2.5]" />
               Cadastrar Primeiro Jogo
@@ -52,10 +67,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onOpenMatchModal, onOpen
 
             <button
               onClick={onOpenEntityModal}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-sm rounded-xl transition-all"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-sm rounded-xl transition-all cursor-pointer"
             >
               <Globe className="w-4 h-4 text-[#2C3EC4]" />
-              Cadastrar País / Liga / Time
+              Cadastrar Entidade
             </button>
           </div>
         </div>

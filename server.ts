@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
-import { syncOnlineFootballData, processMatchRows } from './server/syncEngine';
+import { syncOnlineFootballData, processMatchRows, importCustomCsvText } from './server/syncEngine';
 
 const app = express();
 const PORT = 3000;
@@ -85,6 +85,22 @@ app.post('/api/sync/run', async (req, res) => {
     res.json({ success: true, result, db: updatedDb });
   } catch (err: any) {
     console.error('Error running online sync:', err);
+    res.status(500).json({ success: false, error: err.message || String(err) });
+  }
+});
+
+app.post('/api/sync/import-csv', (req, res) => {
+  try {
+    const { csvText } = req.body;
+    if (!csvText || typeof csvText !== 'string' || !csvText.trim()) {
+      return res.status(400).json({ success: false, error: 'Nenhum conteúdo CSV foi enviado.' });
+    }
+    const currentDb = loadDb();
+    const { updatedDb, result } = importCustomCsvText(csvText, currentDb);
+    saveDb(updatedDb);
+    res.json({ success: true, result, db: updatedDb });
+  } catch (err: any) {
+    console.error('Error importing custom CSV:', err);
     res.status(500).json({ success: false, error: err.message || String(err) });
   }
 });

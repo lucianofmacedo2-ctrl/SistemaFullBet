@@ -27,6 +27,8 @@ import { ResetDatabaseModal } from './components/ResetDatabaseModal';
 import { MatchStatsModal } from './components/MatchStatsModal';
 import { QuickScoreModal } from './components/QuickScoreModal';
 import { PressureChartImportModal } from './components/PressureChartImportModal';
+import { CsvImportSyncModal } from './components/CsvImportSyncModal';
+import { SyncModal } from './components/SyncModal';
 import { ToastNotification } from './components/ToastNotification';
 import { MatchOdds, MatchStats, MatchStatus, MatchPressureData } from './types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from './utils/idGenerator';
@@ -63,6 +65,8 @@ export default function App() {
   const [isBulkTeamModalOpen, setIsBulkTeamModalOpen] = useState(false);
   const [isBulkMatchModalOpen, setIsBulkMatchModalOpen] = useState(false);
   const [isBulkMatchUpdateModalOpen, setIsBulkMatchUpdateModalOpen] = useState(false);
+  const [isCsvImportModalOpen, setIsCsvImportModalOpen] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isPressureModalOpen, setIsPressureModalOpen] = useState(false);
   const [pressureSelectedMatchId, setPressureSelectedMatchId] = useState<string | null>(null);
 
@@ -72,6 +76,21 @@ export default function App() {
 
   // Toast notifications for newly created IDs
   const [notifications, setNotifications] = useState<NewEntityCreatedNotification[]>([]);
+
+  const handleCsvSyncComplete = async (newState: DbState, message: string) => {
+    setDbState(newState);
+    await saveDatabaseState(newState);
+    setNotifications(prev => [
+      ...prev,
+      {
+        id: `sync-${Date.now()}`,
+        type: 'match',
+        entityId: 'CSV-SYNC',
+        name: message,
+        timestamp: Date.now(),
+      },
+    ]);
+  };
 
   // Load database on mount
   useEffect(() => {
@@ -985,6 +1004,8 @@ export default function App() {
         onOpenBulkImportModal={() => setIsBulkTeamModalOpen(true)}
         onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
         onOpenBulkMatchUpdateModal={() => setIsBulkMatchUpdateModalOpen(true)}
+        onOpenCsvImportModal={() => setIsCsvImportModalOpen(true)}
+        onOpenSyncModal={() => setIsSyncModalOpen(true)}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
         onOpenResetModal={() => setIsResetModalOpen(true)}
       />
@@ -998,6 +1019,7 @@ export default function App() {
               <EmptyState
                 onOpenMatchModal={handleOpenNewMatchModal}
                 onOpenEntityModal={() => handleOpenEntityModal('country')}
+                onOpenCsvImportModal={() => setIsCsvImportModalOpen(true)}
               />
             ) : (
               <MatchList
@@ -1170,6 +1192,20 @@ export default function App() {
         onClose={() => setIsBulkMatchUpdateModalOpen(false)}
         dbState={dbState}
         onBulkUpdateMatches={handleBulkUpdateMatches}
+      />
+
+      <CsvImportSyncModal
+        isOpen={isCsvImportModalOpen}
+        onClose={() => setIsCsvImportModalOpen(false)}
+        dbState={dbState}
+        onImportSuccess={handleCsvSyncComplete}
+      />
+
+      <SyncModal
+        isOpen={isSyncModalOpen}
+        onClose={() => setIsSyncModalOpen(false)}
+        dbState={dbState}
+        onSyncComplete={handleCsvSyncComplete}
       />
 
       {/* Unique ID Toast Notifications */}

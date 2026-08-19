@@ -30,6 +30,7 @@ interface NavbarProps {
   onOpenBulkImportModal?: () => void;
   onOpenBulkMatchImportModal?: () => void;
   onOpenBulkMatchUpdateModal?: () => void;
+  onOpenCsvImportModal?: () => void;
   onOpenBackupModal: () => void;
   onOpenSyncModal?: () => void;
   onOpenResetModal?: () => void;
@@ -44,6 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenBulkImportModal,
   onOpenBulkMatchImportModal,
   onOpenBulkMatchUpdateModal,
+  onOpenCsvImportModal,
   onOpenBackupModal,
   onOpenSyncModal,
   onOpenResetModal,
@@ -120,6 +122,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {incompleteMatchesCount}
                   </span>
                 )}
+              </button>
+            )}
+
+            {onOpenCsvImportModal && (
+              <button
+                onClick={onOpenCsvImportModal}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition-all shadow-sm shadow-emerald-600/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                title="Subir arquivo jogos_consolidados.csv manualmente com auto-cadastro"
+              >
+                <UploadCloud className="w-4 h-4 text-emerald-100" />
+                <span>Subir CSV</span>
               </button>
             )}
 

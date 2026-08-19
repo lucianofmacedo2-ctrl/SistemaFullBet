@@ -368,6 +368,76 @@ export function processMatchRows(
   };
 }
 
+export const DIV_MAP: Record<string, { countryCode: string; leagueName: string }> = {
+  E0: { countryCode: 'ING', leagueName: 'Premier League' },
+  E1: { countryCode: 'ING', leagueName: 'Championship' },
+  E2: { countryCode: 'ING', leagueName: 'League 1' },
+  E3: { countryCode: 'ING', leagueName: 'League 2' },
+  SC0: { countryCode: 'ESC', leagueName: 'Premiere League' },
+  SC1: { countryCode: 'ESC', leagueName: 'Division 1' },
+  SC2: { countryCode: 'ESC', leagueName: 'Division 2' },
+  SC3: { countryCode: 'ESC', leagueName: 'Division 3' },
+  D1: { countryCode: 'ALE', leagueName: 'Bundesliga 1' },
+  D2: { countryCode: 'ALE', leagueName: 'Bundesliga 2' },
+  I1: { countryCode: 'ITA', leagueName: 'Serie A' },
+  I2: { countryCode: 'ITA', leagueName: 'Serie B' },
+  SP1: { countryCode: 'ESP', leagueName: 'La Liga 1' },
+  SP2: { countryCode: 'ESP', leagueName: 'La Liga 2' },
+  F1: { countryCode: 'FRA', leagueName: 'Le Championnat' },
+  F2: { countryCode: 'FRA', leagueName: 'Division 2' },
+  N1: { countryCode: 'HOL', leagueName: 'Eredivisie' },
+  B1: { countryCode: 'BEL', leagueName: 'Jupiler League' },
+  P1: { countryCode: 'POR', leagueName: 'Liga I' },
+  T1: { countryCode: 'TUR', leagueName: 'Futbol Ligi 1' },
+  G1: { countryCode: 'GRE', leagueName: 'Ethniki Katigoria' },
+};
+
+export function importCustomCsvText(
+  csvText: string,
+  currentDb: any
+): { updatedDb: any; result: SyncResult } {
+  const parsedRows = parseCsvLines(csvText);
+  const rows: Array<{ countryCode: string; leagueName: string; row: Record<string, string> }> = [];
+
+  for (const r of parsedRows) {
+    let countryCode = (r['PAIS'] || r['Pais'] || r['Country'] || r['COUNTRY'] || '').trim();
+    let leagueName = (r['LIGA'] || r['Liga'] || r['League'] || r['LEAGUE'] || '').trim();
+
+    // If Div code is present (e.g. E0, SP1, D1)
+    const div = (r['Div'] || r['DIV'] || '').trim();
+    if (div && DIV_MAP[div]) {
+      if (!countryCode) countryCode = DIV_MAP[div].countryCode;
+      if (!leagueName) leagueName = DIV_MAP[div].leagueName;
+    }
+
+    if (!countryCode) countryCode = 'INT';
+    if (!leagueName) leagueName = 'Liga Geral';
+
+    rows.push({
+      countryCode,
+      leagueName,
+      row: r,
+    });
+  }
+
+  const { updatedDb, stats } = processMatchRows(rows, currentDb);
+
+  const result: SyncResult = {
+    success: rows.length > 0,
+    message: `Importação manual do CSV concluída: ${stats.newTeams} novos times, ${stats.newLeagues} novas ligas, ${stats.newCountries} novos países e ${stats.newMatches} partidas processadas/cadastradas!`,
+    totalCountries: updatedDb.countries.length,
+    totalLeagues: updatedDb.leagues.length,
+    totalTeams: updatedDb.teams.length,
+    totalMatches: updatedDb.matches.length,
+    newCountriesCount: stats.newCountries,
+    newLeaguesCount: stats.newLeagues,
+    newTeamsCount: stats.newTeams,
+    newMatchesCount: stats.newMatches,
+  };
+
+  return { updatedDb, result };
+}
+
 export async function syncOnlineFootballData(currentDb: any): Promise<{ updatedDb: any; result: SyncResult }> {
   const allRows: Array<{ countryCode: string; leagueName: string; row: Record<string, string> }> = [];
   const errors: string[] = [];
