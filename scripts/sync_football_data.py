@@ -37,7 +37,7 @@ LIGAS_INFO = [
     ("BEL", "Jupiler League", "https://www.football-data.co.uk/mmz4281/2627/B1.csv"),
     ("POR", "Liga I", "https://www.football-data.co.uk/mmz4281/2627/P1.csv"),
     ("TUR", "Futbol Ligi 1", "https://www.football-data.co.uk/mmz4281/2627/T1.csv"),
-    ("GRE", "Ethniki Katigoria", "https://www.football-data.co.uk/mmz4281/2526/G1.csv")
+    ("GRE", "Ethniki Katigoria", "https://www.football-data.co.uk/mmz4281/2627/G1.csv")
 ]
 
 # Nomes amigáveis para os países
