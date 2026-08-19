@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { DbState } from '../types';
 import { parseAndSyncCsvLocally } from '../utils/csvSyncParser';
-import { saveDatabaseState } from '../services/dbService';
+import { saveDatabaseState, syncDatabaseFromServer } from '../services/dbService';
 
 interface CsvImportSyncModalProps {
   isOpen: boolean;
@@ -166,12 +166,7 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
     setIsLoading(true);
     setStatusMessage(null);
     try {
-      const response = await fetch('/api/db', {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const freshDb = await response.json();
+      const freshDb = await syncDatabaseFromServer();
 
       onImportSuccess(
         freshDb,
@@ -185,7 +180,7 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
     } catch (err: any) {
       setStatusMessage({
         type: 'error',
-        text: `Erro ao carregar do servidor: ${err.message || String(err)}`,
+        text: `Erro ao carregar do servidor: ${err.message || String(err)}. Tente subir o arquivo .CSV diretamente pela aba "Arquivo .CSV".`,
       });
     } finally {
       setIsLoading(false);
