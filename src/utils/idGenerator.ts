@@ -1,6 +1,9 @@
 import { Country, League, Team, Match } from '../types';
 
-export function getNextUniqueId(prefix: 'PAIS' | 'LIGA' | 'TIME' | 'JOGO', existingIds: (string | { id?: string } | any)[]): string {
+export function getNextUniqueId(
+  prefix: 'PAIS' | 'LIGA' | 'TIME' | 'JOGO' | 'USER' | string,
+  existingIds: (string | { id?: string } | any)[]
+): string {
   let maxNum = 0;
   const regex = new RegExp(`^${prefix}-(\\d+)$`, 'i');
 

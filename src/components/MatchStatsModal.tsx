@@ -27,6 +27,7 @@ interface MatchStatsModalProps {
   isOpen: boolean;
   onClose: () => void;
   match: Match | null;
+  isMaster?: boolean;
   onSaveStats: (
     matchId: string,
     homeScore: number | null,
@@ -42,6 +43,7 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
   isOpen,
   onClose,
   match,
+  isMaster = true,
   onSaveStats,
   onOpenPressureChartModal,
 }) => {
@@ -264,6 +266,11 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
                 <span className="text-xs text-slate-500 font-medium">
                   {match.leagueName} • {match.countryName}
                 </span>
+                {!isMaster && (
+                  <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-300">
+                    Modo Consulta (Somente Leitura)
+                  </span>
+                )}
               </div>
               <h2 className="text-base sm:text-lg font-bold text-slate-900">
                 {match.homeTeamName} vs {match.awayTeamName}
@@ -281,6 +288,7 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 overflow-y-auto max-h-[calc(92vh-100px)]">
+          <fieldset disabled={!isMaster} className="space-y-4">
           {/* Card 1: Placar Final FT & Placar do Intervalo HT */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between">
@@ -691,22 +699,25 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
               </div>
             )}
           </div>
+          </fieldset>
 
           {/* Footer buttons */}
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-sm font-semibold rounded-xl transition-colors"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-sm font-semibold rounded-xl transition-colors cursor-pointer"
             >
-              Cancelar
+              {isMaster ? 'Cancelar' : 'Fechar'}
             </button>
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md transition-all border border-blue-500 cursor-pointer"
-            >
-              <Check className="w-4 h-4 stroke-[3]" /> Salvar Estatísticas
-            </button>
+            {isMaster && (
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md transition-all border border-blue-500 cursor-pointer"
+              >
+                <Check className="w-4 h-4 stroke-[3]" /> Salvar Estatísticas
+              </button>
+            )}
           </div>
         </form>
       </div>

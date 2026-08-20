@@ -35,6 +35,7 @@ import { PressureChartViewer } from './PressureChartViewer';
 
 interface DailyMatchesViewProps {
   dbState: DbState;
+  isMaster?: boolean;
   onEditMatch: (match: Match) => void;
   onDeleteMatch: (matchId: string) => void;
   onOpenMatchModal: () => void;
@@ -121,6 +122,7 @@ export function extractTime(dateStr: string): string {
 
 export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   dbState,
+  isMaster = true,
   onEditMatch,
   onDeleteMatch,
   onOpenMatchModal,
@@ -851,16 +853,16 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                       )}
                     </div>
 
-                    {/* Score / VS Pill */}
+                    {/* Score / VS Pill & HT */}
                     <div className="col-span-1 text-center flex flex-col items-center justify-center">
                       <button
                         type="button"
                         onClick={() => {
-                          if (onOpenQuickScore) onOpenQuickScore(match);
+                          if (isMaster && onOpenQuickScore) onOpenQuickScore(match);
                           else onOpenStatsModal(match);
                         }}
                         className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-400 text-slate-900 rounded-xl font-black text-base sm:text-lg font-mono min-w-[56px] shadow-2xs transition-all cursor-pointer hover:scale-105"
-                        title="Clique para Lançar/Editar Placar & Odds Rápido"
+                        title={isMaster ? "Clique para Lançar/Editar Placar & Odds Rápido" : "Ver Estatísticas"}
                       >
                         {match.homeScore !== null && match.awayScore !== null ? (
                           `${match.homeScore} - ${match.awayScore}`
@@ -868,6 +870,14 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                           <span className="text-xs text-slate-400 font-sans uppercase">vs</span>
                         )}
                       </button>
+                      {match.stats?.halftimeHomeScore != null && match.stats?.halftimeAwayScore != null && (
+                        <span
+                          className="mt-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 font-mono text-[10px] font-bold border border-blue-200"
+                          title="Placar do 1º Tempo (HT)"
+                        >
+                          HT: {match.stats.halftimeHomeScore} - {match.stats.halftimeAwayScore}
+                        </span>
+                      )}
                     </div>
 
                     {/* Away Team */}
@@ -923,7 +933,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                   {/* Action Buttons Bar */}
                   <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 flex-wrap">
                     <div className="flex items-center gap-1.5">
-                      {onOpenQuickScore && (
+                      {isMaster && onOpenQuickScore && (
                         <button
                           type="button"
                           onClick={() => onOpenQuickScore(match)}
@@ -939,9 +949,10 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                         type="button"
                         onClick={() => onOpenStatsModal(match)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        title={isMaster ? "Lançar/Editar Estatísticas" : "Ver Estatísticas da Partida"}
                       >
                         <BarChart2 className="w-3.5 h-3.5" />
-                        <span>{match.status === 'FINALIZADO' ? 'Stats Completas' : 'Lançar Stats'}</span>
+                        <span>{isMaster ? (match.status === 'FINALIZADO' ? 'Stats Completas' : 'Lançar Stats') : 'Ver Estatísticas'}</span>
                       </button>
 
                       {onOpenPressureChartModal && (
@@ -970,24 +981,26 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                       </button>
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => onEditMatch(match)}
-                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                        title="Editar Partida"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDeleteMatch(match.id)}
-                        className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                        title="Excluir Partida"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    {isMaster && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => onEditMatch(match)}
+                          className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                          title="Editar Partida"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteMatch(match.id)}
+                          className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                          title="Excluir Partida"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Expanded Odds & Half-time details */}

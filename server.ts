@@ -23,6 +23,7 @@ interface DbData {
   leagues: any[];
   teams: any[];
   matches: any[];
+  users?: any[];
 }
 
 // Lazy Gemini AI initialization
@@ -50,16 +51,21 @@ function loadDb(): DbData {
       leagues: [],
       teams: [],
       matches: [],
+      users: [],
     };
     fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
     return initialData;
   }
   try {
     const raw = fs.readFileSync(DB_FILE, 'utf-8');
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed.users)) {
+      parsed.users = [];
+    }
+    return parsed;
   } catch (err) {
     console.error('Error reading db file:', err);
-    return { countries: [], leagues: [], teams: [], matches: [] };
+    return { countries: [], leagues: [], teams: [], matches: [], users: [] };
   }
 }
 
@@ -116,23 +122,27 @@ app.get('/api/sync/status', (req, res) => {
 });
 
 app.post('/api/db/save', (req, res) => {
-  const { countries, leagues, teams, matches } = req.body;
+  const { countries, leagues, teams, matches, users } = req.body;
   const newData: DbData = {
     countries: Array.isArray(countries) ? countries : [],
     leagues: Array.isArray(leagues) ? leagues : [],
     teams: Array.isArray(teams) ? teams : [],
     matches: Array.isArray(matches) ? matches : [],
+    users: Array.isArray(users) ? users : [],
   };
   saveDb(newData);
   res.json({ success: true, data: newData });
 });
 
 app.post('/api/db/clear', (req, res) => {
+  const currentDb = loadDb();
+  // Preserve master users when clearing matches/data or clear all if needed
   const emptyData: DbData = {
     countries: [],
     leagues: [],
     teams: [],
     matches: [],
+    users: currentDb.users || [],
   };
   saveDb(emptyData);
   res.json({ success: true, data: emptyData });

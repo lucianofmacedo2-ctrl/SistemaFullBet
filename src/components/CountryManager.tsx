@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Globe, Plus, Search, Trash2, Link2, Check, X, Edit2 } from 'lucide-react';
+import { Globe, Plus, Search, Trash2, Link2, Check, X, Edit2, AlertCircle } from 'lucide-react';
 import { DbState, Country } from '../types';
+import { isValidImageUrl, validateImageUrlInput, sanitizeImageUrl } from '../utils/imageHelper';
 
 interface CountryManagerProps {
   dbState: DbState;
+  isMaster?: boolean;
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
   onDeleteCountry: (id: string) => void;
   onUpdateCountryFlag?: (countryId: string, flagUrl: string) => void;
@@ -12,6 +14,7 @@ interface CountryManagerProps {
 
 export const CountryManager: React.FC<CountryManagerProps> = ({
   dbState,
+  isMaster = true,
   onOpenEntityModal,
   onDeleteCountry,
   onUpdateCountryFlag,
@@ -20,6 +23,7 @@ export const CountryManager: React.FC<CountryManagerProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [editingCountryId, setEditingCountryId] = useState<string | null>(null);
   const [editUrl, setEditUrl] = useState('');
+  const [urlError, setUrlError] = useState<string | null>(null);
 
   const countries = dbState.countries.filter(c =>
     c.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -29,13 +33,23 @@ export const CountryManager: React.FC<CountryManagerProps> = ({
   const handleStartEdit = (countryId: string, currentUrl?: string) => {
     setEditingCountryId(countryId);
     setEditUrl(currentUrl || '');
+    setUrlError(null);
   };
 
   const handleSaveUrl = (countryId: string) => {
+    if (editUrl.trim()) {
+      const validation = validateImageUrlInput(editUrl);
+      if (!validation.isValid) {
+        setUrlError(validation.errorMessage || 'URL de imagem inválida. Deve começar com https:// ou http://');
+        return;
+      }
+    }
     if (onUpdateCountryFlag) {
-      onUpdateCountryFlag(countryId, editUrl.trim());
+      const cleaned = sanitizeImageUrl(editUrl) || '';
+      onUpdateCountryFlag(countryId, cleaned);
     }
     setEditingCountryId(null);
+    setUrlError(null);
   };
 
   return (
@@ -64,12 +78,14 @@ export const CountryManager: React.FC<CountryManagerProps> = ({
             />
           </div>
 
-          <button
-            onClick={() => onOpenEntityModal('country')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-all hover:scale-[1.02]"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" /> Novo País
-          </button>
+          {isMaster && (
+            <button
+              onClick={() => onOpenEntityModal('country')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-all hover:scale-[1.02]"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" /> Novo País
+            </button>
+          )}
         </div>
       </div>
 
@@ -90,7 +106,7 @@ export const CountryManager: React.FC<CountryManagerProps> = ({
                   <th className="py-3 px-4">Sigla / Código</th>
                   <th className="py-3 px-4">Ligas</th>
                   <th className="py-3 px-4">Jogos</th>
-                  <th className="py-3 px-4 text-right">Ações</th>
+                  {isMaster && <th className="py-3 px-4 text-right">Ações</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 font-medium">
@@ -102,7 +118,7 @@ export const CountryManager: React.FC<CountryManagerProps> = ({
                   return (
                     <tr key={c.id} className="hover:bg-white/[0.02] transition-colors">
                       <td className="py-3 px-4">
-                        {c.flagUrl ? (
+                        {isValidImageUrl(c.flagUrl) ? (
                           <img
                             src={c.flagUrl}
                             alt={c.name}
@@ -138,83 +154,100 @@ export const CountryManager: React.FC<CountryManagerProps> = ({
                           {matchesCount} jogos
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
-                        {isEditing ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            {editUrl.trim() && (
-                              <div className="w-7 h-5 bg-[#121212] border border-emerald-500/50 rounded flex items-center justify-center overflow-hidden shrink-0 shadow-sm" title="Pré-visualização da bandeira">
-                                <img
-                                  src={editUrl.trim()}
-                                  alt="Preview"
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    (e.target as HTMLElement).style.display = 'none';
+                      {isMaster && (
+                        <td className="py-3 px-4 text-right">
+                          {isEditing ? (
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {editUrl.trim() && isValidImageUrl(editUrl.trim()) && (
+                                  <div className="w-7 h-5 bg-[#121212] border border-emerald-500/50 rounded flex items-center justify-center overflow-hidden shrink-0 shadow-sm" title="Pré-visualização da bandeira">
+                                    <img
+                                      src={editUrl.trim()}
+                                      alt="Preview"
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        (e.target as HTMLElement).style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                <input
+                                  type="url"
+                                  placeholder="https://..."
+                                  value={editUrl}
+                                  onChange={(e) => {
+                                    setEditUrl(e.target.value);
+                                    if (urlError) setUrlError(null);
                                   }}
+                                  className={`bg-[#1a1a1a] border rounded px-2 py-1 text-xs text-white focus:outline-none w-48 font-mono ${
+                                    urlError ? 'border-rose-500' : 'border-emerald-500/50'
+                                  }`}
                                 />
+                                <button
+                                  onClick={() => handleSaveUrl(c.id)}
+                                  className="p-1 bg-emerald-500 text-black rounded hover:bg-emerald-400"
+                                  title="Salvar Bandeira"
+                                >
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingCountryId(null);
+                                    setUrlError(null);
+                                  }}
+                                  className="p-1 bg-white/10 text-gray-300 rounded hover:bg-white/20"
+                                  title="Cancelar"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
                               </div>
-                            )}
-                            <input
-                              type="url"
-                              placeholder="URL da bandeira..."
-                              value={editUrl}
-                              onChange={(e) => setEditUrl(e.target.value)}
-                              className="bg-[#1a1a1a] border border-emerald-500/50 rounded px-2 py-1 text-xs text-white focus:outline-none w-48 font-mono"
-                            />
-                            <button
-                              onClick={() => handleSaveUrl(c.id)}
-                              className="p-1 bg-emerald-500 text-black rounded hover:bg-emerald-400"
-                              title="Salvar Bandeira"
-                            >
-                              <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            </button>
-                            <button
-                              onClick={() => setEditingCountryId(null)}
-                              className="p-1 bg-white/10 text-gray-300 rounded hover:bg-white/20"
-                              title="Cancelar"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-end gap-1.5">
-                            {onEditCountry && (
+                              {urlError && (
+                                <span className="text-[10px] text-rose-400 flex items-center gap-1 font-sans">
+                                  <AlertCircle className="w-3 h-3" /> {urlError}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-end gap-1.5">
+                              {onEditCountry && (
+                                <button
+                                  onClick={() => onEditCountry(c)}
+                                  className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 text-[11px] transition-colors"
+                                  title="Editar País Completo"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">Editar</span>
+                                </button>
+                              )}
                               <button
-                                onClick={() => onEditCountry(c)}
-                                className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 text-[11px] transition-colors"
-                                title="Editar País Completo"
+                                onClick={() => handleStartEdit(c.id, c.flagUrl)}
+                                className="p-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-gray-300 hover:text-emerald-400 transition-colors border border-white/5 flex items-center gap-1 text-[11px]"
+                                title="Editar URL da Bandeira"
                               >
-                                <Edit2 className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">Editar</span>
+                                <Link2 className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Bandeira</span>
                               </button>
-                            )}
-                            <button
-                              onClick={() => handleStartEdit(c.id, c.flagUrl)}
-                              className="p-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-gray-300 hover:text-emerald-400 transition-colors border border-white/5 flex items-center gap-1 text-[11px]"
-                              title="Editar URL da Bandeira"
-                            >
-                              <Link2 className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">Bandeira</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                const leagues = dbState.leagues.filter(l => l.countryId === c.id).length;
-                                const matches = dbState.matches.filter(m => m.countryId === c.id).length;
-                                let msg = `Excluir o país "${c.name}" (${c.id})?`;
-                                if (leagues > 0 || matches > 0) {
-                                  msg += `\n\nAtenção: Isso também excluirá ${leagues} liga(s) e ${matches} jogo(s) vinculados a este país!`;
-                                }
-                                if (confirm(msg)) {
-                                  onDeleteCountry(c.id);
-                                }
-                              }}
-                              className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors border border-white/5"
-                              title="Excluir País"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
-                      </td>
+                              <button
+                                onClick={() => {
+                                  const leagues = dbState.leagues.filter(l => l.countryId === c.id).length;
+                                  const matches = dbState.matches.filter(m => m.countryId === c.id).length;
+                                  let msg = `Excluir o país "${c.name}" (${c.id})?`;
+                                  if (leagues > 0 || matches > 0) {
+                                    msg += `\n\nAtenção: Isso também excluirá ${leagues} liga(s) e ${matches} jogo(s) vinculados a este país!`;
+                                  }
+                                  if (confirm(msg)) {
+                                    onDeleteCountry(c.id);
+                                  }
+                                }}
+                                className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors border border-white/5"
+                                title="Excluir País"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

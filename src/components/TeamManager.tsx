@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter, AlertTriangle } from 'lucide-react';
+import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter, AlertTriangle, AlertCircle } from 'lucide-react';
 import { DbState, Team } from '../types';
-import { isValidImageUrl, sanitizeImageUrl } from '../utils/imageHelper';
+import { isValidImageUrl, validateImageUrlInput, sanitizeImageUrl } from '../utils/imageHelper';
 
 interface TeamManagerProps {
   dbState: DbState;
+  isMaster?: boolean;
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
   onOpenBulkImportModal?: () => void;
   onDeleteTeam: (id: string) => void;
@@ -15,6 +16,7 @@ interface TeamManagerProps {
 
 export const TeamManager: React.FC<TeamManagerProps> = ({
   dbState,
+  isMaster = true,
   onOpenEntityModal,
   onOpenBulkImportModal,
   onDeleteTeam,
@@ -28,6 +30,7 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
   const [onlyWithoutLogo, setOnlyWithoutLogo] = useState(false);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editUrl, setEditUrl] = useState('');
+  const [urlError, setUrlError] = useState<string | null>(null);
   const [savedSuccessTeamId, setSavedSuccessTeamId] = useState<string | null>(null);
   const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
 
@@ -48,14 +51,23 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
   const handleStartEdit = (teamId: string, currentUrl?: string) => {
     setEditingTeamId(teamId);
     setEditUrl(currentUrl || '');
+    setUrlError(null);
   };
 
   const handleSaveUrl = (teamId: string) => {
+    if (editUrl.trim()) {
+      const validation = validateImageUrlInput(editUrl);
+      if (!validation.isValid) {
+        setUrlError(validation.errorMessage || 'URL de escudo inválida. Deve começar com https:// ou http://');
+        return;
+      }
+    }
     if (onUpdateTeamLogo) {
       const cleanUrl = sanitizeImageUrl(editUrl) || '';
       onUpdateTeamLogo(teamId, cleanUrl);
     }
     setEditingTeamId(null);
+    setUrlError(null);
   };
 
   const handleLeagueChange = (teamId: string, newLeagueId: string) => {
@@ -150,7 +162,7 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
             <span>Sem Escudo</span>
           </button>
 
-          {onOpenBulkImportModal && (
+          {isMaster && onOpenBulkImportModal && (
             <button
               onClick={onOpenBulkImportModal}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-400 font-bold text-xs rounded-xl border border-emerald-500/30 transition-all hover:scale-[1.02]"
@@ -161,12 +173,14 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
             </button>
           )}
 
-          <button
-            onClick={() => onOpenEntityModal('team')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-all hover:scale-[1.02]"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" /> Novo Time
-          </button>
+          {isMaster && (
+            <button
+              onClick={() => onOpenEntityModal('team')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-all hover:scale-[1.02]"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" /> Novo Time
+            </button>
+          )}
         </div>
       </div>
 
@@ -187,7 +201,7 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                   <th className="py-3 px-4">País (ID)</th>
                   <th className="py-3 px-4">Liga Vinculada (Vincular Direto)</th>
                   <th className="py-3 px-4">Jogos (M/V)</th>
-                  <th className="py-3 px-4 text-right">Ações</th>
+                  {isMaster && <th className="py-3 px-4 text-right">Ações</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 font-medium">
@@ -366,84 +380,101 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                       </td>
 
                       {/* Ações */}
-                      <td className="py-3 px-4 text-right">
-                        {isEditing ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            {editUrl.trim() && (
-                              <div className="w-7 h-7 bg-[#121212] border border-emerald-500/50 rounded flex items-center justify-center overflow-hidden shrink-0 shadow-sm" title="Pré-visualização da imagem">
-                                <img
-                                  src={editUrl.trim()}
-                                  alt="Preview"
-                                  className="w-full h-full object-contain p-0.5"
-                                  onError={(e) => {
-                                    (e.target as HTMLElement).style.display = 'none';
+                      {isMaster && (
+                        <td className="py-3 px-4 text-right">
+                          {isEditing ? (
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {editUrl.trim() && isValidImageUrl(editUrl.trim()) && (
+                                  <div className="w-7 h-7 bg-[#121212] border border-emerald-500/50 rounded flex items-center justify-center overflow-hidden shrink-0 shadow-sm" title="Pré-visualização da imagem">
+                                    <img
+                                      src={editUrl.trim()}
+                                      alt="Preview"
+                                      className="w-full h-full object-contain p-0.5"
+                                      onError={(e) => {
+                                        (e.target as HTMLElement).style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                <input
+                                  type="url"
+                                  placeholder="https://..."
+                                  value={editUrl}
+                                  onChange={(e) => {
+                                    setEditUrl(e.target.value);
+                                    if (urlError) setUrlError(null);
                                   }}
+                                  className={`bg-[#1a1a1a] border rounded px-2 py-1 text-xs text-white focus:outline-none w-48 font-mono ${
+                                    urlError ? 'border-rose-500' : 'border-emerald-500/50'
+                                  }`}
                                 />
+                                <button
+                                  onClick={() => handleSaveUrl(t.id)}
+                                  className="p-1 bg-emerald-500 text-black rounded hover:bg-emerald-400"
+                                  title="Salvar Escudo"
+                                >
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingTeamId(null);
+                                    setUrlError(null);
+                                  }}
+                                  className="p-1 bg-white/10 text-gray-300 rounded hover:bg-white/20"
+                                  title="Cancelar"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
                               </div>
-                            )}
-                            <input
-                              type="url"
-                              placeholder="URL do escudo..."
-                              value={editUrl}
-                              onChange={(e) => setEditUrl(e.target.value)}
-                              className="bg-[#1a1a1a] border border-emerald-500/50 rounded px-2 py-1 text-xs text-white focus:outline-none w-48 font-mono"
-                            />
-                            <button
-                              onClick={() => handleSaveUrl(t.id)}
-                              className="p-1 bg-emerald-500 text-black rounded hover:bg-emerald-400"
-                              title="Salvar Escudo"
-                            >
-                              <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            </button>
-                            <button
-                              onClick={() => setEditingTeamId(null)}
-                              className="p-1 bg-white/10 text-gray-300 rounded hover:bg-white/20"
-                              title="Cancelar"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-end gap-1.5">
-                            {onEditTeam && (
+                              {urlError && (
+                                <span className="text-[10px] text-rose-400 flex items-center gap-1 font-sans">
+                                  <AlertCircle className="w-3 h-3" /> {urlError}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-end gap-1.5">
+                              {onEditTeam && (
+                                <button
+                                  onClick={() => onEditTeam(t)}
+                                  className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 text-[11px] transition-colors"
+                                  title="Editar Time Completo"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">Editar</span>
+                                </button>
+                              )}
                               <button
-                                onClick={() => onEditTeam(t)}
-                                className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 text-[11px] transition-colors"
-                                title="Editar Time Completo"
+                                onClick={() => handleStartEdit(t.id, t.logoUrl)}
+                                className="p-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-gray-300 hover:text-emerald-400 transition-colors border border-white/5 flex items-center gap-1 text-[11px]"
+                                title="Editar Escudo do Time"
                               >
-                                <Edit2 className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">Editar</span>
+                                <Link2 className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Escudo</span>
                               </button>
-                            )}
-                            <button
-                              onClick={() => handleStartEdit(t.id, t.logoUrl)}
-                              className="p-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-gray-300 hover:text-emerald-400 transition-colors border border-white/5 flex items-center gap-1 text-[11px]"
-                              title="Editar Escudo do Time"
-                            >
-                              <Link2 className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">Escudo</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                const homeMatches = dbState.matches.filter(m => m.homeTeamId === t.id).length;
-                                const awayMatches = dbState.matches.filter(m => m.awayTeamId === t.id).length;
-                                const total = homeMatches + awayMatches;
-                                let msg = `Excluir o time "${t.name}" (${t.id})?`;
-                                if (total > 0) {
-                                  msg += `\n\nAtenção: Isso também excluirá ${total} jogo(s) em que este time participa!`;
-                                }
-                                if (confirm(msg)) {
-                                  onDeleteTeam(t.id);
-                                }
-                              }}
-                              className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors border border-white/5"
-                              title="Excluir Time"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
-                      </td>
+                              <button
+                                onClick={() => {
+                                  const homeMatches = dbState.matches.filter(m => m.homeTeamId === t.id).length;
+                                  const awayMatches = dbState.matches.filter(m => m.awayTeamId === t.id).length;
+                                  const total = homeMatches + awayMatches;
+                                  let msg = `Excluir o time "${t.name}" (${t.id})?`;
+                                  if (total > 0) {
+                                    msg += `\n\nAtenção: Isso também excluirá ${total} jogo(s) em que este time participa!`;
+                                  }
+                                  if (confirm(msg)) {
+                                    onDeleteTeam(t.id);
+                                  }
+                                }}
+                                className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors border border-white/5"
+                                title="Excluir Time"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

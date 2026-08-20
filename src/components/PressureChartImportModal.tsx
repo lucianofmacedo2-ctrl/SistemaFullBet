@@ -25,6 +25,7 @@ interface PressureChartImportModalProps {
   onClose: () => void;
   matches: Match[];
   selectedMatchId?: string | null;
+  isMaster?: boolean;
   onSavePressureData: (matchId: string, pressureData: MatchPressureData, autoFillGoalStats?: boolean) => void;
 }
 
@@ -33,6 +34,7 @@ export const PressureChartImportModal: React.FC<PressureChartImportModalProps> =
   onClose,
   matches,
   selectedMatchId: initialSelectedMatchId,
+  isMaster = true,
   onSavePressureData,
 }) => {
   const [selectedMatchId, setSelectedMatchId] = useState<string>(initialSelectedMatchId || '');
@@ -42,7 +44,7 @@ export const PressureChartImportModal: React.FC<PressureChartImportModalProps> =
   const [analyzedData, setAnalyzedData] = useState<MatchPressureData | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [autoFillGoals, setAutoFillGoals] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<'upload' | 'result'>('upload');
+  const [activeTab, setActiveTab] = useState<'upload' | 'result'>(isMaster ? 'upload' : 'result');
   const [dragOver, setDragOver] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,13 +57,15 @@ export const PressureChartImportModal: React.FC<PressureChartImportModalProps> =
       if (m?.pressureData) {
         setAnalyzedData(m.pressureData);
         setActiveTab('result');
+      } else if (!isMaster) {
+        setActiveTab('result');
       }
     }
-  }, [initialSelectedMatchId, matches]);
+  }, [initialSelectedMatchId, matches, isMaster]);
 
-  // Support paste from clipboard (Ctrl+V)
+  // Support paste from clipboard (Ctrl+V) for Master only
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !isMaster) return;
 
     const handlePaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -228,21 +232,23 @@ export const PressureChartImportModal: React.FC<PressureChartImportModalProps> =
 
         {/* Navigation Tabs */}
         <div className="flex border-b border-slate-200 bg-slate-50 px-6 pt-2 shrink-0">
-          <button
-            onClick={() => setActiveTab('upload')}
-            className={`pb-2.5 px-4 text-xs font-bold border-b-2 flex items-center gap-2 transition-all ${
-              activeTab === 'upload'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Upload className="w-4 h-4" />
-            1. Enviar Imagem / Print
-          </button>
+          {isMaster && (
+            <button
+              onClick={() => setActiveTab('upload')}
+              className={`pb-2.5 px-4 text-xs font-bold border-b-2 flex items-center gap-2 transition-all ${
+                activeTab === 'upload'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Upload className="w-4 h-4" />
+              1. Enviar Imagem / Print
+            </button>
+          )}
 
           <button
             onClick={() => setActiveTab('result')}
-            disabled={!analyzedData}
+            disabled={!analyzedData && isMaster}
             className={`pb-2.5 px-4 text-xs font-bold border-b-2 flex items-center gap-2 transition-all ${
               activeTab === 'result'
                 ? 'border-blue-600 text-blue-600'
@@ -252,7 +258,7 @@ export const PressureChartImportModal: React.FC<PressureChartImportModalProps> =
             }`}
           >
             <TrendingUp className="w-4 h-4" />
-            2. Dados & Gráfico Reconstruído
+            {isMaster ? '2. Dados & Gráfico Reconstruído' : 'Gráfico de Pressão da Partida'}
             {analyzedData && (
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             )}
@@ -470,7 +476,7 @@ export const PressureChartImportModal: React.FC<PressureChartImportModalProps> =
             Fechar
           </button>
 
-          {analyzedData && (
+          {analyzedData && isMaster && (
             <button
               type="button"
               onClick={handleSave}

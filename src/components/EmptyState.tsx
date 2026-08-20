@@ -5,12 +5,14 @@ interface EmptyStateProps {
   onOpenMatchModal: () => void;
   onOpenEntityModal: () => void;
   onOpenCsvImportModal?: () => void;
+  isMaster?: boolean;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
   onOpenMatchModal,
   onOpenEntityModal,
   onOpenCsvImportModal,
+  isMaster = true,
 }) => {
   return (
     <div className="max-w-4xl mx-auto my-8 px-4">
@@ -46,33 +48,39 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           </div>
 
           {/* Action buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            {onOpenCsvImportModal && (
+          {isMaster ? (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              {onOpenCsvImportModal && (
+                <button
+                  onClick={onOpenCsvImportModal}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10 cursor-pointer"
+                >
+                  <UploadCloud className="w-5 h-5 stroke-[2.5]" />
+                  Subir jogos_consolidados.csv
+                </button>
+              )}
+
               <button
-                onClick={onOpenCsvImportModal}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10 cursor-pointer"
+                onClick={onOpenMatchModal}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#2C3EC4] hover:bg-[#2231A8] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#2C3EC4]/30 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10 cursor-pointer"
               >
-                <UploadCloud className="w-5 h-5 stroke-[2.5]" />
-                Subir jogos_consolidados.csv
+                <Plus className="w-5 h-5 stroke-[2.5]" />
+                Cadastrar Primeiro Jogo
               </button>
-            )}
 
-            <button
-              onClick={onOpenMatchModal}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#2C3EC4] hover:bg-[#2231A8] text-white font-bold text-sm rounded-xl shadow-lg shadow-[#2C3EC4]/30 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10 cursor-pointer"
-            >
-              <Plus className="w-5 h-5 stroke-[2.5]" />
-              Cadastrar Primeiro Jogo
-            </button>
-
-            <button
-              onClick={onOpenEntityModal}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-sm rounded-xl transition-all cursor-pointer"
-            >
-              <Globe className="w-4 h-4 text-[#2C3EC4]" />
-              Cadastrar Entidade
-            </button>
-          </div>
+              <button
+                onClick={onOpenEntityModal}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-sm rounded-xl transition-all cursor-pointer"
+              >
+                <Globe className="w-4 h-4 text-[#2C3EC4]" />
+                Cadastrar Entidade
+              </button>
+            </div>
+          ) : (
+            <div className="p-4 bg-white/5 border border-white/10 rounded-xl text-gray-300 text-sm">
+              Seu perfil é de <strong>Consulta e Análise</strong>. Aguarde o administrador master cadastrar partidas ou atualizar a base de dados.
+            </div>
+          )}
         </div>
       </div>
     </div>

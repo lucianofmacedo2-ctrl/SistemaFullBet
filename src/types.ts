@@ -178,15 +178,34 @@ export interface Match {
   createdAt: string;
 }
 
+export type UserRole = 'MASTER' | 'CONSULTOR';
+export type UserAccessDuration = '30_DAYS' | '90_DAYS' | '180_DAYS' | '1_YEAR' | 'LIFETIME' | 'CUSTOM';
+export type UserStatus = 'ACTIVE' | 'EXPIRED' | 'BLOCKED';
+
+export interface AppUser {
+  id: string; // e.g. "USER-001"
+  name: string;
+  username: string; // login identifier
+  password?: string;
+  role: UserRole;
+  duration: UserAccessDuration;
+  status: UserStatus;
+  createdAt: string; // ISO date
+  expiresAt: string | null; // ISO date string or null for lifetime
+  lastLogin?: string;
+  notes?: string;
+}
+
 export interface DbState {
   countries: Country[];
   leagues: League[];
   teams: Team[];
   matches: Match[];
+  users?: AppUser[];
 }
 
 export interface NewEntityCreatedNotification {
-  type: 'country' | 'league' | 'team' | 'match';
+  type: 'country' | 'league' | 'team' | 'match' | 'user';
   id: string;
   name: string;
 }

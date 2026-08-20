@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Globe, Trophy, Shield, Check, CheckCircle2, AlertCircle, Loader2, Image as ImageIcon } from 'lucide-react';
+import { X, Sparkles, Globe, Trophy, Shield, Check, CheckCircle2, AlertCircle, Loader2, Image as ImageIcon, AlertTriangle } from 'lucide-react';
 import { DbState, NewEntityCreatedNotification } from '../types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from '../utils/idGenerator';
+import { validateImageUrlInput, sanitizeImageUrl } from '../utils/imageHelper';
 
 interface EntityFormModalProps {
   isOpen: boolean;

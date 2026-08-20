@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Trophy, Plus, Search, Trash2, Globe, Link2, Check, X, Edit2 } from 'lucide-react';
+import { Trophy, Plus, Search, Trash2, Globe, Link2, Check, X, Edit2, AlertCircle } from 'lucide-react';
 import { DbState, League } from '../types';
+import { isValidImageUrl, validateImageUrlInput, sanitizeImageUrl } from '../utils/imageHelper';
 
 interface LeagueManagerProps {
   dbState: DbState;
+  isMaster?: boolean;
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
   onDeleteLeague: (id: string) => void;
   onUpdateLeagueLogo?: (leagueId: string, logoUrl: string) => void;
@@ -12,6 +14,7 @@ interface LeagueManagerProps {
 
 export const LeagueManager: React.FC<LeagueManagerProps> = ({
   dbState,
+  isMaster = true,
   onOpenEntityModal,
   onDeleteLeague,
   onUpdateLeagueLogo,
@@ -20,6 +23,7 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [editingLeagueId, setEditingLeagueId] = useState<string | null>(null);
   const [editUrl, setEditUrl] = useState('');
+  const [urlError, setUrlError] = useState<string | null>(null);
 
   const leagues = dbState.leagues.filter(l =>
     l.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -30,13 +34,23 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
   const handleStartEdit = (leagueId: string, currentUrl?: string) => {
     setEditingLeagueId(leagueId);
     setEditUrl(currentUrl || '');
+    setUrlError(null);
   };
 
   const handleSaveUrl = (leagueId: string) => {
+    if (editUrl.trim()) {
+      const validation = validateImageUrlInput(editUrl);
+      if (!validation.isValid) {
+        setUrlError(validation.errorMessage || 'URL de logo inválida. Deve começar com https:// ou http://');
+        return;
+      }
+    }
     if (onUpdateLeagueLogo) {
-      onUpdateLeagueLogo(leagueId, editUrl.trim());
+      const cleaned = sanitizeImageUrl(editUrl) || '';
+      onUpdateLeagueLogo(leagueId, cleaned);
     }
     setEditingLeagueId(null);
+    setUrlError(null);
   };
 
   return (
@@ -65,12 +79,14 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
             />
           </div>
 
-          <button
-            onClick={() => onOpenEntityModal('league')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-all hover:scale-[1.02]"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" /> Nova Liga
-          </button>
+          {isMaster && (
+            <button
+              onClick={() => onOpenEntityModal('league')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-all hover:scale-[1.02]"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" /> Nova Liga
+            </button>
+          )}
         </div>
       </div>
 
@@ -91,7 +107,7 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
                   <th className="py-3 px-4">País (ID)</th>
                   <th className="py-3 px-4">Tipo</th>
                   <th className="py-3 px-4">Partidas</th>
-                  <th className="py-3 px-4 text-right">Ações</th>
+                  {isMaster && <th className="py-3 px-4 text-right">Ações</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 font-medium">
@@ -102,7 +118,7 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
                   return (
                     <tr key={l.id} className="hover:bg-white/[0.02] transition-colors">
                       <td className="py-3 px-4">
-                        {l.logoUrl ? (
+                        {isValidImageUrl(l.logoUrl) ? (
                           <img
                             src={l.logoUrl}
                             alt={l.name}
@@ -142,82 +158,99 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
                           {matchesCount} partidas
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
-                        {isEditing ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            {editUrl.trim() && (
-                              <div className="w-7 h-7 bg-[#121212] border border-emerald-500/50 rounded flex items-center justify-center overflow-hidden shrink-0 shadow-sm" title="Pré-visualização do logo">
-                                <img
-                                  src={editUrl.trim()}
-                                  alt="Preview"
-                                  className="w-full h-full object-contain p-0.5"
-                                  onError={(e) => {
-                                    (e.target as HTMLElement).style.display = 'none';
+                      {isMaster && (
+                        <td className="py-3 px-4 text-right">
+                          {isEditing ? (
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {editUrl.trim() && isValidImageUrl(editUrl.trim()) && (
+                                  <div className="w-7 h-7 bg-[#121212] border border-emerald-500/50 rounded flex items-center justify-center overflow-hidden shrink-0 shadow-sm" title="Pré-visualização do logo">
+                                    <img
+                                      src={editUrl.trim()}
+                                      alt="Preview"
+                                      className="w-full h-full object-contain p-0.5"
+                                      onError={(e) => {
+                                        (e.target as HTMLElement).style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                <input
+                                  type="url"
+                                  placeholder="https://..."
+                                  value={editUrl}
+                                  onChange={(e) => {
+                                    setEditUrl(e.target.value);
+                                    if (urlError) setUrlError(null);
                                   }}
+                                  className={`bg-[#1a1a1a] border rounded px-2 py-1 text-xs text-white focus:outline-none w-48 font-mono ${
+                                    urlError ? 'border-rose-500' : 'border-emerald-500/50'
+                                  }`}
                                 />
+                                <button
+                                  onClick={() => handleSaveUrl(l.id)}
+                                  className="p-1 bg-emerald-500 text-black rounded hover:bg-emerald-400"
+                                  title="Salvar Logo"
+                                >
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingLeagueId(null);
+                                    setUrlError(null);
+                                  }}
+                                  className="p-1 bg-white/10 text-gray-300 rounded hover:bg-white/20"
+                                  title="Cancelar"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
                               </div>
-                            )}
-                            <input
-                              type="url"
-                              placeholder="URL do logo da liga..."
-                              value={editUrl}
-                              onChange={(e) => setEditUrl(e.target.value)}
-                              className="bg-[#1a1a1a] border border-emerald-500/50 rounded px-2 py-1 text-xs text-white focus:outline-none w-48 font-mono"
-                            />
-                            <button
-                              onClick={() => handleSaveUrl(l.id)}
-                              className="p-1 bg-emerald-500 text-black rounded hover:bg-emerald-400"
-                              title="Salvar Logo"
-                            >
-                              <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            </button>
-                            <button
-                              onClick={() => setEditingLeagueId(null)}
-                              className="p-1 bg-white/10 text-gray-300 rounded hover:bg-white/20"
-                              title="Cancelar"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-end gap-1.5">
-                            {onEditLeague && (
+                              {urlError && (
+                                <span className="text-[10px] text-rose-400 flex items-center gap-1 font-sans">
+                                  <AlertCircle className="w-3 h-3" /> {urlError}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-end gap-1.5">
+                              {onEditLeague && (
+                                <button
+                                  onClick={() => onEditLeague(l)}
+                                  className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 text-[11px] transition-colors"
+                                  title="Editar Liga Completa"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">Editar</span>
+                                </button>
+                              )}
                               <button
-                                onClick={() => onEditLeague(l)}
-                                className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 text-[11px] transition-colors"
-                                title="Editar Liga Completa"
+                                onClick={() => handleStartEdit(l.id, l.logoUrl)}
+                                className="p-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-gray-300 hover:text-emerald-400 transition-colors border border-white/5 flex items-center gap-1 text-[11px]"
+                                title="Editar Logo da Liga"
                               >
-                                <Edit2 className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">Editar</span>
+                                <Link2 className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Logo</span>
                               </button>
-                            )}
-                            <button
-                              onClick={() => handleStartEdit(l.id, l.logoUrl)}
-                              className="p-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-gray-300 hover:text-emerald-400 transition-colors border border-white/5 flex items-center gap-1 text-[11px]"
-                              title="Editar Logo da Liga"
-                            >
-                              <Link2 className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">Logo</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                const matches = dbState.matches.filter(m => m.leagueId === l.id).length;
-                                let msg = `Excluir a liga "${l.name}" (${l.id})?`;
-                                if (matches > 0) {
-                                  msg += `\n\nAtenção: Isso também excluirá ${matches} jogo(s) vinculados a esta liga!`;
-                                }
-                                if (confirm(msg)) {
-                                  onDeleteLeague(l.id);
-                                }
-                              }}
-                              className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors border border-white/5"
-                              title="Excluir Liga"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
-                      </td>
+                              <button
+                                onClick={() => {
+                                  const matches = dbState.matches.filter(m => m.leagueId === l.id).length;
+                                  let msg = `Excluir a liga "${l.name}" (${l.id})?`;
+                                  if (matches > 0) {
+                                    msg += `\n\nAtenção: Isso também excluirá ${matches} jogo(s) vinculados a esta liga!`;
+                                  }
+                                  if (confirm(msg)) {
+                                    onDeleteLeague(l.id);
+                                  }
+                                }}
+                                className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors border border-white/5"
+                                title="Excluir Liga"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -229,3 +262,4 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
     </div>
   );
 };
+

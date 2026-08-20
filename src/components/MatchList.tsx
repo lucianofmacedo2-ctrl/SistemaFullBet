@@ -41,6 +41,7 @@ import { PressureChartViewer } from './PressureChartViewer';
 
 interface MatchListProps {
   dbState: DbState;
+  isMaster?: boolean;
   onEditMatch: (match: Match) => void;
   onDeleteMatch: (matchId: string) => void;
   onOpenMatchModal: () => void;
@@ -155,6 +156,7 @@ export function checkMatchCompleteness(match: Match): CompletenessResult {
 
 export const MatchList: React.FC<MatchListProps> = ({
   dbState,
+  isMaster = true,
   onEditMatch,
   onDeleteMatch,
   onOpenMatchModal,
@@ -1227,16 +1229,16 @@ export const MatchList: React.FC<MatchListProps> = ({
             )}
           </div>
 
-          {/* Score Pill */}
+          {/* Score Pill & HT */}
           <div className="col-span-1 text-center flex flex-col items-center justify-center">
             <button
               type="button"
               onClick={() => {
-                if (onOpenQuickScore) onOpenQuickScore(match);
+                if (isMaster && onOpenQuickScore) onOpenQuickScore(match);
                 else onOpenStatsModal(match);
               }}
               className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-300 hover:border-blue-500 text-blue-950 rounded-xl font-black text-lg sm:text-xl shadow-xs font-mono tracking-wider min-w-[68px] transition-all cursor-pointer hover:scale-105"
-              title="Clique para Lançar/Editar Placar & Odds Rápido"
+              title={isMaster ? "Clique para Lançar/Editar Placar & Odds Rápido" : "Ver Estatísticas"}
             >
               {match.homeScore !== null && match.awayScore !== null ? (
                 `${match.homeScore} - ${match.awayScore}`
@@ -1244,6 +1246,14 @@ export const MatchList: React.FC<MatchListProps> = ({
                 <span className="text-xs text-slate-400 font-sans uppercase">vs</span>
               )}
             </button>
+            {match.stats?.halftimeHomeScore != null && match.stats?.halftimeAwayScore != null && (
+              <span
+                className="mt-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 font-mono text-[10px] font-bold border border-blue-200"
+                title="Placar do 1º Tempo (HT)"
+              >
+                HT: {match.stats.halftimeHomeScore} - {match.stats.halftimeAwayScore}
+              </span>
+            )}
           </div>
 
           {/* Away Team */}
@@ -1530,8 +1540,8 @@ export const MatchList: React.FC<MatchListProps> = ({
               </button>
             )}
 
-            {/* Quick Score button */}
-            {onOpenQuickScore && (
+            {/* Quick Score button (Master only) */}
+            {isMaster && onOpenQuickScore && (
               <button
                 type="button"
                 onClick={() => onOpenQuickScore(match)}
@@ -1547,35 +1557,39 @@ export const MatchList: React.FC<MatchListProps> = ({
             <button
               onClick={() => onOpenStatsModal(match)}
               className="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold border border-blue-500 flex items-center gap-1 transition-all shadow-xs"
-              title="Lançar/Editar Placar & Estatísticas"
+              title={isMaster ? "Lançar/Editar Placar & Estatísticas" : "Ver Estatísticas da Partida"}
             >
               <BarChart2 className="w-3.5 h-3.5" />
-              <span>{match.status === 'AGENDADO' ? 'Lançar Stats' : 'Estatísticas'}</span>
+              <span>{isMaster ? (match.status === 'AGENDADO' ? 'Lançar Stats' : 'Estatísticas') : 'Ver Estatísticas'}</span>
             </button>
 
-            <button
-              onClick={() => onEditMatch(match)}
-              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors border border-slate-200"
-              title="Editar Partida"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-            </button>
+            {isMaster && (
+              <>
+                <button
+                  onClick={() => onEditMatch(match)}
+                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors border border-slate-200"
+                  title="Editar Partida"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
 
-            <button
-              onClick={() => {
-                if (
-                  confirm(
-                    `Tem certeza que deseja excluir o jogo ${match.id} (${match.homeTeamName} x ${match.awayTeamName})?`
-                  )
-                ) {
-                  onDeleteMatch(match.id);
-                }
-              }}
-              className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 transition-colors border border-slate-200"
-              title="Excluir Partida"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+                <button
+                  onClick={() => {
+                    if (
+                      confirm(
+                        `Tem certeza que deseja excluir o jogo ${match.id} (${match.homeTeamName} x ${match.awayTeamName})?`
+                      )
+                    ) {
+                      onDeleteMatch(match.id);
+                    }
+                  }}
+                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 transition-colors border border-slate-200"
+                  title="Excluir Partida"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

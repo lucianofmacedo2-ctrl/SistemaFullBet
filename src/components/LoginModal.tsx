@@ -1,0 +1,194 @@
+import React, { useState } from 'react';
+import {
+  Lock,
+  User,
+  Key,
+  Shield,
+  CheckCircle2,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Crown,
+  Sparkles,
+  ArrowRight
+} from 'lucide-react';
+import { AppUser } from '../types';
+import { getUserEffectiveStatus } from '../services/authService';
+
+interface LoginModalProps {
+  isOpen: boolean;
+  onClose?: () => void;
+  users: AppUser[];
+  onLoginSuccess: (user: AppUser) => void;
+  allowClose?: boolean;
+}
+
+export const LoginModal: React.FC<LoginModalProps> = ({
+  isOpen,
+  onClose,
+  users = [],
+  onLoginSuccess,
+  allowClose = false,
+}) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setLoading(true);
+
+    const cleanUsername = username.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    if (!cleanUsername) {
+      setErrorMessage('Por favor, informe seu usuário ou e-mail de acesso.');
+      setLoading(false);
+      return;
+    }
+
+    const matchedUser = users.find(
+      u => u.username.toLowerCase() === cleanUsername
+    );
+
+    if (!matchedUser) {
+      setErrorMessage('Usuário não encontrado. Verifique o login digitado.');
+      setLoading(false);
+      return;
+    }
+
+    // Verify password if set
+    if (matchedUser.password && matchedUser.password !== cleanPassword) {
+      setErrorMessage('Senha incorreta. Tente novamente.');
+      setLoading(false);
+      return;
+    }
+
+    // Check account status
+    const eff = getUserEffectiveStatus(matchedUser);
+    if (eff.status === 'BLOCKED') {
+      setErrorMessage('Esta conta está bloqueada pelo administrador. Entre em contato com o suporte.');
+      setLoading(false);
+      return;
+    }
+
+    // Login successful
+    setLoading(false);
+    onLoginSuccess(matchedUser);
+  };
+
+  const handleQuickLoginAsMaster = () => {
+    const masterUser = users.find(u => u.role === 'MASTER') || users[0];
+    if (masterUser) {
+      onLoginSuccess(masterUser);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* Header Visual */}
+        <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-6 text-white text-center relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+          <div className="w-14 h-14 rounded-2xl bg-blue-600 border border-blue-400 text-white font-black text-2xl flex items-center justify-center mx-auto shadow-lg shadow-blue-500/30 mb-3">
+            ⚽
+          </div>
+          <h2 className="text-xl font-black tracking-tight text-white">
+            FUT<span className="text-blue-400">LFM2</span>
+          </h2>
+          <p className="text-xs text-slate-300 mt-1 font-medium">
+            Acesso ao Sistema & Análise Esportiva
+          </p>
+        </div>
+
+        {/* Login Form */}
+        <form onSubmit={handleLogin} className="p-6 space-y-4">
+          {errorMessage && (
+            <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700 flex items-center gap-2.5 animate-shake">
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              Usuário / Login
+            </label>
+            <div className="relative">
+              <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                required
+                autoFocus
+                placeholder="Ex: master ou seu.usuario"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9.5 pr-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white font-medium"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              Senha de Acesso
+            </label>
+            <div className="relative">
+              <Key className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                placeholder="Informe sua senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9.5 pr-10 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white font-medium font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Entrar no Sistema</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+
+          {/* Master quick button helper */}
+          <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleQuickLoginAsMaster}
+              className="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl text-xs font-bold text-amber-800 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-600" />
+              <span>Entrar com Perfil Master Principal (Padrão)</span>
+            </button>
+
+            {allowClose && onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-xs text-slate-500 hover:text-slate-800 font-semibold py-1"
+              >
+                Continuar sem alterar
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { DbState, Match, NewEntityCreatedNotification, Country, League, Team } from './types';
+import { DbState, Match, NewEntityCreatedNotification, Country, League, Team, AppUser } from './types';
 import { fetchDatabaseState, saveDatabaseState, clearDatabase } from './services/dbService';
 
 import { Navbar } from './components/Navbar';
@@ -29,11 +29,21 @@ import { QuickScoreModal } from './components/QuickScoreModal';
 import { PressureChartImportModal } from './components/PressureChartImportModal';
 import { CsvImportSyncModal } from './components/CsvImportSyncModal';
 import { SyncModal } from './components/SyncModal';
+import { LoginModal } from './components/LoginModal';
+import { UserManagerModal } from './components/UserManagerModal';
+import { AccessExpiredOverlay } from './components/AccessExpiredOverlay';
 import { ToastNotification } from './components/ToastNotification';
 import { MatchOdds, MatchStats, MatchStatus, MatchPressureData } from './types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from './utils/idGenerator';
 import { ParsedMatchRow, ParsedMatchUpdateRow } from './utils/excelHelper';
 import { sanitizeDbImages, sanitizeImageUrl } from './utils/imageHelper';
+import {
+  getCurrentAuthUser,
+  setCurrentAuthUser,
+  ensureDefaultUsers,
+  getUserEffectiveStatus,
+  DEFAULT_MASTER_USER
+} from './services/authService';
 
 export default function App() {
   const [dbState, setDbState] = useState<DbState>({
@@ -41,10 +51,19 @@ export default function App() {
     leagues: [],
     teams: [],
     matches: [],
+    users: [DEFAULT_MASTER_USER],
+  });
+
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
+    return getCurrentAuthUser() || DEFAULT_MASTER_USER;
   });
 
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats' | 'pending_logos'>('matches');
+
+  // Auth Modals state
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isUserManagerModalOpen, setIsUserManagerModalOpen] = useState(false);
 
   // Modals state
   const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
@@ -99,11 +118,67 @@ export default function App() {
       setIsLoading(true);
       const data = await fetchDatabaseState();
       const cleanData = sanitizeDbImages(data);
-      setDbState(cleanData);
+      const guaranteedUsers = ensureDefaultUsers(cleanData.users);
+      const finalState = { ...cleanData, users: guaranteedUsers };
+      setDbState(finalState);
+
+      // Verify active user validity against latest users
+      const savedUser = getCurrentAuthUser();
+      if (savedUser) {
+        const found = guaranteedUsers.find(u => u.id === savedUser.id);
+        if (found) {
+          setCurrentUser(found);
+          setCurrentAuthUser(found);
+        } else {
+          // If saved user is no longer present, fallback to default master
+          const master = guaranteedUsers.find(u => u.role === 'MASTER') || DEFAULT_MASTER_USER;
+          setCurrentUser(master);
+          setCurrentAuthUser(master);
+        }
+      } else {
+        const master = guaranteedUsers.find(u => u.role === 'MASTER') || DEFAULT_MASTER_USER;
+        setCurrentUser(master);
+        setCurrentAuthUser(master);
+      }
+
       setIsLoading(false);
     }
     initDb();
   }, []);
+
+  const handleLoginSuccess = (user: AppUser) => {
+    setCurrentUser(user);
+    setCurrentAuthUser(user);
+    setIsLoginModalOpen(false);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setCurrentAuthUser(null);
+    setIsLoginModalOpen(true);
+  };
+
+  const handleSwitchUser = (user: AppUser) => {
+    setCurrentUser(user);
+    setCurrentAuthUser(user);
+    setIsUserManagerModalOpen(false);
+  };
+
+  const handleSaveUsers = async (updatedUsers: AppUser[]) => {
+    const ensured = ensureDefaultUsers(updatedUsers);
+    const newState = { ...dbState, users: ensured };
+    setDbState(newState);
+    await saveDatabaseState(newState);
+
+    // Keep currentUser up to date if modified in manager
+    if (currentUser) {
+      const refreshed = ensured.find(u => u.id === currentUser.id);
+      if (refreshed) {
+        setCurrentUser(refreshed);
+        setCurrentAuthUser(refreshed);
+      }
+    }
+  };
 
   // Save handler for Match modal
   const handleSaveMatch = async (
@@ -972,6 +1047,10 @@ export default function App() {
     setIsEntityModalOpen(true);
   };
 
+  const isMaster = currentUser?.role === 'MASTER';
+  const effectiveUserStatus = currentUser ? getUserEffectiveStatus(currentUser) : null;
+  const isAccessBlockedOrExpired = currentUser ? !effectiveUserStatus?.canAccess : false;
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-800 flex items-center justify-center p-4">
@@ -988,6 +1067,7 @@ export default function App() {
       {/* Navbar */}
       <Navbar
         dbState={dbState}
+        currentUser={currentUser}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenMatchModal={handleOpenNewMatchModal}
@@ -999,22 +1079,52 @@ export default function App() {
         onOpenSyncModal={() => setIsSyncModalOpen(true)}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
         onOpenResetModal={() => setIsResetModalOpen(true)}
+        onOpenUserManagerModal={() => setIsUserManagerModalOpen(true)}
+        onOpenLoginModal={() => setIsLoginModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        {/* Main Content by Tab */}
-        {activeTab === 'matches' && (
+        {isAccessBlockedOrExpired && currentUser ? (
+          <AccessExpiredOverlay
+            currentUser={currentUser}
+            onLogout={handleLogout}
+            onOpenLoginModal={() => setIsLoginModalOpen(true)}
+          />
+        ) : (
           <>
-            {dbState.matches.length === 0 ? (
-              <EmptyState
-                onOpenMatchModal={handleOpenNewMatchModal}
-                onOpenEntityModal={() => handleOpenEntityModal('country')}
-                onOpenCsvImportModal={() => setIsCsvImportModalOpen(true)}
-              />
-            ) : (
-              <MatchList
+            {/* Main Content by Tab */}
+            {activeTab === 'matches' && (
+              <>
+                {dbState.matches.length === 0 ? (
+                  <EmptyState
+                    onOpenMatchModal={handleOpenNewMatchModal}
+                    onOpenEntityModal={() => handleOpenEntityModal('country')}
+                    onOpenCsvImportModal={() => setIsCsvImportModalOpen(true)}
+                    isMaster={isMaster}
+                  />
+                ) : (
+                  <MatchList
+                    dbState={dbState}
+                    isMaster={isMaster}
+                    onEditMatch={handleEditMatch}
+                    onDeleteMatch={handleDeleteMatch}
+                    onOpenMatchModal={handleOpenNewMatchModal}
+                    onOpenStatsModal={handleOpenStatsModal}
+                    onOpenQuickScore={handleOpenQuickScore}
+                    onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
+                    onOpenBulkMatchUpdateModal={() => setIsBulkMatchUpdateModalOpen(true)}
+                    onOpenPressureChartModal={handleOpenPressureChartModal}
+                  />
+                )}
+              </>
+            )}
+
+            {activeTab === 'schedule' && (
+              <DailyMatchesView
                 dbState={dbState}
+                isMaster={isMaster}
                 onEditMatch={handleEditMatch}
                 onDeleteMatch={handleDeleteMatch}
                 onOpenMatchModal={handleOpenNewMatchModal}
@@ -1025,67 +1135,56 @@ export default function App() {
                 onOpenPressureChartModal={handleOpenPressureChartModal}
               />
             )}
+
+            {activeTab === 'countries' && (
+              <CountryManager
+                dbState={dbState}
+                isMaster={isMaster}
+                onOpenEntityModal={handleOpenEntityModal}
+                onDeleteCountry={handleDeleteCountry}
+                onUpdateCountryFlag={handleUpdateCountryFlag}
+                onEditCountry={handleOpenEditCountry}
+              />
+            )}
+
+            {activeTab === 'leagues' && (
+              <LeagueManager
+                dbState={dbState}
+                isMaster={isMaster}
+                onOpenEntityModal={handleOpenEntityModal}
+                onDeleteLeague={handleDeleteLeague}
+                onUpdateLeagueLogo={handleUpdateLeagueLogo}
+                onEditLeague={handleOpenEditLeague}
+              />
+            )}
+
+            {activeTab === 'teams' && (
+              <TeamManager
+                dbState={dbState}
+                isMaster={isMaster}
+                onOpenEntityModal={handleOpenEntityModal}
+                onOpenBulkImportModal={() => setIsBulkTeamModalOpen(true)}
+                onDeleteTeam={handleDeleteTeam}
+                onUpdateTeamLogo={handleUpdateTeamLogo}
+                onUpdateTeamLeague={handleUpdateTeamLeague}
+                onEditTeam={handleOpenEditTeam}
+              />
+            )}
+
+            {activeTab === 'stats' && (
+              <StatsDashboard dbState={dbState} />
+            )}
+
+            {activeTab === 'pending_logos' && (
+              <PendingLogosManager
+                dbState={dbState}
+                onUpdateTeamLogo={handleUpdateTeamLogo}
+                onUpdateLeagueLogo={handleUpdateLeagueLogo}
+                onUpdateCountryFlag={handleUpdateCountryFlag}
+                onBulkUpdateLogos={handleBulkUpdateLogos}
+              />
+            )}
           </>
-        )}
-
-        {activeTab === 'schedule' && (
-          <DailyMatchesView
-            dbState={dbState}
-            onEditMatch={handleEditMatch}
-            onDeleteMatch={handleDeleteMatch}
-            onOpenMatchModal={handleOpenNewMatchModal}
-            onOpenStatsModal={handleOpenStatsModal}
-            onOpenQuickScore={handleOpenQuickScore}
-            onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
-            onOpenBulkMatchUpdateModal={() => setIsBulkMatchUpdateModalOpen(true)}
-            onOpenPressureChartModal={handleOpenPressureChartModal}
-          />
-        )}
-
-        {activeTab === 'countries' && (
-          <CountryManager
-            dbState={dbState}
-            onOpenEntityModal={handleOpenEntityModal}
-            onDeleteCountry={handleDeleteCountry}
-            onUpdateCountryFlag={handleUpdateCountryFlag}
-            onEditCountry={handleOpenEditCountry}
-          />
-        )}
-
-        {activeTab === 'leagues' && (
-          <LeagueManager
-            dbState={dbState}
-            onOpenEntityModal={handleOpenEntityModal}
-            onDeleteLeague={handleDeleteLeague}
-            onUpdateLeagueLogo={handleUpdateLeagueLogo}
-            onEditLeague={handleOpenEditLeague}
-          />
-        )}
-
-        {activeTab === 'teams' && (
-          <TeamManager
-            dbState={dbState}
-            onOpenEntityModal={handleOpenEntityModal}
-            onOpenBulkImportModal={() => setIsBulkTeamModalOpen(true)}
-            onDeleteTeam={handleDeleteTeam}
-            onUpdateTeamLogo={handleUpdateTeamLogo}
-            onUpdateTeamLeague={handleUpdateTeamLeague}
-            onEditTeam={handleOpenEditTeam}
-          />
-        )}
-
-        {activeTab === 'stats' && (
-          <StatsDashboard dbState={dbState} />
-        )}
-
-        {activeTab === 'pending_logos' && (
-          <PendingLogosManager
-            dbState={dbState}
-            onUpdateTeamLogo={handleUpdateTeamLogo}
-            onUpdateLeagueLogo={handleUpdateLeagueLogo}
-            onUpdateCountryFlag={handleUpdateCountryFlag}
-            onBulkUpdateLogos={handleBulkUpdateLogos}
-          />
         )}
       </main>
 
@@ -1094,6 +1193,7 @@ export default function App() {
         isOpen={isStatsModalOpen}
         onClose={() => setIsStatsModalOpen(false)}
         match={statsMatch}
+        isMaster={isMaster}
         onSaveStats={handleSaveStats}
         onOpenPressureChartModal={handleOpenPressureChartModal}
       />
@@ -1106,6 +1206,7 @@ export default function App() {
         }}
         matches={dbState.matches}
         selectedMatchId={pressureSelectedMatchId}
+        isMaster={isMaster}
         onSavePressureData={handleSavePressureData}
       />
 
@@ -1198,6 +1299,25 @@ export default function App() {
         onClose={() => setIsSyncModalOpen(false)}
         dbState={dbState}
         onSyncComplete={handleCsvSyncComplete}
+      />
+
+      {/* User Management Modal (Master Only) */}
+      <UserManagerModal
+        isOpen={isUserManagerModalOpen}
+        onClose={() => setIsUserManagerModalOpen(false)}
+        users={dbState.users || [DEFAULT_MASTER_USER]}
+        currentAuthUser={currentUser}
+        onSaveUsers={handleSaveUsers}
+        onSwitchUser={handleSwitchUser}
+      />
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen || !currentUser}
+        onClose={() => setIsLoginModalOpen(false)}
+        users={dbState.users || [DEFAULT_MASTER_USER]}
+        onLoginSuccess={handleLoginSuccess}
+        allowClose={!!currentUser && !!effectiveUserStatus?.canAccess}
       />
 
       {/* Unique ID Toast Notifications */}
