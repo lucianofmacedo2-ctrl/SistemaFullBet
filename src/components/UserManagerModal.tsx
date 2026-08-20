@@ -23,7 +23,10 @@ import {
   UserCheck,
   AlertTriangle,
   Crown,
-  FileText
+  FileText,
+  Share2,
+  ExternalLink,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { AppUser, UserRole, UserAccessDuration, UserStatus, DbState } from '../types';
 import {
@@ -34,6 +37,28 @@ import {
   DEFAULT_MASTER_USER
 } from '../services/authService';
 import { getNextUniqueId } from '../utils/idGenerator';
+
+// Helper to determine clean base app URL
+export function getAppBaseUrl(): string {
+  if (typeof window !== 'undefined' && window.location) {
+    const origin = window.location.origin;
+    const pathname = window.location.pathname;
+    return `${origin}${pathname}`;
+  }
+  return 'https://sistema-full-bet-lucianofelixmacedo.vercel.app/';
+}
+
+export function getConsultaPortalUrl(): string {
+  const base = getAppBaseUrl();
+  const sep = base.includes('?') ? '&' : '?';
+  return `${base}${sep}mode=consulta`;
+}
+
+export function getUserAccessUrl(username: string): string {
+  const base = getAppBaseUrl();
+  const sep = base.includes('?') ? '&' : '?';
+  return `${base}${sep}user=${encodeURIComponent(username)}`;
+}
 
 interface UserManagerModalProps {
   isOpen: boolean;
@@ -261,11 +286,29 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
 
   const handleCopyAccessCredentials = (user: AppUser) => {
     const eff = getUserEffectiveStatus(user);
-    const text = `⚽ *ACESSO AO FUTLFM2*\n\n👤 *Nome:* ${user.name}\n🔑 *Login:* ${user.username}\n🔒 *Senha:* ${user.password}\n⭐ *Perfil:* ${user.role === 'MASTER' ? 'Administrador Master' : 'Consulta & Análise Esportiva'}\n⏳ *Validade:* ${eff.formattedExpiresAt}\n\n🔗 Acesse o sistema e informe suas credenciais para entrar.`;
+    const directLink = getUserAccessUrl(user.username);
+    const text = `⚽ *ACESSO AO SISTEMA DE ANÁLISE FULL BET (FUTLFM2)*\n\n👤 *Nome:* ${user.name}\n🔑 *Login:* ${user.username}\n🔒 *Senha:* ${user.password}\n⭐ *Perfil:* ${user.role === 'MASTER' ? 'Administrador Master' : 'Consulta & Análise Esportiva'}\n⏳ *Validade do Acesso:* ${eff.formattedExpiresAt}\n\n🔗 *Link Direto de Acesso:*\n${directLink}\n\n💡 *Como Acessar:*\nBasta clicar no link acima e digitar sua senha para entrar.`;
 
     navigator.clipboard.writeText(text).then(() => {
       setCopyFeedback(user.id);
       setTimeout(() => setCopyFeedback(null), 3000);
+    });
+  };
+
+  const handleCopyDirectLink = (user: AppUser) => {
+    const directLink = getUserAccessUrl(user.username);
+    navigator.clipboard.writeText(directLink).then(() => {
+      setCopyFeedback(`link-${user.id}`);
+      setTimeout(() => setCopyFeedback(null), 3000);
+    });
+  };
+
+  const [portalCopyFeedback, setPortalCopyFeedback] = useState(false);
+  const handleCopyConsultaPortal = () => {
+    const portalUrl = getConsultaPortalUrl();
+    navigator.clipboard.writeText(portalUrl).then(() => {
+      setPortalCopyFeedback(true);
+      setTimeout(() => setPortalCopyFeedback(false), 3000);
     });
   };
 
@@ -344,6 +387,62 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
               <p className="text-lg sm:text-xl font-black text-red-700">{blockedCount}</p>
             </div>
             <Lock className="w-6 h-6 text-red-500" />
+          </div>
+        </div>
+
+        {/* Links de Compartilhamento / Portal de Consulta */}
+        <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200/70 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shrink-0">
+          <div className="flex items-start gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+              <Share2 className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-blue-950 uppercase tracking-wide">
+                  Link para Usuários de Consulta
+                </span>
+                <span className="px-1.5 py-0.2 bg-blue-200 text-blue-900 rounded text-[10px] font-bold">
+                  Portal Seguro
+                </span>
+              </div>
+              <p className="text-xs text-blue-800/90 mt-0.5">
+                Envie este link direto aos clientes/consultores para abrirem o sistema diretamente no modo consulta seguro.
+              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                <code className="bg-white border border-blue-300 text-blue-950 px-2 py-0.5 rounded font-mono font-bold text-[11px] select-all break-all">
+                  {getConsultaPortalUrl()}
+                </code>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+            <button
+              onClick={handleCopyConsultaPortal}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+            >
+              {portalCopyFeedback ? (
+                <>
+                  <Check className="w-3.5 h-3.5 stroke-[3] text-emerald-300" />
+                  <span>Link Copiado!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copiar Link de Consulta</span>
+                </>
+              )}
+            </button>
+            <a
+              href={getConsultaPortalUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-2.5 py-2 bg-white hover:bg-blue-50 text-blue-700 border border-blue-300 rounded-xl text-xs font-bold transition-colors"
+              title="Abrir Portal de Consulta em Nova Aba"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Testar Link</span>
+            </a>
           </div>
         </div>
 
@@ -601,11 +700,24 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
                           </div>
                         )}
 
+                        {/* Copy Direct Link */}
+                        <button
+                          onClick={() => handleCopyDirectLink(user)}
+                          className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors relative"
+                          title="Copiar Link de Acesso Direto deste Usuário"
+                        >
+                          {copyFeedback === `link-${user.id}` ? (
+                            <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
+                          ) : (
+                            <LinkIcon className="w-4 h-4" />
+                          )}
+                        </button>
+
                         {/* Copy Credentials */}
                         <button
                           onClick={() => handleCopyAccessCredentials(user)}
                           className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors relative"
-                          title="Copiar dados de acesso para enviar ao usuário"
+                          title="Copiar mensagem completa de acesso para enviar no WhatsApp"
                         >
                           {copyFeedback === user.id ? (
                             <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />

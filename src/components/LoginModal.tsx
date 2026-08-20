@@ -21,6 +21,8 @@ interface LoginModalProps {
   users: AppUser[];
   onLoginSuccess: (user: AppUser) => void;
   allowClose?: boolean;
+  initialUsername?: string;
+  isConsultaPortal?: boolean;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
@@ -29,12 +31,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   users = [],
   onLoginSuccess,
   allowClose = false,
+  initialUsername = '',
+  isConsultaPortal = false,
 }) => {
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(initialUsername || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Sync initialUsername if it changes
+  React.useEffect(() => {
+    if (initialUsername) {
+      setUsername(initialUsername);
+    }
+  }, [initialUsername]);
 
   if (!isOpen) return null;
 
@@ -93,16 +104,27 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header Visual */}
-        <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-6 text-white text-center relative overflow-hidden">
+        <div className={`p-6 text-white text-center relative overflow-hidden ${
+          isConsultaPortal 
+            ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950'
+            : 'bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900'
+        }`}>
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
           <div className="w-14 h-14 rounded-2xl bg-blue-600 border border-blue-400 text-white font-black text-2xl flex items-center justify-center mx-auto shadow-lg shadow-blue-500/30 mb-3">
             ⚽
           </div>
-          <h2 className="text-xl font-black tracking-tight text-white">
-            FUT<span className="text-blue-400">LFM2</span>
+          <h2 className="text-xl font-black tracking-tight text-white flex items-center justify-center gap-2">
+            <span>FUT<span className="text-blue-400">LFM2</span></span>
+            {isConsultaPortal && (
+              <span className="px-2 py-0.5 rounded-full bg-blue-400/20 text-blue-200 text-[10px] font-bold border border-blue-300/30">
+                Portal de Consulta
+              </span>
+            )}
           </h2>
           <p className="text-xs text-slate-300 mt-1 font-medium">
-            Acesso ao Sistema & Análise Esportiva
+            {isConsultaPortal
+              ? 'Área exclusiva para Consulta & Análise de Jogos'
+              : 'Acesso ao Sistema & Análise Esportiva'}
           </p>
         </div>
 

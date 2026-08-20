@@ -63,6 +63,8 @@ export default function App() {
 
   // Auth Modals state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [loginInitialUsername, setLoginInitialUsername] = useState('');
+  const [isConsultaPortalMode, setIsConsultaPortalMode] = useState(false);
   const [isUserManagerModalOpen, setIsUserManagerModalOpen] = useState(false);
 
   // Modals state
@@ -124,8 +126,44 @@ export default function App() {
 
       // Verify active user validity against latest users
       const savedUser = getCurrentAuthUser();
-      if (savedUser) {
-        const found = guaranteedUsers.find(u => u.id === savedUser.id);
+      let targetUser = savedUser;
+      if (typeof window !== 'undefined') {
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const modeParam = urlParams.get('mode') || urlParams.get('portal');
+          const userParam = urlParams.get('user');
+
+          if (modeParam === 'consulta' || modeParam === 'viewer') {
+            setIsConsultaPortalMode(true);
+            // If currently Master or no valid user, force open the Login modal
+            if (!savedUser || savedUser.role === 'MASTER') {
+              setIsLoginModalOpen(true);
+            }
+          }
+
+          if (userParam) {
+            const foundByUserParam = guaranteedUsers.find(
+              u => u.username.toLowerCase() === userParam.toLowerCase() || u.id.toLowerCase() === userParam.toLowerCase()
+            );
+            if (foundByUserParam) {
+              setLoginInitialUsername(foundByUserParam.username);
+              // If user param was specified and matches, open login ready for them
+              if (!savedUser || savedUser.id !== foundByUserParam.id) {
+                setIsLoginModalOpen(true);
+              }
+            } else {
+              setLoginInitialUsername(userParam);
+              setIsLoginModalOpen(true);
+            }
+          }
+        } catch {
+          // Ignore URL parsing errors
+        }
+      }
+
+      // Verify active user validity against latest users
+      if (targetUser) {
+        const found = guaranteedUsers.find(u => u.id === targetUser.id);
         if (found) {
           setCurrentUser(found);
           setCurrentAuthUser(found);
@@ -1318,6 +1356,8 @@ export default function App() {
         users={dbState.users || [DEFAULT_MASTER_USER]}
         onLoginSuccess={handleLoginSuccess}
         allowClose={!!currentUser && !!effectiveUserStatus?.canAccess}
+        initialUsername={loginInitialUsername}
+        isConsultaPortal={isConsultaPortalMode || currentUser?.role === 'CONSULTOR'}
       />
 
       {/* Unique ID Toast Notifications */}
