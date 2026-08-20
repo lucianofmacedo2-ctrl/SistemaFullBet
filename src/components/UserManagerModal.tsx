@@ -97,6 +97,7 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
   // Quick Extend Menu state
   const [quickExtendUserId, setQuickExtendUserId] = useState<string | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [portalCopyFeedback, setPortalCopyFeedback] = useState(false);
 
   if (!isOpen) return null;
 
@@ -303,7 +304,6 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
     });
   };
 
-  const [portalCopyFeedback, setPortalCopyFeedback] = useState(false);
   const handleCopyConsultaPortal = () => {
     const portalUrl = getConsultaPortalUrl();
     navigator.clipboard.writeText(portalUrl).then(() => {
