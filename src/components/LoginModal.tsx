@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
 import {
-  Lock,
   User,
   Key,
-  Shield,
-  CheckCircle2,
   AlertCircle,
   Eye,
   EyeOff,
-  Crown,
-  Sparkles,
   ArrowRight
 } from 'lucide-react';
 import { AppUser } from '../types';
@@ -93,13 +88,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     onLoginSuccess(matchedUser);
   };
 
-  const handleQuickLoginAsMaster = () => {
-    const masterUser = users.find(u => u.role === 'MASTER') || users[0];
-    if (masterUser) {
-      onLoginSuccess(masterUser);
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -147,7 +135,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 type="text"
                 required
                 autoFocus
-                placeholder="Ex: master ou seu.usuario"
+                placeholder="Informe seu usuário"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9.5 pr-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white font-medium"
@@ -182,33 +170,23 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
           >
             <span>Entrar no Sistema</span>
             <ArrowRight className="w-4 h-4" />
           </button>
 
-          {/* Master quick button helper */}
-          <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={handleQuickLoginAsMaster}
-              className="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl text-xs font-bold text-amber-800 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Crown className="w-3.5 h-3.5 text-amber-600" />
-              <span>Entrar com Perfil Master Principal (Padrão)</span>
-            </button>
-
-            {allowClose && onClose && (
+          {allowClose && onClose && (
+            <div className="pt-2 text-center">
               <button
                 type="button"
                 onClick={onClose}
-                className="text-xs text-slate-500 hover:text-slate-800 font-semibold py-1"
+                className="text-xs text-slate-500 hover:text-slate-800 font-semibold py-1 hover:underline cursor-pointer"
               >
                 Continuar sem alterar
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </form>
       </div>
     </div>
