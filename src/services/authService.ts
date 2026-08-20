@@ -5,14 +5,14 @@ const ACTIVE_USER_STORAGE_KEY = 'football_active_user_session_v1';
 export const DEFAULT_MASTER_USER: AppUser = {
   id: 'USER-MASTER-001',
   name: 'Administrador Master',
-  username: 'master',
-  password: '123',
+  username: '31882844890',
+  password: 'Otavio@2010',
   role: 'MASTER',
   duration: 'LIFETIME',
   status: 'ACTIVE',
   createdAt: new Date().toISOString(),
   expiresAt: null,
-  notes: 'Perfil Master Principal com Acesso Total',
+  notes: 'Perfil Master Principal',
 };
 
 /**
@@ -161,9 +161,24 @@ export function ensureDefaultUsers(users?: AppUser[]): AppUser[] {
   if (!users || users.length === 0) {
     return [DEFAULT_MASTER_USER];
   }
-  const hasMaster = users.some(u => u.role === 'MASTER');
-  if (!hasMaster) {
+  const masterIndex = users.findIndex(u => u.role === 'MASTER');
+  if (masterIndex === -1) {
     return [DEFAULT_MASTER_USER, ...users];
+  }
+  // If master user exists with previous default username or password, update it cleanly
+  const existingMaster = users[masterIndex];
+  if (
+    existingMaster.username === 'master' ||
+    existingMaster.password === '123' ||
+    !existingMaster.password
+  ) {
+    const updated = [...users];
+    updated[masterIndex] = {
+      ...existingMaster,
+      username: DEFAULT_MASTER_USER.username,
+      password: DEFAULT_MASTER_USER.password,
+    };
+    return updated;
   }
   return users;
 }
