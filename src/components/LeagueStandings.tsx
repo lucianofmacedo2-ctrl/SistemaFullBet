@@ -23,7 +23,6 @@ import {
   ArrowUpRight, 
   ArrowDownRight, 
   Zap,
-  Whistle as WhistleIcon, // if available, or scale
   AlertTriangle,
   HelpCircle
 } from 'lucide-react';

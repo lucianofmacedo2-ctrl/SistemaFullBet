@@ -14,44 +14,180 @@ export interface ClientSyncResult {
 }
 
 export const DIV_MAP: Record<string, { countryCode: string; leagueName: string }> = {
-  E0: { countryCode: 'ING', leagueName: 'Premier League ING' },
-  E1: { countryCode: 'ING', leagueName: 'Championship ING' },
-  E2: { countryCode: 'ING', leagueName: 'League 1 ING' },
-  E3: { countryCode: 'ING', leagueName: 'League 2 ING' },
-  SC0: { countryCode: 'ESC', leagueName: 'Premiere League ESC' },
-  SC1: { countryCode: 'ESC', leagueName: 'Division 1 ESC' },
-  SC2: { countryCode: 'ESC', leagueName: 'Division 2 ESC' },
-  SC3: { countryCode: 'ESC', leagueName: 'Division 3 ESC' },
-  D1: { countryCode: 'ALE', leagueName: 'Bundesliga 1 ALE' },
-  D2: { countryCode: 'ALE', leagueName: 'Bundesliga 2 ALE' },
-  I1: { countryCode: 'ITA', leagueName: 'Serie A ITA' },
-  I2: { countryCode: 'ITA', leagueName: 'Serie B ITA' },
-  SP1: { countryCode: 'ESP', leagueName: 'La Liga 1 ESP' },
-  SP2: { countryCode: 'ESP', leagueName: 'La Liga 2 ESP' },
-  F1: { countryCode: 'FRA', leagueName: 'Le Championnat FRA' },
-  F2: { countryCode: 'FRA', leagueName: 'Division 2 FRA' },
-  N1: { countryCode: 'HOL', leagueName: 'Eredivisie HOL' },
-  B1: { countryCode: 'BEL', leagueName: 'Jupiler League BEL' },
-  P1: { countryCode: 'POR', leagueName: 'Liga I POR' },
-  T1: { countryCode: 'TUR', leagueName: 'Futbol Ligi 1 TUR' },
-  G1: { countryCode: 'GRE', leagueName: 'Ethniki Katigoria GRE' },
+  // Holanda (Netherlands)
+  N1: { countryCode: 'HOL', leagueName: 'Eredivisie' },
+  N2: { countryCode: 'HOL', leagueName: 'Eerste Divisie' },
+  // Inglaterra (England)
+  E0: { countryCode: 'ING', leagueName: 'Premier League' },
+  E1: { countryCode: 'ING', leagueName: 'Championship' },
+  E2: { countryCode: 'ING', leagueName: 'League 1' },
+  E3: { countryCode: 'ING', leagueName: 'League 2' },
+  EC: { countryCode: 'ING', leagueName: 'National League' },
+  // Escócia (Scotland)
+  SC0: { countryCode: 'ESC', leagueName: 'Premiership' },
+  SC1: { countryCode: 'ESC', leagueName: 'Championship' },
+  SC2: { countryCode: 'ESC', leagueName: 'League One' },
+  SC3: { countryCode: 'ESC', leagueName: 'League Two' },
+  // Alemanha (Germany)
+  D1: { countryCode: 'ALE', leagueName: 'Bundesliga' },
+  D2: { countryCode: 'ALE', leagueName: '2. Bundesliga' },
+  // Itália (Italy)
+  I1: { countryCode: 'ITA', leagueName: 'Serie A' },
+  I2: { countryCode: 'ITA', leagueName: 'Serie B' },
+  // Espanha (Spain)
+  SP1: { countryCode: 'ESP', leagueName: 'La Liga' },
+  SP2: { countryCode: 'ESP', leagueName: 'La Liga 2' },
+  // França (France)
+  F1: { countryCode: 'FRA', leagueName: 'Ligue 1' },
+  F2: { countryCode: 'FRA', leagueName: 'Ligue 2' },
+  // Bélgica (Belgium)
+  B1: { countryCode: 'BEL', leagueName: 'Jupiler Pro League' },
+  // Portugal
+  P1: { countryCode: 'POR', leagueName: 'Primeira Liga' },
+  P2: { countryCode: 'POR', leagueName: 'Liga Portugal 2' },
+  // Turquia (Turkey)
+  T1: { countryCode: 'TUR', leagueName: 'Süper Lig' },
+  // Grécia (Greece)
+  G1: { countryCode: 'GRE', leagueName: 'Super League' },
+  // Brasil
+  BRA1: { countryCode: 'BRA', leagueName: 'Brasileirão Série A' },
+  BRA2: { countryCode: 'BRA', leagueName: 'Brasileirão Série B' },
+  BR1: { countryCode: 'BRA', leagueName: 'Brasileirão Série A' },
+  BSA: { countryCode: 'BRA', leagueName: 'Brasileirão Série A' },
+  BSB: { countryCode: 'BRA', leagueName: 'Brasileirão Série B' },
+  // Argentina
+  ARG1: { countryCode: 'ARG', leagueName: 'Liga Profesional' },
+  ARG: { countryCode: 'ARG', leagueName: 'Liga Profesional' },
+  // Outros
+  AUT1: { countryCode: 'AUT', leagueName: 'Austrian Bundesliga' },
+  SUI1: { countryCode: 'SUI', leagueName: 'Swiss Super League' },
+  DEN1: { countryCode: 'DEN', leagueName: 'Danish Superliga' },
+  NOR1: { countryCode: 'NOR', leagueName: 'Eliteserien' },
+  SWE1: { countryCode: 'SWE', leagueName: 'Allsvenskan' },
+  MLS: { countryCode: 'USA', leagueName: 'Major League Soccer' },
+  USA1: { countryCode: 'USA', leagueName: 'Major League Soccer' },
+  MEX1: { countryCode: 'MEX', leagueName: 'Liga MX' },
 };
 
 export const COUNTRY_NAMES: Record<string, string> = {
-  ING: 'Inglaterra',
-  ESC: 'Escócia',
-  ALE: 'Alemanha',
-  ITA: 'Itália',
-  ESP: 'Espanha',
-  FRA: 'França',
+  // Holanda
   HOL: 'Holanda',
+  NED: 'Holanda',
+  NLD: 'Holanda',
+  HOLLAND: 'Holanda',
+  NETHERLANDS: 'Holanda',
+  PAISES_BAIXOS: 'Holanda',
+  'PAÍSES BAIXOS': 'Holanda',
+  'PAISES BAIXOS': 'Holanda',
+  // Inglaterra
+  ING: 'Inglaterra',
+  ENG: 'Inglaterra',
+  ENGLAND: 'Inglaterra',
+  UK: 'Inglaterra',
+  // Escócia
+  ESC: 'Escócia',
+  SCO: 'Escócia',
+  SCOTLAND: 'Escócia',
+  // Alemanha
+  ALE: 'Alemanha',
+  GER: 'Alemanha',
+  GERMANY: 'Alemanha',
+  DEU: 'Alemanha',
+  DEUTSCHLAND: 'Alemanha',
+  // Itália
+  ITA: 'Itália',
+  ITALY: 'Itália',
+  ITALIA: 'Itália',
+  // Espanha
+  ESP: 'Espanha',
+  SPA: 'Espanha',
+  SPAIN: 'Espanha',
+  ESPANA: 'Espanha',
+  ESPAÑA: 'Espanha',
+  // França
+  FRA: 'França',
+  FRANCE: 'França',
+  FRANCA: 'França',
+  // Bélgica
   BEL: 'Bélgica',
+  BELGIUM: 'Bélgica',
+  BELGICA: 'Bélgica',
+  // Portugal
   POR: 'Portugal',
+  PRT: 'Portugal',
+  PORTUGAL: 'Portugal',
+  // Turquia
   TUR: 'Turquia',
+  TURKEY: 'Turquia',
+  TURKIYE: 'Turquia',
+  TÜRKIYE: 'Turquia',
+  // Grécia
   GRE: 'Grécia',
+  GRC: 'Grécia',
+  GREECE: 'Grécia',
+  GRECIA: 'Grécia',
+  // Brasil
+  BRA: 'Brasil',
+  BRAZIL: 'Brasil',
+  BRASIL: 'Brasil',
+  // Argentina
+  ARG: 'Argentina',
+  ARGENTINA: 'Argentina',
+  // Áustria
+  AUT: 'Áustria',
+  AUSTRIA: 'Áustria',
+  // Suíça
+  SUI: 'Suíça',
+  SWI: 'Suíça',
+  SWITZERLAND: 'Suíça',
+  SUICA: 'Suíça',
+  // Dinamarca
+  DEN: 'Dinamarca',
+  DNK: 'Dinamarca',
+  DENMARK: 'Dinamarca',
+  // Noruega
+  NOR: 'Noruega',
+  NORWAY: 'Noruega',
+  // Suécia
+  SWE: 'Suécia',
+  SWEDEN: 'Suécia',
+  SUECIA: 'Suécia',
+  // EUA
+  USA: 'Estados Unidos',
+  EUA: 'Estados Unidos',
+  'UNITED STATES': 'Estados Unidos',
+  // México
+  MEX: 'México',
+  MEXICO: 'México',
 };
 
-function parseCsvRow(line: string): string[] {
+/**
+ * Detects the most appropriate delimiter (, ; \t |) based on the first few lines of CSV
+ */
+function detectDelimiter(text: string): string {
+  const firstLines = text.split(/\r?\n/).slice(0, 5).join('\n');
+  const counts: Record<string, number> = {
+    ',': (firstLines.match(/,/g) || []).length,
+    ';': (firstLines.match(/;/g) || []).length,
+    '\t': (firstLines.match(/\t/g) || []).length,
+    '|': (firstLines.match(/\|/g) || []).length,
+  };
+
+  let bestDelimiter = ',';
+  let maxCount = 0;
+  for (const [delim, count] of Object.entries(counts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      bestDelimiter = delim;
+    }
+  }
+  return bestDelimiter;
+}
+
+/**
+ * Parses a single CSV line with quote preservation
+ */
+function parseCsvRow(line: string, delimiter: string = ','): string[] {
   const result: string[] = [];
   let current = '';
   let inQuotes = false;
@@ -59,8 +195,13 @@ function parseCsvRow(line: string): string[] {
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
     if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === delimiter && !inQuotes) {
       result.push(current.trim().replace(/^["']|["']$/g, ''));
       current = '';
     } else {
@@ -71,42 +212,95 @@ function parseCsvRow(line: string): string[] {
   return result;
 }
 
-function parseCsvLines(csvText: string): Record<string, string>[] {
-  const lines = csvText.split(/\r?\n/).filter(l => l.trim().length > 0);
+/**
+ * Normalizes string key for flexible header matching
+ */
+function normalizeHeaderKey(key: string): string {
+  return key
+    .replace(/^[\uFEFF\uFFFE]/, '') // Strip BOM
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove accents (á -> a)
+    .replace(/[^a-z0-9]/g, ''); // remove spaces, underscores, dashes, quotes
+}
+
+/**
+ * Parses full CSV text into array of row objects with normalized header lookup
+ */
+export function parseCsvLines(csvText: string): Record<string, string>[] {
+  const cleanText = csvText.replace(/^[\uFEFF\uFFFE]/, '').trim();
+  if (!cleanText) return [];
+
+  const delimiter = detectDelimiter(cleanText);
+  const lines = cleanText.split(/\r?\n/).filter(l => l.trim().length > 0);
   if (lines.length < 2) return [];
 
-  const headers = parseCsvRow(lines[0]);
+  const rawHeaders = parseCsvRow(lines[0], delimiter);
   const results: Record<string, string>[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const row = parseCsvRow(lines[i]);
+    const row = parseCsvRow(lines[i], delimiter);
     if (row.length === 0 || row.every(cell => !cell.trim())) continue;
     const obj: Record<string, string> = {};
-    for (let j = 0; j < headers.length; j++) {
-      obj[headers[j]] = row[j] !== undefined ? row[j] : '';
+    for (let j = 0; j < rawHeaders.length; j++) {
+      const header = rawHeaders[j];
+      const val = row[j] !== undefined ? row[j].trim() : '';
+      if (header) {
+        obj[header] = val;
+        // Also map normalized key for resilient lookup
+        const norm = normalizeHeaderKey(header);
+        if (norm && !obj[norm]) {
+          obj[norm] = val;
+        }
+      }
     }
     results.push(obj);
   }
   return results;
 }
 
+/**
+ * Extracts a value from a row using multiple alias keys (case and accent insensitive)
+ */
+function getRowValue(row: Record<string, string>, aliases: string[]): string {
+  for (const alias of aliases) {
+    if (row[alias] !== undefined && row[alias] !== '') {
+      return row[alias].trim();
+    }
+    const norm = normalizeHeaderKey(alias);
+    if (row[norm] !== undefined && row[norm] !== '') {
+      return row[norm].trim();
+    }
+  }
+  return '';
+}
+
 function parseDate(dateStr?: string, timeStr?: string): string {
   if (!dateStr || !dateStr.trim()) return new Date().toISOString();
   const rawDate = dateStr.trim();
-  const parts = rawDate.split(/[\/\-]/);
+  const parts = rawDate.split(/[\/\-\.]/);
   let year = new Date().getFullYear();
   let month = 1;
   let day = 1;
 
   if (parts.length === 3) {
-    day = parseInt(parts[0], 10) || 1;
-    month = parseInt(parts[1], 10) || 1;
-    let y = parseInt(parts[2], 10);
-    if (y < 100) y += 2000;
-    year = y;
+    // Check if ISO format YYYY-MM-DD
+    if (parts[0].length === 4) {
+      year = parseInt(parts[0], 10) || year;
+      month = parseInt(parts[1], 10) || 1;
+      day = parseInt(parts[2], 10) || 1;
+    } else {
+      // DD/MM/YYYY or DD/MM/YY
+      day = parseInt(parts[0], 10) || 1;
+      month = parseInt(parts[1], 10) || 1;
+      let y = parseInt(parts[2], 10);
+      if (y < 100) y += 2000;
+      year = y || year;
+    }
   }
 
-  let hours = 0;
+  let hours = 16;
   let mins = 0;
   if (timeStr && timeStr.trim()) {
     const tParts = timeStr.trim().split(':');
@@ -117,13 +311,32 @@ function parseDate(dateStr?: string, timeStr?: string): string {
   }
 
   const d = new Date(year, month - 1, day, hours, mins, 0);
-  return d.toISOString();
+  return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 
 function safeNum(val: any): number | null {
   if (val === undefined || val === null || val === '') return null;
-  const num = parseFloat(String(val).replace(',', '.'));
+  const num = parseFloat(String(val).replace(',', '.').trim());
   return isNaN(num) ? null : num;
+}
+
+/**
+ * Finds the highest numeric suffix in existing IDs (e.g. TIME-045 -> 45)
+ */
+function getHighestIdNumber(prefix: string, items: { id?: string }[]): number {
+  let max = 0;
+  const regex = new RegExp(`^${prefix}-(\\d+)$`, 'i');
+  for (const item of items) {
+    if (!item?.id) continue;
+    const match = String(item.id).match(regex);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (!isNaN(num) && num > max) {
+        max = num;
+      }
+    }
+  }
+  return max;
 }
 
 export function parseAndSyncCsvLocally(
@@ -137,30 +350,52 @@ export function parseAndSyncCsvLocally(
   const teams = [...(currentDb.teams || [])];
   const matches = [...(currentDb.matches || [])];
 
+  // Track highest ID numbers to ensure unique sequential IDs
+  let nextCountryNum = Math.max(countries.length, getHighestIdNumber('PAIS', countries));
+  let nextLeagueNum = Math.max(leagues.length, getHighestIdNumber('LIGA', leagues));
+  let nextTeamNum = Math.max(teams.length, getHighestIdNumber('TIME', teams));
+  let nextMatchNum = Math.max(matches.length, getHighestIdNumber('JOGO', matches));
+
+  // Multi-index Maps for ultra-fast and resilient lookups
   const countriesMap = new Map<string, Country>();
   countries.forEach(c => {
     if (c.code) countriesMap.set(c.code.toUpperCase(), c);
-    if (c.name) countriesMap.set(c.name.toUpperCase(), c);
+    if (c.name) {
+      countriesMap.set(c.name.toUpperCase(), c);
+      countriesMap.set(normalizeHeaderKey(c.name), c);
+    }
     countriesMap.set(c.id, c);
   });
 
   const leaguesMap = new Map<string, League>();
   leagues.forEach(l => {
-    leaguesMap.set(`${l.countryId}_${l.name.toUpperCase()}`, l);
+    if (l.countryId) {
+      leaguesMap.set(`${l.countryId}_${l.name.toUpperCase()}`, l);
+      leaguesMap.set(`${l.countryId}_${normalizeHeaderKey(l.name)}`, l);
+    }
     leaguesMap.set(l.name.toUpperCase(), l);
+    leaguesMap.set(normalizeHeaderKey(l.name), l);
+    leaguesMap.set(l.id, l);
   });
 
   const teamsMap = new Map<string, Team>();
   teams.forEach(t => {
-    teamsMap.set(`${t.countryId}_${t.name.toUpperCase()}`, t);
+    if (t.countryId) {
+      teamsMap.set(`${t.countryId}_${t.name.toUpperCase()}`, t);
+      teamsMap.set(`${t.countryId}_${normalizeHeaderKey(t.name)}`, t);
+    }
     teamsMap.set(t.name.toUpperCase(), t);
+    teamsMap.set(normalizeHeaderKey(t.name), t);
+    teamsMap.set(t.id, t);
   });
 
   const matchesMap = new Map<string, Match>();
   matches.forEach(m => {
     const dateKey = m.matchDate ? m.matchDate.substring(0, 10) : '';
-    matchesMap.set(`${dateKey}_${m.homeTeamId}_${m.awayTeamId}`, m);
-    matchesMap.set(`${m.homeTeamId}_${m.awayTeamId}`, m);
+    if (m.homeTeamId && m.awayTeamId) {
+      matchesMap.set(`${dateKey}_${m.homeTeamId}_${m.awayTeamId}`, m);
+      matchesMap.set(`${m.homeTeamId}_${m.awayTeamId}`, m);
+    }
     matchesMap.set(m.id, m);
   });
 
@@ -170,67 +405,129 @@ export function parseAndSyncCsvLocally(
   let newMatchesCount = 0;
 
   for (const r of parsedRows) {
-    const homeName = (r['Mandante'] || r['HomeTeam'] || r['Home'] || r['MANDANTE'] || '').trim();
-    const awayName = (r['Visitante'] || r['AwayTeam'] || r['Away'] || r['VISITANTE'] || '').trim();
+    // Extract Home and Away team names using comprehensive aliases
+    const homeName = getRowValue(r, [
+      'Mandante', 'HomeTeam', 'Home', 'MANDANTE', 'HOMETEAM', 'HOME',
+      'Time_Mandante', 'Time Mandante', 'Equipe_Mandante', 'Equipe Mandante',
+      'Clube_Mandante', 'Clube Mandante', 'Casa', 'Time Casa', 'Time_Casa',
+      'Team 1', 'Team1', 'Team_1', 'HT', 'TimeMandante', 'EquipeMandante'
+    ]);
+
+    const awayName = getRowValue(r, [
+      'Visitante', 'AwayTeam', 'Away', 'VISITANTE', 'AWAYTEAM', 'AWAY',
+      'Time_Visitante', 'Time Visitante', 'Equipe_Visitante', 'Equipe Visitante',
+      'Clube_Visitante', 'Clube Visitante', 'Fora', 'Time Fora', 'Time_Fora',
+      'Team 2', 'Team2', 'Team_2', 'AT', 'TimeVisitante', 'EquipeVisitante'
+    ]);
 
     if (!homeName || !awayName) continue;
 
-    let countryCodeOrName = (r['Pais'] || r['PAIS'] || r['Country'] || r['COUNTRY'] || '').trim();
-    let leagueName = (r['Liga'] || r['LIGA'] || r['League'] || r['LEAGUE'] || '').trim();
+    // Extract Country and League
+    let countryCodeOrName = getRowValue(r, [
+      'Pais', 'País', 'PAIS', 'PAÍS', 'Country', 'COUNTRY', 'CountryName',
+      'Nação', 'Nacao', 'Nation', 'Pais_Nome', 'Nome_Pais'
+    ]);
 
-    // Check Div code mapping (e.g. E0, SP1, D1)
-    const div = (r['Div'] || r['DIV'] || r['ï»¿Div'] || '').trim();
-    if (div && DIV_MAP[div]) {
-      if (!countryCodeOrName) countryCodeOrName = DIV_MAP[div].countryCode;
-      if (!leagueName) leagueName = DIV_MAP[div].leagueName;
+    let leagueName = getRowValue(r, [
+      'Liga', 'LIGA', 'League', 'LEAGUE', 'LeagueName', 'Divisao', 'Divisão',
+      'DIVISAO', 'DIVISÃO', 'Competition', 'COMPETITION', 'Campeonato', 'CAMPEONATO',
+      'Torneio', 'TORNEIO', 'Nome_Liga'
+    ]);
+
+    // Check Div code mapping (e.g. N1, E0, SP1, D1, BRA1)
+    const div = getRowValue(r, ['Div', 'DIV', 'Division', 'Divisao', 'Divisão', 'DivCode']);
+    if (div && DIV_MAP[div.toUpperCase()]) {
+      const mapped = DIV_MAP[div.toUpperCase()];
+      if (!countryCodeOrName) countryCodeOrName = mapped.countryCode;
+      if (!leagueName) leagueName = mapped.leagueName;
     }
 
     if (!countryCodeOrName) countryCodeOrName = 'INT';
-    const friendlyCountryName = COUNTRY_NAMES[countryCodeOrName.toUpperCase()] || countryCodeOrName;
+    const friendlyCountryName = COUNTRY_NAMES[countryCodeOrName.toUpperCase()] ||
+      COUNTRY_NAMES[normalizeHeaderKey(countryCodeOrName).toUpperCase()] ||
+      countryCodeOrName;
+
     if (!leagueName) leagueName = `Liga Principal ${countryCodeOrName}`;
 
     // 1. Ensure Country
-    const cKey = countryCodeOrName.toUpperCase();
-    let country = countriesMap.get(cKey) || countriesMap.get(friendlyCountryName.toUpperCase());
+    const cKeyUpper = countryCodeOrName.toUpperCase();
+    const cKeyFriendly = friendlyCountryName.toUpperCase();
+    const cKeyNorm = normalizeHeaderKey(friendlyCountryName);
+
+    let country = countriesMap.get(cKeyUpper) ||
+      countriesMap.get(cKeyFriendly) ||
+      countriesMap.get(cKeyNorm);
+
     if (!country) {
-      const nextNum = countries.length + 1;
-      const id = `PAIS-${String(nextNum).padStart(3, '0')}`;
+      nextCountryNum++;
+      const id = `PAIS-${String(nextCountryNum).padStart(3, '0')}`;
+      const code = countryCodeOrName.length <= 3
+        ? countryCodeOrName.toUpperCase()
+        : friendlyCountryName.substring(0, 3).toUpperCase();
+
       country = {
         id,
         name: friendlyCountryName,
-        code: countryCodeOrName.length <= 3 ? countryCodeOrName.toUpperCase() : undefined,
+        code,
         createdAt: new Date().toISOString(),
       };
       countries.push(country);
-      countriesMap.set(cKey, country);
-      countriesMap.set(country.name.toUpperCase(), country);
+      countriesMap.set(cKeyUpper, country);
+      countriesMap.set(cKeyFriendly, country);
+      countriesMap.set(cKeyNorm, country);
+      countriesMap.set(code, country);
+      countriesMap.set(id, country);
       newCountriesCount++;
     }
 
     // 2. Ensure League
-    const lKey = `${country.id}_${leagueName.toUpperCase()}`;
-    let league = leaguesMap.get(lKey) || leaguesMap.get(leagueName.toUpperCase());
+    const lKeyUpper = leagueName.toUpperCase();
+    const lKeyNorm = normalizeHeaderKey(leagueName);
+    const countryLeagueKey = `${country.id}_${lKeyUpper}`;
+    const countryLeagueNorm = `${country.id}_${lKeyNorm}`;
+
+    let league = leaguesMap.get(countryLeagueKey) ||
+      leaguesMap.get(countryLeagueNorm) ||
+      leaguesMap.get(lKeyUpper) ||
+      leaguesMap.get(lKeyNorm);
+
     if (!league) {
-      const nextNum = leagues.length + 1;
-      const id = `LIGA-${String(nextNum).padStart(3, '0')}`;
+      nextLeagueNum++;
+      const id = `LIGA-${String(nextLeagueNum).padStart(3, '0')}`;
       league = {
         id,
         name: leagueName,
         countryId: country.id,
         countryName: country.name,
+        type: 'Pontos Corridos',
         createdAt: new Date().toISOString(),
       };
       leagues.push(league);
-      leaguesMap.set(lKey, league);
+      leaguesMap.set(countryLeagueKey, league);
+      leaguesMap.set(countryLeagueNorm, league);
+      leaguesMap.set(lKeyUpper, league);
+      leaguesMap.set(lKeyNorm, league);
+      leaguesMap.set(id, league);
       newLeaguesCount++;
+    } else if (!league.countryId) {
+      league.countryId = country.id;
+      league.countryName = country.name;
     }
 
     // 3. Ensure Home Team
-    const htKey = `${country.id}_${homeName.toUpperCase()}`;
-    let homeTeam = teamsMap.get(htKey) || teamsMap.get(homeName.toUpperCase());
+    const htUpper = homeName.toUpperCase();
+    const htNorm = normalizeHeaderKey(homeName);
+    const countryHtKey = `${country.id}_${htUpper}`;
+    const countryHtNorm = `${country.id}_${htNorm}`;
+
+    let homeTeam = teamsMap.get(countryHtKey) ||
+      teamsMap.get(countryHtNorm) ||
+      teamsMap.get(htUpper) ||
+      teamsMap.get(htNorm);
+
     if (!homeTeam) {
-      const nextNum = teams.length + 1;
-      const id = `TIME-${String(nextNum).padStart(3, '0')}`;
+      nextTeamNum++;
+      const id = `TIME-${String(nextTeamNum).padStart(3, '0')}`;
       homeTeam = {
         id,
         name: homeName,
@@ -238,20 +535,54 @@ export function parseAndSyncCsvLocally(
         countryName: country.name,
         leagueId: league.id,
         leagueName: league.name,
+        leagueIds: [league.id],
         createdAt: new Date().toISOString(),
       };
       teams.push(homeTeam);
-      teamsMap.set(htKey, homeTeam);
-      teamsMap.set(homeName.toUpperCase(), homeTeam);
+      teamsMap.set(countryHtKey, homeTeam);
+      teamsMap.set(countryHtNorm, homeTeam);
+      teamsMap.set(htUpper, homeTeam);
+      teamsMap.set(htNorm, homeTeam);
+      teamsMap.set(id, homeTeam);
       newTeamsCount++;
+    } else {
+      // Update team's league association if missing
+      let updated = false;
+      if (!homeTeam.countryId) {
+        homeTeam.countryId = country.id;
+        homeTeam.countryName = country.name;
+        updated = true;
+      }
+      if (!homeTeam.leagueId) {
+        homeTeam.leagueId = league.id;
+        homeTeam.leagueName = league.name;
+        updated = true;
+      }
+      const existingLeagueIds = homeTeam.leagueIds ? [...homeTeam.leagueIds] : (homeTeam.leagueId ? [homeTeam.leagueId] : []);
+      if (!existingLeagueIds.includes(league.id)) {
+        existingLeagueIds.push(league.id);
+        homeTeam.leagueIds = existingLeagueIds;
+        updated = true;
+      }
+      if (updated) {
+        teamsMap.set(`${homeTeam.countryId}_${htUpper}`, homeTeam);
+      }
     }
 
     // 4. Ensure Away Team
-    const atKey = `${country.id}_${awayName.toUpperCase()}`;
-    let awayTeam = teamsMap.get(atKey) || teamsMap.get(awayName.toUpperCase());
+    const atUpper = awayName.toUpperCase();
+    const atNorm = normalizeHeaderKey(awayName);
+    const countryAtKey = `${country.id}_${atUpper}`;
+    const countryAtNorm = `${country.id}_${atNorm}`;
+
+    let awayTeam = teamsMap.get(countryAtKey) ||
+      teamsMap.get(countryAtNorm) ||
+      teamsMap.get(atUpper) ||
+      teamsMap.get(atNorm);
+
     if (!awayTeam) {
-      const nextNum = teams.length + 1;
-      const id = `TIME-${String(nextNum).padStart(3, '0')}`;
+      nextTeamNum++;
+      const id = `TIME-${String(nextTeamNum).padStart(3, '0')}`;
       awayTeam = {
         id,
         name: awayName,
@@ -259,45 +590,85 @@ export function parseAndSyncCsvLocally(
         countryName: country.name,
         leagueId: league.id,
         leagueName: league.name,
+        leagueIds: [league.id],
         createdAt: new Date().toISOString(),
       };
       teams.push(awayTeam);
-      teamsMap.set(atKey, awayTeam);
-      teamsMap.set(awayName.toUpperCase(), awayTeam);
+      teamsMap.set(countryAtKey, awayTeam);
+      teamsMap.set(countryAtNorm, awayTeam);
+      teamsMap.set(atUpper, awayTeam);
+      teamsMap.set(atNorm, awayTeam);
+      teamsMap.set(id, awayTeam);
       newTeamsCount++;
+    } else {
+      // Update team's league association if missing
+      let updated = false;
+      if (!awayTeam.countryId) {
+        awayTeam.countryId = country.id;
+        awayTeam.countryName = country.name;
+        updated = true;
+      }
+      if (!awayTeam.leagueId) {
+        awayTeam.leagueId = league.id;
+        awayTeam.leagueName = league.name;
+        updated = true;
+      }
+      const existingLeagueIds = awayTeam.leagueIds ? [...awayTeam.leagueIds] : (awayTeam.leagueId ? [awayTeam.leagueId] : []);
+      if (!existingLeagueIds.includes(league.id)) {
+        existingLeagueIds.push(league.id);
+        awayTeam.leagueIds = existingLeagueIds;
+        updated = true;
+      }
+      if (updated) {
+        teamsMap.set(`${awayTeam.countryId}_${atUpper}`, awayTeam);
+      }
     }
 
     // 5. Process Match Info
-    const dateStr = r['Data'] || r['Date'] || r['DATE'] || r['DATA'] || '';
-    const timeStr = r['Hora'] || r['Time'] || r['TIME'] || r['HORA'] || '';
+    const dateStr = getRowValue(r, ['Data', 'Date', 'DATE', 'DATA', 'MatchDate', 'Data_Jogo', 'DataJogo']);
+    const timeStr = getRowValue(r, ['Hora', 'Time', 'TIME', 'HORA', 'MatchTime', 'Horario', 'Horário', 'Hora_Jogo']);
     const isoDate = parseDate(dateStr, timeStr);
     const dateKey = isoDate.substring(0, 10);
     const mKey = `${dateKey}_${homeTeam.id}_${awayTeam.id}`;
 
-    const fthg = safeNum(r['Placar_Mandante_FT'] ?? r['FTHG'] ?? r['HG'] ?? r['GOLS_MANDANTE']);
-    const ftag = safeNum(r['Placar_Visitante_FT'] ?? r['FTAG'] ?? r['AG'] ?? r['GOLS_VISITANTE']);
-    const hthg = safeNum(r['Placar_Mandante_HT'] ?? r['HTHG']);
-    const htag = safeNum(r['Placar_Visitante_HT'] ?? r['HTAG']);
-    const referee = (r['Arbitro'] || r['Referee'] || r['ARBITRO'] || '').trim() || undefined;
+    const fthg = safeNum(getRowValue(r, [
+      'Placar_Mandante_FT', 'FTHG', 'HG', 'Gols_Mandante', 'GOLS_MANDANTE',
+      'HomeScore', 'FullTimeHomeGoals', 'GolsMandante', 'PlacarMandanteFT'
+    ]));
+
+    const ftag = safeNum(getRowValue(r, [
+      'Placar_Visitante_FT', 'FTAG', 'AG', 'Gols_Visitante', 'GOLS_VISITANTE',
+      'AwayScore', 'FullTimeAwayGoals', 'GolsVisitante', 'PlacarVisitanteFT'
+    ]));
+
+    const hthg = safeNum(getRowValue(r, [
+      'Placar_Mandante_HT', 'HTHG', 'HalftimeHomeGoals', 'PlacarMandanteHT'
+    ]));
+
+    const htag = safeNum(getRowValue(r, [
+      'Placar_Visitante_HT', 'HTAG', 'HalftimeAwayGoals', 'PlacarVisitanteHT'
+    ]));
+
+    const referee = getRowValue(r, ['Arbitro', 'Árbitro', 'Referee', 'ARBITRO', 'Juiz']) || undefined;
 
     const isFinished = fthg !== null && ftag !== null;
     const status = isFinished ? 'FINALIZADO' : 'AGENDADO';
 
-    // Exact Stats matching user's columns
-    const xgHome = safeNum(r['xG_Mandante_FT'] ?? r['HxG']);
-    const xgAway = safeNum(r['xG_Visitante_FT'] ?? r['AxG']);
-    const shotsHome = safeNum(r['Finalizacoes_Mandante_FT'] ?? r['HS'] ?? r['CHUTES_MANDANTE']);
-    const shotsAway = safeNum(r['Finalizacoes_Visitante_FT'] ?? r['AS'] ?? r['CHUTES_VISITANTE']);
-    const shotsOnTargetHome = safeNum(r['Chutes_Gol_Mandante_FT'] ?? r['HST'] ?? r['CHUTES_GOL_MANDANTE']);
-    const shotsOnTargetAway = safeNum(r['Chutes_Gol_Visitante_FT'] ?? r['AST'] ?? r['CHUTES_GOL_VISITANTE']);
-    const foulsHome = safeNum(r['Faltas_Mandante_FT'] ?? r['HF'] ?? r['FALTAS_MANDANTE']);
-    const foulsAway = safeNum(r['Faltas_Visitante_FT'] ?? r['AF'] ?? r['FALTAS_VISITANTE']);
-    const cornersHome = safeNum(r['Escanteios_Mandante_FT'] ?? r['HC'] ?? r['ESCANTEIOS_MANDANTE']);
-    const cornersAway = safeNum(r['Escanteios_Visitante_FT'] ?? r['AC'] ?? r['ESCANTEIOS_VISITANTE']);
-    const yellowHome = safeNum(r['Cartao_Amarelo_Mandante_FT'] ?? r['HY'] ?? r['AMARELOS_MANDANTE']);
-    const yellowAway = safeNum(r['Cartao_Amarelo_Visitante_FT'] ?? r['AY'] ?? r['AMARELOS_VISITANTE']);
-    const redHome = safeNum(r['Cartao_Vermelho_Mandante_FT'] ?? r['HR'] ?? r['VERMELHOS_MANDANTE']);
-    const redAway = safeNum(r['Cartao_Vermelho_Visitante_FT'] ?? r['AR'] ?? r['VERMELHOS_VISITANTE']);
+    // Exact Stats matching columns
+    const xgHome = safeNum(getRowValue(r, ['xG_Mandante_FT', 'HxG', 'xG_Home', 'xG_Mandante']));
+    const xgAway = safeNum(getRowValue(r, ['xG_Visitante_FT', 'AxG', 'xG_Away', 'xG_Visitante']));
+    const shotsHome = safeNum(getRowValue(r, ['Finalizacoes_Mandante_FT', 'HS', 'Finalizacoes_Mandante', 'Chutes_Mandante']));
+    const shotsAway = safeNum(getRowValue(r, ['Finalizacoes_Visitante_FT', 'AS', 'Finalizacoes_Visitante', 'Chutes_Visitante']));
+    const shotsOnTargetHome = safeNum(getRowValue(r, ['Chutes_Gol_Mandante_FT', 'HST', 'Chutes_Gol_Mandante', 'ChutesNoAlvo_Mandante']));
+    const shotsOnTargetAway = safeNum(getRowValue(r, ['Chutes_Gol_Visitante_FT', 'AST', 'Chutes_Gol_Visitante', 'ChutesNoAlvo_Visitante']));
+    const foulsHome = safeNum(getRowValue(r, ['Faltas_Mandante_FT', 'HF', 'Faltas_Mandante']));
+    const foulsAway = safeNum(getRowValue(r, ['Faltas_Visitante_FT', 'AF', 'Faltas_Visitante']));
+    const cornersHome = safeNum(getRowValue(r, ['Escanteios_Mandante_FT', 'HC', 'Escanteios_Mandante', 'Cantos_Mandante']));
+    const cornersAway = safeNum(getRowValue(r, ['Escanteios_Visitante_FT', 'AC', 'Escanteios_Visitante', 'Cantos_Visitante']));
+    const yellowHome = safeNum(getRowValue(r, ['Cartao_Amarelo_Mandante_FT', 'HY', 'Amarelos_Mandante', 'Cartoes_Amarelos_Mandante']));
+    const yellowAway = safeNum(getRowValue(r, ['Cartao_Amarelo_Visitante_FT', 'AY', 'Amarelos_Visitante', 'Cartoes_Amarelos_Visitante']));
+    const redHome = safeNum(getRowValue(r, ['Cartao_Vermelho_Mandante_FT', 'HR', 'Vermelhos_Mandante', 'Cartoes_Vermelhos_Mandante']));
+    const redAway = safeNum(getRowValue(r, ['Cartao_Vermelho_Visitante_FT', 'AR', 'Vermelhos_Visitante', 'Cartoes_Vermelhos_Visitante']));
 
     const statsObj: MatchStats = {
       halftimeHomeScore: hthg,
@@ -318,21 +689,21 @@ export function parseAndSyncCsvLocally(
       redCardsAwayFT: redAway,
     };
 
-    // Exact Odds matching user's columns
-    const oddHome = safeNum(r['Odd_Home_FT'] ?? r['B365H']);
-    const oddDraw = safeNum(r['Odd_Draw_FT'] ?? r['B365D']);
-    const oddAway = safeNum(r['Odd_Away_FT'] ?? r['B365A']);
-    const oddOver25 = safeNum(r['Odd_Over25_FT'] ?? r['B365>2.5']);
-    const oddUnder25 = safeNum(r['Odd_Under25_FT'] ?? r['B365<2.5']);
+    // Exact Odds matching columns
+    const oddHome = safeNum(getRowValue(r, ['Odd_Home_FT', 'B365H', 'Odd_Mandante', 'Odd_Casa', 'Odd_1']));
+    const oddDraw = safeNum(getRowValue(r, ['Odd_Draw_FT', 'B365D', 'Odd_Empate', 'Odd_X']));
+    const oddAway = safeNum(getRowValue(r, ['Odd_Away_FT', 'B365A', 'Odd_Visitante', 'Odd_Fora', 'Odd_2']));
+    const oddOver25 = safeNum(getRowValue(r, ['Odd_Over25_FT', 'B365>2.5', 'Odd_Over_2_5', 'Odd_Mais_2_5', 'Over25']));
+    const oddUnder25 = safeNum(getRowValue(r, ['Odd_Under25_FT', 'B365<2.5', 'Odd_Under_2_5', 'Odd_Menos_2_5', 'Under25']));
 
     // Asian Handicap
-    const ahHomeLine = safeNum(r['Linha_Handicap_Asiático_Mandante_FT'] ?? r['AHh']);
-    const ahHomeOdd = safeNum(r['Odd_Handicap_Asiático_Mandante_FT'] ?? r['B365AHH']);
-    let ahAwayLine = safeNum(r['Linha_Handicap_Asiático_Visitante_FT'] ?? r['AHa']);
+    const ahHomeLine = safeNum(getRowValue(r, ['Linha_Handicap_Asiático_Mandante_FT', 'Linha_Handicap_Asiatico_Mandante_FT', 'AHh', 'AH_Home_Line']));
+    const ahHomeOdd = safeNum(getRowValue(r, ['Odd_Handicap_Asiático_Mandante_FT', 'Odd_Handicap_Asiatico_Mandante_FT', 'B365AHH', 'AH_Home_Odd']));
+    let ahAwayLine = safeNum(getRowValue(r, ['Linha_Handicap_Asiático_Visitante_FT', 'Linha_Handicap_Asiatico_Visitante_FT', 'AHa', 'AH_Away_Line']));
     if (ahAwayLine === null && ahHomeLine !== null) {
       ahAwayLine = -ahHomeLine;
     }
-    const ahAwayOdd = safeNum(r['Odd_Handicap_Asiático_Visitante_FT'] ?? r['B365AHA']);
+    const ahAwayOdd = safeNum(getRowValue(r, ['Odd_Handicap_Asiático_Visitante_FT', 'Odd_Handicap_Asiatico_Visitante_FT', 'B365AHA', 'AH_Away_Odd']));
 
     const oddsObj: MatchOdds = {
       homeFT: oddHome,
@@ -346,7 +717,7 @@ export function parseAndSyncCsvLocally(
       asianHandicapAwayOdd: ahAwayOdd,
     };
 
-    let existingMatch = matchesMap.get(mKey);
+    let existingMatch = matchesMap.get(mKey) || matchesMap.get(`${homeTeam.id}_${awayTeam.id}`);
     if (existingMatch) {
       existingMatch.matchDate = isoDate;
       existingMatch.status = status;
@@ -356,16 +727,18 @@ export function parseAndSyncCsvLocally(
       existingMatch.stats = { ...(existingMatch.stats || {}), ...statsObj };
       existingMatch.odds = { ...(existingMatch.odds || {}), ...oddsObj };
     } else {
-      const nextNum = matches.length + 1;
-      const matchId = `JOGO-${String(nextNum).padStart(3, '0')}`;
+      nextMatchNum++;
+      const matchId = `JOGO-${String(nextMatchNum).padStart(3, '0')}`;
       const newMatch: Match = {
         id: matchId,
         matchDate: isoDate,
         status,
         countryId: country.id,
         countryName: country.name,
+        countryFlagUrl: country.flagUrl,
         leagueId: league.id,
         leagueName: league.name,
+        leagueLogoUrl: league.logoUrl,
         homeTeamId: homeTeam.id,
         homeTeamName: homeTeam.name,
         homeTeamLogoUrl: homeTeam.logoUrl || undefined,
@@ -381,11 +754,13 @@ export function parseAndSyncCsvLocally(
       };
       matches.push(newMatch);
       matchesMap.set(mKey, newMatch);
+      matchesMap.set(matchId, newMatch);
       newMatchesCount++;
     }
   }
 
   const updatedDb: DbState = {
+    ...currentDb,
     countries,
     leagues,
     teams,
@@ -407,3 +782,4 @@ export function parseAndSyncCsvLocally(
 
   return { updatedDb, result };
 }
+
