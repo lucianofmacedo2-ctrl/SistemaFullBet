@@ -27,7 +27,8 @@ import {
   Info,
   Zap,
   LayoutList,
-  LayoutGrid
+  LayoutGrid,
+  ArrowRight
 } from 'lucide-react';
 import { DbState, Match, MatchStatus } from '../types';
 import { checkMatchCompleteness, checkMatchFullCompleteness } from './MatchList';
@@ -45,6 +46,7 @@ interface DailyMatchesViewProps {
   onOpenBulkMatchUpdateModal?: () => void;
   onOpenPressureChartModal?: (matchId: string) => void;
   onAnalyzeMatch?: (match: Match) => void;
+  onNavigateToAnalysis?: () => void;
 }
 
 export type DaySelectionMode = 'TODAY' | 'TOMORROW' | 'AFTER_TOMORROW' | 'THREE_DAYS' | 'CUSTOM';
@@ -133,6 +135,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   onOpenBulkMatchUpdateModal,
   onOpenPressureChartModal,
   onAnalyzeMatch,
+  onNavigateToAnalysis,
 }) => {
   // Base reference date (today)
   const today = useMemo(() => new Date(), []);
@@ -332,6 +335,39 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Banner de Destaque Visual - Módulo de Análise & Power Ranking */}
+      {onNavigateToAnalysis && (
+        <div className="bg-gradient-to-r from-indigo-950 via-indigo-900 to-purple-950 rounded-2xl p-4 sm:p-5 text-white shadow-xl shadow-indigo-950/20 border border-indigo-700/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-slate-950 font-black shrink-0 shadow-lg shadow-amber-400/20 border border-amber-300">
+              <Zap className="w-6 h-6 fill-slate-950 text-slate-950 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-black tracking-tight text-white flex items-center gap-2">
+                  Módulo de Análise & Power Ranking
+                </h3>
+                <span className="px-2 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-black rounded-full uppercase tracking-wider shadow-xs">
+                  Liberado para Todos
+                </span>
+              </div>
+              <p className="text-xs text-indigo-200 mt-1 max-w-2xl leading-relaxed">
+                Compare confrontos com modelo Poisson de placar, índice de força ponderado por Odds, eficiência de xG, médias descritivas (Média, Desvio Padrão, CV%) e indicadores +EV.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onNavigateToAnalysis}
+            className="w-full md:w-auto px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-amber-500/25 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.98] shrink-0 cursor-pointer border border-amber-300"
+          >
+            <Zap className="w-4 h-4 fill-slate-950" />
+            <span>Acessar Painel de Análise</span>
+            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+          </button>
+        </div>
+      )}
+
       {/* 1. Primary Date Selector Bar */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -951,10 +987,10 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                         <button
                           type="button"
                           onClick={() => onAnalyzeMatch(match)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold border border-indigo-200 transition-all shadow-xs cursor-pointer"
-                          title="Análise & Power Ranking do Confronto"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-xs font-black border border-indigo-400/80 transition-all shadow-sm hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
+                          title="Análise Estatística, Power Ranking e Projeção Poisson deste confronto"
                         >
-                          <Zap className="w-3.5 h-3.5 text-amber-500 fill-current" />
+                          <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300 animate-pulse" />
                           <span>Análise</span>
                         </button>
                       )}

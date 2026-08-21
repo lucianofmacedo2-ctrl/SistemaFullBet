@@ -159,6 +159,24 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
+            {/* Módulo de Análise & Power Ranking - Destaque Visual no Header Superior */}
+            <button
+              onClick={() => setActiveTab('analysis')}
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all shadow-md cursor-pointer hover:scale-[1.03] active:scale-[0.98] border ${
+                activeTab === 'analysis'
+                  ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white border-indigo-400 ring-2 ring-indigo-300 shadow-indigo-500/30'
+                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white border-indigo-400/50 shadow-indigo-500/20'
+              }`}
+              title="Abrir Módulo de Análise Estatística, Power Ranking e Projeções Poisson"
+            >
+              <Zap className="w-4 h-4 text-amber-300 fill-amber-300 animate-pulse" />
+              <span className="hidden sm:inline">Módulo de Análise</span>
+              <span className="sm:hidden">Análise</span>
+              <span className="px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[10px] font-black rounded-md uppercase tracking-tighter">
+                PRO
+              </span>
+            </button>
+
             {/* MASTER-ONLY ACTIONS (Circled in user screenshot: + Jogo, Subir Massa, Subir CSV, Futuros, Times, Entidade, Backup, Reset) */}
             {isMaster ? (
               <div className="flex items-center gap-1.5 sm:gap-2">
@@ -346,6 +364,22 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </button>
 
+            {/* Módulo de Análise & Power Ranking - Destaque em Posição Nobre */}
+            <button
+              onClick={() => setActiveTab('analysis')}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all shadow-sm ${
+                activeTab === 'analysis'
+                  ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white border border-indigo-400 shadow-md shadow-indigo-500/30 ring-2 ring-indigo-300'
+                  : 'bg-indigo-50 text-indigo-800 hover:bg-indigo-100/90 border border-indigo-200 hover:border-indigo-400 hover:scale-[1.02]'
+              }`}
+            >
+              <Zap className="w-4 h-4 text-amber-500 fill-amber-400 animate-pulse" />
+              <span className="tracking-wide">ANÁLISE & POWER RANKING</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-400 text-slate-950 uppercase tracking-tighter shadow-xs">
+                NOVO
+              </span>
+            </button>
+
             <button
               onClick={() => setActiveTab('countries')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
@@ -407,18 +441,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <BarChart3 className="w-3.5 h-3.5" />
               Estatísticas
-            </button>
-
-            <button
-              onClick={() => setActiveTab('analysis')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
-                activeTab === 'analysis'
-                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
-                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
-              }`}
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-500" />
-              Análise & Power Ranking
             </button>
 
             {/* Escudos Pendentes is an admin maintenance tab (only visible for master) */}

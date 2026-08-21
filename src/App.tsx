@@ -1160,6 +1160,7 @@ export default function App() {
                       setAnalysisTargetMatchId(match.id);
                       setActiveTab('analysis');
                     }}
+                    onNavigateToAnalysis={() => setActiveTab('analysis')}
                   />
                 )}
               </>
@@ -1181,6 +1182,7 @@ export default function App() {
                   setAnalysisTargetMatchId(match.id);
                   setActiveTab('analysis');
                 }}
+                onNavigateToAnalysis={() => setActiveTab('analysis')}
               />
             )}
 
@@ -1220,7 +1222,10 @@ export default function App() {
             )}
 
             {activeTab === 'stats' && (
-              <StatsDashboard dbState={dbState} />
+              <StatsDashboard
+                dbState={dbState}
+                onNavigateToAnalysis={() => setActiveTab('analysis')}
+              />
             )}
 
             {activeTab === 'analysis' && (

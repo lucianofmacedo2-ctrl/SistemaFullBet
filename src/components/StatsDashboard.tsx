@@ -1,13 +1,14 @@
 import React from 'react';
-import { BarChart3, Trophy, Shield, Activity, Target } from 'lucide-react';
+import { BarChart3, Trophy, Shield, Activity, Target, Zap, ArrowRight } from 'lucide-react';
 import { DbState } from '../types';
 import { LeagueStandings } from './LeagueStandings';
 
 interface StatsDashboardProps {
   dbState: DbState;
+  onNavigateToAnalysis?: () => void;
 }
 
-export const StatsDashboard: React.FC<StatsDashboardProps> = ({ dbState }) => {
+export const StatsDashboard: React.FC<StatsDashboardProps> = ({ dbState, onNavigateToAnalysis }) => {
   const matches = dbState.matches;
 
   const totalMatches = matches.length;
@@ -53,6 +54,39 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ dbState }) => {
 
   return (
     <div className="space-y-6">
+      {/* Banner de Acesso Rápido ao Módulo de Análise & Power Ranking */}
+      {onNavigateToAnalysis && (
+        <div className="bg-gradient-to-r from-indigo-950 via-indigo-900 to-purple-950 rounded-2xl p-4 sm:p-5 text-white shadow-xl shadow-indigo-950/20 border border-indigo-700/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-slate-950 font-black shrink-0 shadow-lg shadow-amber-400/20 border border-amber-300">
+              <Zap className="w-6 h-6 fill-slate-950 text-slate-950 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-black tracking-tight text-white flex items-center gap-2">
+                  Módulo de Análise Estatística & Power Ranking
+                </h3>
+                <span className="px-2 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-black rounded-full uppercase tracking-wider shadow-xs">
+                  Avançado
+                </span>
+              </div>
+              <p className="text-xs text-indigo-200 mt-1 max-w-2xl leading-relaxed">
+                Acesse o modelo preditivo de Poisson, Power Ranking com ponderação de mando, dispersão estatística e radar de confrontos direto.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onNavigateToAnalysis}
+            className="w-full md:w-auto px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-amber-500/25 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-[0.98] shrink-0 cursor-pointer border border-amber-300"
+          >
+            <Zap className="w-4 h-4 fill-slate-950" />
+            <span>Abrir Painel de Análise</span>
+            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+          </button>
+        </div>
+      )}
+
       {/* 1. Main League Standings Section (Ranked by % Aproveitamento) */}
       <LeagueStandings dbState={dbState} />
 
