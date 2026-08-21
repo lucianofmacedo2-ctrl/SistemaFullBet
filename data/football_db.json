@@ -2692,6 +2692,51 @@
       "leagueId": "LIGA-016",
       "leagueName": "Ethniki Katigoria",
       "createdAt": "2026-08-19T00:46:40.389690"
+    },
+    {
+      "id": "TIME-269",
+      "name": "Sheffield Wed",
+      "countryId": "PAIS-001",
+      "countryName": "Inglaterra",
+      "leagueId": "LIGA-018",
+      "leagueName": "League 1 ING",
+      "createdAt": "2026-08-21T09:26:56.570269"
+    },
+    {
+      "id": "TIME-270",
+      "name": "Bradford City",
+      "countryId": "PAIS-001",
+      "countryName": "Inglaterra",
+      "leagueId": "LIGA-018",
+      "leagueName": "League 1 ING",
+      "createdAt": "2026-08-21T09:26:56.570280"
+    },
+    {
+      "id": "TIME-271",
+      "name": "Atl. Madrid",
+      "countryId": "PAIS-004",
+      "countryName": "Espanha",
+      "leagueId": "LIGA-025",
+      "leagueName": "La Liga 1 ESP",
+      "createdAt": "2026-08-21T09:26:56.587144"
+    },
+    {
+      "id": "TIME-272",
+      "name": "Malaga",
+      "countryId": "PAIS-004",
+      "countryName": "Espanha",
+      "leagueId": "LIGA-025",
+      "leagueName": "La Liga 1 ESP",
+      "createdAt": "2026-08-21T09:26:56.587150"
+    },
+    {
+      "id": "TIME-273",
+      "name": "Rayo Vallecano",
+      "countryId": "PAIS-004",
+      "countryName": "Espanha",
+      "leagueId": "LIGA-025",
+      "leagueName": "La Liga 1 ESP",
+      "createdAt": "2026-08-21T09:26:56.587374"
     }
   ],
   "matches": [
@@ -30128,6 +30173,135 @@
         "awayHT": null
       },
       "createdAt": "2026-08-20T10:50:11.105219"
+    },
+    {
+      "id": "JOGO-639",
+      "countryId": "PAIS-001",
+      "countryName": "Inglaterra",
+      "leagueId": "LIGA-018",
+      "leagueName": "League 1 ING",
+      "homeTeamId": "TIME-269",
+      "homeTeamName": "Sheffield Wed",
+      "awayTeamId": "TIME-270",
+      "awayTeamName": "Bradford City",
+      "homeScore": 0,
+      "awayScore": 1,
+      "matchDate": "2026-08-20T20:00:00",
+      "status": "FINALIZADO",
+      "referee": "T Parsons",
+      "stats": {
+        "halftimeHomeScore": 0,
+        "halftimeAwayScore": 0,
+        "shotsHomeFT": 13,
+        "shotsAwayFT": 10,
+        "shotsOnTargetHomeFT": 3,
+        "shotsOnTargetAwayFT": 4,
+        "cornersHomeFT": 8,
+        "cornersAwayFT": 9,
+        "yellowCardsHomeFT": 1,
+        "yellowCardsAwayFT": 1,
+        "redCardsHomeFT": 0,
+        "redCardsAwayFT": 0,
+        "foulsHome": 13,
+        "foulsAway": 10
+      },
+      "odds": {
+        "homeFT": 2.4,
+        "drawFT": 3.3,
+        "awayFT": 2.7,
+        "over25FT": 1.95,
+        "under25FT": 1.85,
+        "homeHT": null,
+        "drawHT": null,
+        "awayHT": null
+      },
+      "createdAt": "2026-08-21T09:26:56.570411"
+    },
+    {
+      "id": "JOGO-640",
+      "countryId": "PAIS-004",
+      "countryName": "Espanha",
+      "leagueId": "LIGA-025",
+      "leagueName": "La Liga 1 ESP",
+      "homeTeamId": "TIME-271",
+      "homeTeamName": "Atl. Madrid",
+      "awayTeamId": "TIME-272",
+      "awayTeamName": "Malaga",
+      "homeScore": 2,
+      "awayScore": 0,
+      "matchDate": "2026-08-19T20:00:00",
+      "status": "FINALIZADO",
+      "referee": "",
+      "stats": {
+        "halftimeHomeScore": 0,
+        "halftimeAwayScore": 0,
+        "shotsHomeFT": 15,
+        "shotsAwayFT": 5,
+        "shotsOnTargetHomeFT": 6,
+        "shotsOnTargetAwayFT": 1,
+        "cornersHomeFT": 6,
+        "cornersAwayFT": 1,
+        "yellowCardsHomeFT": 2,
+        "yellowCardsAwayFT": 3,
+        "redCardsHomeFT": 0,
+        "redCardsAwayFT": 0,
+        "foulsHome": 17,
+        "foulsAway": 11
+      },
+      "odds": {
+        "homeFT": 1.33,
+        "drawFT": 5.25,
+        "awayFT": 9.5,
+        "over25FT": 1.73,
+        "under25FT": 2.1,
+        "homeHT": null,
+        "drawHT": null,
+        "awayHT": null
+      },
+      "createdAt": "2026-08-21T09:26:56.587286"
+    },
+    {
+      "id": "JOGO-641",
+      "countryId": "PAIS-004",
+      "countryName": "Espanha",
+      "leagueId": "LIGA-025",
+      "leagueName": "La Liga 1 ESP",
+      "homeTeamId": "TIME-273",
+      "homeTeamName": "Rayo Vallecano",
+      "awayTeamId": "TIME-133",
+      "awayTeamName": "Alaves",
+      "homeScore": 1,
+      "awayScore": 1,
+      "matchDate": "2026-08-20T20:00:00",
+      "status": "FINALIZADO",
+      "referee": "",
+      "stats": {
+        "halftimeHomeScore": 0,
+        "halftimeAwayScore": 0,
+        "shotsHomeFT": 8,
+        "shotsAwayFT": 15,
+        "shotsOnTargetHomeFT": 3,
+        "shotsOnTargetAwayFT": 3,
+        "cornersHomeFT": 9,
+        "cornersAwayFT": 7,
+        "yellowCardsHomeFT": 1,
+        "yellowCardsAwayFT": 2,
+        "redCardsHomeFT": 0,
+        "redCardsAwayFT": 0,
+        "foulsHome": 14,
+        "foulsAway": 13
+      },
+      "odds": {
+        "homeFT": 2.25,
+        "drawFT": 3,
+        "awayFT": 3.6,
+        "over25FT": 2.75,
+        "under25FT": 1.44,
+        "homeHT": null,
+        "drawHT": null,
+        "awayHT": null
+      },
+      "createdAt": "2026-08-21T09:26:56.587492"
     }
   ]
 }
