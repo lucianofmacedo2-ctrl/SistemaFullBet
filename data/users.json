@@ -1,0 +1,26 @@
+[
+  {
+    "id": "USER-MASTER-001",
+    "name": "Administrador Master",
+    "username": "31882844890",
+    "password": "Otavio@2010",
+    "role": "MASTER",
+    "duration": "LIFETIME",
+    "status": "ACTIVE",
+    "createdAt": "2026-08-19T00:00:00.000Z",
+    "expiresAt": null,
+    "notes": "Perfil Master Principal"
+  },
+  {
+    "id": "USER-CONSULTA-001",
+    "name": "User Teste",
+    "username": "usuario.teste",
+    "password": "123456",
+    "role": "CONSULTOR",
+    "duration": "30_DAYS",
+    "status": "ACTIVE",
+    "createdAt": "2026-08-21T00:00:00.000Z",
+    "expiresAt": "2026-09-20T09:38:00.000Z",
+    "notes": "Perfil de Teste Consulta & Análise"
+  }
+]

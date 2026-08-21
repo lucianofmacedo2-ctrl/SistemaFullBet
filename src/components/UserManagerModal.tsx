@@ -34,7 +34,8 @@ import {
   extendUserAccess,
   getUserEffectiveStatus,
   formatDurationLabel,
-  DEFAULT_MASTER_USER
+  DEFAULT_MASTER_USER,
+  encodeUserToToken,
 } from '../services/authService';
 import { getNextUniqueId } from '../utils/idGenerator';
 
@@ -54,10 +55,18 @@ export function getConsultaPortalUrl(): string {
   return `${base}${sep}mode=consulta`;
 }
 
-export function getUserAccessUrl(username: string): string {
+export function getUserAccessUrl(user: AppUser | string): string {
   const base = getAppBaseUrl();
   const sep = base.includes('?') ? '&' : '?';
-  return `${base}${sep}user=${encodeURIComponent(username)}`;
+  if (typeof user === 'object' && user) {
+    const token = encodeUserToToken(user);
+    if (token) {
+      return `${base}${sep}mode=consulta&user=${encodeURIComponent(user.username)}&acc=${encodeURIComponent(token)}`;
+    }
+    return `${base}${sep}mode=consulta&user=${encodeURIComponent(user.username)}`;
+  }
+  const usernameStr = typeof user === 'string' ? user : '';
+  return `${base}${sep}mode=consulta&user=${encodeURIComponent(usernameStr)}`;
 }
 
 interface UserManagerModalProps {
@@ -287,7 +296,7 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
 
   const handleCopyAccessCredentials = (user: AppUser) => {
     const eff = getUserEffectiveStatus(user);
-    const directLink = getUserAccessUrl(user.username);
+    const directLink = getUserAccessUrl(user);
     const text = `⚽ *ACESSO AO SISTEMA DE ANÁLISE FULL BET (FUTLFM2)*\n\n👤 *Nome:* ${user.name}\n🔑 *Login:* ${user.username}\n🔒 *Senha:* ${user.password}\n⭐ *Perfil:* ${user.role === 'MASTER' ? 'Administrador Master' : 'Consulta & Análise Esportiva'}\n⏳ *Validade do Acesso:* ${eff.formattedExpiresAt}\n\n🔗 *Link Direto de Acesso:*\n${directLink}\n\n💡 *Como Acessar:*\nBasta clicar no link acima e digitar sua senha para entrar.`;
 
     navigator.clipboard.writeText(text).then(() => {
@@ -297,7 +306,7 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
   };
 
   const handleCopyDirectLink = (user: AppUser) => {
-    const directLink = getUserAccessUrl(user.username);
+    const directLink = getUserAccessUrl(user);
     navigator.clipboard.writeText(directLink).then(() => {
       setCopyFeedback(`link-${user.id}`);
       setTimeout(() => setCopyFeedback(null), 3000);

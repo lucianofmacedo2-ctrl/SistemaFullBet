@@ -15,6 +15,19 @@ export const DEFAULT_MASTER_USER: AppUser = {
   notes: 'Perfil Master Principal',
 };
 
+export const DEFAULT_CONSULTA_USER: AppUser = {
+  id: 'USER-CONSULTA-001',
+  name: 'User Teste',
+  username: 'usuario.teste',
+  password: '123456',
+  role: 'CONSULTOR',
+  duration: '30_DAYS',
+  status: 'ACTIVE',
+  createdAt: new Date().toISOString(),
+  expiresAt: new Date(Date.now() + 29 * 24 * 60 * 60 * 1000).toISOString(),
+  notes: 'Perfil de Teste Consulta & Análise',
+};
+
 /**
  * Calculates the expiration date ISO string based on duration option.
  */
@@ -155,32 +168,36 @@ export function getUserEffectiveStatus(user: AppUser): {
 }
 
 /**
- * Ensures that the users list always has at least the default master administrator.
+ * Ensures that the users list always has at least the default master administrator and test consultation profile.
  */
 export function ensureDefaultUsers(users?: AppUser[]): AppUser[] {
-  if (!users || users.length === 0) {
-    return [DEFAULT_MASTER_USER];
-  }
-  const masterIndex = users.findIndex(u => u.role === 'MASTER');
+  let result: AppUser[] = Array.isArray(users) && users.length > 0 ? [...users] : [DEFAULT_MASTER_USER, DEFAULT_CONSULTA_USER];
+
+  const masterIndex = result.findIndex(u => u.role === 'MASTER');
   if (masterIndex === -1) {
-    return [DEFAULT_MASTER_USER, ...users];
+    result.unshift(DEFAULT_MASTER_USER);
+  } else {
+    const existingMaster = result[masterIndex];
+    if (
+      existingMaster.username === 'master' ||
+      existingMaster.password === '123' ||
+      !existingMaster.password
+    ) {
+      result[masterIndex] = {
+        ...existingMaster,
+        username: DEFAULT_MASTER_USER.username,
+        password: DEFAULT_MASTER_USER.password,
+      };
+    }
   }
-  // If master user exists with previous default username or password, update it cleanly
-  const existingMaster = users[masterIndex];
-  if (
-    existingMaster.username === 'master' ||
-    existingMaster.password === '123' ||
-    !existingMaster.password
-  ) {
-    const updated = [...users];
-    updated[masterIndex] = {
-      ...existingMaster,
-      username: DEFAULT_MASTER_USER.username,
-      password: DEFAULT_MASTER_USER.password,
-    };
-    return updated;
+
+  // Ensure default consultation user exists for seamless cross-device testing
+  const consultaIndex = result.findIndex(u => u.username.toLowerCase() === 'usuario.teste');
+  if (consultaIndex === -1) {
+    result.push(DEFAULT_CONSULTA_USER);
   }
-  return users;
+
+  return result;
 }
 
 /**
@@ -229,4 +246,43 @@ export function formatDurationLabel(duration: UserAccessDuration): string {
     default:
       return duration;
   }
+}
+
+/**
+ * Encodes a user object into a safe URL token for instant cross-device sharing.
+ */
+export function encodeUserToToken(user: AppUser): string {
+  try {
+    const minified = {
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      password: user.password,
+      role: user.role,
+      duration: user.duration,
+      status: user.status,
+      expiresAt: user.expiresAt,
+      createdAt: user.createdAt,
+      notes: user.notes,
+    };
+    return btoa(encodeURIComponent(JSON.stringify(minified)));
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Decodes a user object from a URL token.
+ */
+export function decodeUserFromToken(token: string): AppUser | null {
+  try {
+    const jsonStr = decodeURIComponent(atob(token));
+    const parsed = JSON.parse(jsonStr);
+    if (parsed && parsed.username && parsed.role) {
+      return parsed as AppUser;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
 }

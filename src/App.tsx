@@ -44,7 +44,9 @@ import {
   setCurrentAuthUser,
   ensureDefaultUsers,
   getUserEffectiveStatus,
-  DEFAULT_MASTER_USER
+  DEFAULT_MASTER_USER,
+  DEFAULT_CONSULTA_USER,
+  decodeUserFromToken,
 } from './services/authService';
 
 export default function App() {
@@ -53,7 +55,7 @@ export default function App() {
     leagues: [],
     teams: [],
     matches: [],
-    users: [DEFAULT_MASTER_USER],
+    users: [DEFAULT_MASTER_USER, DEFAULT_CONSULTA_USER],
   });
 
   const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
@@ -134,7 +136,28 @@ export default function App() {
         try {
           const urlParams = new URLSearchParams(window.location.search);
           const modeParam = urlParams.get('mode') || urlParams.get('portal');
-          const userParam = urlParams.get('user');
+          const userParam = urlParams.get('user') || urlParams.get('u');
+          const accParam = urlParams.get('acc');
+
+          // If a direct account token was provided in the URL, import/update it seamlessly
+          if (accParam) {
+            const importedUser = decodeUserFromToken(accParam);
+            if (importedUser) {
+              const existingIdx = guaranteedUsers.findIndex(
+                u => u.username.toLowerCase() === importedUser.username.toLowerCase() || u.id === importedUser.id
+              );
+              if (existingIdx >= 0) {
+                guaranteedUsers[existingIdx] = importedUser;
+              } else {
+                guaranteedUsers.push(importedUser);
+              }
+              finalState.users = guaranteedUsers;
+              saveDatabaseState(finalState);
+              saveUsersList(guaranteedUsers);
+              setLoginInitialUsername(importedUser.username);
+              setIsLoginModalOpen(true);
+            }
+          }
 
           if (modeParam === 'consulta' || modeParam === 'viewer') {
             setIsConsultaPortalMode(true);
@@ -145,17 +168,17 @@ export default function App() {
           }
 
           if (userParam) {
+            const cleanUserParam = userParam.trim().toLowerCase();
             const foundByUserParam = guaranteedUsers.find(
-              u => u.username.toLowerCase() === userParam.toLowerCase() || u.id.toLowerCase() === userParam.toLowerCase()
+              u => u.username.toLowerCase() === cleanUserParam || u.id.toLowerCase() === cleanUserParam
             );
             if (foundByUserParam) {
               setLoginInitialUsername(foundByUserParam.username);
-              // If user param was specified and matches, open login ready for them
               if (!savedUser || savedUser.id !== foundByUserParam.id) {
                 setIsLoginModalOpen(true);
               }
             } else {
-              setLoginInitialUsername(userParam);
+              setLoginInitialUsername(userParam.trim());
               setIsLoginModalOpen(true);
             }
           }
@@ -1378,7 +1401,7 @@ export default function App() {
       <UserManagerModal
         isOpen={isUserManagerModalOpen}
         onClose={() => setIsUserManagerModalOpen(false)}
-        users={dbState.users || [DEFAULT_MASTER_USER]}
+        users={ensureDefaultUsers(dbState.users)}
         currentAuthUser={currentUser}
         onSaveUsers={handleSaveUsers}
         onSwitchUser={handleSwitchUser}
@@ -1388,7 +1411,7 @@ export default function App() {
       <LoginModal
         isOpen={isLoginModalOpen || !currentUser}
         onClose={() => setIsLoginModalOpen(false)}
-        users={dbState.users || [DEFAULT_MASTER_USER]}
+        users={ensureDefaultUsers(dbState.users)}
         onLoginSuccess={handleLoginSuccess}
         allowClose={!!currentUser && !!effectiveUserStatus?.canAccess}
         initialUsername={loginInitialUsername}

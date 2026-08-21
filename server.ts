@@ -40,14 +40,28 @@ const DEFAULT_MASTER_USER = {
   notes: 'Perfil Master Principal',
 };
 
+const DEFAULT_CONSULTA_USER = {
+  id: 'USER-CONSULTA-001',
+  name: 'User Teste',
+  username: 'usuario.teste',
+  password: '123456',
+  role: 'CONSULTOR',
+  duration: '30_DAYS',
+  status: 'ACTIVE',
+  createdAt: new Date().toISOString(),
+  expiresAt: new Date(Date.now() + 29 * 24 * 60 * 60 * 1000).toISOString(),
+  notes: 'Perfil de Teste Consulta & Análise',
+};
+
 // Helper to load users safely from users.json and fallback to football_db.json
 function loadUsers(): any[] {
+  let list: any[] = [];
   if (fs.existsSync(USERS_FILE)) {
     try {
       const raw = fs.readFileSync(USERS_FILE, 'utf-8');
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        list = parsed;
       }
     } catch (err) {
       console.error('Error reading users.json:', err);
@@ -55,22 +69,32 @@ function loadUsers(): any[] {
   }
 
   // Fallback to football_db.json
-  if (fs.existsSync(DB_FILE)) {
+  if (list.length === 0 && fs.existsSync(DB_FILE)) {
     try {
       const raw = fs.readFileSync(DB_FILE, 'utf-8');
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed.users) && parsed.users.length > 0) {
-        saveUsers(parsed.users);
-        return parsed.users;
+        list = parsed.users;
       }
     } catch {
       // ignore
     }
   }
 
-  const initial = [DEFAULT_MASTER_USER];
-  saveUsers(initial);
-  return initial;
+  if (list.length === 0) {
+    list = [DEFAULT_MASTER_USER, DEFAULT_CONSULTA_USER];
+  }
+
+  // Ensure both master and default consulta exist
+  if (!list.some(u => u.role === 'MASTER')) {
+    list.unshift(DEFAULT_MASTER_USER);
+  }
+  if (!list.some(u => u.username === 'usuario.teste')) {
+    list.push(DEFAULT_CONSULTA_USER);
+  }
+
+  saveUsers(list);
+  return list;
 }
 
 function saveUsers(users: any[]) {
