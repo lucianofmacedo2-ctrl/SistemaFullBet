@@ -44,7 +44,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setLoading(true);
@@ -58,19 +58,44 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       return;
     }
 
-    const matchedUser = users.find(
-      u => u.username.toLowerCase() === cleanUsername
+    // 1. Try finding in current local users array
+    let matchedUser = users.find(
+      u =>
+        u.username.trim().toLowerCase() === cleanUsername ||
+        (u.id && u.id.trim().toLowerCase() === cleanUsername) ||
+        (u.name && u.name.trim().toLowerCase() === cleanUsername)
     );
 
+    // 2. If not found locally, fetch latest users live from server (cross-device sync for mobile)
     if (!matchedUser) {
-      setErrorMessage('Usuário não encontrado. Verifique o login digitado.');
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: cleanUsername, password: cleanPassword }),
+        });
+        const result = await response.json();
+        if (response.ok && result.success && result.user) {
+          matchedUser = result.user;
+        } else if (result.error) {
+          setErrorMessage(result.error);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn('Live login endpoint check failed, checking users list', err);
+      }
+    }
+
+    if (!matchedUser) {
+      setErrorMessage('Usuário não encontrado. Verifique se digitou o login corretamente.');
       setLoading(false);
       return;
     }
 
-    // Verify password if set
-    if (matchedUser.password && matchedUser.password !== cleanPassword) {
-      setErrorMessage('Senha incorreta. Tente novamente.');
+    // Verify password
+    if (matchedUser.password && matchedUser.password.trim() !== cleanPassword) {
+      setErrorMessage('Senha incorreta. Verifique maiúsculas e minúsculas.');
       setLoading(false);
       return;
     }
@@ -79,6 +104,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     const eff = getUserEffectiveStatus(matchedUser);
     if (eff.status === 'BLOCKED') {
       setErrorMessage('Esta conta está bloqueada pelo administrador. Entre em contato com o suporte.');
+      setLoading(false);
+      return;
+    }
+
+    if (eff.status === 'EXPIRED') {
+      setErrorMessage('O período de acesso desta conta expirou. Solicite a renovação ao administrador.');
       setLoading(false);
       return;
     }
@@ -135,6 +166,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 type="text"
                 required
                 autoFocus
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="username"
                 placeholder="Informe seu usuário"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -152,6 +187,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="current-password"
                 placeholder="Informe sua senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -160,7 +199,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -170,9 +209,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
+            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2 disabled:opacity-50"
           >
-            <span>Entrar no Sistema</span>
+            <span>{loading ? 'Verificando...' : 'Entrar no Sistema'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
 

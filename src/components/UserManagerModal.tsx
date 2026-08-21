@@ -855,6 +855,10 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
                   <input
                     type="text"
                     required
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    autoComplete="username"
                     placeholder="Ex: joao.analista"
                     value={formUsername}
                     onChange={(e) => setFormUsername(e.target.value)}
@@ -870,7 +874,7 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setFormPassword(Math.random().toString(36).substring(2, 8))}
-                      className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold"
+                      className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
                     >
                       Gerar Aleatória
                     </button>
@@ -879,6 +883,10 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      autoComplete="new-password"
                       placeholder="Senha de acesso"
                       value={formPassword}
                       onChange={(e) => setFormPassword(e.target.value)}

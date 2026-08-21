@@ -12,6 +12,7 @@ app.use(express.json({ limit: '25mb' }));
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'football_db.json');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -24,6 +25,61 @@ interface DbData {
   teams: any[];
   matches: any[];
   users?: any[];
+}
+
+const DEFAULT_MASTER_USER = {
+  id: 'USER-MASTER-001',
+  name: 'Administrador Master',
+  username: '31882844890',
+  password: 'Otavio@2010',
+  role: 'MASTER',
+  duration: 'LIFETIME',
+  status: 'ACTIVE',
+  createdAt: new Date().toISOString(),
+  expiresAt: null,
+  notes: 'Perfil Master Principal',
+};
+
+// Helper to load users safely from users.json and fallback to football_db.json
+function loadUsers(): any[] {
+  if (fs.existsSync(USERS_FILE)) {
+    try {
+      const raw = fs.readFileSync(USERS_FILE, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    } catch (err) {
+      console.error('Error reading users.json:', err);
+    }
+  }
+
+  // Fallback to football_db.json
+  if (fs.existsSync(DB_FILE)) {
+    try {
+      const raw = fs.readFileSync(DB_FILE, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.users) && parsed.users.length > 0) {
+        saveUsers(parsed.users);
+        return parsed.users;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const initial = [DEFAULT_MASTER_USER];
+  saveUsers(initial);
+  return initial;
+}
+
+function saveUsers(users: any[]) {
+  try {
+    const ensuredUsers = Array.isArray(users) && users.length > 0 ? users : [DEFAULT_MASTER_USER];
+    fs.writeFileSync(USERS_FILE, JSON.stringify(ensuredUsers, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error writing users.json:', err);
+  }
 }
 
 // Lazy Gemini AI initialization
@@ -45,13 +101,14 @@ function getGeminiAI(): GoogleGenAI | null {
 
 // Initialize empty DB if not present
 function loadDb(): DbData {
+  const users = loadUsers();
   if (!fs.existsSync(DB_FILE)) {
     const initialData: DbData = {
       countries: [],
       leagues: [],
       teams: [],
       matches: [],
-      users: [],
+      users,
     };
     fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
     return initialData;
@@ -59,19 +116,24 @@ function loadDb(): DbData {
   try {
     const raw = fs.readFileSync(DB_FILE, 'utf-8');
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed.users)) {
-      parsed.users = [];
-    }
+    parsed.users = users;
     return parsed;
   } catch (err) {
     console.error('Error reading db file:', err);
-    return { countries: [], leagues: [], teams: [], matches: [], users: [] };
+    return { countries: [], leagues: [], teams: [], matches: [], users };
   }
 }
 
 function saveDb(data: DbData) {
   try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    if (Array.isArray(data.users)) {
+      saveUsers(data.users);
+    }
+    const dataToSave = {
+      ...data,
+      users: loadUsers(),
+    };
+    fs.writeFileSync(DB_FILE, JSON.stringify(dataToSave, null, 2), 'utf-8');
   } catch (err) {
     console.error('Error writing db file:', err);
   }
@@ -81,6 +143,49 @@ function saveDb(data: DbData) {
 app.get('/api/db', (req, res) => {
   const db = loadDb();
   res.json(db);
+});
+
+// Dedicated Users API
+app.get('/api/users', (req, res) => {
+  const users = loadUsers();
+  res.json(users);
+});
+
+app.post('/api/users', (req, res) => {
+  const { users } = req.body;
+  if (!Array.isArray(users)) {
+    return res.status(400).json({ error: 'Array de usuários esperado.' });
+  }
+  saveUsers(users);
+  res.json({ success: true, users });
+});
+
+// Dedicated Auth Login verification API
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body;
+  const cleanUsername = String(username || '').trim().toLowerCase();
+  const cleanPassword = String(password || '').trim();
+
+  const users = loadUsers();
+  const matched = users.find(u => 
+    String(u.username || '').trim().toLowerCase() === cleanUsername ||
+    String(u.id || '').trim().toLowerCase() === cleanUsername ||
+    String(u.name || '').trim().toLowerCase() === cleanUsername
+  );
+
+  if (!matched) {
+    return res.status(404).json({ success: false, error: 'Usuário não encontrado. Verifique o login digitado.' });
+  }
+
+  if (matched.password && String(matched.password).trim() !== cleanPassword) {
+    return res.status(401).json({ success: false, error: 'Senha incorreta. Tente novamente.' });
+  }
+
+  if (matched.status === 'BLOCKED') {
+    return res.status(403).json({ success: false, error: 'Esta conta está bloqueada pelo administrador.' });
+  }
+
+  res.json({ success: true, user: matched });
 });
 
 app.post('/api/sync/run', async (req, res) => {

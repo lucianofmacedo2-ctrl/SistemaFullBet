@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DbState, Match, NewEntityCreatedNotification, Country, League, Team, AppUser } from './types';
-import { fetchDatabaseState, saveDatabaseState, clearDatabase } from './services/dbService';
+import { fetchDatabaseState, saveDatabaseState, clearDatabase, saveUsersList } from './services/dbService';
 
 import { Navbar } from './components/Navbar';
 import { EmptyState } from './components/EmptyState';
@@ -210,6 +210,7 @@ export default function App() {
     const newState = { ...dbState, users: ensured };
     setDbState(newState);
     await saveDatabaseState(newState);
+    await saveUsersList(ensured);
 
     // Keep currentUser up to date if modified in manager
     if (currentUser) {
