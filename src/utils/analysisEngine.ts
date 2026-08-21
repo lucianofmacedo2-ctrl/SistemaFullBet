@@ -1,0 +1,1125 @@
+import { Match, MatchStats, MatchOdds, DbState, Team, League, Country } from '../types';
+
+export interface TeamSampleMatch {
+  match: Match;
+  isHome: boolean;
+  teamGoals: number;
+  oppGoals: number;
+  teamGoalsHT: number;
+  oppGoalsHT: number;
+  result: 'W' | 'D' | 'L'; // V, E, D
+  opponentName: string;
+  opponentId: string;
+  opponentLogoUrl?: string;
+  opponentOdd: number | null;
+  matchOdd: number | null;
+  xgFor: number | null;
+  xgAgainst: number | null;
+  shotsFor: number | null;
+  shotsAgainst: number | null;
+  shotsOnTargetFor: number | null;
+  shotsOnTargetAgainst: number | null;
+  cornersFor: number | null;
+  cornersAgainst: number | null;
+  foulsFor: number | null;
+  foulsAgainst: number | null;
+  yellowCardsFor: number | null;
+  yellowCardsAgainst: number | null;
+  redCardsFor: number | null;
+  redCardsAgainst: number | null;
+  cardPointsFor: number; // yellow * 1 + red * 2
+  cardPointsAgainst: number;
+  // Market checks
+  asianHandicapCovered: boolean | null;
+  over25Hit: boolean;
+  under25Hit: boolean;
+  bttsHit: boolean;
+  cleanSheet: boolean;
+  failedToScore: boolean;
+}
+
+export interface DescriptiveMetric {
+  name: string;
+  unit?: string;
+  homeValue: number;
+  homeMean: number;
+  homeMedian: number;
+  homeMode: number;
+  homeModeFreq: number;
+  homeStdDev: number;
+  homeCv: number; // Coefficient of Variation %
+  homeConsistency: 'Alta Regularidade' | 'Moderada' | 'Volátil / Disperso';
+  awayValue: number;
+  awayMean: number;
+  awayMedian: number;
+  awayMode: number;
+  awayModeFreq: number;
+  awayStdDev: number;
+  awayCv: number;
+  awayConsistency: 'Alta Regularidade' | 'Moderada' | 'Volátil / Disperso';
+}
+
+export interface PoissonOutcome {
+  score: string; // e.g. "2 - 1"
+  homeGoals: number;
+  awayGoals: number;
+  prob: number; // e.g. 0.1245
+}
+
+export interface MatchAnalysisResult {
+  homeTeam: Team;
+  awayTeam: Team;
+  country?: Country;
+  league?: League;
+  sampleSize: number; // 5, 10, 15, 20 or All
+  venueMode: 'SPECIFIC' | 'GENERAL'; // Specific = Home in Casa, Away Fora; General = Todos jogos
+
+  // Módulo 1: Forma Recente
+  homeFormG5: TeamSampleMatch[]; // Últimos 5 geral
+  homeFormE5: TeamSampleMatch[]; // Últimos 5 em casa
+  awayFormG5: TeamSampleMatch[]; // Últimos 5 geral
+  awayFormE5: TeamSampleMatch[]; // Últimos 5 fora
+
+  // Amostras ativas usadas nos cálculos (conforme sampleSize e venueMode)
+  homeActiveSample: TeamSampleMatch[];
+  awayActiveSample: TeamSampleMatch[];
+
+  // Módulo 2: Power Ranking Ponderado
+  homePower: TeamPowerRating;
+  awayPower: TeamPowerRating;
+
+  // Módulo 3: Estatísticas Descritivas
+  descriptiveMetrics: DescriptiveMetric[];
+
+  // Módulo 4: Projeções Contínuas e Poisson
+  projections: ContinuousProjections;
+  poisson: PoissonAnalysis;
+
+  // Complementares
+  htFtAnalysis: HtFtDifferential;
+  refereeAnalysis?: RefereeCardAnalysis;
+  valueBets: ValueBetOpportunity[];
+}
+
+export interface TeamPowerRating {
+  teamId: string;
+  teamName: string;
+  pointsRatePct: number; // % Pontos ganhos
+  wins: number;
+  draws: number;
+  losses: number;
+  matchesPlayed: number;
+  points: number;
+  maxPoints: number;
+  goalsForAvg: number;
+  goalsAgainstAvg: number;
+  goalDiffAvg: number;
+  goalsForHTAvg: number;
+  goalsAgainstHTAvg: number;
+  // Dificuldade por Odds do Adversário
+  opponentOddsWeightScore: number;
+  // Eficiência de xG / Chutes
+  xgForAvg: number;
+  xgAgainstAvg: number;
+  offensiveEfficiency: number; // Gols Feitos / xG (ou Finalizações)
+  defensiveEfficiency: number; // Gols Sofridos / xG
+  shotsVolumeAvg: number;
+  shotsConcededAvg: number;
+  shotsOnTargetAvg: number;
+  shotsOnTargetConcededAvg: number;
+  // Linhas de Mercado
+  asianHandicapCoverRatePct: number;
+  over25RatePct: number;
+  under25RatePct: number;
+  bttsRatePct: number;
+  cleanSheetRatePct: number;
+  failedToScoreRatePct: number;
+  // Composite Power Score (0 to 100)
+  compositeRating: number;
+}
+
+export interface ContinuousProjections {
+  expectedGoalsHome: number; // lambda Home
+  expectedGoalsAway: number; // lambda Away
+  totalExpectedGoals: number;
+  expectedCornersHome: number;
+  expectedCornersAway: number;
+  totalExpectedCorners: number;
+  expectedShotsHome: number;
+  expectedShotsAway: number;
+  totalExpectedShots: number;
+  expectedShotsOnTargetHome: number;
+  expectedShotsOnTargetAway: number;
+  totalExpectedShotsOnTarget: number;
+  expectedCardsHome: number;
+  expectedCardsAway: number;
+  totalExpectedCards: number;
+  // League Baselines
+  leagueAvgGoalsHome: number;
+  leagueAvgGoalsAway: number;
+  leagueAvgCornersHome: number;
+  leagueAvgCornersAway: number;
+}
+
+export interface PoissonAnalysis {
+  matrix: number[][]; // [homeGoals 0..5][awayGoals 0..5]
+  probHomeWin: number;
+  probDraw: number;
+  probAwayWin: number;
+  probOver05: number;
+  probOver15: number;
+  probOver25: number;
+  probOver35: number;
+  probUnder25: number;
+  probBttsYes: number;
+  probBttsNo: number;
+  topExactScores: PoissonOutcome[];
+}
+
+export interface HtFtDifferential {
+  homeScoredHTPct: number;
+  homeScored2HPct: number;
+  homeComeQuietoTendency: 'Forte Crescimento 2ºT' | 'Equilibrado' | 'Queda de Ritmo no 2ºT';
+  awayScoredHTPct: number;
+  awayScored2HPct: number;
+  awayComeQuietoTendency: 'Forte Crescimento 2ºT' | 'Equilibrado' | 'Queda de Ritmo no 2ºT';
+  homeGoalsHTAvg: number;
+  homeGoals2HAvg: number;
+  awayGoalsHTAvg: number;
+  awayGoals2HAvg: number;
+}
+
+export interface RefereeCardAnalysis {
+  refereeName: string;
+  matchesCount: number;
+  avgYellowCards: number;
+  avgRedCards: number;
+  avgTotalCardsPoints: number;
+  combinedExpectation: number;
+}
+
+export interface ValueBetOpportunity {
+  market: string;
+  selection: string;
+  modelProbPct: number;
+  fairOdd: number;
+  bookmakerOdd?: number | null;
+  evPct?: number | null; // Expected Value %
+  hasValue: boolean;
+  status: 'VALOR' | 'JUSTA' | 'SEM_VALOR' | 'SEM_ODD';
+}
+
+// ----------------- MATH UTILS -----------------
+
+export function calculateMean(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sum = values.reduce((acc, v) => acc + v, 0);
+  return sum / values.length;
+}
+
+export function calculateMedian(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+  return sorted[mid];
+}
+
+export function calculateMode(values: number[]): { mode: number; frequency: number } {
+  if (values.length === 0) return { mode: 0, frequency: 0 };
+  const counts: Record<number, number> = {};
+  let maxFreq = 0;
+  let modeVal = values[0];
+
+  for (const v of values) {
+    // Round to 1 decimal for continuous numbers
+    const rounded = Math.round(v * 10) / 10;
+    counts[rounded] = (counts[rounded] || 0) + 1;
+    if (counts[rounded] > maxFreq) {
+      maxFreq = counts[rounded];
+      modeVal = rounded;
+    }
+  }
+
+  return { mode: modeVal, frequency: maxFreq };
+}
+
+export function calculateStandardDeviation(values: number[], mean?: number): number {
+  if (values.length <= 1) return 0;
+  const m = mean ?? calculateMean(values);
+  const variance = values.reduce((acc, v) => acc + Math.pow(v - m, 2), 0) / (values.length - 1);
+  return Math.sqrt(variance);
+}
+
+export function calculateCV(stdDev: number, mean: number): number {
+  if (mean === 0) return 0;
+  return (stdDev / Math.abs(mean)) * 100;
+}
+
+export function getConsistencyLabel(cv: number): 'Alta Regularidade' | 'Moderada' | 'Volátil / Disperso' {
+  if (cv < 28) return 'Alta Regularidade';
+  if (cv <= 50) return 'Moderada';
+  return 'Volátil / Disperso';
+}
+
+function factorial(n: number): number {
+  if (n <= 1) return 1;
+  let res = 1;
+  for (let i = 2; i <= n; i++) res *= i;
+  return res;
+}
+
+export function poissonProbability(k: number, lambda: number): number {
+  if (lambda <= 0) return k === 0 ? 1 : 0;
+  return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
+}
+
+// ----------------- DATA EXTRACTOR -----------------
+
+export function extractTeamMatches(
+  teamId: string,
+  matches: Match[],
+  options?: {
+    venueOnly?: 'HOME' | 'AWAY' | 'ALL';
+    maxCount?: number;
+    leagueId?: string;
+  }
+): TeamSampleMatch[] {
+  const venue = options?.venueOnly || 'ALL';
+  const leagueId = options?.leagueId;
+
+  // Filter completed matches sorted chronologically descending (newest first)
+  const finished = matches
+    .filter(m => {
+      if (m.status !== 'FINALIZADO') return false;
+      if (m.homeScore === null || m.awayScore === null) return false;
+      if (leagueId && m.leagueId !== leagueId) return false;
+
+      const isHome = m.homeTeamId === teamId;
+      const isAway = m.awayTeamId === teamId;
+
+      if (venue === 'HOME') return isHome;
+      if (venue === 'AWAY') return isAway;
+      return isHome || isAway;
+    })
+    .sort((a, b) => new Date(b.matchDate).getTime() - new Date(a.matchDate).getTime());
+
+  const sliced = options?.maxCount ? finished.slice(0, options.maxCount) : finished;
+
+  return sliced.map(m => {
+    const isHome = m.homeTeamId === teamId;
+    const teamGoals = isHome ? (m.homeScore ?? 0) : (m.awayScore ?? 0);
+    const oppGoals = isHome ? (m.awayScore ?? 0) : (m.homeScore ?? 0);
+
+    const teamGoalsHT = isHome ? (m.stats?.halftimeHomeScore ?? 0) : (m.stats?.halftimeAwayScore ?? 0);
+    const oppGoalsHT = isHome ? (m.stats?.halftimeAwayScore ?? 0) : (m.stats?.halftimeHomeScore ?? 0);
+
+    let result: 'W' | 'D' | 'L' = 'D';
+    if (teamGoals > oppGoals) result = 'W';
+    else if (teamGoals === oppGoals) result = 'D';
+    else result = 'L';
+
+    const opponentName = isHome ? m.awayTeamName : m.homeTeamName;
+    const opponentId = isHome ? m.awayTeamId : m.homeTeamId;
+    const opponentLogoUrl = isHome ? m.awayTeamLogoUrl : m.homeTeamLogoUrl;
+
+    const opponentOdd = isHome ? (m.odds?.awayFT ?? null) : (m.odds?.homeFT ?? null);
+    const matchOdd = isHome ? (m.odds?.homeFT ?? null) : (m.odds?.awayFT ?? null);
+
+    const xgFor = isHome ? (m.stats?.xgHomeFT ?? null) : (m.stats?.xgAwayFT ?? null);
+    const xgAgainst = isHome ? (m.stats?.xgAwayFT ?? null) : (m.stats?.xgHomeFT ?? null);
+
+    const shotsFor = isHome ? (m.stats?.shotsHomeFT ?? null) : (m.stats?.shotsAwayFT ?? null);
+    const shotsAgainst = isHome ? (m.stats?.shotsAwayFT ?? null) : (m.stats?.shotsHomeFT ?? null);
+
+    const shotsOnTargetFor = isHome ? (m.stats?.shotsOnTargetHomeFT ?? null) : (m.stats?.shotsOnTargetAwayFT ?? null);
+    const shotsOnTargetAgainst = isHome ? (m.stats?.shotsOnTargetAwayFT ?? null) : (m.stats?.shotsOnTargetHomeFT ?? null);
+
+    const cornersFor = isHome ? (m.stats?.cornersHomeFT ?? null) : (m.stats?.cornersAwayFT ?? null);
+    const cornersAgainst = isHome ? (m.stats?.cornersAwayFT ?? null) : (m.stats?.cornersHomeFT ?? null);
+
+    const foulsFor = isHome ? (m.stats?.foulsHomeFT ?? null) : (m.stats?.foulsAwayFT ?? null);
+    const foulsAgainst = isHome ? (m.stats?.foulsAwayFT ?? null) : (m.stats?.foulsHomeFT ?? null);
+
+    const yellowCardsFor = isHome ? (m.stats?.yellowCardsHomeFT ?? null) : (m.stats?.yellowCardsAwayFT ?? null);
+    const yellowCardsAgainst = isHome ? (m.stats?.yellowCardsAwayFT ?? null) : (m.stats?.yellowCardsHomeFT ?? null);
+
+    const redCardsFor = isHome ? (m.stats?.redCardsHomeFT ?? null) : (m.stats?.redCardsAwayFT ?? null);
+    const redCardsAgainst = isHome ? (m.stats?.redCardsAwayFT ?? null) : (m.stats?.redCardsHomeFT ?? null);
+
+    const cardPointsFor = (yellowCardsFor ?? 0) * 1 + (redCardsFor ?? 0) * 2;
+    const cardPointsAgainst = (yellowCardsAgainst ?? 0) * 1 + (redCardsAgainst ?? 0) * 2;
+
+    // Asian Handicap evaluation
+    let asianHandicapCovered: boolean | null = null;
+    const haLine = isHome ? m.odds?.asianHandicapHomeLine : m.odds?.asianHandicapAwayLine;
+    if (typeof haLine === 'number') {
+      const adjustedGoalDiff = (teamGoals - oppGoals) + haLine;
+      if (adjustedGoalDiff > 0.05) asianHandicapCovered = true;
+      else if (adjustedGoalDiff < -0.05) asianHandicapCovered = false;
+      else asianHandicapCovered = null; // Push / tie
+    }
+
+    const totalMatchGoals = teamGoals + oppGoals;
+    const over25Hit = totalMatchGoals > 2.5;
+    const under25Hit = totalMatchGoals < 2.5;
+    const bttsHit = teamGoals > 0 && oppGoals > 0;
+    const cleanSheet = oppGoals === 0;
+    const failedToScore = teamGoals === 0;
+
+    return {
+      match: m,
+      isHome,
+      teamGoals,
+      oppGoals,
+      teamGoalsHT,
+      oppGoalsHT,
+      result,
+      opponentName,
+      opponentId,
+      opponentLogoUrl,
+      opponentOdd,
+      matchOdd,
+      xgFor,
+      xgAgainst,
+      shotsFor,
+      shotsAgainst,
+      shotsOnTargetFor,
+      shotsOnTargetAgainst,
+      cornersFor,
+      cornersAgainst,
+      foulsFor,
+      foulsAgainst,
+      yellowCardsFor,
+      yellowCardsAgainst,
+      redCardsFor,
+      redCardsAgainst,
+      cardPointsFor,
+      cardPointsAgainst,
+      asianHandicapCovered,
+      over25Hit,
+      under25Hit,
+      bttsHit,
+      cleanSheet,
+      failedToScore,
+    };
+  });
+}
+
+// ----------------- POWER RATING ENGINE -----------------
+
+export function calculateTeamPowerRating(
+  team: Team,
+  sampleMatches: TeamSampleMatch[]
+): TeamPowerRating {
+  const count = sampleMatches.length;
+  if (count === 0) {
+    return {
+      teamId: team.id,
+      teamName: team.name,
+      pointsRatePct: 0,
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      matchesPlayed: 0,
+      points: 0,
+      maxPoints: 0,
+      goalsForAvg: 0,
+      goalsAgainstAvg: 0,
+      goalDiffAvg: 0,
+      goalsForHTAvg: 0,
+      goalsAgainstHTAvg: 0,
+      opponentOddsWeightScore: 0,
+      xgForAvg: 0,
+      xgAgainstAvg: 0,
+      offensiveEfficiency: 1.0,
+      defensiveEfficiency: 1.0,
+      shotsVolumeAvg: 0,
+      shotsConcededAvg: 0,
+      shotsOnTargetAvg: 0,
+      shotsOnTargetConcededAvg: 0,
+      asianHandicapCoverRatePct: 0,
+      over25RatePct: 0,
+      under25RatePct: 0,
+      bttsRatePct: 0,
+      cleanSheetRatePct: 0,
+      failedToScoreRatePct: 0,
+      compositeRating: 50,
+    };
+  }
+
+  let wins = 0;
+  let draws = 0;
+  let losses = 0;
+  let points = 0;
+  let totalGF = 0;
+  let totalGA = 0;
+  let totalGFHT = 0;
+  let totalGAHT = 0;
+  let totalWeightedOppOdd = 0;
+  let weightedOppOddCount = 0;
+
+  let totalXGFor = 0;
+  let totalXGAgainst = 0;
+  let xgMatchCount = 0;
+
+  let totalShotsFor = 0;
+  let totalShotsAgainst = 0;
+  let totalShotsOnTargetFor = 0;
+  let totalShotsOnTargetAgainst = 0;
+  let shotsMatchCount = 0;
+
+  let haCoverCount = 0;
+  let haValidCount = 0;
+  let over25Count = 0;
+  let under25Count = 0;
+  let bttsCount = 0;
+  let cleanSheetCount = 0;
+  let failedToScoreCount = 0;
+
+  for (const sm of sampleMatches) {
+    if (sm.result === 'W') {
+      wins++;
+      points += 3;
+    } else if (sm.result === 'D') {
+      draws++;
+      points += 1;
+    } else {
+      losses++;
+    }
+
+    totalGF += sm.teamGoals;
+    totalGA += sm.oppGoals;
+    totalGFHT += sm.teamGoalsHT;
+    totalGAHT += sm.oppGoalsHT;
+
+    // Weight by opponent odds: R * OpponentOdd (R=1 for W, 0.5 for D, 0 for L)
+    // Default baseline opponent odd is 2.5 if missing
+    const oppOdd = sm.opponentOdd && sm.opponentOdd > 1.0 ? sm.opponentOdd : 2.5;
+    const r = sm.result === 'W' ? 1.0 : sm.result === 'D' ? 0.5 : 0.0;
+    totalWeightedOppOdd += r * oppOdd;
+    weightedOppOddCount++;
+
+    if (sm.xgFor !== null && sm.xgAgainst !== null) {
+      totalXGFor += sm.xgFor;
+      totalXGAgainst += sm.xgAgainst;
+      xgMatchCount++;
+    }
+
+    if (sm.shotsFor !== null) {
+      totalShotsFor += sm.shotsFor;
+      totalShotsAgainst += sm.shotsAgainst ?? 0;
+      totalShotsOnTargetFor += sm.shotsOnTargetFor ?? 0;
+      totalShotsOnTargetAgainst += sm.shotsOnTargetAgainst ?? 0;
+      shotsMatchCount++;
+    }
+
+    if (sm.asianHandicapCovered !== null) {
+      haValidCount++;
+      if (sm.asianHandicapCovered === true) haCoverCount++;
+    }
+
+    if (sm.over25Hit) over25Count++;
+    if (sm.under25Hit) under25Count++;
+    if (sm.bttsHit) bttsCount++;
+    if (sm.cleanSheet) cleanSheetCount++;
+    if (sm.failedToScore) failedToScoreCount++;
+  }
+
+  const maxPoints = count * 3;
+  const pointsRatePct = maxPoints > 0 ? (points / maxPoints) * 100 : 0;
+  const goalsForAvg = totalGF / count;
+  const goalsAgainstAvg = totalGA / count;
+  const goalDiffAvg = goalsForAvg - goalsAgainstAvg;
+  const goalsForHTAvg = totalGFHT / count;
+  const goalsAgainstHTAvg = totalGAHT / count;
+
+  const opponentOddsWeightScore = weightedOppOddCount > 0 ? totalWeightedOppOdd / weightedOppOddCount : 0;
+
+  const xgForAvg = xgMatchCount > 0 ? totalXGFor / xgMatchCount : goalsForAvg;
+  const xgAgainstAvg = xgMatchCount > 0 ? totalXGAgainst / xgMatchCount : goalsAgainstAvg;
+
+  // Offensive efficiency: Goals Scored / xG (or default 1.0)
+  const offensiveEfficiency = xgForAvg > 0 ? goalsForAvg / xgForAvg : 1.0;
+  // Defensive efficiency: Goals Conceded / xG Conceded (lower is better defense, but ratio >= 1 means conceding more than xG)
+  const defensiveEfficiency = xgAgainstAvg > 0 ? goalsAgainstAvg / xgAgainstAvg : 1.0;
+
+  const shotsVolumeAvg = shotsMatchCount > 0 ? totalShotsFor / shotsMatchCount : 0;
+  const shotsConcededAvg = shotsMatchCount > 0 ? totalShotsAgainst / shotsMatchCount : 0;
+  const shotsOnTargetAvg = shotsMatchCount > 0 ? totalShotsOnTargetFor / shotsMatchCount : 0;
+  const shotsOnTargetConcededAvg = shotsMatchCount > 0 ? totalShotsOnTargetAgainst / shotsMatchCount : 0;
+
+  const asianHandicapCoverRatePct = haValidCount > 0 ? (haCoverCount / haValidCount) * 100 : pointsRatePct;
+  const over25RatePct = (over25Count / count) * 100;
+  const under25RatePct = (under25Count / count) * 100;
+  const bttsRatePct = (bttsCount / count) * 100;
+  const cleanSheetRatePct = (cleanSheetCount / count) * 100;
+  const failedToScoreRatePct = (failedToScoreCount / count) * 100;
+
+  // Composite Rating Calculation (0 - 100 score)
+  // Components: Points Rate (40%), Goal Diff normalized (25%), Opponent Weight (15%), HA Cover Rate (10%), xG Efficiency (10%)
+  const normPoints = pointsRatePct; // 0..100
+  const normGoalDiff = Math.max(0, Math.min(100, 50 + goalDiffAvg * 20)); // -2.5 -> 0, 0 -> 50, +2.5 -> 100
+  const normOppWeight = Math.max(0, Math.min(100, (opponentOddsWeightScore / 3.5) * 100));
+  const normHaCover = asianHandicapCoverRatePct;
+  const normXgEff = Math.max(0, Math.min(100, 50 + (offensiveEfficiency - 1.0) * 30 - (defensiveEfficiency - 1.0) * 30));
+
+  const compositeRating = Math.round(
+    normPoints * 0.40 +
+    normGoalDiff * 0.25 +
+    normOppWeight * 0.15 +
+    normHaCover * 0.10 +
+    normXgEff * 0.10
+  );
+
+  return {
+    teamId: team.id,
+    teamName: team.name,
+    pointsRatePct,
+    wins,
+    draws,
+    losses,
+    matchesPlayed: count,
+    points,
+    maxPoints,
+    goalsForAvg,
+    goalsAgainstAvg,
+    goalDiffAvg,
+    goalsForHTAvg,
+    goalsAgainstHTAvg,
+    opponentOddsWeightScore,
+    xgForAvg,
+    xgAgainstAvg,
+    offensiveEfficiency,
+    defensiveEfficiency,
+    shotsVolumeAvg,
+    shotsConcededAvg,
+    shotsOnTargetAvg,
+    shotsOnTargetConcededAvg,
+    asianHandicapCoverRatePct,
+    over25RatePct,
+    under25RatePct,
+    bttsRatePct,
+    cleanSheetRatePct,
+    failedToScoreRatePct,
+    compositeRating: Math.max(1, Math.min(99, compositeRating)),
+  };
+}
+
+// ----------------- LEAGUE AVERAGES -----------------
+
+export function calculateLeagueBaselines(leagueMatches: Match[]): {
+  avgGoalsHome: number;
+  avgGoalsAway: number;
+  avgCornersHome: number;
+  avgCornersAway: number;
+  avgShotsHome: number;
+  avgShotsAway: number;
+  avgShotsOnTargetHome: number;
+  avgShotsOnTargetAway: number;
+  avgCardsHome: number;
+  avgCardsAway: number;
+} {
+  const completed = leagueMatches.filter(m => m.status === 'FINALIZADO' && m.homeScore !== null && m.awayScore !== null);
+  const count = completed.length;
+
+  if (count === 0) {
+    // Default international averages
+    return {
+      avgGoalsHome: 1.45,
+      avgGoalsAway: 1.15,
+      avgCornersHome: 5.5,
+      avgCornersAway: 4.5,
+      avgShotsHome: 12.5,
+      avgShotsAway: 10.0,
+      avgShotsOnTargetHome: 4.8,
+      avgShotsOnTargetAway: 3.8,
+      avgCardsHome: 2.1,
+      avgCardsAway: 2.4,
+    };
+  }
+
+  let gHome = 0, gAway = 0;
+  let cHome = 0, cAway = 0, cCount = 0;
+  let sHome = 0, sAway = 0, sCount = 0;
+  let stHome = 0, stAway = 0, stCount = 0;
+  let cardHome = 0, cardAway = 0, cardCount = 0;
+
+  for (const m of completed) {
+    gHome += m.homeScore ?? 0;
+    gAway += m.awayScore ?? 0;
+
+    if (m.stats?.cornersHomeFT !== null && m.stats?.cornersAwayFT !== null && m.stats?.cornersHomeFT !== undefined) {
+      cHome += m.stats.cornersHomeFT;
+      cAway += m.stats.cornersAwayFT ?? 0;
+      cCount++;
+    }
+
+    if (m.stats?.shotsHomeFT !== null && m.stats?.shotsAwayFT !== null && m.stats?.shotsHomeFT !== undefined) {
+      sHome += m.stats.shotsHomeFT;
+      sAway += m.stats.shotsAwayFT ?? 0;
+      sCount++;
+    }
+
+    if (m.stats?.shotsOnTargetHomeFT !== null && m.stats?.shotsOnTargetAwayFT !== null && m.stats?.shotsOnTargetHomeFT !== undefined) {
+      stHome += m.stats.shotsOnTargetHomeFT;
+      stAway += m.stats.shotsOnTargetAwayFT ?? 0;
+      stCount++;
+    }
+
+    if (m.stats?.yellowCardsHomeFT !== null && m.stats?.yellowCardsAwayFT !== null && m.stats?.yellowCardsHomeFT !== undefined) {
+      const hPts = (m.stats.yellowCardsHomeFT ?? 0) * 1 + (m.stats.redCardsHomeFT ?? 0) * 2;
+      const aPts = (m.stats.yellowCardsAwayFT ?? 0) * 1 + (m.stats.redCardsAwayFT ?? 0) * 2;
+      cardHome += hPts;
+      cardAway += aPts;
+      cardCount++;
+    }
+  }
+
+  return {
+    avgGoalsHome: Math.max(0.8, gHome / count),
+    avgGoalsAway: Math.max(0.6, gAway / count),
+    avgCornersHome: cCount > 0 ? cHome / cCount : 5.4,
+    avgCornersAway: cCount > 0 ? cAway / cCount : 4.4,
+    avgShotsHome: sCount > 0 ? sHome / sCount : 12.5,
+    avgShotsAway: sCount > 0 ? sAway / sCount : 10.2,
+    avgShotsOnTargetHome: stCount > 0 ? stHome / stCount : 4.8,
+    avgShotsOnTargetAway: stCount > 0 ? stAway / stCount : 3.8,
+    avgCardsHome: cardCount > 0 ? cardHome / cardCount : 2.1,
+    avgCardsAway: cardCount > 0 ? cardAway / cardCount : 2.4,
+  };
+}
+
+// ----------------- DESCRIPTIVE METRICS BUILDER -----------------
+
+function buildDescriptiveMetric(
+  name: string,
+  unit: string,
+  homeValues: number[],
+  awayValues: number[]
+): DescriptiveMetric {
+  const hMean = calculateMean(homeValues);
+  const hMedian = calculateMedian(homeValues);
+  const hModeData = calculateMode(homeValues);
+  const hStdDev = calculateStandardDeviation(homeValues, hMean);
+  const hCv = calculateCV(hStdDev, hMean);
+  const hConsistency = getConsistencyLabel(hCv);
+
+  const aMean = calculateMean(awayValues);
+  const aMedian = calculateMedian(awayValues);
+  const aModeData = calculateMode(awayValues);
+  const aStdDev = calculateStandardDeviation(awayValues, aMean);
+  const aCv = calculateCV(aStdDev, aMean);
+  const aConsistency = getConsistencyLabel(aCv);
+
+  return {
+    name,
+    unit,
+    homeValue: hMean,
+    homeMean: hMean,
+    homeMedian: hMedian,
+    homeMode: hModeData.mode,
+    homeModeFreq: hModeData.frequency,
+    homeStdDev: hStdDev,
+    homeCv: hCv,
+    homeConsistency: hConsistency,
+    awayValue: aMean,
+    awayMean: aMean,
+    awayMedian: aMedian,
+    awayMode: aModeData.mode,
+    awayModeFreq: aModeData.frequency,
+    awayStdDev: aStdDev,
+    awayCv: aCv,
+    awayConsistency: aConsistency,
+  };
+}
+
+// ----------------- MAIN ANALYSIS PIPELINE -----------------
+
+export function runFullMatchAnalysis(
+  homeTeam: Team,
+  awayTeam: Team,
+  dbState: DbState,
+  options?: {
+    sampleSize?: number; // 5, 10, 15, 20 or 999 for all
+    venueMode?: 'SPECIFIC' | 'GENERAL'; // Specific: Home in Casa, Away Fora; General: All matches
+    activeMatch?: Match | null;
+  }
+): MatchAnalysisResult {
+  const sampleSize = options?.sampleSize || 10;
+  const venueMode = options?.venueMode || 'SPECIFIC';
+
+  const country = dbState.countries.find(c => c.id === homeTeam.countryId);
+  const league = dbState.leagues.find(l => l.id === homeTeam.leagueId || homeTeam.leagueIds?.includes(l.id));
+
+  // Extract Form Trackers (G5 & E5 for both teams)
+  const homeFormG5 = extractTeamMatches(homeTeam.id, dbState.matches, { venueOnly: 'ALL', maxCount: 5 });
+  const homeFormE5 = extractTeamMatches(homeTeam.id, dbState.matches, { venueOnly: 'HOME', maxCount: 5 });
+  const awayFormG5 = extractTeamMatches(awayTeam.id, dbState.matches, { venueOnly: 'ALL', maxCount: 5 });
+  const awayFormE5 = extractTeamMatches(awayTeam.id, dbState.matches, { venueOnly: 'AWAY', maxCount: 5 });
+
+  // Extract Active Samples according to configuration
+  const homeActiveSample = extractTeamMatches(homeTeam.id, dbState.matches, {
+    venueOnly: venueMode === 'SPECIFIC' ? 'HOME' : 'ALL',
+    maxCount: sampleSize >= 999 ? undefined : sampleSize,
+  });
+
+  const awayActiveSample = extractTeamMatches(awayTeam.id, dbState.matches, {
+    venueOnly: venueMode === 'SPECIFIC' ? 'AWAY' : 'ALL',
+    maxCount: sampleSize >= 999 ? undefined : sampleSize,
+  });
+
+  // Calculate Power Ratings
+  const homePower = calculateTeamPowerRating(homeTeam, homeActiveSample);
+  const awayPower = calculateTeamPowerRating(awayTeam, awayActiveSample);
+
+  // League Baselines
+  const leagueMatches = league ? dbState.matches.filter(m => m.leagueId === league.id) : dbState.matches;
+  const baselines = calculateLeagueBaselines(leagueMatches);
+
+  // Continuous Projections (Attack x Defense Model)
+  // Expectativa Mandante = (Ataque Mandante / Liga Casa) * (Defesa Visitante / Liga Fora) * Liga Casa
+  const homeAttRating = baselines.avgGoalsHome > 0 ? homePower.goalsForAvg / baselines.avgGoalsHome : 1.0;
+  const awayDefRating = baselines.avgGoalsHome > 0 ? awayPower.goalsAgainstAvg / baselines.avgGoalsHome : 1.0;
+  const lambdaHome = Math.max(0.2, homeAttRating * awayDefRating * baselines.avgGoalsHome);
+
+  const awayAttRating = baselines.avgGoalsAway > 0 ? awayPower.goalsForAvg / baselines.avgGoalsAway : 1.0;
+  const homeDefRating = baselines.avgGoalsAway > 0 ? homePower.goalsAgainstAvg / baselines.avgGoalsAway : 1.0;
+  const lambdaAway = Math.max(0.15, awayAttRating * homeDefRating * baselines.avgGoalsAway);
+
+  // Corners Projections
+  const homeCornerAtt = baselines.avgCornersHome > 0
+    ? calculateMean(homeActiveSample.map(s => s.cornersFor ?? baselines.avgCornersHome)) / baselines.avgCornersHome
+    : 1.0;
+  const awayCornerDef = baselines.avgCornersHome > 0
+    ? calculateMean(awayActiveSample.map(s => s.cornersAgainst ?? baselines.avgCornersHome)) / baselines.avgCornersHome
+    : 1.0;
+  const expCornersHome = Math.max(1.5, homeCornerAtt * awayCornerDef * baselines.avgCornersHome);
+
+  const awayCornerAtt = baselines.avgCornersAway > 0
+    ? calculateMean(awayActiveSample.map(s => s.cornersFor ?? baselines.avgCornersAway)) / baselines.avgCornersAway
+    : 1.0;
+  const homeCornerDef = baselines.avgCornersAway > 0
+    ? calculateMean(homeActiveSample.map(s => s.cornersAgainst ?? baselines.avgCornersAway)) / baselines.avgCornersAway
+    : 1.0;
+  const expCornersAway = Math.max(1.0, awayCornerAtt * homeCornerDef * baselines.avgCornersAway);
+
+  // Shots Projections
+  const expShotsHome = Math.max(3.0, (homePower.shotsVolumeAvg || baselines.avgShotsHome) * 0.55 + (awayPower.shotsConcededAvg || baselines.avgShotsHome) * 0.45);
+  const expShotsAway = Math.max(2.5, (awayPower.shotsVolumeAvg || baselines.avgShotsAway) * 0.55 + (homePower.shotsConcededAvg || baselines.avgShotsAway) * 0.45);
+
+  const expShotsOnTargetHome = Math.max(1.0, (homePower.shotsOnTargetAvg || baselines.avgShotsOnTargetHome) * 0.55 + (awayPower.shotsOnTargetConcededAvg || baselines.avgShotsOnTargetHome) * 0.45);
+  const expShotsOnTargetAway = Math.max(0.8, (awayPower.shotsOnTargetAvg || baselines.avgShotsOnTargetAway) * 0.55 + (homePower.shotsOnTargetConcededAvg || baselines.avgShotsOnTargetAway) * 0.45);
+
+  // Cards Projections
+  const homeCardAvg = calculateMean(homeActiveSample.map(s => s.cardPointsFor || 2.0));
+  const awayCardAvg = calculateMean(awayActiveSample.map(s => s.cardPointsFor || 2.3));
+  const expCardsHome = homeCardAvg || baselines.avgCardsHome;
+  const expCardsAway = awayCardAvg || baselines.avgCardsAway;
+
+  const projections: ContinuousProjections = {
+    expectedGoalsHome: lambdaHome,
+    expectedGoalsAway: lambdaAway,
+    totalExpectedGoals: lambdaHome + lambdaAway,
+    expectedCornersHome: expCornersHome,
+    expectedCornersAway: expCornersAway,
+    totalExpectedCorners: expCornersHome + expCornersAway,
+    expectedShotsHome: expShotsHome,
+    expectedShotsAway: expShotsAway,
+    totalExpectedShots: expShotsHome + expShotsAway,
+    expectedShotsOnTargetHome: expShotsOnTargetHome,
+    expectedShotsOnTargetAway: expShotsOnTargetAway,
+    totalExpectedShotsOnTarget: expShotsOnTargetHome + expShotsOnTargetAway,
+    expectedCardsHome: expCardsHome,
+    expectedCardsAway: expCardsAway,
+    totalExpectedCards: expCardsHome + expCardsAway,
+    leagueAvgGoalsHome: baselines.avgGoalsHome,
+    leagueAvgGoalsAway: baselines.avgGoalsAway,
+    leagueAvgCornersHome: baselines.avgCornersHome,
+    leagueAvgCornersAway: baselines.avgCornersAway,
+  };
+
+  // Poisson Distribution Matrix (0..5 x 0..5)
+  const matrix: number[][] = [];
+  let probHomeWin = 0;
+  let probDraw = 0;
+  let probAwayWin = 0;
+  let probOver05 = 0;
+  let probOver15 = 0;
+  let probOver25 = 0;
+  let probOver35 = 0;
+  let probBttsYes = 0;
+
+  const exactScores: PoissonOutcome[] = [];
+
+  for (let i = 0; i <= 5; i++) {
+    matrix[i] = [];
+    const pHome = poissonProbability(i, lambdaHome);
+    for (let j = 0; j <= 5; j++) {
+      const pAway = poissonProbability(j, lambdaAway);
+      const pExact = pHome * pAway;
+      matrix[i][j] = pExact;
+
+      exactScores.push({
+        score: `${i} - ${j}`,
+        homeGoals: i,
+        awayGoals: j,
+        prob: pExact,
+      });
+
+      if (i > j) probHomeWin += pExact;
+      else if (i === j) probDraw += pExact;
+      else probAwayWin += pExact;
+
+      const totalGoals = i + j;
+      if (totalGoals > 0.5) probOver05 += pExact;
+      if (totalGoals > 1.5) probOver15 += pExact;
+      if (totalGoals > 2.5) probOver25 += pExact;
+      if (totalGoals > 3.5) probOver35 += pExact;
+      if (i > 0 && j > 0) probBttsYes += pExact;
+    }
+  }
+
+  // Normalize 1X2 sum to 100%
+  const total1X2 = probHomeWin + probDraw + probAwayWin;
+  if (total1X2 > 0) {
+    probHomeWin /= total1X2;
+    probDraw /= total1X2;
+    probAwayWin /= total1X2;
+  }
+
+  const topExactScores = exactScores.sort((a, b) => b.prob - a.prob).slice(0, 6);
+
+  const poisson: PoissonAnalysis = {
+    matrix,
+    probHomeWin,
+    probDraw,
+    probAwayWin,
+    probOver05,
+    probOver15,
+    probOver25,
+    probOver35,
+    probUnder25: 1 - probOver25,
+    probBttsYes,
+    probBttsNo: 1 - probBttsYes,
+    topExactScores,
+  };
+
+  // Módulo 3: Descriptive Statistics Variables (Side-by-side array)
+  const descriptiveMetrics: DescriptiveMetric[] = [
+    buildDescriptiveMetric(
+      'Gols Feitos (FT)',
+      'gols',
+      homeActiveSample.map(s => s.teamGoals),
+      awayActiveSample.map(s => s.teamGoals)
+    ),
+    buildDescriptiveMetric(
+      'Gols Sofridos (FT)',
+      'gols',
+      homeActiveSample.map(s => s.oppGoals),
+      awayActiveSample.map(s => s.oppGoals)
+    ),
+    buildDescriptiveMetric(
+      'Gols Feitos (HT)',
+      'gols',
+      homeActiveSample.map(s => s.teamGoalsHT),
+      awayActiveSample.map(s => s.teamGoalsHT)
+    ),
+    buildDescriptiveMetric(
+      'Gols Sofridos (HT)',
+      'gols',
+      homeActiveSample.map(s => s.oppGoalsHT),
+      awayActiveSample.map(s => s.oppGoalsHT)
+    ),
+    buildDescriptiveMetric(
+      'Escanteios Feitos (FT)',
+      'cantos',
+      homeActiveSample.map(s => s.cornersFor ?? 0),
+      awayActiveSample.map(s => s.cornersFor ?? 0)
+    ),
+    buildDescriptiveMetric(
+      'Escanteios Sofridos (FT)',
+      'cantos',
+      homeActiveSample.map(s => s.cornersAgainst ?? 0),
+      awayActiveSample.map(s => s.cornersAgainst ?? 0)
+    ),
+    buildDescriptiveMetric(
+      'Finalizações Feitas (FT)',
+      'chutes',
+      homeActiveSample.map(s => s.shotsFor ?? 0),
+      awayActiveSample.map(s => s.shotsFor ?? 0)
+    ),
+    buildDescriptiveMetric(
+      'Finalizações Sofridas (FT)',
+      'chutes',
+      homeActiveSample.map(s => s.shotsAgainst ?? 0),
+      awayActiveSample.map(s => s.shotsAgainst ?? 0)
+    ),
+    buildDescriptiveMetric(
+      'Chutes a Gol Feitos (FT)',
+      'ao gol',
+      homeActiveSample.map(s => s.shotsOnTargetFor ?? 0),
+      awayActiveSample.map(s => s.shotsOnTargetFor ?? 0)
+    ),
+    buildDescriptiveMetric(
+      'Chutes a Gol Sofridos (FT)',
+      'ao gol',
+      homeActiveSample.map(s => s.shotsOnTargetAgainst ?? 0),
+      awayActiveSample.map(s => s.shotsOnTargetAgainst ?? 0)
+    ),
+    buildDescriptiveMetric(
+      'Pontos Cartões (Amx1 + Vrmx2)',
+      'pts',
+      homeActiveSample.map(s => s.cardPointsFor),
+      awayActiveSample.map(s => s.cardPointsFor)
+    ),
+    buildDescriptiveMetric(
+      'Odds Pré-Jogo de Vitória',
+      'odd',
+      homeActiveSample.map(s => s.matchOdd ?? 2.0),
+      awayActiveSample.map(s => s.matchOdd ?? 2.5)
+    ),
+  ];
+
+  // Complementary: HT vs FT Differentials ("Come-Quieto" detection)
+  const homeTotalGF = homeActiveSample.reduce((acc, s) => acc + s.teamGoals, 0);
+  const homeHTGF = homeActiveSample.reduce((acc, s) => acc + s.teamGoalsHT, 0);
+  const home2HGF = Math.max(0, homeTotalGF - homeHTGF);
+
+  const awayTotalGF = awayActiveSample.reduce((acc, s) => acc + s.teamGoals, 0);
+  const awayHTGF = awayActiveSample.reduce((acc, s) => acc + s.teamGoalsHT, 0);
+  const away2HGF = Math.max(0, awayTotalGF - awayHTGF);
+
+  const homeScoredHTPct = homeTotalGF > 0 ? (homeHTGF / homeTotalGF) * 100 : 50;
+  const homeScored2HPct = homeTotalGF > 0 ? (home2HGF / homeTotalGF) * 100 : 50;
+  const awayScoredHTPct = awayTotalGF > 0 ? (awayHTGF / awayTotalGF) * 100 : 50;
+  const awayScored2HPct = awayTotalGF > 0 ? (away2HGF / awayTotalGF) * 100 : 50;
+
+  const homeComeQuieto = homeScored2HPct >= 65 ? 'Forte Crescimento 2ºT' : homeScored2HPct <= 35 ? 'Queda de Ritmo no 2ºT' : 'Equilibrado';
+  const awayComeQuieto = awayScored2HPct >= 65 ? 'Forte Crescimento 2ºT' : awayScored2HPct <= 35 ? 'Queda de Ritmo no 2ºT' : 'Equilibrado';
+
+  const htFtAnalysis: HtFtDifferential = {
+    homeScoredHTPct,
+    homeScored2HPct,
+    homeComeQuietoTendency: homeComeQuieto,
+    awayScoredHTPct,
+    awayScored2HPct,
+    awayComeQuietoTendency: awayComeQuieto,
+    homeGoalsHTAvg: homeActiveSample.length > 0 ? homeHTGF / homeActiveSample.length : 0,
+    homeGoals2HAvg: homeActiveSample.length > 0 ? home2HGF / homeActiveSample.length : 0,
+    awayGoalsHTAvg: awayActiveSample.length > 0 ? awayHTGF / awayActiveSample.length : 0,
+    awayGoals2HAvg: awayActiveSample.length > 0 ? away2HGF / awayActiveSample.length : 0,
+  };
+
+  // Referee Analysis (if active match has referee)
+  let refereeAnalysis: RefereeCardAnalysis | undefined;
+  const refereeName = options?.activeMatch?.referee?.trim();
+  if (refereeName) {
+    const refMatches = dbState.matches.filter(
+      m => m.referee?.trim().toLowerCase() === refereeName.toLowerCase() && m.status === 'FINALIZADO'
+    );
+    if (refMatches.length > 0) {
+      let rYellows = 0;
+      let rReds = 0;
+      let rValid = 0;
+      for (const rm of refMatches) {
+        if (rm.stats?.yellowCardsHomeFT !== null && rm.stats?.yellowCardsHomeFT !== undefined) {
+          rYellows += (rm.stats.yellowCardsHomeFT || 0) + (rm.stats.yellowCardsAwayFT || 0);
+          rReds += (rm.stats.redCardsHomeFT || 0) + (rm.stats.redCardsAwayFT || 0);
+          rValid++;
+        }
+      }
+      if (rValid > 0) {
+        const avgY = rYellows / rValid;
+        const avgR = rReds / rValid;
+        const avgTotalPts = avgY * 1 + avgR * 2;
+        const combined = (expCardsHome + expCardsAway) * 0.5 + avgTotalPts * 0.5;
+        refereeAnalysis = {
+          refereeName,
+          matchesCount: rValid,
+          avgYellowCards: avgY,
+          avgRedCards: avgR,
+          avgTotalCardsPoints: avgTotalPts,
+          combinedExpectation: combined,
+        };
+      }
+    }
+  }
+
+  // +EV Scanner (Value Bet Analysis)
+  const activeOdds = options?.activeMatch?.odds;
+  const valueBets: ValueBetOpportunity[] = [];
+
+  // Helper to evaluate value
+  function evaluateValue(
+    market: string,
+    selection: string,
+    prob: number,
+    bookieOdd?: number | null
+  ): ValueBetOpportunity {
+    const fairOdd = prob > 0.005 ? 1 / prob : 99.0;
+    const modelProbPct = prob * 100;
+    if (!bookieOdd || bookieOdd <= 1.0) {
+      return {
+        market,
+        selection,
+        modelProbPct,
+        fairOdd,
+        bookmakerOdd: null,
+        evPct: null,
+        hasValue: false,
+        status: 'SEM_ODD',
+      };
+    }
+
+    // EV % = (prob * odd - 1) * 100
+    const evPct = ((prob * bookieOdd) - 1) * 100;
+    const hasValue = evPct >= 3.0; // At least +3% EV
+    const isFair = evPct >= -3.0 && evPct < 3.0;
+
+    return {
+      market,
+      selection,
+      modelProbPct,
+      fairOdd,
+      bookmakerOdd: bookieOdd,
+      evPct,
+      hasValue,
+      status: hasValue ? 'VALOR' : isFair ? 'JUSTA' : 'SEM_VALOR',
+    };
+  }
+
+  valueBets.push(evaluateValue('Resultado Final 1X2', `Vitória ${homeTeam.name}`, poisson.probHomeWin, activeOdds?.homeFT));
+  valueBets.push(evaluateValue('Resultado Final 1X2', 'Empate (X)', poisson.probDraw, activeOdds?.drawFT));
+  valueBets.push(evaluateValue('Resultado Final 1X2', `Vitória ${awayTeam.name}`, poisson.probAwayWin, activeOdds?.awayFT));
+  valueBets.push(evaluateValue('Gols FT', 'Over 2.5 Gols', poisson.probOver25, activeOdds?.over25FT));
+  valueBets.push(evaluateValue('Gols FT', 'Under 2.5 Gols', poisson.probUnder25, activeOdds?.under25FT));
+  valueBets.push(evaluateValue('Gols FT', 'Over 1.5 Gols', poisson.probOver15, null));
+  valueBets.push(evaluateValue('Ambas Marcam', 'Ambas Marcam: SIM', poisson.probBttsYes, null));
+  valueBets.push(evaluateValue('Ambas Marcam', 'Ambas Marcam: NÃO', poisson.probBttsNo, null));
+
+  return {
+    homeTeam,
+    awayTeam,
+    country,
+    league,
+    sampleSize,
+    venueMode,
+    homeFormG5,
+    homeFormE5,
+    awayFormG5,
+    awayFormE5,
+    homeActiveSample,
+    awayActiveSample,
+    homePower,
+    awayPower,
+    descriptiveMetrics,
+    projections,
+    poisson,
+    htFtAnalysis,
+    refereeAnalysis,
+    valueBets,
+  };
+}

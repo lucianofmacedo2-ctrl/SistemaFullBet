@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import { Match, MatchStatus, MatchStats, MatchOdds } from '../types';
+import { Match, MatchStatus, MatchStats, MatchOdds, Team, League, Country } from '../types';
 
 export interface ParsedTeamRow {
   rowIndex: number;
@@ -295,6 +295,111 @@ export async function downloadTeamImportTemplate(leagueName?: string, season?: s
   const fileName = leagueName
     ? `modelo_times_${leagueName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${season || '2026'}.xlsx`
     : `modelo_importacao_times.xlsx`;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Exporta todos os times cadastrados para planilha Excel (.xlsx)
+ * com colunas dos times, países e ligas correspondentes.
+ */
+export async function exportTeamsToExcel(
+  teams: Team[],
+  leagues: League[] = [],
+  countries: Country[] = []
+): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'FUTLFM2 Master System';
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet('Times Cadastrados', {
+    views: [{ state: 'frozen', ySplit: 1 }]
+  });
+
+  worksheet.columns = [
+    { header: 'ID Time', key: 'teamId', width: 15 },
+    { header: 'Nome do Time', key: 'teamName', width: 30 },
+    { header: 'País', key: 'countryName', width: 22 },
+    { header: 'Liga', key: 'leagueName', width: 30 },
+    { header: 'ID País', key: 'countryId', width: 14 },
+    { header: 'ID Liga', key: 'leagueId', width: 14 },
+    { header: 'URL Escudo', key: 'logoUrl', width: 45 },
+    { header: 'Data de Cadastro', key: 'createdAt', width: 22 },
+  ];
+
+  // Header styling: Emerald/Dark Green header
+  const headerRow = worksheet.getRow(1);
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+  headerRow.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF065F46' }, // Emerald-800
+  };
+  headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+  headerRow.height = 28;
+
+  // Lookup maps
+  const countryById = new Map(countries.map(c => [c.id, c.name]));
+  const leagueById = new Map(leagues.map(l => [l.id, l.name]));
+
+  teams.forEach((team, index) => {
+    const countryName = team.countryName || countryById.get(team.countryId) || '';
+    
+    // Resolve league name
+    let leagueName = team.leagueName || '';
+    if (!leagueName && team.leagueId) {
+      leagueName = leagueById.get(team.leagueId) || '';
+    }
+    if (team.leagueIds && team.leagueIds.length > 0) {
+      const allNames = team.leagueIds
+        .map(lid => leagueById.get(lid))
+        .filter(Boolean);
+      if (allNames.length > 0) {
+        leagueName = allNames.join(', ');
+      }
+    }
+
+    const createdFormatted = team.createdAt
+      ? new Date(team.createdAt).toLocaleString('pt-BR')
+      : '';
+
+    const row = worksheet.addRow({
+      teamId: team.id,
+      teamName: team.name,
+      countryName: countryName,
+      leagueName: leagueName,
+      countryId: team.countryId || '',
+      leagueId: team.leagueId || '',
+      logoUrl: team.logoUrl || '',
+      createdAt: createdFormatted,
+    });
+
+    // Striped styling for better readability
+    if (index % 2 === 1) {
+      row.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFF9FAFB' },
+      };
+    }
+    row.alignment = { vertical: 'middle' };
+  });
+
+  // Enable AutoFilter
+  worksheet.autoFilter = {
+    from: { row: 1, column: 1 },
+    to: { row: 1, column: 8 },
+  };
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const fileName = `times_cadastrados_${new Date().toISOString().slice(0, 10)}.xlsx`;
   a.download = fileName;
   document.body.appendChild(a);
   a.click();

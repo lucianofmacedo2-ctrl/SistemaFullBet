@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Database, Download, Upload, RotateCcw, Copy, Check, AlertTriangle } from 'lucide-react';
+import { X, Database, Download, Upload, RotateCcw, Copy, Check, AlertTriangle, FileSpreadsheet, Shield } from 'lucide-react';
 import { DbState } from '../types';
+import { exportTeamsToExcel, exportMatchesToExcel } from '../utils/excelHelper';
 
 interface BackupModalProps {
   isOpen: boolean;
@@ -145,11 +146,66 @@ export const BackupModal: React.FC<BackupModalProps> = ({
             </div>
           </div>
 
-          {/* Section 2: Import */}
+          {/* Section 2: Export to Excel (.xlsx) */}
+          <div className="bg-[#080808] p-4 rounded-xl border border-white/10 space-y-3">
+            <div>
+              <h4 className="text-xs font-bold text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
+                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                2. Exportar em Planilha Excel (.xlsx)
+              </h4>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Baixe planilhas formatadas com colunas de times, países e ligas correspondentes ou todos os jogos.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => exportTeamsToExcel(dbState.teams, dbState.leagues, dbState.countries)}
+                disabled={dbState.teams.length === 0}
+                className="inline-flex items-center justify-between p-3 bg-emerald-950/40 hover:bg-emerald-900/60 disabled:opacity-50 text-emerald-300 border border-emerald-500/30 text-xs font-bold rounded-xl transition-all hover:scale-[1.01] cursor-pointer"
+                title="Exportar tabela de times com País e Liga correspondentes"
+              >
+                <div className="flex items-center gap-2 text-left">
+                  <Shield className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div>
+                    <div className="font-bold text-white">Exportar Times (.xlsx)</div>
+                    <div className="text-[10px] text-gray-400">Times, Países e Ligas</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 bg-emerald-500/20 px-2 py-1 rounded-lg">
+                  <Download className="w-3.5 h-3.5 text-emerald-300" />
+                  <span className="text-[10px] font-bold text-emerald-200">{dbState.teams.length}</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => exportMatchesToExcel(dbState.matches, false)}
+                disabled={dbState.matches.length === 0}
+                className="inline-flex items-center justify-between p-3 bg-blue-950/40 hover:bg-blue-900/60 disabled:opacity-50 text-blue-300 border border-blue-500/30 text-xs font-bold rounded-xl transition-all hover:scale-[1.01] cursor-pointer"
+                title="Exportar todos os jogos consolidados"
+              >
+                <div className="flex items-center gap-2 text-left">
+                  <FileSpreadsheet className="w-4 h-4 text-blue-400 shrink-0" />
+                  <div>
+                    <div className="font-bold text-white">Exportar Jogos (.xlsx)</div>
+                    <div className="text-[10px] text-gray-400">Estatísticas e Odds</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 bg-blue-500/20 px-2 py-1 rounded-lg">
+                  <Download className="w-3.5 h-3.5 text-blue-300" />
+                  <span className="text-[10px] font-bold text-blue-200">{dbState.matches.length}</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Section 3: Import */}
           <form onSubmit={handleImportSubmit} className="bg-[#080808] p-4 rounded-xl border border-white/10 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold text-gray-200 uppercase tracking-wider">
-                2. Importar Banco de Dados
+                3. Importar Banco de Dados
               </h4>
 
               <label className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 text-xs font-medium rounded-lg cursor-pointer transition-colors">

@@ -22,19 +22,21 @@ import {
   LogOut,
   Key,
   Clock,
-  Lock
+  Lock,
+  Download,
+  Zap
 } from 'lucide-react';
 import { DbState, AppUser } from '../types';
 import { extractYMD, formatDateToYMD } from './DailyMatchesView';
-import { isMatchComplete } from '../utils/excelHelper';
+import { isMatchComplete, exportTeamsToExcel } from '../utils/excelHelper';
 import { isValidImageUrl } from '../utils/imageHelper';
 import { getUserEffectiveStatus } from '../services/authService';
 
 interface NavbarProps {
   dbState: DbState;
   currentUser: AppUser | null;
-  activeTab: 'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats' | 'pending_logos';
-  setActiveTab: (tab: 'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats' | 'pending_logos') => void;
+  activeTab: 'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos';
+  setActiveTab: (tab: 'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos') => void;
   onOpenMatchModal: () => void;
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
   onOpenBulkImportModal?: () => void;
@@ -218,6 +220,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
 
                 <button
+                  onClick={() => exportTeamsToExcel(dbState.teams, dbState.leagues, dbState.countries)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-xs cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                  title={`Baixar planilha Excel (.xlsx) com todos os ${dbState.teams.length} times cadastrados, seus Países e Ligas correspondentes`}
+                >
+                  <Download className="w-4 h-4 text-emerald-600" />
+                  <span className="hidden xl:inline">Exportar Times (.xlsx)</span>
+                </button>
+
+                <button
                   onClick={() => onOpenEntityModal()}
                   className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs sm:text-sm rounded-xl transition-all"
                   title="Cadastrar País, Liga ou Time individualmente"
@@ -396,6 +407,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <BarChart3 className="w-3.5 h-3.5" />
               Estatísticas
+            </button>
+
+            <button
+              onClick={() => setActiveTab('analysis')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                activeTab === 'analysis'
+                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
+                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-500" />
+              Análise & Power Ranking
             </button>
 
             {/* Escudos Pendentes is an admin maintenance tab (only visible for master) */}

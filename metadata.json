@@ -1,6 +1,6 @@
 {
   "name": "Cadastro de Jogos de Futebol",
-  "description": "Sistema para cadastrar e gerenciar partidas de futebol, estatísticas pós-jogo, tabelas de pressão com índice líquido de 5 em 5 minutos e estudos táticos.",
+  "description": "Sistema para cadastrar e gerenciar partidas de futebol, módulo de análise estatística avançada com Power Ranking ponderado por odds, métricas descritivas, projeções Poisson e gráficos de pressão.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

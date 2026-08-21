@@ -22,6 +22,7 @@ import { TeamManager } from './components/TeamManager';
 import { StatsDashboard } from './components/StatsDashboard';
 import { DailyMatchesView } from './components/DailyMatchesView';
 import { PendingLogosManager } from './components/PendingLogosManager';
+import { AnalysisDashboard } from './components/analysis/AnalysisDashboard';
 import { BackupModal } from './components/BackupModal';
 import { ResetDatabaseModal } from './components/ResetDatabaseModal';
 import { MatchStatsModal } from './components/MatchStatsModal';
@@ -59,7 +60,8 @@ export default function App() {
   });
 
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats' | 'pending_logos'>('matches');
+  const [activeTab, setActiveTab] = useState<'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos'>('matches');
+  const [analysisTargetMatchId, setAnalysisTargetMatchId] = useState<string | null>(null);
 
   // Auth Modals state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -1154,6 +1156,10 @@ export default function App() {
                     onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
                     onOpenBulkMatchUpdateModal={() => setIsBulkMatchUpdateModalOpen(true)}
                     onOpenPressureChartModal={handleOpenPressureChartModal}
+                    onAnalyzeMatch={(match) => {
+                      setAnalysisTargetMatchId(match.id);
+                      setActiveTab('analysis');
+                    }}
                   />
                 )}
               </>
@@ -1171,6 +1177,10 @@ export default function App() {
                 onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
                 onOpenBulkMatchUpdateModal={() => setIsBulkMatchUpdateModalOpen(true)}
                 onOpenPressureChartModal={handleOpenPressureChartModal}
+                onAnalyzeMatch={(match) => {
+                  setAnalysisTargetMatchId(match.id);
+                  setActiveTab('analysis');
+                }}
               />
             )}
 
@@ -1211,6 +1221,13 @@ export default function App() {
 
             {activeTab === 'stats' && (
               <StatsDashboard dbState={dbState} />
+            )}
+
+            {activeTab === 'analysis' && (
+              <AnalysisDashboard
+                dbState={dbState}
+                initialMatchId={analysisTargetMatchId}
+              />
             )}
 
             {activeTab === 'pending_logos' && (

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter, AlertTriangle, AlertCircle, Download, Loader2 } from 'lucide-react';
 import { DbState, Team } from '../types';
 import { isValidImageUrl, validateImageUrlInput, sanitizeImageUrl } from '../utils/imageHelper';
+import { exportTeamsToExcel } from '../utils/excelHelper';
 
 interface TeamManagerProps {
   dbState: DbState;
@@ -33,6 +34,7 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
   const [urlError, setUrlError] = useState<string | null>(null);
   const [savedSuccessTeamId, setSavedSuccessTeamId] = useState<string | null>(null);
   const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
+  const [isExporting, setIsExporting] = useState(false);
 
   const teams = dbState.teams.filter(t => {
     const matchesSearch =
@@ -47,6 +49,20 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
 
     return matchesSearch && matchesCountry && matchesLeague && matchesLogo;
   });
+
+  const handleExportTeams = async () => {
+    try {
+      setIsExporting(true);
+      const targetTeams = (searchTerm || selectedCountryFilter || selectedLeagueFilter || onlyWithoutLogo)
+        ? teams
+        : dbState.teams;
+      await exportTeamsToExcel(targetTeams, dbState.leagues, dbState.countries);
+    } catch (err) {
+      console.error('Erro ao exportar times para Excel:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleStartEdit = (teamId: string, currentUrl?: string) => {
     setEditingTeamId(teamId);
@@ -161,6 +177,26 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
             <Shield className="w-3.5 h-3.5" />
             <span>Sem Escudo</span>
           </button>
+
+          {/* Export Teams to Excel (.xlsx) */}
+          {isMaster && (
+            <button
+              onClick={handleExportTeams}
+              disabled={isExporting || dbState.teams.length === 0}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.02] cursor-pointer"
+              title="Baixar planilha Excel (.xlsx) com todos os times, países e ligas cadastrados"
+            >
+              {isExporting ? (
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+              ) : (
+                <Download className="w-4 h-4 text-emerald-100" />
+              )}
+              <span className="hidden sm:inline">Exportar Excel</span>
+              <span className="px-1.5 py-0.2 bg-emerald-800 text-emerald-100 text-[10px] font-bold rounded-md ml-0.5">
+                {teams.length}
+              </span>
+            </button>
+          )}
 
           {isMaster && onOpenBulkImportModal && (
             <button

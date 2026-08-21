@@ -50,6 +50,7 @@ interface MatchListProps {
   onOpenBulkMatchImportModal?: () => void;
   onOpenBulkMatchUpdateModal?: () => void;
   onOpenPressureChartModal?: (matchId: string) => void;
+  onAnalyzeMatch?: (match: Match) => void;
 }
 
 export interface CompletenessResult {
@@ -165,6 +166,7 @@ export const MatchList: React.FC<MatchListProps> = ({
   onOpenBulkMatchImportModal,
   onOpenBulkMatchUpdateModal,
   onOpenPressureChartModal,
+  onAnalyzeMatch,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCountryId, setFilterCountryId] = useState('');
@@ -1550,6 +1552,19 @@ export const MatchList: React.FC<MatchListProps> = ({
               >
                 <Zap className="w-3.5 h-3.5 text-blue-600" />
                 <span>Placar/Odds</span>
+              </button>
+            )}
+
+            {/* Analysis & Power Ranking button */}
+            {onAnalyzeMatch && (
+              <button
+                type="button"
+                onClick={() => onAnalyzeMatch(match)}
+                className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 flex items-center gap-1 transition-all shadow-xs cursor-pointer"
+                title="Abrir Módulo de Análise & Power Ranking para este confronto"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-500 fill-current" />
+                <span>Análise</span>
               </button>
             )}
 

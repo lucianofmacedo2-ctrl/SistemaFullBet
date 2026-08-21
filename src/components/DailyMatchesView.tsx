@@ -44,6 +44,7 @@ interface DailyMatchesViewProps {
   onOpenBulkMatchImportModal?: () => void;
   onOpenBulkMatchUpdateModal?: () => void;
   onOpenPressureChartModal?: (matchId: string) => void;
+  onAnalyzeMatch?: (match: Match) => void;
 }
 
 export type DaySelectionMode = 'TODAY' | 'TOMORROW' | 'AFTER_TOMORROW' | 'THREE_DAYS' | 'CUSTOM';
@@ -131,6 +132,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   onOpenBulkMatchImportModal,
   onOpenBulkMatchUpdateModal,
   onOpenPressureChartModal,
+  onAnalyzeMatch,
 }) => {
   // Base reference date (today)
   const today = useMemo(() => new Date(), []);
@@ -942,6 +944,18 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                         >
                           <Zap className="w-3.5 h-3.5 text-blue-600" />
                           <span>Placar/Odds</span>
+                        </button>
+                      )}
+
+                      {onAnalyzeMatch && (
+                        <button
+                          type="button"
+                          onClick={() => onAnalyzeMatch(match)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold border border-indigo-200 transition-all shadow-xs cursor-pointer"
+                          title="Análise & Power Ranking do Confronto"
+                        >
+                          <Zap className="w-3.5 h-3.5 text-amber-500 fill-current" />
+                          <span>Análise</span>
                         </button>
                       )}
 
