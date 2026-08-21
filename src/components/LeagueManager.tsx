@@ -10,6 +10,7 @@ interface LeagueManagerProps {
   onDeleteLeague: (id: string) => void;
   onUpdateLeagueLogo?: (leagueId: string, logoUrl: string) => void;
   onEditLeague?: (league: League) => void;
+  onNavigateToStandings?: (leagueId?: string) => void;
 }
 
 export const LeagueManager: React.FC<LeagueManagerProps> = ({
@@ -19,6 +20,7 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
   onDeleteLeague,
   onUpdateLeagueLogo,
   onEditLeague,
+  onNavigateToStandings,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingLeagueId, setEditingLeagueId] = useState<string | null>(null);
@@ -167,9 +169,21 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
                         {l.type || 'Pontos Corridos'}
                       </td>
                       <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-gray-300 text-[11px] font-bold">
-                          {matchesCount} partidas
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-gray-300 text-[11px] font-bold">
+                            {matchesCount} partidas
+                          </span>
+                          {onNavigateToStandings && (
+                            <button
+                              onClick={() => onNavigateToStandings(l.id)}
+                              className="px-2 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                              title="Ver Tabela de Classificação"
+                            >
+                              <Trophy className="w-3 h-3 text-amber-400" />
+                              Tabela
+                            </button>
+                          )}
+                        </div>
                       </td>
                       {isMaster && (
                         <td className="py-3 px-4 text-right">

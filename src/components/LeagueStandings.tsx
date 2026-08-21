@@ -91,6 +91,31 @@ export const LeagueStandings: React.FC<LeagueStandingsProps> = ({
   const [highlightAwayTeamId, setHighlightAwayTeamId] = useState<string>(initialAwayTeamId || '');
   const [showMatchSimulator, setShowMatchSimulator] = useState<boolean>(Boolean(initialHomeTeamId && initialAwayTeamId));
 
+  // Sincronizar props iniciais ou alterações dinâmicas de liga/times do pai
+  React.useEffect(() => {
+    if (initialLeagueId && leagues.some(l => l.id === initialLeagueId)) {
+      setSelectedLeagueId(initialLeagueId);
+      const lObj = leagues.find(l => l.id === initialLeagueId);
+      if (lObj && lObj.countryId) {
+        setSelectedCountryId(lObj.countryId);
+      }
+    }
+  }, [initialLeagueId, leagues]);
+
+  React.useEffect(() => {
+    if (initialHomeTeamId) setHighlightHomeTeamId(initialHomeTeamId);
+  }, [initialHomeTeamId]);
+
+  React.useEffect(() => {
+    if (initialAwayTeamId) setHighlightAwayTeamId(initialAwayTeamId);
+  }, [initialAwayTeamId]);
+
+  React.useEffect(() => {
+    if (initialHomeTeamId && initialAwayTeamId) {
+      setShowMatchSimulator(true);
+    }
+  }, [initialHomeTeamId, initialAwayTeamId]);
+
   // Ajustar liga quando países mudam
   const handleCountryChange = (countryId: string) => {
     setSelectedCountryId(countryId);

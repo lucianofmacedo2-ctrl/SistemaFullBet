@@ -35,8 +35,8 @@ import { getUserEffectiveStatus } from '../services/authService';
 interface NavbarProps {
   dbState: DbState;
   currentUser: AppUser | null;
-  activeTab: 'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos';
-  setActiveTab: (tab: 'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos') => void;
+  activeTab: 'matches' | 'schedule' | 'standings' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos';
+  setActiveTab: (tab: 'matches' | 'schedule' | 'standings' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos') => void;
   onOpenMatchModal: () => void;
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
   onOpenBulkImportModal?: () => void;
@@ -378,6 +378,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-400 text-slate-950 uppercase tracking-tighter shadow-xs">
                 NOVO
               </span>
+            </button>
+
+            {/* Tabela de Classificação / Standings */}
+            <button
+              onClick={() => setActiveTab('standings')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-black whitespace-nowrap transition-all ${
+                activeTab === 'standings'
+                  ? 'bg-amber-500 text-slate-950 border border-amber-600 shadow-sm shadow-amber-500/30'
+                  : 'text-amber-900 bg-amber-50/80 border border-amber-200 hover:bg-amber-100/80 hover:text-amber-950'
+              }`}
+            >
+              <Trophy className={`w-3.5 h-3.5 ${activeTab === 'standings' ? 'fill-slate-950' : 'text-amber-600'}`} />
+              Classificação
             </button>
 
             <button

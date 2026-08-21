@@ -26,6 +26,7 @@ import { PowerRankingSection } from './PowerRankingSection';
 import { DescriptiveStatsSection } from './DescriptiveStatsSection';
 import { ProjectionsPoissonSection } from './ProjectionsPoissonSection';
 import { ValueAndTacticalSection } from './ValueAndTacticalSection';
+import { LeagueStandings } from '../LeagueStandings';
 
 interface AnalysisDashboardProps {
   dbState: DbState;
@@ -42,7 +43,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ dbState, i
   // General Settings / Cut Parameters
   const [sampleSize, setSampleSize] = useState<number>(10); // 5, 10, 15, 20, 999
   const [venueMode, setVenueMode] = useState<'SPECIFIC' | 'GENERAL'>('SPECIFIC'); // SPECIFIC = Casa x Fora; GENERAL = Geral
-  const [activeModuleTab, setActiveModuleTab] = useState<'ALL' | 'FORM' | 'POWER' | 'DESCRIPTIVE' | 'PROJECTIONS' | 'VALUE'>('ALL');
+  const [activeModuleTab, setActiveModuleTab] = useState<'ALL' | 'FORM' | 'POWER' | 'DESCRIPTIVE' | 'PROJECTIONS' | 'VALUE' | 'STANDINGS'>('ALL');
 
   // Quick match selection search
   const [matchSearchQuery, setMatchSearchQuery] = useState('');
@@ -540,16 +541,48 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ dbState, i
           <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
           Módulo 5: +EV & Tático
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveModuleTab('STANDINGS')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
+            activeModuleTab === 'STANDINGS'
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-md shadow-amber-500/20 ring-2 ring-amber-300'
+              : 'bg-amber-50 border border-amber-300 text-amber-900 hover:bg-amber-100'
+          }`}
+        >
+          <Trophy className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+          Módulo 6: Tabela & Classificação
+        </button>
       </div>
 
       {/* 3. ANALYSIS RENDERER */}
-      {!analysisResult ? (
+      {activeModuleTab === 'STANDINGS' ? (
+        <div className="space-y-4">
+          <LeagueStandings
+            dbState={dbState}
+            initialLeagueId={selectedLeagueId}
+            initialHomeTeamId={selectedHomeTeamId}
+            initialAwayTeamId={selectedAwayTeamId}
+          />
+        </div>
+      ) : !analysisResult ? (
         <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center space-y-3">
           <Shield className="w-12 h-12 text-slate-300 mx-auto" />
           <h3 className="text-base font-bold text-slate-800">Selecione duas equipes distintas para iniciar a análise</h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
             Utilize os seletores em cascata acima (País → Liga → Mandante → Visitante) ou clique em "Carregar de Jogo Cadastrado" para gerar o relatório completo.
           </p>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => setActiveModuleTab('STANDINGS')}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-md shadow-amber-500/20 transition-all hover:scale-105"
+            >
+              <Trophy className="w-4 h-4 fill-slate-950" />
+              Ver Tabela de Classificação da Liga Selecionada
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-6">
@@ -576,6 +609,37 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ dbState, i
           {/* MÓDULO 5: Indicador +EV, Diferencial HT/FT & Árbitro */}
           {(activeModuleTab === 'ALL' || activeModuleTab === 'VALUE') && (
             <ValueAndTacticalSection analysis={analysisResult} />
+          )}
+
+          {/* MÓDULO 6: Tabela & Classificação Dinâmica da Competição */}
+          {activeModuleTab === 'ALL' && (
+            <div className="space-y-4 pt-4 border-t-2 border-slate-200">
+              <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-amber-500 fill-amber-400" />
+                    Módulo 6: Tabela e Classificação Oficial da Liga
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                    Acompanhe o impacto do confronto na pontuação, saldo de gols e critérios de desempate da competição.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveModuleTab('STANDINGS')}
+                  className="px-3 py-1.5 bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
+                >
+                  <Trophy className="w-3.5 h-3.5 text-amber-600" />
+                  Expandir Tabela
+                </button>
+              </div>
+              <LeagueStandings
+                dbState={dbState}
+                initialLeagueId={selectedLeagueId}
+                initialHomeTeamId={selectedHomeTeamId}
+                initialAwayTeamId={selectedAwayTeamId}
+              />
+            </div>
           )}
         </div>
       )}

@@ -23,6 +23,7 @@ import { StatsDashboard } from './components/StatsDashboard';
 import { DailyMatchesView } from './components/DailyMatchesView';
 import { PendingLogosManager } from './components/PendingLogosManager';
 import { AnalysisDashboard } from './components/analysis/AnalysisDashboard';
+import { LeagueStandings } from './components/LeagueStandings';
 import { BackupModal } from './components/BackupModal';
 import { ResetDatabaseModal } from './components/ResetDatabaseModal';
 import { MatchStatsModal } from './components/MatchStatsModal';
@@ -60,7 +61,7 @@ export default function App() {
   });
 
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'matches' | 'schedule' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos'>('matches');
+  const [activeTab, setActiveTab] = useState<'matches' | 'schedule' | 'standings' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos'>('matches');
   const [analysisTargetMatchId, setAnalysisTargetMatchId] = useState<string | null>(null);
 
   // Auth Modals state
@@ -1205,6 +1206,7 @@ export default function App() {
                 onDeleteLeague={handleDeleteLeague}
                 onUpdateLeagueLogo={handleUpdateLeagueLogo}
                 onEditLeague={handleOpenEditLeague}
+                onNavigateToStandings={() => setActiveTab('standings')}
               />
             )}
 
@@ -1225,6 +1227,16 @@ export default function App() {
               <StatsDashboard
                 dbState={dbState}
                 onNavigateToAnalysis={() => setActiveTab('analysis')}
+              />
+            )}
+
+            {activeTab === 'standings' && (
+              <LeagueStandings
+                dbState={dbState}
+                onSelectMatchAnalysis={(match) => {
+                  setAnalysisTargetMatchId(match.id);
+                  setActiveTab('analysis');
+                }}
               />
             )}
 
