@@ -1,7 +1,11 @@
 import { DbState, Country, League, Team, Match, AppUser } from '../types';
+import defaultDatabaseData from '../data/defaultDatabase.json';
 
 const STORAGE_KEY = 'football_db_v1';
 const USERS_STORAGE_KEY = 'football_users_list_v1';
+
+// Preloaded database built into client bundle (contains all 641+ matches, 22 leagues, 11 countries)
+const SEED_DATABASE: DbState = defaultDatabaseData as unknown as DbState;
 
 export async function fetchUsersList(): Promise<AppUser[]> {
   try {
@@ -54,30 +58,61 @@ export async function fetchDatabaseState(): Promise<DbState> {
       headers: { 'Cache-Control': 'no-cache' },
     });
     if (response.ok) {
-      dbData = await response.json();
+      const serverData = await response.json();
+      if (serverData && (serverData.matches?.length > 0 || serverData.countries?.length > 0)) {
+        dbData = serverData;
+      }
     }
   } catch (err) {
     console.warn('Backend API not available, falling back to LocalStorage', err);
   }
 
-  // Fallback to local storage if API failed
+  // Fallback to local storage if API failed or returned empty
   if (!dbData) {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        dbData = JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && (parsed.matches?.length > 0 || parsed.countries?.length > 0)) {
+          dbData = parsed;
+        }
       } catch {
         // ignore
       }
     }
   }
 
-  const result: DbState = dbData || {
-    countries: [],
-    leagues: [],
-    teams: [],
-    matches: [],
-    users: [],
+  // Fallback to preloaded built-in seed database if both server and localstorage were empty
+  if (!dbData || (!dbData.matches?.length && !dbData.countries?.length)) {
+    dbData = {
+      countries: SEED_DATABASE.countries || [],
+      leagues: SEED_DATABASE.leagues || [],
+      teams: SEED_DATABASE.teams || [],
+      matches: SEED_DATABASE.matches || [],
+      users: SEED_DATABASE.users || [],
+    };
+  } else {
+    // If dbData has missing countries or leagues compared to SEED_DATABASE, ensure base leagues exist
+    if ((!dbData.countries || dbData.countries.length === 0) && SEED_DATABASE.countries?.length > 0) {
+      dbData.countries = SEED_DATABASE.countries;
+    }
+    if ((!dbData.leagues || dbData.leagues.length === 0) && SEED_DATABASE.leagues?.length > 0) {
+      dbData.leagues = SEED_DATABASE.leagues;
+    }
+    if ((!dbData.teams || dbData.teams.length === 0) && SEED_DATABASE.teams?.length > 0) {
+      dbData.teams = SEED_DATABASE.teams;
+    }
+    if ((!dbData.matches || dbData.matches.length === 0) && SEED_DATABASE.matches?.length > 0) {
+      dbData.matches = SEED_DATABASE.matches;
+    }
+  }
+
+  const result: DbState = {
+    countries: dbData.countries || [],
+    leagues: dbData.leagues || [],
+    teams: dbData.teams || [],
+    matches: dbData.matches || [],
+    users: dbData.users || [],
   };
 
   // If result has users, also sync local USERS_STORAGE_KEY
@@ -91,6 +126,7 @@ export async function fetchDatabaseState(): Promise<DbState> {
     }
   }
 
+  // Save to LocalStorage so future access is instantaneous
   localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
   return result;
 }

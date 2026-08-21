@@ -48,14 +48,18 @@ import {
   DEFAULT_CONSULTA_USER,
   decodeUserFromToken,
 } from './services/authService';
+import defaultDatabaseData from './data/defaultDatabase.json';
 
 export default function App() {
-  const [dbState, setDbState] = useState<DbState>({
-    countries: [],
-    leagues: [],
-    teams: [],
-    matches: [],
-    users: [DEFAULT_MASTER_USER, DEFAULT_CONSULTA_USER],
+  const [dbState, setDbState] = useState<DbState>(() => {
+    const raw = defaultDatabaseData as unknown as DbState;
+    return {
+      countries: raw.countries || [],
+      leagues: raw.leagues || [],
+      teams: raw.teams || [],
+      matches: raw.matches || [],
+      users: ensureDefaultUsers(raw.users),
+    };
   });
 
   const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
