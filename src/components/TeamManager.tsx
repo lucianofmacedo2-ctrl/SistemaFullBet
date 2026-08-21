@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter, AlertTriangle, AlertCircle, Download, Loader2 } from 'lucide-react';
 import { DbState, Team } from '../types';
 import { isValidImageUrl, validateImageUrlInput, sanitizeImageUrl } from '../utils/imageHelper';
@@ -17,7 +17,7 @@ interface TeamManagerProps {
 
 export const TeamManager: React.FC<TeamManagerProps> = ({
   dbState,
-  isMaster = true,
+  isMaster = false,
   onOpenEntityModal,
   onOpenBulkImportModal,
   onDeleteTeam,
@@ -36,19 +36,30 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
   const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
   const [isExporting, setIsExporting] = useState(false);
 
-  const teams = dbState.teams.filter(t => {
-    const matchesSearch =
-      t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.countryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (t.leagueName && t.leagueName.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Ordenação alfabética de times por País -> Liga -> Nome do Time
+  const teams = useMemo(() => {
+    return [...dbState.teams]
+      .sort((a, b) => {
+        const countryComp = (a.countryName || '').localeCompare(b.countryName || '', 'pt-BR', { sensitivity: 'base' });
+        if (countryComp !== 0) return countryComp;
+        const leagueComp = (a.leagueName || '').localeCompare(b.leagueName || '', 'pt-BR', { sensitivity: 'base' });
+        if (leagueComp !== 0) return leagueComp;
+        return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' });
+      })
+      .filter(t => {
+        const matchesSearch =
+          t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          t.countryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (t.leagueName && t.leagueName.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesCountry = !selectedCountryFilter || t.countryId === selectedCountryFilter;
-    const matchesLeague = !selectedLeagueFilter || t.leagueId === selectedLeagueFilter || (t.leagueIds && t.leagueIds.includes(selectedLeagueFilter));
-    const matchesLogo = !onlyWithoutLogo || !isValidImageUrl(t.logoUrl);
+        const matchesCountry = !selectedCountryFilter || t.countryId === selectedCountryFilter;
+        const matchesLeague = !selectedLeagueFilter || t.leagueId === selectedLeagueFilter || (t.leagueIds && t.leagueIds.includes(selectedLeagueFilter));
+        const matchesLogo = !onlyWithoutLogo || !isValidImageUrl(t.logoUrl);
 
-    return matchesSearch && matchesCountry && matchesLeague && matchesLogo;
-  });
+        return matchesSearch && matchesCountry && matchesLeague && matchesLogo;
+      });
+  }, [dbState.teams, searchTerm, selectedCountryFilter, selectedLeagueFilter, onlyWithoutLogo]);
 
   const handleExportTeams = async () => {
     try {
@@ -266,31 +277,51 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                           <img
                             src={t.logoUrl}
                             alt={t.name}
-                            className="w-7 h-7 object-contain rounded bg-black/40 border border-white/10 p-0.5 shadow-sm cursor-pointer hover:scale-110 transition-transform"
-                            onClick={() => handleStartEdit(t.id, t.logoUrl)}
-                            title="Clique para editar a URL do escudo"
+                            className={`w-7 h-7 object-contain rounded bg-black/40 border border-white/10 p-0.5 shadow-sm ${
+                              isMaster ? 'cursor-pointer hover:scale-110 transition-transform' : ''
+                            }`}
+                            onClick={() => {
+                              if (isMaster) handleStartEdit(t.id, t.logoUrl);
+                            }}
+                            title={isMaster ? 'Clique para editar a URL do escudo' : t.name}
                             onError={() => {
                               setBrokenImages(prev => ({ ...prev, [t.id]: true }));
                             }}
                           />
                         ) : isBroken ? (
-                          <button
-                            onClick={() => handleStartEdit(t.id, t.logoUrl)}
-                            className="px-2 py-0.5 rounded bg-red-950/80 border border-red-500/40 text-red-400 text-[10px] font-bold flex items-center gap-1 hover:bg-red-900 transition-colors"
-                            title="URL de imagem corrompida ou inacessível. Clique para corrigir."
-                          >
-                            <AlertTriangle className="w-3 h-3 text-red-400" />
-                            <span>Quebrado</span>
-                          </button>
+                          isMaster ? (
+                            <button
+                              type="button"
+                              onClick={() => handleStartEdit(t.id, t.logoUrl)}
+                              className="px-2 py-0.5 rounded bg-red-950/80 border border-red-500/40 text-red-400 text-[10px] font-bold flex items-center gap-1 hover:bg-red-900 transition-colors cursor-pointer"
+                              title="URL de imagem corrompida ou inacessível. Clique para corrigir."
+                            >
+                              <AlertTriangle className="w-3 h-3 text-red-400" />
+                              <span>Quebrado</span>
+                            </button>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded bg-red-950/40 border border-red-500/20 text-red-400 text-[10px] font-medium flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3 text-red-400" />
+                              <span>Quebrado</span>
+                            </span>
+                          )
                         ) : (
-                          <button
-                            onClick={() => handleStartEdit(t.id, '')}
-                            className="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 text-amber-300 text-[10px] font-bold flex items-center gap-1 hover:bg-amber-900 transition-colors"
-                            title="Time sem escudo cadastrado. Clique para adicionar."
-                          >
-                            <span>🛡️</span>
-                            <span>Sem Escudo</span>
-                          </button>
+                          isMaster ? (
+                            <button
+                              type="button"
+                              onClick={() => handleStartEdit(t.id, '')}
+                              className="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 text-amber-300 text-[10px] font-bold flex items-center gap-1 hover:bg-amber-900 transition-colors cursor-pointer"
+                              title="Time sem escudo cadastrado. Clique para adicionar."
+                            >
+                              <span>🛡️</span>
+                              <span>Sem Escudo</span>
+                            </button>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded bg-amber-950/30 border border-amber-500/20 text-amber-400/70 text-[10px] font-medium flex items-center gap-1">
+                              <span>🛡️</span>
+                              <span>Sem Escudo</span>
+                            </span>
+                          )
                         )}
                       </td>
 
@@ -337,74 +368,88 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                             />
                           )}
 
-                          <div className="relative flex-1">
-                            <select
-                              value={t.leagueId || ''}
-                              onChange={(e) => handleLeagueChange(t.id, e.target.value)}
-                              className={`w-full text-xs rounded-lg px-2.5 py-1.5 appearance-none focus:outline-none transition-all cursor-pointer font-medium pr-7 ${
-                                isJustSaved
-                                  ? 'bg-emerald-950 border border-emerald-400 text-emerald-300 ring-1 ring-emerald-400 shadow-md shadow-emerald-500/20'
-                                  : t.leagueId
-                                  ? 'bg-[#151515] hover:bg-[#1f1f1f] border border-amber-500/30 hover:border-amber-400 text-amber-200 shadow-xs'
-                                  : 'bg-[#141414] hover:bg-[#1c1c1c] border border-dashed border-gray-600 hover:border-emerald-500 text-gray-400 hover:text-emerald-300'
-                              }`}
-                              title="Clique para vincular ou trocar a liga diretamente"
-                            >
-                              <option value="" className="bg-[#121212] text-gray-400">
-                                -- Sem Liga Vinculada --
-                              </option>
-
-                              {countryLeagues.length > 0 && (
-                                <optgroup
-                                  label={`Ligas de ${t.countryName}`}
-                                  className="bg-[#121212] text-emerald-400 font-bold"
-                                >
-                                  {countryLeagues.map(l => (
-                                    <option
-                                      key={l.id}
-                                      value={l.id}
-                                      className="bg-[#1a1a1a] text-white font-normal"
-                                    >
-                                      🏆 {l.name} [{l.id}]
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              )}
-
-                              {otherLeagues.length > 0 && (
-                                <optgroup
-                                  label="Outras Ligas Cadastradas"
-                                  className="bg-[#121212] text-gray-400 font-bold"
-                                >
-                                  {otherLeagues.map(l => (
-                                    <option
-                                      key={l.id}
-                                      value={l.id}
-                                      className="bg-[#1a1a1a] text-gray-300 font-normal"
-                                    >
-                                      🏆 {l.name} ({l.countryName}) [{l.id}]
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              )}
-
-                              <option
-                                value="__NEW_LEAGUE__"
-                                className="bg-[#162a1a] text-emerald-300 font-bold"
+                          {isMaster ? (
+                            <div className="relative flex-1">
+                              <select
+                                value={t.leagueId || ''}
+                                onChange={(e) => handleLeagueChange(t.id, e.target.value)}
+                                className={`w-full text-xs rounded-lg px-2.5 py-1.5 appearance-none focus:outline-none transition-all cursor-pointer font-medium pr-7 ${
+                                  isJustSaved
+                                    ? 'bg-emerald-950 border border-emerald-400 text-emerald-300 ring-1 ring-emerald-400 shadow-md shadow-emerald-500/20'
+                                    : t.leagueId
+                                    ? 'bg-[#151515] hover:bg-[#1f1f1f] border border-amber-500/30 hover:border-amber-400 text-amber-200 shadow-xs'
+                                    : 'bg-[#141414] hover:bg-[#1c1c1c] border border-dashed border-gray-600 hover:border-emerald-500 text-gray-400 hover:text-emerald-300'
+                                }`}
+                                title="Clique para vincular ou trocar a liga diretamente"
                               >
-                                + Cadastrar Nova Liga...
-                              </option>
-                            </select>
+                                <option value="" className="bg-[#121212] text-gray-400">
+                                  -- Sem Liga Vinculada --
+                                </option>
 
-                            {/* Dropdown Indicator or Saved Checkmark */}
-                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                              {isJustSaved ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-400 animate-pulse stroke-[3]" />
+                                {countryLeagues.length > 0 && (
+                                  <optgroup
+                                    label={`Ligas de ${t.countryName}`}
+                                    className="bg-[#121212] text-emerald-400 font-bold"
+                                  >
+                                    {countryLeagues.map(l => (
+                                      <option
+                                        key={l.id}
+                                        value={l.id}
+                                        className="bg-[#1a1a1a] text-white font-normal"
+                                      >
+                                        🏆 {l.name} [{l.id}]
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                )}
+
+                                {otherLeagues.length > 0 && (
+                                  <optgroup
+                                    label="Outras Ligas Cadastradas"
+                                    className="bg-[#121212] text-gray-400 font-bold"
+                                  >
+                                    {otherLeagues.map(l => (
+                                      <option
+                                        key={l.id}
+                                        value={l.id}
+                                        className="bg-[#1a1a1a] text-gray-300 font-normal"
+                                      >
+                                        🏆 {l.name} ({l.countryName}) [{l.id}]
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                )}
+
+                                <option
+                                  value="__NEW_LEAGUE__"
+                                  className="bg-[#162a1a] text-emerald-300 font-bold"
+                                >
+                                  + Cadastrar Nova Liga...
+                                </option>
+                              </select>
+
+                              {/* Dropdown Indicator or Saved Checkmark */}
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                {isJustSaved ? (
+                                  <Check className="w-3.5 h-3.5 text-emerald-400 animate-pulse stroke-[3]" />
+                                ) : (
+                                  <span className="text-[9px] text-gray-400 opacity-60">▼</span>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex-1">
+                              {linkedLeague ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-950/30 border border-amber-500/20 text-amber-300 text-xs font-semibold">
+                                  <span>{linkedLeague.name}</span>
+                                </span>
                               ) : (
-                                <span className="text-[9px] text-gray-400 opacity-60">▼</span>
+                                <span className="text-xs text-gray-500 italic">
+                                  Sem liga vinculada
+                                </span>
                               )}
                             </div>
-                          </div>
+                          )}
                         </div>
                       </td>
 

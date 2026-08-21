@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Trophy, Plus, Search, Trash2, Globe, Link2, Check, X, Edit2, AlertCircle } from 'lucide-react';
 import { DbState, League } from '../types';
 import { isValidImageUrl, validateImageUrlInput, sanitizeImageUrl } from '../utils/imageHelper';
@@ -14,7 +14,7 @@ interface LeagueManagerProps {
 
 export const LeagueManager: React.FC<LeagueManagerProps> = ({
   dbState,
-  isMaster = true,
+  isMaster = false,
   onOpenEntityModal,
   onDeleteLeague,
   onUpdateLeagueLogo,
@@ -25,11 +25,24 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
   const [editUrl, setEditUrl] = useState('');
   const [urlError, setUrlError] = useState<string | null>(null);
 
-  const leagues = dbState.leagues.filter(l =>
-    l.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    l.countryName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Ordenação prioritária por ordem alfabética de País (countryName), com desempate por Nome da Liga (name)
+  const leagues = useMemo(() => {
+    return [...dbState.leagues]
+      .sort((a, b) => {
+        const countryA = a.countryName || '';
+        const countryB = b.countryName || '';
+        const countryComp = countryA.localeCompare(countryB, 'pt-BR', { sensitivity: 'base' });
+        if (countryComp !== 0) return countryComp;
+        const nameA = a.name || '';
+        const nameB = b.name || '';
+        return nameA.localeCompare(nameB, 'pt-BR', { sensitivity: 'base' });
+      })
+      .filter(l =>
+        l.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        l.countryName.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+  }, [dbState.leagues, searchTerm]);
 
   const handleStartEdit = (leagueId: string, currentUrl?: string) => {
     setEditingLeagueId(leagueId);

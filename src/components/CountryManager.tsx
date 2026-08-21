@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Globe, Plus, Search, Trash2, Link2, Check, X, Edit2, AlertCircle } from 'lucide-react';
 import { DbState, Country } from '../types';
 import { isValidImageUrl, validateImageUrlInput, sanitizeImageUrl } from '../utils/imageHelper';
@@ -14,7 +14,7 @@ interface CountryManagerProps {
 
 export const CountryManager: React.FC<CountryManagerProps> = ({
   dbState,
-  isMaster = true,
+  isMaster = false,
   onOpenEntityModal,
   onDeleteCountry,
   onUpdateCountryFlag,
@@ -25,10 +25,15 @@ export const CountryManager: React.FC<CountryManagerProps> = ({
   const [editUrl, setEditUrl] = useState('');
   const [urlError, setUrlError] = useState<string | null>(null);
 
-  const countries = dbState.countries.filter(c =>
-    c.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Ordenação alfabética por Nome do País (name)
+  const countries = useMemo(() => {
+    return [...dbState.countries]
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' }))
+      .filter(c =>
+        c.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+  }, [dbState.countries, searchTerm]);
 
   const handleStartEdit = (countryId: string, currentUrl?: string) => {
     setEditingCountryId(countryId);
