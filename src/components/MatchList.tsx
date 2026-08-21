@@ -365,14 +365,9 @@ export const MatchList: React.FC<MatchListProps> = ({
               <Zap className="w-6 h-6 fill-slate-950 text-slate-950 animate-pulse" />
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base font-black tracking-tight text-white flex items-center gap-2">
-                  Módulo de Análise & Power Ranking
-                </h3>
-                <span className="px-2 py-0.5 bg-amber-400 text-slate-950 text-[10px] font-black rounded-full uppercase tracking-wider shadow-xs">
-                  Liberado para Todos
-                </span>
-              </div>
+              <h3 className="text-base font-black tracking-tight text-white flex items-center gap-2">
+                Módulo de Análise & Power Ranking
+              </h3>
               <p className="text-xs text-indigo-200 mt-1 max-w-2xl leading-relaxed">
                 Compare confrontos com modelo Poisson de placar, índice de força ponderado por Odds, eficiência de xG, médias descritivas (Média, Desvio Padrão, CV%) e indicadores +EV.
               </p>

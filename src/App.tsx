@@ -8,7 +8,6 @@ import { DbState, Match, NewEntityCreatedNotification, Country, League, Team, Ap
 import { fetchDatabaseState, saveDatabaseState, clearDatabase, saveUsersList } from './services/dbService';
 
 import { Navbar } from './components/Navbar';
-import { EmptyState } from './components/EmptyState';
 import { MatchList } from './components/MatchList';
 import { MatchFormModal } from './components/MatchFormModal';
 import { EntityFormModal } from './components/EntityFormModal';
@@ -1165,34 +1164,23 @@ export default function App() {
           <>
             {/* Main Content by Tab */}
             {activeTab === 'matches' && (
-              <>
-                {dbState.matches.length === 0 ? (
-                  <EmptyState
-                    onOpenMatchModal={handleOpenNewMatchModal}
-                    onOpenEntityModal={() => handleOpenEntityModal('country')}
-                    onOpenCsvImportModal={() => setIsCsvImportModalOpen(true)}
-                    isMaster={isMaster}
-                  />
-                ) : (
-                  <MatchList
-                    dbState={dbState}
-                    isMaster={isMaster}
-                    onEditMatch={handleEditMatch}
-                    onDeleteMatch={handleDeleteMatch}
-                    onOpenMatchModal={handleOpenNewMatchModal}
-                    onOpenStatsModal={handleOpenStatsModal}
-                    onOpenQuickScore={handleOpenQuickScore}
-                    onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
-                    onOpenBulkMatchUpdateModal={() => setIsBulkMatchUpdateModalOpen(true)}
-                    onOpenPressureChartModal={handleOpenPressureChartModal}
-                    onAnalyzeMatch={(match) => {
-                      setAnalysisTargetMatchId(match.id);
-                      setActiveTab('analysis');
-                    }}
-                    onNavigateToAnalysis={() => setActiveTab('analysis')}
-                  />
-                )}
-              </>
+              <MatchList
+                dbState={dbState}
+                isMaster={isMaster}
+                onEditMatch={handleEditMatch}
+                onDeleteMatch={handleDeleteMatch}
+                onOpenMatchModal={handleOpenNewMatchModal}
+                onOpenStatsModal={handleOpenStatsModal}
+                onOpenQuickScore={handleOpenQuickScore}
+                onOpenBulkMatchImportModal={() => setIsBulkMatchModalOpen(true)}
+                onOpenBulkMatchUpdateModal={() => setIsBulkMatchUpdateModalOpen(true)}
+                onOpenPressureChartModal={handleOpenPressureChartModal}
+                onAnalyzeMatch={(match) => {
+                  setAnalysisTargetMatchId(match.id);
+                  setActiveTab('analysis');
+                }}
+                onNavigateToAnalysis={() => setActiveTab('analysis')}
+              />
             )}
 
             {activeTab === 'schedule' && (
