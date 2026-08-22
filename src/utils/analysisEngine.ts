@@ -285,6 +285,7 @@ export function extractTeamMatches(
     venueOnly?: 'HOME' | 'AWAY' | 'ALL';
     maxCount?: number;
     leagueId?: string;
+    teams?: Team[];
   }
 ): TeamSampleMatch[] {
   const venue = options?.venueOnly || 'ALL';
@@ -323,7 +324,9 @@ export function extractTeamMatches(
 
     const opponentName = isHome ? m.awayTeamName : m.homeTeamName;
     const opponentId = isHome ? m.awayTeamId : m.homeTeamId;
-    const opponentLogoUrl = isHome ? m.awayTeamLogoUrl : m.homeTeamLogoUrl;
+    const opponentLogoUrl =
+      (isHome ? m.awayTeamLogoUrl : m.homeTeamLogoUrl) ||
+      options?.teams?.find(t => t.id === opponentId || t.name === opponentName)?.logoUrl;
 
     const opponentOdd = isHome ? (m.odds?.awayFT ?? null) : (m.odds?.homeFT ?? null);
     const matchOdd = isHome ? (m.odds?.homeFT ?? null) : (m.odds?.awayFT ?? null);
@@ -755,20 +758,22 @@ export function runFullMatchAnalysis(
   const league = dbState.leagues.find(l => l.id === homeTeam.leagueId || homeTeam.leagueIds?.includes(l.id));
 
   // Extract Form Trackers (G5 & E5 for both teams)
-  const homeFormG5 = extractTeamMatches(homeTeam.id, dbState.matches, { venueOnly: 'ALL', maxCount: 5 });
-  const homeFormE5 = extractTeamMatches(homeTeam.id, dbState.matches, { venueOnly: 'HOME', maxCount: 5 });
-  const awayFormG5 = extractTeamMatches(awayTeam.id, dbState.matches, { venueOnly: 'ALL', maxCount: 5 });
-  const awayFormE5 = extractTeamMatches(awayTeam.id, dbState.matches, { venueOnly: 'AWAY', maxCount: 5 });
+  const homeFormG5 = extractTeamMatches(homeTeam.id, dbState.matches, { venueOnly: 'ALL', maxCount: 5, teams: dbState.teams });
+  const homeFormE5 = extractTeamMatches(homeTeam.id, dbState.matches, { venueOnly: 'HOME', maxCount: 5, teams: dbState.teams });
+  const awayFormG5 = extractTeamMatches(awayTeam.id, dbState.matches, { venueOnly: 'ALL', maxCount: 5, teams: dbState.teams });
+  const awayFormE5 = extractTeamMatches(awayTeam.id, dbState.matches, { venueOnly: 'AWAY', maxCount: 5, teams: dbState.teams });
 
   // Extract Active Samples according to configuration
   const homeActiveSample = extractTeamMatches(homeTeam.id, dbState.matches, {
     venueOnly: venueMode === 'SPECIFIC' ? 'HOME' : 'ALL',
     maxCount: sampleSize >= 999 ? undefined : sampleSize,
+    teams: dbState.teams,
   });
 
   const awayActiveSample = extractTeamMatches(awayTeam.id, dbState.matches, {
     venueOnly: venueMode === 'SPECIFIC' ? 'AWAY' : 'ALL',
     maxCount: sampleSize >= 999 ? undefined : sampleSize,
+    teams: dbState.teams,
   });
 
   // Calculate Power Ratings
