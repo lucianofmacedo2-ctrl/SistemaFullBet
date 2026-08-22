@@ -4,6 +4,7 @@ import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import { syncOnlineFootballData, processMatchRows, importCustomCsvText } from './server/syncEngine';
+import { sanitizeAndCleanDb } from './src/utils/dbSanitizer';
 
 const app = express();
 const PORT = 3000;
@@ -141,7 +142,11 @@ function loadDb(): DbData {
     const raw = fs.readFileSync(DB_FILE, 'utf-8');
     const parsed = JSON.parse(raw);
     parsed.users = users;
-    return parsed;
+    const { cleanedDb, stats } = sanitizeAndCleanDb(parsed as any);
+    if (stats.foreignLeaguesRemoved > 0 || stats.teamsCleaned > 0 || stats.duplicatesRemoved > 0) {
+      saveDb(cleanedDb);
+    }
+    return cleanedDb;
   } catch (err) {
     console.error('Error reading db file:', err);
     return { countries: [], leagues: [], teams: [], matches: [], users };
@@ -153,8 +158,9 @@ function saveDb(data: DbData) {
     if (Array.isArray(data.users)) {
       saveUsers(data.users);
     }
+    const { cleanedDb } = sanitizeAndCleanDb(data as any);
     const dataToSave = {
-      ...data,
+      ...cleanedDb,
       users: loadUsers(),
     };
     fs.writeFileSync(DB_FILE, JSON.stringify(dataToSave, null, 2), 'utf-8');

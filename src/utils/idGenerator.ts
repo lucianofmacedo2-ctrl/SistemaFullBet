@@ -108,9 +108,11 @@ export function findOrCreateTeam(
   leagueName?: string
 ): { team: Team; isNew: boolean; updatedTeams: Team[] } {
   const trimmedName = teamName.trim();
+  
+  // Prioriza encontrar o time estritamente pelo mesmo país
   const existing = teams.find(
-    t => t.name.toLowerCase() === trimmedName.toLowerCase()
-  );
+    t => t.name.toLowerCase() === trimmedName.toLowerCase() && (t.countryId === countryId || !t.countryId)
+  ) || (countryId ? undefined : teams.find(t => t.name.toLowerCase() === trimmedName.toLowerCase()));
 
   if (existing) {
     let updated = false;
@@ -119,6 +121,14 @@ export function findOrCreateTeam(
       cloned.logoUrl = logoUrl;
       updated = true;
     }
+    if (countryId && (!cloned.countryId || cloned.countryId !== countryId)) {
+      // Se não tinha país, vincula ao país informado
+      if (!cloned.countryId) {
+        cloned.countryId = countryId;
+        cloned.countryName = countryName;
+        updated = true;
+      }
+    }
     if (leagueId) {
       if (!cloned.leagueId) {
         cloned.leagueId = leagueId;
@@ -126,6 +136,7 @@ export function findOrCreateTeam(
         updated = true;
       }
       const ids = cloned.leagueIds ? [...cloned.leagueIds] : (cloned.leagueId ? [cloned.leagueId] : []);
+      // Apenas adiciona à lista se pertencer ao mesmo país e não estiver presente
       if (!ids.includes(leagueId)) {
         ids.push(leagueId);
         cloned.leagueIds = ids;

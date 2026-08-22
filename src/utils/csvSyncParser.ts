@@ -1,5 +1,7 @@
 import { DbState, Country, League, Team, Match, MatchStats, MatchOdds } from '../types';
 
+import { sanitizeAndCleanDb } from './dbSanitizer';
+
 export interface ClientSyncResult {
   success: boolean;
   message: string;
@@ -15,40 +17,40 @@ export interface ClientSyncResult {
 
 export const DIV_MAP: Record<string, { countryCode: string; leagueName: string }> = {
   // Holanda (Netherlands)
-  N1: { countryCode: 'HOL', leagueName: 'Eredivisie' },
-  N2: { countryCode: 'HOL', leagueName: 'Eerste Divisie' },
+  N1: { countryCode: 'HOL', leagueName: 'Eredivisie HOL' },
+  N2: { countryCode: 'HOL', leagueName: 'Eerste Divisie HOL' },
   // Inglaterra (England)
-  E0: { countryCode: 'ING', leagueName: 'Premier League' },
-  E1: { countryCode: 'ING', leagueName: 'Championship' },
-  E2: { countryCode: 'ING', leagueName: 'League 1' },
-  E3: { countryCode: 'ING', leagueName: 'League 2' },
-  EC: { countryCode: 'ING', leagueName: 'National League' },
+  E0: { countryCode: 'ING', leagueName: 'Premier League ING' },
+  E1: { countryCode: 'ING', leagueName: 'Championship ING' },
+  E2: { countryCode: 'ING', leagueName: 'League 1 ING' },
+  E3: { countryCode: 'ING', leagueName: 'League 2 ING' },
+  EC: { countryCode: 'ING', leagueName: 'National League ING' },
   // Escócia (Scotland)
-  SC0: { countryCode: 'ESC', leagueName: 'Premiership' },
-  SC1: { countryCode: 'ESC', leagueName: 'Championship' },
-  SC2: { countryCode: 'ESC', leagueName: 'League One' },
-  SC3: { countryCode: 'ESC', leagueName: 'League Two' },
+  SC0: { countryCode: 'ESC', leagueName: 'Premiere League ESC' },
+  SC1: { countryCode: 'ESC', leagueName: 'Division 1 ESC' },
+  SC2: { countryCode: 'ESC', leagueName: 'Division 2 ESC' },
+  SC3: { countryCode: 'ESC', leagueName: 'Division 3 ESC' },
   // Alemanha (Germany)
-  D1: { countryCode: 'ALE', leagueName: 'Bundesliga' },
-  D2: { countryCode: 'ALE', leagueName: '2. Bundesliga' },
+  D1: { countryCode: 'ALE', leagueName: 'Bundesliga 1 ALE' },
+  D2: { countryCode: 'ALE', leagueName: 'Bundesliga 2 ALE' },
   // Itália (Italy)
-  I1: { countryCode: 'ITA', leagueName: 'Serie A' },
-  I2: { countryCode: 'ITA', leagueName: 'Serie B' },
+  I1: { countryCode: 'ITA', leagueName: 'Serie A ITA' },
+  I2: { countryCode: 'ITA', leagueName: 'Serie B ITA' },
   // Espanha (Spain)
-  SP1: { countryCode: 'ESP', leagueName: 'La Liga' },
-  SP2: { countryCode: 'ESP', leagueName: 'La Liga 2' },
+  SP1: { countryCode: 'ESP', leagueName: 'La Liga 1 ESP' },
+  SP2: { countryCode: 'ESP', leagueName: 'La Liga 2 ESP' },
   // França (France)
-  F1: { countryCode: 'FRA', leagueName: 'Ligue 1' },
-  F2: { countryCode: 'FRA', leagueName: 'Ligue 2' },
+  F1: { countryCode: 'FRA', leagueName: 'Le Championnat FRA' },
+  F2: { countryCode: 'FRA', leagueName: 'Division 2 FRA' },
   // Bélgica (Belgium)
-  B1: { countryCode: 'BEL', leagueName: 'Jupiler Pro League' },
+  B1: { countryCode: 'BEL', leagueName: 'Jupiler League BEL' },
   // Portugal
-  P1: { countryCode: 'POR', leagueName: 'Primeira Liga' },
-  P2: { countryCode: 'POR', leagueName: 'Liga Portugal 2' },
+  P1: { countryCode: 'POR', leagueName: 'Liga I POR' },
+  P2: { countryCode: 'POR', leagueName: 'Liga Portugal 2 POR' },
   // Turquia (Turkey)
-  T1: { countryCode: 'TUR', leagueName: 'Süper Lig' },
+  T1: { countryCode: 'TUR', leagueName: 'Futbol Ligi 1 TUR' },
   // Grécia (Greece)
-  G1: { countryCode: 'GRE', leagueName: 'Super League' },
+  G1: { countryCode: 'GRE', leagueName: 'Ethniki Katigoria GRE' },
   // Brasil
   BRA1: { countryCode: 'BRA', leagueName: 'Brasileirão Série A' },
   BRA2: { countryCode: 'BRA', leagueName: 'Brasileirão Série B' },
@@ -480,7 +482,7 @@ export function parseAndSyncCsvLocally(
       newCountriesCount++;
     }
 
-    // 2. Ensure League
+    // 2. Ensure League (estritamente dentro do país)
     const lKeyUpper = leagueName.toUpperCase();
     const lKeyNorm = normalizeHeaderKey(leagueName);
     const countryLeagueKey = `${country.id}_${lKeyUpper}`;
@@ -488,8 +490,7 @@ export function parseAndSyncCsvLocally(
 
     let league = leaguesMap.get(countryLeagueKey) ||
       leaguesMap.get(countryLeagueNorm) ||
-      leaguesMap.get(lKeyUpper) ||
-      leaguesMap.get(lKeyNorm);
+      leagues.find(l => l.countryId === country.id && (l.name.toUpperCase() === lKeyUpper || normalizeHeaderKey(l.name) === lKeyNorm));
 
     if (!league) {
       nextLeagueNum++;
@@ -505,8 +506,6 @@ export function parseAndSyncCsvLocally(
       leagues.push(league);
       leaguesMap.set(countryLeagueKey, league);
       leaguesMap.set(countryLeagueNorm, league);
-      leaguesMap.set(lKeyUpper, league);
-      leaguesMap.set(lKeyNorm, league);
       leaguesMap.set(id, league);
       newLeaguesCount++;
     } else if (!league.countryId) {
@@ -514,7 +513,7 @@ export function parseAndSyncCsvLocally(
       league.countryName = country.name;
     }
 
-    // 3. Ensure Home Team
+    // 3. Ensure Home Team (estritamente dentro do país)
     const htUpper = homeName.toUpperCase();
     const htNorm = normalizeHeaderKey(homeName);
     const countryHtKey = `${country.id}_${htUpper}`;
@@ -522,8 +521,7 @@ export function parseAndSyncCsvLocally(
 
     let homeTeam = teamsMap.get(countryHtKey) ||
       teamsMap.get(countryHtNorm) ||
-      teamsMap.get(htUpper) ||
-      teamsMap.get(htNorm);
+      teams.find(t => t.countryId === country.id && (t.name.toUpperCase() === htUpper || normalizeHeaderKey(t.name) === htNorm));
 
     if (!homeTeam) {
       nextTeamNum++;
@@ -541,35 +539,36 @@ export function parseAndSyncCsvLocally(
       teams.push(homeTeam);
       teamsMap.set(countryHtKey, homeTeam);
       teamsMap.set(countryHtNorm, homeTeam);
-      teamsMap.set(htUpper, homeTeam);
-      teamsMap.set(htNorm, homeTeam);
       teamsMap.set(id, homeTeam);
       newTeamsCount++;
     } else {
-      // Update team's league association if missing
+      // Update team's league association within its country
       let updated = false;
       if (!homeTeam.countryId) {
         homeTeam.countryId = country.id;
         homeTeam.countryName = country.name;
         updated = true;
       }
-      if (!homeTeam.leagueId) {
+      if (!homeTeam.leagueId && league.countryId === homeTeam.countryId) {
         homeTeam.leagueId = league.id;
         homeTeam.leagueName = league.name;
         updated = true;
       }
-      const existingLeagueIds = homeTeam.leagueIds ? [...homeTeam.leagueIds] : (homeTeam.leagueId ? [homeTeam.leagueId] : []);
-      if (!existingLeagueIds.includes(league.id)) {
-        existingLeagueIds.push(league.id);
-        homeTeam.leagueIds = existingLeagueIds;
-        updated = true;
+      // NUNCA adicionar ligas de outro país
+      if (league.countryId === homeTeam.countryId) {
+        const existingLeagueIds = homeTeam.leagueIds ? [...homeTeam.leagueIds] : (homeTeam.leagueId ? [homeTeam.leagueId] : []);
+        if (!existingLeagueIds.includes(league.id)) {
+          existingLeagueIds.push(league.id);
+          homeTeam.leagueIds = existingLeagueIds;
+          updated = true;
+        }
       }
       if (updated) {
         teamsMap.set(`${homeTeam.countryId}_${htUpper}`, homeTeam);
       }
     }
 
-    // 4. Ensure Away Team
+    // 4. Ensure Away Team (estritamente dentro do país)
     const atUpper = awayName.toUpperCase();
     const atNorm = normalizeHeaderKey(awayName);
     const countryAtKey = `${country.id}_${atUpper}`;
@@ -577,8 +576,7 @@ export function parseAndSyncCsvLocally(
 
     let awayTeam = teamsMap.get(countryAtKey) ||
       teamsMap.get(countryAtNorm) ||
-      teamsMap.get(atUpper) ||
-      teamsMap.get(atNorm);
+      teams.find(t => t.countryId === country.id && (t.name.toUpperCase() === atUpper || normalizeHeaderKey(t.name) === atNorm));
 
     if (!awayTeam) {
       nextTeamNum++;
@@ -596,28 +594,29 @@ export function parseAndSyncCsvLocally(
       teams.push(awayTeam);
       teamsMap.set(countryAtKey, awayTeam);
       teamsMap.set(countryAtNorm, awayTeam);
-      teamsMap.set(atUpper, awayTeam);
-      teamsMap.set(atNorm, awayTeam);
       teamsMap.set(id, awayTeam);
       newTeamsCount++;
     } else {
-      // Update team's league association if missing
+      // Update team's league association within its country
       let updated = false;
       if (!awayTeam.countryId) {
         awayTeam.countryId = country.id;
         awayTeam.countryName = country.name;
         updated = true;
       }
-      if (!awayTeam.leagueId) {
+      if (!awayTeam.leagueId && league.countryId === awayTeam.countryId) {
         awayTeam.leagueId = league.id;
         awayTeam.leagueName = league.name;
         updated = true;
       }
-      const existingLeagueIds = awayTeam.leagueIds ? [...awayTeam.leagueIds] : (awayTeam.leagueId ? [awayTeam.leagueId] : []);
-      if (!existingLeagueIds.includes(league.id)) {
-        existingLeagueIds.push(league.id);
-        awayTeam.leagueIds = existingLeagueIds;
-        updated = true;
+      // NUNCA adicionar ligas de outro país
+      if (league.countryId === awayTeam.countryId) {
+        const existingLeagueIds = awayTeam.leagueIds ? [...awayTeam.leagueIds] : (awayTeam.leagueId ? [awayTeam.leagueId] : []);
+        if (!existingLeagueIds.includes(league.id)) {
+          existingLeagueIds.push(league.id);
+          awayTeam.leagueIds = existingLeagueIds;
+          updated = true;
+        }
       }
       if (updated) {
         teamsMap.set(`${awayTeam.countryId}_${atUpper}`, awayTeam);
@@ -759,7 +758,7 @@ export function parseAndSyncCsvLocally(
     }
   }
 
-  const updatedDb: DbState = {
+  const rawUpdatedDb: DbState = {
     ...currentDb,
     countries,
     leagues,
@@ -767,19 +766,21 @@ export function parseAndSyncCsvLocally(
     matches,
   };
 
+  const { cleanedDb } = sanitizeAndCleanDb(rawUpdatedDb);
+
   const result: ClientSyncResult = {
     success: parsedRows.length > 0,
     message: `Processamento concluído com sucesso: +${newTeamsCount} times, +${newLeaguesCount} ligas, +${newCountriesCount} países e +${newMatchesCount} jogos consolidados!`,
-    totalCountries: countries.length,
-    totalLeagues: leagues.length,
-    totalTeams: teams.length,
-    totalMatches: matches.length,
+    totalCountries: cleanedDb.countries.length,
+    totalLeagues: cleanedDb.leagues.length,
+    totalTeams: cleanedDb.teams.length,
+    totalMatches: cleanedDb.matches.length,
     newCountriesCount,
     newLeaguesCount,
     newTeamsCount,
     newMatchesCount,
   };
 
-  return { updatedDb, result };
+  return { updatedDb: cleanedDb, result };
 }
 

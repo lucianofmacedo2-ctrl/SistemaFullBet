@@ -22,9 +22,16 @@ import {
   Sparkles,
   DollarSign,
   ChevronDown,
+  ChevronUp,
   Layers,
   Settings,
-  Flame
+  Flame,
+  LayoutDashboard,
+  Grid,
+  SlidersHorizontal,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { DbState, AppUser } from '../types';
 import { extractYMD, formatDateToYMD } from './DailyMatchesView';
@@ -78,14 +85,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isMaster = currentUser?.role === 'MASTER';
   const effStatus = currentUser ? getUserEffectiveStatus(currentUser) : null;
 
-  // Dropdowns state
+  // Dropdowns and Master Quick Panel states
   const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
   const [isSystemMenuOpen, setIsSystemMenuOpen] = useState(false);
-  const [isEntitiesMenuOpen, setIsEntitiesMenuOpen] = useState(false);
+  const [isMasterPanelOpen, setIsMasterPanelOpen] = useState(false);
 
   const importMenuRef = useRef<HTMLDivElement>(null);
   const systemMenuRef = useRef<HTMLDivElement>(null);
-  const entitiesMenuRef = useRef<HTMLDivElement>(null);
 
   // Close menus on click outside
   useEffect(() => {
@@ -95,9 +101,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       }
       if (systemMenuRef.current && !systemMenuRef.current.contains(event.target as Node)) {
         setIsSystemMenuOpen(false);
-      }
-      if (entitiesMenuRef.current && !entitiesMenuRef.current.contains(event.target as Node)) {
-        setIsEntitiesMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -130,8 +133,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     u => getUserEffectiveStatus(u).status === 'ACTIVE'
   ).length || 1;
 
-  const isEntityTabActive = ['countries', 'leagues', 'teams', 'stats', 'pending_logos'].includes(activeTab);
-
   return (
     <header className="bg-white border-b border-slate-200 text-slate-800 sticky top-0 z-40 shadow-xs">
       {/* Top Header Bar */}
@@ -161,8 +162,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Center Summary Indicator (Desktop) */}
-          <div className="hidden 2xl:flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1 rounded-full font-medium">
-            <span className="font-semibold text-slate-700">{dbState.matches.length}</span> Jogos no Banco •
+          <div className="hidden lg:flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1 rounded-full font-medium">
+            <span className="font-semibold text-slate-700">{dbState.matches.length}</span> Jogos •
             <span className="font-semibold text-slate-700">{dbState.countries.length}</span> Países •
             <span className="font-semibold text-slate-700">{dbState.leagues.length}</span> Ligas •
             <span className="font-semibold text-slate-700">{dbState.teams.length}</span> Times
@@ -191,20 +192,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* MASTER-ONLY ACTIONS: Streamlined, Grouped and Overflow-Free */}
+            {/* MASTER-ONLY QUICK ACTIONS (Compact, Accessible, No Overflow) */}
             {isMaster ? (
               <div className="flex items-center gap-1.5 sm:gap-2">
-                {/* 1. Cadastrar Jogo (Botão Principal) */}
+                {/* 1. Cadastrar Jogo */}
                 <button
                   onClick={onOpenMatchModal}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm rounded-lg shadow-sm shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm rounded-lg shadow-sm shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                   title="Cadastrar Nova Partida"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-[3]" />
                   <span className="hidden xs:inline">Cadastrar Jogo</span>
                 </button>
 
-                {/* 2. Menu Dropdown: Importações & Massa */}
+                {/* 2. Menu Dropdown: Importações & Cargas */}
                 <div className="relative" ref={importMenuRef}>
                   <button
                     onClick={() => {
@@ -216,10 +217,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                         ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border-indigo-300 shadow-2xs'
                         : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
                     }`}
-                    title="Menu de Importação e Atualização em Massa"
+                    title="Menu de Importações em Massa"
                   >
                     <UploadCloud className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Importar</span>
+                    <span className="hidden sm:inline">Importar</span>
                     {incompleteMatchesCount > 0 && (
                       <span className="px-1.5 py-0.2 bg-amber-500 text-white text-[10px] font-black rounded-full animate-pulse">
                         {incompleteMatchesCount}
@@ -309,7 +310,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   )}
                 </div>
 
-                {/* 3. Gestão de Usuários */}
+                {/* 3. Usuários */}
                 {onOpenUserManagerModal && (
                   <button
                     onClick={onOpenUserManagerModal}
@@ -317,14 +318,29 @@ export const Navbar: React.FC<NavbarProps> = ({
                     title="Gerenciar Usuários e Permissões"
                   >
                     <Users className="w-3.5 h-3.5 text-purple-600" />
-                    <span className="hidden sm:inline">Usuários</span>
+                    <span className="hidden md:inline">Usuários</span>
                     <span className="px-1.5 py-0.2 bg-purple-200 text-purple-900 text-[10px] font-black rounded-full">
                       {activeUsersCount}
                     </span>
                   </button>
                 )}
 
-                {/* 4. Menu Dropdown: Configurações & Entidades & Backup */}
+                {/* 4. Painel Master Completo (Toggle View) */}
+                <button
+                  onClick={() => setIsMasterPanelOpen(!isMasterPanelOpen)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg border transition-all cursor-pointer ${
+                    isMasterPanelOpen
+                      ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-sm'
+                      : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
+                  }`}
+                  title="Abrir/Fechar Central de Funções Master Completa"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  <span className="hidden xl:inline">Painel Master</span>
+                  <ChevronDown className={`w-3 h-3 transition-transform ${isMasterPanelOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* 5. Menu Dropdown: Mais Ações */}
                 <div className="relative" ref={systemMenuRef}>
                   <button
                     onClick={() => {
@@ -332,16 +348,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                       setIsImportMenuOpen(false);
                     }}
                     className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs sm:text-sm rounded-lg transition-all cursor-pointer"
-                    title="Gerenciamento de Entidades, Backups e Configurações"
+                    title="Mais Funções e Relatórios"
                   >
                     <Settings className="w-3.5 h-3.5 text-slate-600" />
-                    <span className="hidden lg:inline">Mais</span>
                     <ChevronDown className={`w-3 h-3 text-slate-500 transition-transform ${isSystemMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {/* Dropdown Menu Sistema */}
                   {isSystemMenuOpen && (
-                    <div className="absolute right-0 mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="absolute right-0 mt-1.5 w-60 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
                       <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
                         Entidades & Cadastros
                       </div>
@@ -366,7 +381,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             exportTeamsToExcel(dbState.teams, dbState.leagues, dbState.countries);
                           }
                         }}
-                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between transition-colors"
+                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between transition-colors border-t border-slate-50"
                       >
                         <div className="flex items-center gap-2">
                           <FileSpreadsheet className="w-4 h-4 text-teal-600 shrink-0" />
@@ -388,7 +403,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 flex items-center gap-2 transition-colors border-t border-slate-50"
                       >
                         <Download className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Baixar Planilha (.xlsx)</span>
+                        <span>Baixar Planilha Excel (.xlsx)</span>
                       </button>
 
                       <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 border-t border-b border-slate-100 mt-1">
@@ -436,7 +451,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               {onOpenLoginModal && (
                 <button
                   onClick={onOpenLoginModal}
-                  className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                   title="Trocar de Conta / Login"
                 >
                   <Key className="w-4 h-4" />
@@ -446,7 +461,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               {onLogout && (
                 <button
                   onClick={onLogout}
-                  className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                   title="Sair da Conta"
                 >
                   <LogOut className="w-4 h-4" />
@@ -457,7 +472,225 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Navigation Bar (Categorized, Clean & Compact - No Overflow) */}
+      {/* MASTER EXPANDED DASHBOARD GRID (Visible on toggle - Clean Categorized Layout, No Horizontal Scroll) */}
+      {isMaster && isMasterPanelOpen && (
+        <div className="bg-gradient-to-b from-amber-50/50 via-slate-50 to-slate-100 border-t border-b border-amber-200/80 px-3 sm:px-5 lg:px-6 py-3.5 animate-in fade-in slide-in-from-top-2 duration-200 shadow-inner">
+          <div className="max-w-[1700px] mx-auto">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-amber-600" />
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                  Central de Funções do Usuário Master
+                </h3>
+                <span className="text-[10px] text-slate-500 font-medium hidden sm:inline">
+                  Todas as ferramentas reunidas em blocos visuais, sem necessidade de rolagem lateral.
+                </span>
+              </div>
+              <button
+                onClick={() => setIsMasterPanelOpen(false)}
+                className="text-xs font-bold text-slate-500 hover:text-slate-800 px-2 py-0.5 rounded hover:bg-slate-200/60 cursor-pointer"
+              >
+                Recolher ✕
+              </button>
+            </div>
+
+            {/* 4 Categorized Columns in Responsive Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+              {/* Card 1: Cadastros & Gestão */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 pb-1.5 border-b border-slate-100">
+                  <Plus className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Cadastros & Gestão</span>
+                </div>
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => {
+                      setIsMasterPanelOpen(false);
+                      onOpenMatchModal();
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                  >
+                    <span>+ Cadastrar Partida</span>
+                    <Plus className="w-3.5 h-3.5 text-blue-600" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMasterPanelOpen(false);
+                      onOpenEntityModal();
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                  >
+                    <span>+ País / Liga / Time</span>
+                    <Globe className="w-3.5 h-3.5 text-slate-500" />
+                  </button>
+                  {onOpenUserManagerModal && (
+                    <button
+                      onClick={() => {
+                        setIsMasterPanelOpen(false);
+                        onOpenUserManagerModal();
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-900 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span>Gestão de Usuários</span>
+                      <span className="px-1.5 py-0.2 bg-purple-200 text-purple-900 text-[10px] font-bold rounded-md">
+                        {activeUsersCount} ativos
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Card 2: Importações em Massa */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 pb-1.5 border-b border-slate-100">
+                  <UploadCloud className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Importações & Cargas</span>
+                </div>
+                <div className="space-y-1.5">
+                  {onOpenBulkMatchUpdateModal && (
+                    <button
+                      onClick={() => {
+                        setIsMasterPanelOpen(false);
+                        onOpenBulkMatchUpdateModal();
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span className="truncate">Subir Dados em Massa</span>
+                      {incompleteMatchesCount > 0 && (
+                        <span className="px-1.5 py-0.2 bg-amber-500 text-white text-[10px] font-bold rounded-full">
+                          {incompleteMatchesCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  {onOpenCsvImportModal && (
+                    <button
+                      onClick={() => {
+                        setIsMasterPanelOpen(false);
+                        onOpenCsvImportModal();
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span>Subir CSV Consolidado</span>
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                    </button>
+                  )}
+                  {onOpenBulkMatchImportModal && (
+                    <button
+                      onClick={() => {
+                        setIsMasterPanelOpen(false);
+                        onOpenBulkMatchImportModal();
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span>Importar Jogos Futuros (.xlsx)</span>
+                      <CalendarDays className="w-3.5 h-3.5 text-blue-600" />
+                    </button>
+                  )}
+                  {onOpenBulkImportModal && (
+                    <button
+                      onClick={() => {
+                        setIsMasterPanelOpen(false);
+                        onOpenBulkImportModal();
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span>Importar Equipes (.xlsx)</span>
+                      <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Card 3: Relatórios & Planilhas */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 pb-1.5 border-b border-slate-100">
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-teal-600" />
+                  <span>Relatórios & Exportações</span>
+                </div>
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => {
+                      setIsMasterPanelOpen(false);
+                      if (onOpenTeamsReportModal) {
+                        onOpenTeamsReportModal();
+                      } else {
+                        exportTeamsToExcel(dbState.teams, dbState.leagues, dbState.countries);
+                      }
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-900 rounded-lg text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                  >
+                    <span>Relatório de Times Cadastrados</span>
+                    <span className="px-1.5 py-0.2 bg-teal-200 text-teal-900 text-[10px] font-bold rounded-md">
+                      {dbState.teams.length}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMasterPanelOpen(false);
+                      exportTeamsToExcel(dbState.teams, dbState.leagues, dbState.countries);
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                  >
+                    <span>Baixar Planilha (.xlsx)</span>
+                    <Download className="w-3.5 h-3.5 text-slate-600" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMasterPanelOpen(false);
+                      setActiveTab('pending_logos');
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                  >
+                    <span>Escudos e Logos Pendentes</span>
+                    {pendingLogosCount > 0 ? (
+                      <span className="px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[10px] font-black rounded-md">
+                        {pendingLogosCount}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-emerald-700 font-bold">100% OK</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 4: Sistema & Banco de Dados */}
+              <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 pb-1.5 border-b border-slate-100">
+                  <Database className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Banco & Manutenção</span>
+                </div>
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => {
+                      setIsMasterPanelOpen(false);
+                      onOpenBackupModal();
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                  >
+                    <span>Backup & Restaurar JSON</span>
+                    <Database className="w-3.5 h-3.5 text-blue-600" />
+                  </button>
+                  {onOpenResetModal && (
+                    <button
+                      onClick={() => {
+                        setIsMasterPanelOpen(false);
+                        onOpenResetModal();
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span>Resetar Banco de Dados</span>
+                      <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation Tabs Bar (Clean, Wrap-Safe, No Horizontal Scroll) */}
       <div className="bg-slate-50 border-t border-slate-200 px-3 sm:px-5 lg:px-6 py-1.5">
         <div className="max-w-[1700px] mx-auto flex flex-wrap items-center justify-between gap-y-2 gap-x-3">
           {/* Main Navigation Segmented Controls */}
@@ -466,7 +699,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="flex items-center bg-white p-0.5 rounded-lg border border-slate-200 shadow-2xs">
               <button
                 onClick={() => setActiveTab('matches')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
                   activeTab === 'matches'
                     ? 'bg-blue-600 text-white shadow-2xs'
                     : 'text-slate-600 hover:text-blue-700 hover:bg-slate-100'
@@ -483,7 +716,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <button
                 onClick={() => setActiveTab('schedule')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
                   activeTab === 'schedule'
                     ? 'bg-blue-600 text-white shadow-2xs'
                     : 'text-slate-600 hover:text-blue-700 hover:bg-slate-100'
@@ -500,7 +733,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <button
                 onClick={() => setActiveTab('standings')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
                   activeTab === 'standings'
                     ? 'bg-amber-500 text-slate-950 shadow-2xs'
                     : 'text-slate-600 hover:text-amber-800 hover:bg-slate-100'
@@ -511,11 +744,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
 
-            {/* Separador Visual Discreto */}
+            {/* Separador Visual */}
             <div className="hidden sm:block w-px h-5 bg-slate-300/80 mx-0.5"></div>
 
-            {/* Bloco 2: Inteligência Esportiva & Apostas (DESTAQUE NOBRE) */}
-            <div className="flex items-center gap-1 sm:gap-1.5">
+            {/* Bloco 2: Inteligência Esportiva & Apostas (DESTAQUE) */}
+            <div className="flex items-center flex-wrap gap-1 sm:gap-1.5">
               <button
                 onClick={() => setActiveTab('analysis')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all shadow-2xs cursor-pointer ${
@@ -557,14 +790,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            {/* Separador Visual Discreto */}
+            {/* Separador Visual */}
             <div className="hidden md:block w-px h-5 bg-slate-300/80 mx-0.5"></div>
 
-            {/* Bloco 3: Cadastros & Entidades (Visual Compacto) */}
-            <div className="flex items-center bg-white p-0.5 rounded-lg border border-slate-200 shadow-2xs">
+            {/* Bloco 3: Cadastros & Entidades */}
+            <div className="flex items-center flex-wrap bg-white p-0.5 rounded-lg border border-slate-200 shadow-2xs">
               <button
                 onClick={() => setActiveTab('countries')}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                   activeTab === 'countries'
                     ? 'bg-slate-800 text-white'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -575,7 +808,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <button
                 onClick={() => setActiveTab('leagues')}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                   activeTab === 'leagues'
                     ? 'bg-slate-800 text-white'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -586,7 +819,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <button
                 onClick={() => setActiveTab('teams')}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                   activeTab === 'teams'
                     ? 'bg-slate-800 text-white'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -597,7 +830,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <button
                 onClick={() => setActiveTab('stats')}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                   activeTab === 'stats'
                     ? 'bg-slate-800 text-white'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -606,11 +839,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Estatísticas
               </button>
 
-              {/* Escudos Pendentes (Admin) */}
+              {/* Escudos Pendentes (Master) */}
               {isMaster && (
                 <button
                   onClick={() => setActiveTab('pending_logos')}
-                  className={`px-2 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
+                  className={`px-2 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                     activeTab === 'pending_logos'
                       ? 'bg-amber-500 text-slate-950'
                       : pendingLogosCount > 0
@@ -648,5 +881,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+
 
 

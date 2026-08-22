@@ -1,5 +1,6 @@
 import { DbState, Country, League, Team, Match, AppUser } from '../types';
 import defaultDatabaseData from '../data/defaultDatabase.json';
+import { sanitizeAndCleanDb } from '../utils/dbSanitizer';
 
 const STORAGE_KEY = 'football_db_v1';
 const USERS_STORAGE_KEY = 'football_users_list_v1';
@@ -107,7 +108,7 @@ export async function fetchDatabaseState(): Promise<DbState> {
     }
   }
 
-  const result: DbState = {
+  const rawResult: DbState = {
     countries: dbData.countries || [],
     leagues: dbData.leagues || [],
     teams: dbData.teams || [],
@@ -115,20 +116,29 @@ export async function fetchDatabaseState(): Promise<DbState> {
     users: dbData.users || [],
   };
 
+  // Sanitiza e corrige o banco de dados contra anomalias/duplicidades/ligas cruzadas
+  const { cleanedDb, stats } = sanitizeAndCleanDb(rawResult);
+
   // If result has users, also sync local USERS_STORAGE_KEY
-  if (Array.isArray(result.users) && result.users.length > 0) {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(result.users));
+  if (Array.isArray(cleanedDb.users) && cleanedDb.users.length > 0) {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(cleanedDb.users));
   } else {
     // Try fetching dedicated users
     const users = await fetchUsersList();
     if (users.length > 0) {
-      result.users = users;
+      cleanedDb.users = users;
     }
   }
 
   // Save to LocalStorage so future access is instantaneous
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
-  return result;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedDb));
+
+  // If corrections were made, persist back to the backend
+  if (stats.foreignLeaguesRemoved > 0 || stats.teamsCleaned > 0 || stats.duplicatesRemoved > 0) {
+    saveDatabaseState(cleanedDb).catch(() => {});
+  }
+
+  return cleanedDb;
 }
 
 export async function syncDatabaseFromServer(): Promise<DbState> {
@@ -138,8 +148,9 @@ export async function syncDatabaseFromServer(): Promise<DbState> {
   });
   if (response.ok) {
     const data = await response.json();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    return data;
+    const { cleanedDb } = sanitizeAndCleanDb(data);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedDb));
+    return cleanedDb;
   }
   throw new Error('Falha ao obter dados do servidor.');
 }
