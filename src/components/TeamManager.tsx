@@ -1,15 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter, AlertTriangle, AlertCircle, Download, Loader2, FileText, BarChart3 } from 'lucide-react';
+import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter, AlertTriangle, AlertCircle, Download, Loader2, FileText, BarChart3, Zap, Sparkles } from 'lucide-react';
 import { DbState, Team } from '../types';
 import { isValidImageUrl, validateImageUrlInput, sanitizeImageUrl } from '../utils/imageHelper';
 import { exportTeamsToExcel, exportTeamsToCsv } from '../utils/excelHelper';
 import { TeamsReportModal } from './TeamsReportModal';
+import { diagnoseDatabaseAnomalies } from '../utils/dbSanitizer';
 
 interface TeamManagerProps {
   dbState: DbState;
   isMaster?: boolean;
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
   onOpenBulkImportModal?: () => void;
+  onOpenSanitizerModal?: () => void;
   onDeleteTeam: (id: string) => void;
   onUpdateTeamLogo?: (teamId: string, logoUrl: string) => void;
   onUpdateTeamLeague?: (teamId: string, leagueId: string) => void;
@@ -21,6 +23,7 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
   isMaster = false,
   onOpenEntityModal,
   onOpenBulkImportModal,
+  onOpenSanitizerModal,
   onDeleteTeam,
   onUpdateTeamLogo,
   onUpdateTeamLeague,
@@ -37,6 +40,11 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
   const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
   const [isExporting, setIsExporting] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
+  // Diagnóstico de anomalias e ligas cruzadas
+  const anomalyReport = useMemo(() => {
+    return diagnoseDatabaseAnomalies(dbState);
+  }, [dbState]);
 
   // Ordenação alfabética de times por País -> Liga -> Nome do Time
   const teams = useMemo(() => {
@@ -204,6 +212,27 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
             </span>
           </button>
 
+          {/* Botão de Diagnóstico & Correção Automática de Times */}
+          {isMaster && onOpenSanitizerModal && (
+            <button
+              onClick={onOpenSanitizerModal}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all hover:scale-[1.02] cursor-pointer ${
+                anomalyReport.totalAnomaliesCount > 0
+                  ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20 animate-pulse'
+                  : 'bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border-indigo-500/30'
+              }`}
+              title="Diagnóstico de Integridade e Correção Automática de Ligas Cruzadas / Duplicidades"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>Corrigir Duplicidades</span>
+              {anomalyReport.totalAnomaliesCount > 0 && (
+                <span className="px-1.5 py-0.2 bg-slate-950 text-amber-400 text-[10px] font-black rounded-md">
+                  {anomalyReport.totalAnomaliesCount}
+                </span>
+              )}
+            </button>
+          )}
+
           {/* Export Quick Excel (.xlsx) */}
           <button
             onClick={handleExportTeams}
@@ -240,6 +269,38 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
           )}
         </div>
       </div>
+
+      {/* Banner de Aviso de Ligas Cruzadas / Duplicidades Detectadas */}
+      {isMaster && anomalyReport.totalAnomaliesCount > 0 && onOpenSanitizerModal && (
+        <div className="bg-gradient-to-r from-amber-950/60 via-amber-900/30 to-amber-950/60 border border-amber-500/40 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg shadow-amber-950/40 animate-in fade-in">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <div className="p-2 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl shrink-0">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-amber-300">
+                {anomalyReport.totalAnomaliesCount} Anomalia(s) de Ligas Cruzadas ou Duplicidades Detectadas
+              </h4>
+              <p className="text-[11px] text-amber-200/80">
+                {anomalyReport.crossCountryTeams.length > 0 && (
+                  <span>
+                    Clubes como {anomalyReport.crossCountryTeams.slice(0, 3).map(c => c.teamName).join(', ')} estão com ligas de outros países vinculadas.
+                  </span>
+                )}
+                {' '}Você pode remover essas ligas indevidas e mesclar duplicidades automaticamente.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onOpenSanitizerModal}
+            className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all hover:scale-[1.02] shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>Corrigir Automaticamente</span>
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       {teams.length === 0 ? (

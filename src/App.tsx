@@ -37,6 +37,7 @@ import { UserManagerModal } from './components/UserManagerModal';
 import { AccessExpiredOverlay } from './components/AccessExpiredOverlay';
 import { ToastNotification } from './components/ToastNotification';
 import { TeamsReportModal } from './components/TeamsReportModal';
+import { DbSanitizerModal } from './components/DbSanitizerModal';
 import { MatchOdds, MatchStats, MatchStatus, MatchPressureData } from './types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from './utils/idGenerator';
 import { ParsedMatchRow, ParsedMatchUpdateRow } from './utils/excelHelper';
@@ -103,6 +104,7 @@ export default function App() {
   const [isPressureModalOpen, setIsPressureModalOpen] = useState(false);
   const [pressureSelectedMatchId, setPressureSelectedMatchId] = useState<string | null>(null);
   const [isTeamsReportModalOpen, setIsTeamsReportModalOpen] = useState(false);
+  const [isSanitizerModalOpen, setIsSanitizerModalOpen] = useState(false);
 
   // Opportunities Hub & Bankroll Tracker Modals
   const [isOpportunitiesHubOpen, setIsOpportunitiesHubOpen] = useState(false);
@@ -141,6 +143,21 @@ export default function App() {
         type: 'match',
         entityId: 'CSV-SYNC',
         name: message,
+        timestamp: Date.now(),
+      },
+    ]);
+  };
+
+  const handleApplyCleanedDb = async (cleanedDb: DbState) => {
+    setDbState(cleanedDb);
+    await saveDatabaseState(cleanedDb);
+    setNotifications(prev => [
+      ...prev,
+      {
+        id: `clean-${Date.now()}`,
+        type: 'team',
+        entityId: 'AUTO-CLEAN',
+        name: 'Banco de Dados Sanitizado com Sucesso (Ligas e Duplicidades Corrigidas)',
         timestamp: Date.now(),
       },
     ]);
@@ -1171,6 +1188,7 @@ export default function App() {
         onOpenSyncModal={() => setIsSyncModalOpen(true)}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
         onOpenResetModal={() => setIsResetModalOpen(true)}
+        onOpenSanitizerModal={() => setIsSanitizerModalOpen(true)}
         onOpenUserManagerModal={() => setIsUserManagerModalOpen(true)}
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
         onLogout={handleLogout}
@@ -1259,6 +1277,7 @@ export default function App() {
                 isMaster={isMaster}
                 onOpenEntityModal={handleOpenEntityModal}
                 onOpenBulkImportModal={() => setIsBulkTeamModalOpen(true)}
+                onOpenSanitizerModal={() => setIsSanitizerModalOpen(true)}
                 onDeleteTeam={handleDeleteTeam}
                 onUpdateTeamLogo={handleUpdateTeamLogo}
                 onUpdateTeamLeague={handleUpdateTeamLeague}
@@ -1468,6 +1487,14 @@ export default function App() {
         isOpen={isTeamsReportModalOpen}
         onClose={() => setIsTeamsReportModalOpen(false)}
         dbState={dbState}
+      />
+
+      {/* Diagnóstico & Correção Automática de Times e Ligas */}
+      <DbSanitizerModal
+        isOpen={isSanitizerModalOpen}
+        onClose={() => setIsSanitizerModalOpen(false)}
+        dbState={dbState}
+        onApplyCleanedDb={handleApplyCleanedDb}
       />
 
       {/* Unique ID Toast Notifications */}

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Trophy,
   Globe,
@@ -38,6 +38,7 @@ import { extractYMD, formatDateToYMD } from './DailyMatchesView';
 import { isMatchComplete, exportTeamsToExcel } from '../utils/excelHelper';
 import { isValidImageUrl } from '../utils/imageHelper';
 import { getUserEffectiveStatus } from '../services/authService';
+import { diagnoseDatabaseAnomalies } from '../utils/dbSanitizer';
 
 interface NavbarProps {
   dbState: DbState;
@@ -53,6 +54,7 @@ interface NavbarProps {
   onOpenBackupModal: () => void;
   onOpenSyncModal?: () => void;
   onOpenResetModal?: () => void;
+  onOpenSanitizerModal?: () => void;
   onOpenUserManagerModal?: () => void;
   onOpenLoginModal?: () => void;
   onLogout?: () => void;
@@ -75,6 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenBackupModal,
   onOpenSyncModal,
   onOpenResetModal,
+  onOpenSanitizerModal,
   onOpenUserManagerModal,
   onOpenLoginModal,
   onLogout,
@@ -84,6 +87,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const isMaster = currentUser?.role === 'MASTER';
   const effStatus = currentUser ? getUserEffectiveStatus(currentUser) : null;
+
+  // Diagnóstico em tempo real de ligas cruzadas e duplicidades
+  const anomalyReport = useMemo(() => {
+    return diagnoseDatabaseAnomalies(dbState);
+  }, [dbState]);
 
   // Dropdowns and Master Quick Panel states
   const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
@@ -410,12 +418,36 @@ export const Navbar: React.FC<NavbarProps> = ({
                         Banco de Dados & Backup
                       </div>
 
+                      {onOpenSanitizerModal && (
+                        <button
+                          onClick={() => {
+                            setIsSystemMenuOpen(false);
+                            onOpenSanitizerModal();
+                          }}
+                          className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between transition-colors ${
+                            anomalyReport.totalAnomaliesCount > 0
+                              ? 'bg-amber-50 text-amber-900 hover:bg-amber-100'
+                              : 'text-indigo-900 hover:bg-indigo-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Zap className={`w-4 h-4 shrink-0 ${anomalyReport.totalAnomaliesCount > 0 ? 'text-amber-600' : 'text-indigo-600'}`} />
+                            <span>Corrigir Duplicidades & Ligas</span>
+                          </div>
+                          {anomalyReport.totalAnomaliesCount > 0 && (
+                            <span className="px-1.5 py-0.2 bg-amber-500 text-slate-950 text-[10px] font-black rounded-md">
+                              {anomalyReport.totalAnomaliesCount}
+                            </span>
+                          )}
+                        </button>
+                      )}
+
                       <button
                         onClick={() => {
                           setIsSystemMenuOpen(false);
                           onOpenBackupModal();
                         }}
-                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors border-t border-slate-50"
                       >
                         <Database className="w-4 h-4 text-blue-600 shrink-0" />
                         <span>Backup & Restaurar JSON</span>
@@ -661,6 +693,32 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span>Banco & Manutenção</span>
                 </div>
                 <div className="space-y-1.5">
+                  {onOpenSanitizerModal && (
+                    <button
+                      onClick={() => {
+                        setIsMasterPanelOpen(false);
+                        onOpenSanitizerModal();
+                      }}
+                      className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${
+                        anomalyReport.totalAnomaliesCount > 0
+                          ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300'
+                          : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-900'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <Zap className={`w-3.5 h-3.5 ${anomalyReport.totalAnomaliesCount > 0 ? 'text-amber-700' : 'text-indigo-600'}`} />
+                        <span>Corrigir Duplicidades</span>
+                      </div>
+                      {anomalyReport.totalAnomaliesCount > 0 ? (
+                        <span className="px-1.5 py-0.2 bg-amber-500 text-slate-950 text-[10px] font-black rounded-md">
+                          {anomalyReport.totalAnomaliesCount}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-emerald-700 font-bold">100% OK</span>
+                      )}
+                    </button>
+                  )}
+
                   <button
                     onClick={() => {
                       setIsMasterPanelOpen(false);

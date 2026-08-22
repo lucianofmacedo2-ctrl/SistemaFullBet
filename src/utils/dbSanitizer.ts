@@ -398,3 +398,111 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
     stats,
   };
 }
+
+export interface AnomalyReport {
+  crossCountryTeams: Array<{
+    teamId: string;
+    teamName: string;
+    countryName: string;
+    countryId: string;
+    invalidLeagues: Array<{ id: string; name: string; countryName: string }>;
+    validLeagues: Array<{ id: string; name: string }>;
+  }>;
+  duplicateTeams: Array<{
+    name: string;
+    countryName: string;
+    count: number;
+    teamIds: string[];
+  }>;
+  orphanTeams: Team[];
+  totalAnomaliesCount: number;
+}
+
+/**
+ * Analisa o banco de dados e retorna todas as anomalias, duplicidades e ligas cruzadas detectadas.
+ */
+export function diagnoseDatabaseAnomalies(dbState: DbState): AnomalyReport {
+  if (!dbState) {
+    return {
+      crossCountryTeams: [],
+      duplicateTeams: [],
+      orphanTeams: [],
+      totalAnomaliesCount: 0,
+    };
+  }
+
+  const leagueById = new Map<string, League>(dbState.leagues.map(l => [l.id, l]));
+  const countryById = new Map<string, Country>(dbState.countries.map(c => [c.id, c]));
+
+  const crossCountryTeams: AnomalyReport['crossCountryTeams'] = [];
+  const nameAndCountryMap = new Map<string, string[]>(); // `countryId_normName` -> teamIds[]
+  const orphanTeams: Team[] = [];
+
+  for (const team of dbState.teams) {
+    if (!team.countryId || !countryById.has(team.countryId)) {
+      orphanTeams.push(team);
+    }
+
+    const teamCountryId = team.countryId;
+    const allLeagueIds = team.leagueIds ? [...team.leagueIds] : (team.leagueId ? [team.leagueId] : []);
+    
+    const invalidLeagues: Array<{ id: string; name: string; countryName: string }> = [];
+    const validLeagues: Array<{ id: string; name: string }> = [];
+
+    for (const lid of allLeagueIds) {
+      const l = leagueById.get(lid);
+      if (!l) continue;
+      if (teamCountryId && l.countryId && l.countryId !== teamCountryId) {
+        const leagueCountry = countryById.get(l.countryId);
+        invalidLeagues.push({
+          id: l.id,
+          name: l.name,
+          countryName: leagueCountry?.name || l.countryName || 'Outro País',
+        });
+      } else {
+        validLeagues.push({
+          id: l.id,
+          name: l.name,
+        });
+      }
+    }
+
+    if (invalidLeagues.length > 0) {
+      crossCountryTeams.push({
+        teamId: team.id,
+        teamName: team.name,
+        countryName: team.countryName || countryById.get(teamCountryId)?.name || 'Sem País',
+        countryId: teamCountryId,
+        invalidLeagues,
+        validLeagues,
+      });
+    }
+
+    const normKey = `${teamCountryId || 'NONE'}_${(team.name || '').trim().toLowerCase()}`;
+    const existing = nameAndCountryMap.get(normKey) || [];
+    existing.push(team.id);
+    nameAndCountryMap.set(normKey, existing);
+  }
+
+  const duplicateTeams: AnomalyReport['duplicateTeams'] = [];
+  for (const [key, ids] of nameAndCountryMap.entries()) {
+    if (ids.length > 1) {
+      const firstTeam = dbState.teams.find(t => t.id === ids[0]);
+      duplicateTeams.push({
+        name: firstTeam?.name || 'Time',
+        countryName: firstTeam?.countryName || 'País',
+        count: ids.length,
+        teamIds: ids,
+      });
+    }
+  }
+
+  const totalAnomaliesCount = crossCountryTeams.length + duplicateTeams.length + orphanTeams.length;
+
+  return {
+    crossCountryTeams,
+    duplicateTeams,
+    orphanTeams,
+    totalAnomaliesCount,
+  };
+}
