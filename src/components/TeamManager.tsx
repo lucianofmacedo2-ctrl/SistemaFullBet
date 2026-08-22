@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter, AlertTriangle, AlertCircle, Download, Loader2 } from 'lucide-react';
+import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter, AlertTriangle, AlertCircle, Download, Loader2, FileText, BarChart3 } from 'lucide-react';
 import { DbState, Team } from '../types';
 import { isValidImageUrl, validateImageUrlInput, sanitizeImageUrl } from '../utils/imageHelper';
-import { exportTeamsToExcel } from '../utils/excelHelper';
+import { exportTeamsToExcel, exportTeamsToCsv } from '../utils/excelHelper';
+import { TeamsReportModal } from './TeamsReportModal';
 
 interface TeamManagerProps {
   dbState: DbState;
@@ -35,6 +36,7 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
   const [savedSuccessTeamId, setSavedSuccessTeamId] = useState<string | null>(null);
   const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
   const [isExporting, setIsExporting] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   // Ordenação alfabética de times por País -> Liga -> Nome do Time
   const teams = useMemo(() => {
@@ -189,25 +191,33 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
             <span>Sem Escudo</span>
           </button>
 
-          {/* Export Teams to Excel (.xlsx) */}
-          {isMaster && (
-            <button
-              onClick={handleExportTeams}
-              disabled={isExporting || dbState.teams.length === 0}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.02] cursor-pointer"
-              title="Baixar planilha Excel (.xlsx) com todos os times, países e ligas cadastrados"
-            >
-              {isExporting ? (
-                <Loader2 className="w-4 h-4 animate-spin text-white" />
-              ) : (
-                <Download className="w-4 h-4 text-emerald-100" />
-              )}
-              <span className="hidden sm:inline">Exportar Excel</span>
-              <span className="px-1.5 py-0.2 bg-emerald-800 text-emerald-100 text-[10px] font-bold rounded-md ml-0.5">
-                {teams.length}
-              </span>
-            </button>
-          )}
+          {/* Botão de Relatório de Times (País, Liga e Time) */}
+          <button
+            onClick={() => setIsReportModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-teal-700 to-emerald-600 hover:from-teal-600 hover:to-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-teal-700/20 border border-teal-400/30 transition-all hover:scale-[1.02] cursor-pointer"
+            title="Abrir Central e Baixar Relatório Completo de Times (com colunas de País, Liga e Time)"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-teal-200" />
+            <span>Relatório de Times</span>
+            <span className="px-1.5 py-0.2 bg-teal-900/80 text-teal-200 text-[10px] font-bold rounded-md ml-0.5 border border-teal-400/30">
+              {teams.length}
+            </span>
+          </button>
+
+          {/* Export Quick Excel (.xlsx) */}
+          <button
+            onClick={handleExportTeams}
+            disabled={isExporting || dbState.teams.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white font-bold text-xs rounded-xl border border-white/10 transition-all hover:scale-[1.02] cursor-pointer"
+            title="Baixar diretamente a planilha Excel (.xlsx) com colunas: País, Liga e Time"
+          >
+            {isExporting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+            ) : (
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+            )}
+            <span className="hidden sm:inline">Baixar .xlsx</span>
+          </button>
 
           {isMaster && onOpenBulkImportModal && (
             <button
@@ -564,6 +574,13 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal do Relatório de Times com colunas País, Liga e Time */}
+      <TeamsReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        dbState={dbState}
+      />
     </div>
   );
 };

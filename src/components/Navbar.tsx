@@ -51,6 +51,7 @@ interface NavbarProps {
   onLogout?: () => void;
   onOpenOpportunitiesHub?: () => void;
   onOpenBankrollTracker?: () => void;
+  onOpenTeamsReportModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -72,6 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   onOpenOpportunitiesHub,
   onOpenBankrollTracker,
+  onOpenTeamsReportModal,
 }) => {
   const isMaster = currentUser?.role === 'MASTER';
   const effStatus = currentUser ? getUserEffectiveStatus(currentUser) : null;
@@ -358,12 +360,35 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <button
                         onClick={() => {
                           setIsSystemMenuOpen(false);
+                          if (onOpenTeamsReportModal) {
+                            onOpenTeamsReportModal();
+                          } else {
+                            exportTeamsToExcel(dbState.teams, dbState.leagues, dbState.countries);
+                          }
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileSpreadsheet className="w-4 h-4 text-teal-600 shrink-0" />
+                          <div>
+                            <div className="font-bold text-slate-900">Relatório de Times</div>
+                            <div className="text-[10px] text-slate-500">Colunas: País, Liga, Time</div>
+                          </div>
+                        </div>
+                        <span className="px-1.5 py-0.5 bg-teal-100 text-teal-800 text-[10px] font-bold rounded-md">
+                          {dbState.teams.length}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsSystemMenuOpen(false);
                           exportTeamsToExcel(dbState.teams, dbState.leagues, dbState.countries);
                         }}
-                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 flex items-center gap-2 transition-colors"
+                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 flex items-center gap-2 transition-colors border-t border-slate-50"
                       >
                         <Download className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Exportar Times (.xlsx)</span>
+                        <span>Baixar Planilha (.xlsx)</span>
                       </button>
 
                       <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 border-t border-b border-slate-100 mt-1">

@@ -36,6 +36,7 @@ import { LoginModal } from './components/LoginModal';
 import { UserManagerModal } from './components/UserManagerModal';
 import { AccessExpiredOverlay } from './components/AccessExpiredOverlay';
 import { ToastNotification } from './components/ToastNotification';
+import { TeamsReportModal } from './components/TeamsReportModal';
 import { MatchOdds, MatchStats, MatchStatus, MatchPressureData } from './types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from './utils/idGenerator';
 import { ParsedMatchRow, ParsedMatchUpdateRow } from './utils/excelHelper';
@@ -101,6 +102,7 @@ export default function App() {
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isPressureModalOpen, setIsPressureModalOpen] = useState(false);
   const [pressureSelectedMatchId, setPressureSelectedMatchId] = useState<string | null>(null);
+  const [isTeamsReportModalOpen, setIsTeamsReportModalOpen] = useState(false);
 
   // Opportunities Hub & Bankroll Tracker Modals
   const [isOpportunitiesHubOpen, setIsOpportunitiesHubOpen] = useState(false);
@@ -1174,6 +1176,7 @@ export default function App() {
         onLogout={handleLogout}
         onOpenOpportunitiesHub={() => setIsOpportunitiesHubOpen(true)}
         onOpenBankrollTracker={() => setIsBankrollTrackerOpen(true)}
+        onOpenTeamsReportModal={() => setIsTeamsReportModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -1458,6 +1461,13 @@ export default function App() {
           setBankrollPrefillBet(null);
         }}
         prefillBet={bankrollPrefillBet}
+      />
+
+      {/* Relatório de Times Cadastrados Modal */}
+      <TeamsReportModal
+        isOpen={isTeamsReportModalOpen}
+        onClose={() => setIsTeamsReportModalOpen(false)}
+        dbState={dbState}
       />
 
       {/* Unique ID Toast Notifications */}

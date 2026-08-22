@@ -304,39 +304,41 @@ export async function downloadTeamImportTemplate(leagueName?: string, season?: s
 
 /**
  * Exporta todos os times cadastrados para planilha Excel (.xlsx)
- * com colunas dos times, países e ligas correspondentes.
+ * com colunas organizadas: País, Liga, Nome do Time, IDs e Escudos.
  */
 export async function exportTeamsToExcel(
   teams: Team[],
   leagues: League[] = [],
-  countries: Country[] = []
+  countries: Country[] = [],
+  customFileName?: string
 ): Promise<void> {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'FUTLFM2 Master System';
   workbook.created = new Date();
 
-  const worksheet = workbook.addWorksheet('Times Cadastrados', {
+  const worksheet = workbook.addWorksheet('Relatório de Times', {
     views: [{ state: 'frozen', ySplit: 1 }]
   });
 
+  // Colunas ordenadas com destaque para País, Liga e Nome do Time
   worksheet.columns = [
-    { header: 'ID Time', key: 'teamId', width: 15 },
-    { header: 'Nome do Time', key: 'teamName', width: 30 },
-    { header: 'País', key: 'countryName', width: 22 },
-    { header: 'Liga', key: 'leagueName', width: 30 },
+    { header: 'País', key: 'countryName', width: 24 },
+    { header: 'Liga', key: 'leagueName', width: 32 },
+    { header: 'Nome do Time', key: 'teamName', width: 32 },
+    { header: 'ID Time', key: 'teamId', width: 16 },
     { header: 'ID País', key: 'countryId', width: 14 },
     { header: 'ID Liga', key: 'leagueId', width: 14 },
     { header: 'URL Escudo', key: 'logoUrl', width: 45 },
     { header: 'Data de Cadastro', key: 'createdAt', width: 22 },
   ];
 
-  // Header styling: Emerald/Dark Green header
+  // Estilização do cabeçalho
   const headerRow = worksheet.getRow(1);
   headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
   headerRow.fill = {
     type: 'pattern',
     pattern: 'solid',
-    fgColor: { argb: 'FF065F46' }, // Emerald-800
+    fgColor: { argb: 'FF0F766E' }, // Teal-700
   };
   headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
   headerRow.height = 28;
@@ -345,7 +347,22 @@ export async function exportTeamsToExcel(
   const countryById = new Map(countries.map(c => [c.id, c.name]));
   const leagueById = new Map(leagues.map(l => [l.id, l.name]));
 
-  teams.forEach((team, index) => {
+  // Ordenação alfabética: País -> Liga -> Time
+  const sortedTeams = [...teams].sort((a, b) => {
+    const cA = a.countryName || countryById.get(a.countryId) || '';
+    const cB = b.countryName || countryById.get(b.countryId) || '';
+    const compCountry = cA.localeCompare(cB, 'pt-BR', { sensitivity: 'base' });
+    if (compCountry !== 0) return compCountry;
+
+    const lA = a.leagueName || leagueById.get(a.leagueId) || '';
+    const lB = b.leagueName || leagueById.get(b.leagueId) || '';
+    const compLeague = lA.localeCompare(lB, 'pt-BR', { sensitivity: 'base' });
+    if (compLeague !== 0) return compLeague;
+
+    return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' });
+  });
+
+  sortedTeams.forEach((team, index) => {
     const countryName = team.countryName || countryById.get(team.countryId) || '';
     
     // Resolve league name
@@ -367,10 +384,10 @@ export async function exportTeamsToExcel(
       : '';
 
     const row = worksheet.addRow({
-      teamId: team.id,
-      teamName: team.name,
       countryName: countryName,
       leagueName: leagueName,
+      teamName: team.name,
+      teamId: team.id,
       countryId: team.countryId || '',
       leagueId: team.leagueId || '',
       logoUrl: team.logoUrl || '',
@@ -382,7 +399,7 @@ export async function exportTeamsToExcel(
       row.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: 'FFF9FAFB' },
+        fgColor: { argb: 'FFF0FDFA' }, // Light teal tint
       };
     }
     row.alignment = { vertical: 'middle' };
@@ -399,7 +416,88 @@ export async function exportTeamsToExcel(
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  const fileName = `times_cadastrados_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const fileName = customFileName || `relatorio_times_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Exporta os times cadastrados para arquivo CSV (.csv) com codificação UTF-8 e BOM
+ * para abrir perfeitamente no Excel, LibreOffice ou Google Planilhas.
+ */
+export function exportTeamsToCsv(
+  teams: Team[],
+  leagues: League[] = [],
+  countries: Country[] = [],
+  customFileName?: string
+): void {
+  const countryById = new Map(countries.map(c => [c.id, c.name]));
+  const leagueById = new Map(leagues.map(l => [l.id, l.name]));
+
+  // Ordenação alfabética: País -> Liga -> Time
+  const sortedTeams = [...teams].sort((a, b) => {
+    const cA = a.countryName || countryById.get(a.countryId) || '';
+    const cB = b.countryName || countryById.get(b.countryId) || '';
+    const compCountry = cA.localeCompare(cB, 'pt-BR', { sensitivity: 'base' });
+    if (compCountry !== 0) return compCountry;
+
+    const lA = a.leagueName || leagueById.get(a.leagueId) || '';
+    const lB = b.leagueName || leagueById.get(b.leagueId) || '';
+    const compLeague = lA.localeCompare(lB, 'pt-BR', { sensitivity: 'base' });
+    if (compLeague !== 0) return compLeague;
+
+    return (a.name || '').localeCompare(b.name || '', 'pt-BR', { sensitivity: 'base' });
+  });
+
+  const headers = ['Pais', 'Liga', 'Time', 'ID_Time', 'ID_Pais', 'ID_Liga', 'URL_Escudo', 'Data_Cadastro'];
+  
+  const csvRows: string[] = [];
+  csvRows.push(headers.join(';'));
+
+  sortedTeams.forEach(team => {
+    const countryName = team.countryName || countryById.get(team.countryId) || '';
+    let leagueName = team.leagueName || '';
+    if (!leagueName && team.leagueId) {
+      leagueName = leagueById.get(team.leagueId) || '';
+    }
+    if (team.leagueIds && team.leagueIds.length > 0) {
+      const allNames = team.leagueIds.map(lid => leagueById.get(lid)).filter(Boolean);
+      if (allNames.length > 0) leagueName = allNames.join(', ');
+    }
+
+    const createdFormatted = team.createdAt ? new Date(team.createdAt).toISOString() : '';
+
+    const escapeCsv = (val: string) => {
+      if (val.includes(';') || val.includes('"') || val.includes('\n')) {
+        return `"${val.replace(/"/g, '""')}"`;
+      }
+      return val;
+    };
+
+    const row = [
+      escapeCsv(countryName),
+      escapeCsv(leagueName),
+      escapeCsv(team.name),
+      escapeCsv(team.id),
+      escapeCsv(team.countryId || ''),
+      escapeCsv(team.leagueId || ''),
+      escapeCsv(team.logoUrl || ''),
+      escapeCsv(createdFormatted)
+    ];
+
+    csvRows.push(row.join(';'));
+  });
+
+  // Adiciona UTF-8 BOM (\uFEFF) para garantir que acentos abram perfeitamente no Excel
+  const csvContent = '\uFEFF' + csvRows.join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const fileName = customFileName || `relatorio_times_${new Date().toISOString().slice(0, 10)}.csv`;
   a.download = fileName;
   document.body.appendChild(a);
   a.click();
