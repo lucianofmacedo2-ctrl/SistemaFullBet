@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Trophy,
   Globe,
@@ -8,12 +8,8 @@ import {
   BarChart3,
   ListOrdered,
   CalendarDays,
-  RotateCcw,
-  CheckCircle2,
   FileSpreadsheet,
-  TrendingUp,
   UploadCloud,
-  FileEdit,
   Trash2,
   Image,
   Users,
@@ -21,12 +17,14 @@ import {
   Eye,
   LogOut,
   Key,
-  Clock,
-  Lock,
   Download,
   Zap,
   Sparkles,
-  DollarSign
+  DollarSign,
+  ChevronDown,
+  Layers,
+  Settings,
+  Flame
 } from 'lucide-react';
 import { DbState, AppUser } from '../types';
 import { extractYMD, formatDateToYMD } from './DailyMatchesView';
@@ -78,6 +76,32 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isMaster = currentUser?.role === 'MASTER';
   const effStatus = currentUser ? getUserEffectiveStatus(currentUser) : null;
 
+  // Dropdowns state
+  const [isImportMenuOpen, setIsImportMenuOpen] = useState(false);
+  const [isSystemMenuOpen, setIsSystemMenuOpen] = useState(false);
+  const [isEntitiesMenuOpen, setIsEntitiesMenuOpen] = useState(false);
+
+  const importMenuRef = useRef<HTMLDivElement>(null);
+  const systemMenuRef = useRef<HTMLDivElement>(null);
+  const entitiesMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close menus on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (importMenuRef.current && !importMenuRef.current.contains(event.target as Node)) {
+        setIsImportMenuOpen(false);
+      }
+      if (systemMenuRef.current && !systemMenuRef.current.contains(event.target as Node)) {
+        setIsSystemMenuOpen(false);
+      }
+      if (entitiesMenuRef.current && !entitiesMenuRef.current.contains(event.target as Node)) {
+        setIsEntitiesMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Calculate matches for today, tomorrow, and after tomorrow
   const today = new Date();
   const todayYMD = formatDateToYMD(today);
@@ -104,213 +128,290 @@ export const Navbar: React.FC<NavbarProps> = ({
     u => getUserEffectiveStatus(u).status === 'ACTIVE'
   ).length || 1;
 
+  const isEntityTabActive = ['countries', 'leagues', 'teams', 'stats', 'pending_logos'].includes(activeTab);
+
   return (
-    <header className="bg-white border-b border-blue-200 text-slate-800 sticky top-0 z-40 shadow-sm">
-      {/* Top Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
-          {/* Logo & Title */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xl shadow-md shadow-blue-500/20 border border-blue-400">
+    <header className="bg-white border-b border-slate-200 text-slate-800 sticky top-0 z-40 shadow-xs">
+      {/* Top Header Bar */}
+      <div className="max-w-[1700px] mx-auto px-3 sm:px-5 lg:px-6">
+        <div className="flex items-center justify-between h-14 gap-2 sm:gap-4">
+          {/* Brand & Badge */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-black text-base sm:text-lg shadow-sm shadow-blue-500/20">
               ⚽
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-black tracking-tight leading-none">
-                  <span className="text-black">FUT</span>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-base sm:text-lg font-black tracking-tight leading-none">
+                  <span className="text-slate-900">FUT</span>
                   <span className="text-blue-600">LFM2</span>
                 </h1>
-                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border flex items-center gap-1.5 shadow-xs ${
+                <span className={`text-[9px] sm:text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border flex items-center gap-1 ${
                   isMaster
                     ? 'bg-amber-50 text-amber-800 border-amber-300'
                     : 'bg-blue-50 text-blue-700 border-blue-200'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${isMaster ? 'bg-amber-500' : 'bg-blue-600'} animate-pulse`}></span>
-                  {isMaster ? 'Modo Master' : 'Modo Consulta'}
+                  {isMaster ? 'Master' : 'Consulta'}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 hidden sm:block mt-0.5 font-medium">
-                {isMaster ? 'Gestão Total de Jogos & Entidades' : 'Painel de Consulta & Análise Esportiva'}
-              </p>
             </div>
           </div>
 
-          {/* User Profile & Role Info & Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* User Session Pill */}
+          {/* Center Summary Indicator (Desktop) */}
+          <div className="hidden 2xl:flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1 rounded-full font-medium">
+            <span className="font-semibold text-slate-700">{dbState.matches.length}</span> Jogos no Banco •
+            <span className="font-semibold text-slate-700">{dbState.countries.length}</span> Países •
+            <span className="font-semibold text-slate-700">{dbState.leagues.length}</span> Ligas •
+            <span className="font-semibold text-slate-700">{dbState.teams.length}</span> Times
+          </div>
+
+          {/* Right Header Actions & Master Control Panel */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* User Session Badge */}
             {currentUser && (
-              <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold ${
+              <div className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${
                 isMaster
-                  ? 'bg-amber-50/80 border-amber-200 text-amber-900'
+                  ? 'bg-amber-50/70 border-amber-200/80 text-amber-900'
                   : 'bg-slate-50 border-slate-200 text-slate-700'
               }`}>
-                <div className="flex items-center gap-1.5">
-                  {isMaster ? (
-                    <Crown className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  ) : (
-                    <Eye className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  )}
-                  <span className="font-bold truncate max-w-[130px]">{currentUser.name}</span>
-                </div>
-
+                {isMaster ? (
+                  <Crown className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                ) : (
+                  <Eye className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                )}
+                <span className="font-bold truncate max-w-[110px]">{currentUser.name}</span>
                 {!isMaster && effStatus && (
-                  <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                    effStatus.status === 'ACTIVE'
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                      : 'bg-amber-100 text-amber-800 border border-amber-300'
-                  }`}>
+                  <span className="px-1 py-0.2 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">
                     {effStatus.statusLabel}
                   </span>
                 )}
               </div>
             )}
 
-            {/* Módulo de Análise & Power Ranking - Destaque Visual no Header Superior */}
-            <button
-              onClick={() => setActiveTab('analysis')}
-              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all shadow-md cursor-pointer hover:scale-[1.03] active:scale-[0.98] border ${
-                activeTab === 'analysis'
-                  ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white border-indigo-400 ring-2 ring-indigo-300 shadow-indigo-500/30'
-                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white border-indigo-400/50 shadow-indigo-500/20'
-              }`}
-              title="Abrir Módulo de Análise Estatística, Power Ranking e Projeções Poisson"
-            >
-              <Zap className="w-4 h-4 text-amber-300 fill-amber-300 animate-pulse" />
-              <span className="hidden sm:inline">Módulo de Análise</span>
-              <span className="sm:hidden">Análise</span>
-              <span className="px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[10px] font-black rounded-md uppercase tracking-tighter">
-                PRO
-              </span>
-            </button>
-
-            {/* MASTER-ONLY ACTIONS (Circled in user screenshot: + Jogo, Subir Massa, Subir CSV, Futuros, Times, Entidade, Backup, Reset) */}
+            {/* MASTER-ONLY ACTIONS: Streamlined, Grouped and Overflow-Free */}
             {isMaster ? (
               <div className="flex items-center gap-1.5 sm:gap-2">
+                {/* 1. Cadastrar Jogo (Botão Principal) */}
                 <button
                   onClick={onOpenMatchModal}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] border border-blue-500"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm rounded-lg shadow-sm shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  title="Cadastrar Nova Partida"
                 >
-                  <Plus className="w-4 h-4 stroke-[3]" />
-                  <span className="hidden xs:inline">Cadastrar</span> Jogo
+                  <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                  <span className="hidden xs:inline">Cadastrar Jogo</span>
                 </button>
 
-                {onOpenBulkMatchUpdateModal && (
+                {/* 2. Menu Dropdown: Importações & Massa */}
+                <div className="relative" ref={importMenuRef}>
                   <button
-                    onClick={onOpenBulkMatchUpdateModal}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs sm:text-sm rounded-xl transition-all shadow-xs cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-                    title="Baixar planilha com jogos incompletos, preencher dados e subir em massa"
+                    onClick={() => {
+                      setIsImportMenuOpen(!isImportMenuOpen);
+                      setIsSystemMenuOpen(false);
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg border transition-all cursor-pointer ${
+                      incompleteMatchesCount > 0
+                        ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border-indigo-300 shadow-2xs'
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                    }`}
+                    title="Menu de Importação e Atualização em Massa"
                   >
-                    <UploadCloud className="w-4 h-4 text-indigo-600" />
-                    <span className="hidden sm:inline">Subir Dados em Massa</span>
+                    <UploadCloud className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Importar</span>
                     {incompleteMatchesCount > 0 && (
-                      <span className="px-1.5 py-0.2 bg-amber-500 text-white text-[10px] font-bold rounded-full ml-0.5 animate-pulse" title={`${incompleteMatchesCount} jogo(s) incompleto(s)`}>
+                      <span className="px-1.5 py-0.2 bg-amber-500 text-white text-[10px] font-black rounded-full animate-pulse">
                         {incompleteMatchesCount}
                       </span>
                     )}
+                    <ChevronDown className={`w-3 h-3 text-slate-500 transition-transform ${isImportMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
-                )}
 
-                {onOpenCsvImportModal && (
-                  <button
-                    onClick={onOpenCsvImportModal}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-sm shadow-emerald-600/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-                    title="Subir arquivo jogos_consolidados.csv manualmente com auto-cadastro"
-                  >
-                    <UploadCloud className="w-4 h-4 text-emerald-100" />
-                    <span>Subir CSV</span>
-                  </button>
-                )}
+                  {/* Dropdown Menu Importações */}
+                  {isImportMenuOpen && (
+                    <div className="absolute right-0 mt-1.5 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                      <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                        Ferramentas de Carga & Massa
+                      </div>
 
-                {onOpenBulkMatchImportModal && (
-                  <button
-                    onClick={onOpenBulkMatchImportModal}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-xs cursor-pointer"
-                    title="Cadastrar Jogos Futuros em Massa via Excel (.xlsx)"
-                  >
-                    <FileSpreadsheet className="w-4 h-4 text-blue-600" />
-                    <span className="hidden md:inline">Importar Futuros</span>
-                  </button>
-                )}
+                      {onOpenBulkMatchUpdateModal && (
+                        <button
+                          onClick={() => {
+                            setIsImportMenuOpen(false);
+                            onOpenBulkMatchUpdateModal();
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 flex items-center justify-between transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <UploadCloud className="w-4 h-4 text-indigo-600 shrink-0" />
+                            <div>
+                              <div className="font-bold text-slate-900">Subir Dados em Massa</div>
+                              <div className="text-[10px] text-slate-500">Planilha de jogos pendentes</div>
+                            </div>
+                          </div>
+                          {incompleteMatchesCount > 0 && (
+                            <span className="px-1.5 py-0.5 bg-amber-500 text-white text-[10px] font-bold rounded-full">
+                              {incompleteMatchesCount}
+                            </span>
+                          )}
+                        </button>
+                      )}
 
-                {onOpenBulkImportModal && (
-                  <button
-                    onClick={onOpenBulkImportModal}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs sm:text-sm rounded-xl transition-all"
-                    title="Cadastrar Equipes em Massa via Excel (.xlsx)"
-                  >
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                    <span className="hidden lg:inline">Importar Times</span>
-                  </button>
-                )}
+                      {onOpenCsvImportModal && (
+                        <button
+                          onClick={() => {
+                            setIsImportMenuOpen(false);
+                            onOpenCsvImportModal();
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 flex items-center gap-2 transition-colors border-t border-slate-50"
+                        >
+                          <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div>
+                            <div className="font-bold text-slate-900">Subir CSV Consolidado</div>
+                            <div className="text-[10px] text-slate-500">Auto-cadastra ligas, times e odds</div>
+                          </div>
+                        </button>
+                      )}
 
-                <button
-                  onClick={() => exportTeamsToExcel(dbState.teams, dbState.leagues, dbState.countries)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-xs cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-                  title={`Baixar planilha Excel (.xlsx) com todos os ${dbState.teams.length} times cadastrados, seus Países e Ligas correspondentes`}
-                >
-                  <Download className="w-4 h-4 text-emerald-600" />
-                  <span className="hidden xl:inline">Exportar Times (.xlsx)</span>
-                </button>
+                      {onOpenBulkMatchImportModal && (
+                        <button
+                          onClick={() => {
+                            setIsImportMenuOpen(false);
+                            onOpenBulkMatchImportModal();
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-900 flex items-center gap-2 transition-colors border-t border-slate-50"
+                        >
+                          <CalendarDays className="w-4 h-4 text-blue-600 shrink-0" />
+                          <div>
+                            <div className="font-bold text-slate-900">Importar Jogos Futuros</div>
+                            <div className="text-[10px] text-slate-500">Planilha Excel (.xlsx)</div>
+                          </div>
+                        </button>
+                      )}
 
-                <button
-                  onClick={() => onOpenEntityModal()}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs sm:text-sm rounded-xl transition-all"
-                  title="Cadastrar País, Liga ou Time individualmente"
-                >
-                  <Plus className="w-4 h-4 text-blue-600" />
-                  <span className="hidden xl:inline">Nova Entidade</span>
-                </button>
+                      {onOpenBulkImportModal && (
+                        <button
+                          onClick={() => {
+                            setIsImportMenuOpen(false);
+                            onOpenBulkImportModal();
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors border-t border-slate-50"
+                        >
+                          <Shield className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div>
+                            <div className="font-bold text-slate-900">Importar Equipes</div>
+                            <div className="text-[10px] text-slate-500">Lista em lote (.xlsx)</div>
+                          </div>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
 
-                {/* Gestão de Usuários Button (Exclusivo Master) */}
+                {/* 3. Gestão de Usuários */}
                 {onOpenUserManagerModal && (
                   <button
                     onClick={onOpenUserManagerModal}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-bold text-xs sm:text-sm rounded-xl transition-all shadow-xs cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-                    title="Gerenciar Usuários, Prazos de Validade e Permissões"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-bold text-xs sm:text-sm rounded-lg transition-all cursor-pointer shadow-2xs"
+                    title="Gerenciar Usuários e Permissões"
                   >
-                    <Users className="w-4 h-4 text-purple-600" />
-                    <span className="hidden sm:inline">Gestão de Usuários</span>
-                    <span className="px-1.5 py-0.2 bg-purple-200 text-purple-800 text-[10px] font-bold rounded-full ml-0.5">
+                    <Users className="w-3.5 h-3.5 text-purple-600" />
+                    <span className="hidden sm:inline">Usuários</span>
+                    <span className="px-1.5 py-0.2 bg-purple-200 text-purple-900 text-[10px] font-black rounded-full">
                       {activeUsersCount}
                     </span>
                   </button>
                 )}
 
-                <button
-                  onClick={onOpenBackupModal}
-                  className="p-2 sm:px-3 sm:py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs sm:text-sm rounded-xl transition-all"
-                  title="Gerenciar Dados & Backup JSON"
-                >
-                  <Database className="w-4 h-4 text-blue-600" />
-                  <span className="hidden xl:inline">Banco & Backup</span>
-                </button>
-
-                {onOpenResetModal && (
+                {/* 4. Menu Dropdown: Configurações & Entidades & Backup */}
+                <div className="relative" ref={systemMenuRef}>
                   <button
-                    onClick={onOpenResetModal}
-                    className="p-2 sm:px-2.5 sm:py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 hover:border-red-300 font-bold text-xs sm:text-sm rounded-xl transition-all shadow-xs cursor-pointer"
-                    title="Resetar banco de dados e limpar tudo (requer senha)"
+                    onClick={() => {
+                      setIsSystemMenuOpen(!isSystemMenuOpen);
+                      setIsImportMenuOpen(false);
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs sm:text-sm rounded-lg transition-all cursor-pointer"
+                    title="Gerenciamento de Entidades, Backups e Configurações"
                   >
-                    <Trash2 className="w-4 h-4 text-red-600" />
+                    <Settings className="w-3.5 h-3.5 text-slate-600" />
+                    <span className="hidden lg:inline">Mais</span>
+                    <ChevronDown className={`w-3 h-3 text-slate-500 transition-transform ${isSystemMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
-                )}
+
+                  {/* Dropdown Menu Sistema */}
+                  {isSystemMenuOpen && (
+                    <div className="absolute right-0 mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                      <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                        Entidades & Cadastros
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setIsSystemMenuOpen(false);
+                          onOpenEntityModal();
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-900 flex items-center gap-2 transition-colors"
+                      >
+                        <Plus className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span>Cadastrar País / Liga / Time</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsSystemMenuOpen(false);
+                          exportTeamsToExcel(dbState.teams, dbState.leagues, dbState.countries);
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 flex items-center gap-2 transition-colors"
+                      >
+                        <Download className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>Exportar Times (.xlsx)</span>
+                      </button>
+
+                      <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 border-t border-b border-slate-100 mt-1">
+                        Banco de Dados & Backup
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setIsSystemMenuOpen(false);
+                          onOpenBackupModal();
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                      >
+                        <Database className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span>Backup & Restaurar JSON</span>
+                      </button>
+
+                      {onOpenResetModal && (
+                        <button
+                          onClick={() => {
+                            setIsSystemMenuOpen(false);
+                            onOpenResetModal();
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors border-t border-slate-100 mt-1"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600 shrink-0" />
+                          <span>Resetar Banco de Dados</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
-              /* CONSULTATION USER BAR: Clean & minimal without admin buttons */
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50/70 border border-blue-200 rounded-xl text-xs font-semibold text-blue-900">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>Modo Análise & Consulta</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-lg text-xs font-semibold text-blue-900">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>Modo Consulta Ativo</span>
                 </div>
               </div>
             )}
 
-            {/* Auth Login / Logout Button */}
-            <div className="flex items-center gap-1 pl-1 border-l border-slate-200">
+            {/* Auth Login / Logout */}
+            <div className="flex items-center gap-0.5 pl-1 border-l border-slate-200">
               {onOpenLoginModal && (
                 <button
                   onClick={onOpenLoginModal}
-                  className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+                  className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                   title="Trocar de Conta / Login"
                 >
                   <Key className="w-4 h-4" />
@@ -320,7 +421,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               {onLogout && (
                 <button
                   onClick={onLogout}
-                  className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                  className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   title="Sair da Conta"
                 >
                   <LogOut className="w-4 h-4" />
@@ -331,192 +432,190 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Navigation & Summary Bar */}
-      <div className="bg-blue-50/80 border-t border-blue-100 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-2">
-          {/* Tabs */}
-          <nav className="flex items-center space-x-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-            <button
-              onClick={() => setActiveTab('matches')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
-                activeTab === 'matches'
-                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
-                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
-              }`}
-            >
-              <ListOrdered className="w-3.5 h-3.5" />
-              Todas Partidas
-              <span className={`ml-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${
-                activeTab === 'matches' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
-              }`}>
-                {dbState.matches.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('schedule')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
-                activeTab === 'schedule'
-                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
-                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
-              }`}
-            >
-              <CalendarDays className="w-3.5 h-3.5" />
-              Jogos por Data (Hoje/Amanhã)
-              <span className={`ml-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${
-                activeTab === 'schedule' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
-              }`}>
-                {nextDaysMatchesCount}
-              </span>
-            </button>
-
-            {/* Módulo de Análise & Power Ranking - Destaque em Posição Nobre */}
-            <button
-              onClick={() => setActiveTab('analysis')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all shadow-sm cursor-pointer ${
-                activeTab === 'analysis'
-                  ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white border border-indigo-400 shadow-md shadow-indigo-500/30 ring-2 ring-indigo-300'
-                  : 'bg-indigo-50 text-indigo-800 hover:bg-indigo-100/90 border border-indigo-200 hover:border-indigo-400 hover:scale-[1.02]'
-              }`}
-            >
-              <Zap className="w-4 h-4 text-amber-500 fill-amber-400 animate-pulse" />
-              <span className="tracking-wide">ANÁLISE & POWER RANKING</span>
-              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-400 text-slate-950 uppercase tracking-tighter shadow-xs">
-                PRO
-              </span>
-            </button>
-
-            {/* Central de Oportunidades & Scanner +EV */}
-            {onOpenOpportunitiesHub && (
+      {/* Navigation Bar (Categorized, Clean & Compact - No Overflow) */}
+      <div className="bg-slate-50 border-t border-slate-200 px-3 sm:px-5 lg:px-6 py-1.5">
+        <div className="max-w-[1700px] mx-auto flex flex-wrap items-center justify-between gap-y-2 gap-x-3">
+          {/* Main Navigation Segmented Controls */}
+          <div className="flex items-center flex-wrap gap-1.5 sm:gap-2">
+            {/* Bloco 1: Jogos & Tabela */}
+            <div className="flex items-center bg-white p-0.5 rounded-lg border border-slate-200 shadow-2xs">
               <button
-                type="button"
-                onClick={onOpenOpportunitiesHub}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-700 text-slate-950 shadow-sm shadow-orange-500/20 cursor-pointer hover:scale-[1.02]"
-              >
-                <Sparkles className="w-4 h-4 text-slate-950" />
-                <span>OPORTUNIDADES (+EV & Bilhetes)</span>
-                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-slate-950 text-amber-300 uppercase">
-                  AI
-                </span>
-              </button>
-            )}
-
-            {/* Gestão de Banca */}
-            {onOpenBankrollTracker && (
-              <button
-                type="button"
-                onClick={onOpenBankrollTracker}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all bg-emerald-50 hover:bg-emerald-100/90 text-emerald-900 border border-emerald-300 shadow-2xs cursor-pointer hover:scale-[1.02]"
-              >
-                <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-                <span>GESTÃO DE BANCA</span>
-              </button>
-            )}
-
-            {/* Tabela de Classificação / Standings */}
-            <button
-              onClick={() => setActiveTab('standings')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-black whitespace-nowrap transition-all ${
-                activeTab === 'standings'
-                  ? 'bg-amber-500 text-slate-950 border border-amber-600 shadow-sm shadow-amber-500/30'
-                  : 'text-amber-900 bg-amber-50/80 border border-amber-200 hover:bg-amber-100/80 hover:text-amber-950'
-              }`}
-            >
-              <Trophy className={`w-3.5 h-3.5 ${activeTab === 'standings' ? 'fill-slate-950' : 'text-amber-600'}`} />
-              Classificação
-            </button>
-
-            <button
-              onClick={() => setActiveTab('countries')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
-                activeTab === 'countries'
-                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
-                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
-              }`}
-            >
-              <Globe className="w-3.5 h-3.5" />
-              Países
-              <span className={`ml-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${
-                activeTab === 'countries' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
-              }`}>
-                {dbState.countries.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('leagues')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
-                activeTab === 'leagues'
-                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
-                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
-              }`}
-            >
-              <Trophy className="w-3.5 h-3.5" />
-              Ligas
-              <span className={`ml-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${
-                activeTab === 'leagues' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
-              }`}>
-                {dbState.leagues.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('teams')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
-                activeTab === 'teams'
-                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
-                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
-              }`}
-            >
-              <Shield className="w-3.5 h-3.5" />
-              Times
-              <span className={`ml-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${
-                activeTab === 'teams' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'
-              }`}>
-                {dbState.teams.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('stats')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
-                activeTab === 'stats'
-                  ? 'bg-blue-600 text-white border border-blue-600 shadow-sm shadow-blue-500/20'
-                  : 'text-slate-600 hover:text-blue-700 hover:bg-blue-100/60'
-              }`}
-            >
-              <BarChart3 className="w-3.5 h-3.5" />
-              Estatísticas
-            </button>
-
-            {/* Escudos Pendentes is an admin maintenance tab (only visible for master) */}
-            {isMaster && (
-              <button
-                onClick={() => setActiveTab('pending_logos')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
-                  activeTab === 'pending_logos'
-                    ? 'bg-amber-500 text-slate-950 border border-amber-500 shadow-sm shadow-amber-500/20'
-                    : 'text-amber-800 hover:text-amber-950 hover:bg-amber-100/70'
+                onClick={() => setActiveTab('matches')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                  activeTab === 'matches'
+                    ? 'bg-blue-600 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-blue-700 hover:bg-slate-100'
                 }`}
               >
-                <Image className="w-3.5 h-3.5" />
-                Escudos Pendentes
-                {pendingLogosCount > 0 && (
-                  <span className={`ml-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold ${
-                    activeTab === 'pending_logos' ? 'bg-slate-950 text-white' : 'bg-amber-500 text-slate-950 animate-pulse'
-                  }`}>
-                    {pendingLogosCount}
-                  </span>
-                )}
+                <ListOrdered className="w-3.5 h-3.5" />
+                <span>Todas Partidas</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  activeTab === 'matches' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                }`}>
+                  {dbState.matches.length}
+                </span>
               </button>
-            )}
-          </nav>
 
-          {/* Quick summary line */}
-          <div className="hidden lg:flex items-center gap-3 text-xs text-slate-600 font-medium">
-            <span>IDs Registrados no Sistema:</span>
-            <span className="font-mono bg-white px-2.5 py-1 rounded-lg border border-blue-200 text-slate-800 font-bold shadow-xs">
-              {dbState.countries.length} Países • {dbState.leagues.length} Ligas • {dbState.teams.length} Times
+              <button
+                onClick={() => setActiveTab('schedule')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                  activeTab === 'schedule'
+                    ? 'bg-blue-600 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-blue-700 hover:bg-slate-100'
+                }`}
+              >
+                <CalendarDays className="w-3.5 h-3.5" />
+                <span>Hoje/Amanhã</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  activeTab === 'schedule' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-700'
+                }`}>
+                  {nextDaysMatchesCount}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('standings')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                  activeTab === 'standings'
+                    ? 'bg-amber-500 text-slate-950 shadow-2xs'
+                    : 'text-slate-600 hover:text-amber-800 hover:bg-slate-100'
+                }`}
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                <span>Classificação</span>
+              </button>
+            </div>
+
+            {/* Separador Visual Discreto */}
+            <div className="hidden sm:block w-px h-5 bg-slate-300/80 mx-0.5"></div>
+
+            {/* Bloco 2: Inteligência Esportiva & Apostas (DESTAQUE NOBRE) */}
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <button
+                onClick={() => setActiveTab('analysis')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all shadow-2xs cursor-pointer ${
+                  activeTab === 'analysis'
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white ring-2 ring-indigo-300 shadow-indigo-500/20'
+                    : 'bg-white text-indigo-900 border border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50/60'
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400 animate-pulse" />
+                <span>ANÁLISE & POWER RANKING</span>
+                <span className="px-1.5 py-0.2 rounded-md text-[9px] font-black bg-amber-400 text-slate-950 uppercase">
+                  PRO
+                </span>
+              </button>
+
+              {onOpenOpportunitiesHub && (
+                <button
+                  type="button"
+                  onClick={onOpenOpportunitiesHub}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-700 text-slate-950 shadow-2xs cursor-pointer hover:scale-[1.02]"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                  <span>OPORTUNIDADES (+EV)</span>
+                  <span className="px-1.5 py-0.2 rounded-md text-[9px] font-black bg-slate-950 text-amber-300 uppercase">
+                    AI
+                  </span>
+                </button>
+              )}
+
+              {onOpenBankrollTracker && (
+                <button
+                  type="button"
+                  onClick={onOpenBankrollTracker}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-black transition-all bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs cursor-pointer hover:scale-[1.02]"
+                >
+                  <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>BANCA</span>
+                </button>
+              )}
+            </div>
+
+            {/* Separador Visual Discreto */}
+            <div className="hidden md:block w-px h-5 bg-slate-300/80 mx-0.5"></div>
+
+            {/* Bloco 3: Cadastros & Entidades (Visual Compacto) */}
+            <div className="flex items-center bg-white p-0.5 rounded-lg border border-slate-200 shadow-2xs">
+              <button
+                onClick={() => setActiveTab('countries')}
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                  activeTab === 'countries'
+                    ? 'bg-slate-800 text-white'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                Países ({dbState.countries.length})
+              </button>
+
+              <button
+                onClick={() => setActiveTab('leagues')}
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                  activeTab === 'leagues'
+                    ? 'bg-slate-800 text-white'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                Ligas ({dbState.leagues.length})
+              </button>
+
+              <button
+                onClick={() => setActiveTab('teams')}
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                  activeTab === 'teams'
+                    ? 'bg-slate-800 text-white'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                Times ({dbState.teams.length})
+              </button>
+
+              <button
+                onClick={() => setActiveTab('stats')}
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                  activeTab === 'stats'
+                    ? 'bg-slate-800 text-white'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                Estatísticas
+              </button>
+
+              {/* Escudos Pendentes (Admin) */}
+              {isMaster && (
+                <button
+                  onClick={() => setActiveTab('pending_logos')}
+                  className={`px-2 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 ${
+                    activeTab === 'pending_logos'
+                      ? 'bg-amber-500 text-slate-950'
+                      : pendingLogosCount > 0
+                      ? 'text-amber-800 hover:bg-amber-50'
+                      : 'text-slate-500 hover:bg-slate-100'
+                  }`}
+                  title="Escudos e Logos Pendentes"
+                >
+                  <Image className="w-3 h-3" />
+                  <span className="hidden xl:inline">Escudos</span>
+                  {pendingLogosCount > 0 && (
+                    <span className="px-1 py-0.1 bg-amber-500 text-slate-950 font-black text-[9px] rounded-full">
+                      {pendingLogosCount}
+                    </span>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Counter Summary Indicator (Pills no final da barra) */}
+          <div className="hidden xl:flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+            <span className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-slate-700">
+              {dbState.countries.length} Países
+            </span>
+            <span className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-slate-700">
+              {dbState.leagues.length} Ligas
+            </span>
+            <span className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-slate-700">
+              {dbState.teams.length} Times
             </span>
           </div>
         </div>
@@ -524,4 +623,5 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+
 
