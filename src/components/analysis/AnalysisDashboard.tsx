@@ -31,9 +31,23 @@ import { LeagueStandings } from '../LeagueStandings';
 interface AnalysisDashboardProps {
   dbState: DbState;
   initialMatchId?: string | null;
+  onRegisterBetToBankroll?: (prefill: {
+    matchDescription: string;
+    market: string;
+    odd: number;
+    evPct?: number;
+  }) => void;
+  onOpenOpportunitiesHub?: () => void;
+  onOpenBankrollTracker?: () => void;
 }
 
-export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ dbState, initialMatchId }) => {
+export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
+  dbState,
+  initialMatchId,
+  onRegisterBetToBankroll,
+  onOpenOpportunitiesHub,
+  onOpenBankrollTracker,
+}) => {
   // Cascading Selection State
   const [selectedCountryId, setSelectedCountryId] = useState<string>('');
   const [selectedLeagueId, setSelectedLeagueId] = useState<string>('');
@@ -223,8 +237,30 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ dbState, i
             </div>
           </div>
 
-          {/* Quick Match Picker Button */}
-          <div className="flex items-center gap-2 self-start sm:self-auto">
+          {/* Quick Match Picker Button & Hub Triggers */}
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            {onOpenOpportunitiesHub && (
+              <button
+                type="button"
+                onClick={onOpenOpportunitiesHub}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs rounded-xl shadow-xs transition-all cursor-pointer hover:scale-105"
+              >
+                <Sparkles className="w-4 h-4 text-slate-950" />
+                <span>Central de Oportunidades</span>
+              </button>
+            )}
+
+            {onOpenBankrollTracker && (
+              <button
+                type="button"
+                onClick={onOpenBankrollTracker}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                <DollarSign className="w-4 h-4 text-emerald-600" />
+                <span>Gestão de Banca</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setIsQuickMatchPickerOpen(!isQuickMatchPickerOpen)}
@@ -608,7 +644,10 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ dbState, i
 
           {/* MÓDULO 5: Indicador +EV, Diferencial HT/FT & Árbitro */}
           {(activeModuleTab === 'ALL' || activeModuleTab === 'VALUE') && (
-            <ValueAndTacticalSection analysis={analysisResult} />
+            <ValueAndTacticalSection
+              analysis={analysisResult}
+              onRegisterBetToBankroll={onRegisterBetToBankroll}
+            />
           )}
 
           {/* MÓDULO 6: Tabela & Classificação Dinâmica da Competição */}

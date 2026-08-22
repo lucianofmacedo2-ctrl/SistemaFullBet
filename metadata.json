@@ -1,6 +1,6 @@
 {
   "name": "Cadastro de Jogos de Futebol",
-  "description": "Sistema para cadastrar e gerenciar partidas de futebol, módulo de análise estatística avançada com Power Ranking ponderado por odds, métricas descritivas, projeções Poisson e gráficos de pressão.",
+  "description": "Sistema profissional de análise estatística de futebol, Power Ranking ponderado, projeções de Poisson, Scanner de Valor (+EV), Radar HT, Matriz BTTS, Gestão de Banca com Auto-ROI e Gerador de Bilhetes.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -23,6 +23,8 @@ import { DailyMatchesView } from './components/DailyMatchesView';
 import { PendingLogosManager } from './components/PendingLogosManager';
 import { AnalysisDashboard } from './components/analysis/AnalysisDashboard';
 import { LeagueStandings } from './components/LeagueStandings';
+import { OpportunitiesHubModal } from './components/opportunities/OpportunitiesHubModal';
+import { BankrollTrackerModal } from './components/bankroll/BankrollTrackerModal';
 import { BackupModal } from './components/BackupModal';
 import { ResetDatabaseModal } from './components/ResetDatabaseModal';
 import { MatchStatsModal } from './components/MatchStatsModal';
@@ -99,6 +101,26 @@ export default function App() {
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isPressureModalOpen, setIsPressureModalOpen] = useState(false);
   const [pressureSelectedMatchId, setPressureSelectedMatchId] = useState<string | null>(null);
+
+  // Opportunities Hub & Bankroll Tracker Modals
+  const [isOpportunitiesHubOpen, setIsOpportunitiesHubOpen] = useState(false);
+  const [isBankrollTrackerOpen, setIsBankrollTrackerOpen] = useState(false);
+  const [bankrollPrefillBet, setBankrollPrefillBet] = useState<{
+    matchDescription: string;
+    market: string;
+    odd: number;
+    evPct?: number;
+  } | null>(null);
+
+  const handleOpenBankrollWithPrefill = (prefill: {
+    matchDescription: string;
+    market: string;
+    odd: number;
+    evPct?: number;
+  }) => {
+    setBankrollPrefillBet(prefill);
+    setIsBankrollTrackerOpen(true);
+  };
 
   // Quick Score & Odds Modal state
   const [isQuickScoreModalOpen, setIsQuickScoreModalOpen] = useState(false);
@@ -1150,6 +1172,8 @@ export default function App() {
         onOpenUserManagerModal={() => setIsUserManagerModalOpen(true)}
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
         onLogout={handleLogout}
+        onOpenOpportunitiesHub={() => setIsOpportunitiesHubOpen(true)}
+        onOpenBankrollTracker={() => setIsBankrollTrackerOpen(true)}
       />
 
       {/* Main Container */}
@@ -1260,6 +1284,9 @@ export default function App() {
               <AnalysisDashboard
                 dbState={dbState}
                 initialMatchId={analysisTargetMatchId}
+                onRegisterBetToBankroll={handleOpenBankrollWithPrefill}
+                onOpenOpportunitiesHub={() => setIsOpportunitiesHubOpen(true)}
+                onOpenBankrollTracker={() => setIsBankrollTrackerOpen(true)}
               />
             )}
 
@@ -1408,6 +1435,29 @@ export default function App() {
         allowClose={!!currentUser && !!effectiveUserStatus?.canAccess}
         initialUsername={loginInitialUsername}
         isConsultaPortal={isConsultaPortalMode || currentUser?.role === 'CONSULTOR'}
+      />
+
+      {/* Opportunities Hub & Value Scanner Modal */}
+      <OpportunitiesHubModal
+        isOpen={isOpportunitiesHubOpen}
+        onClose={() => setIsOpportunitiesHubOpen(false)}
+        dbState={dbState}
+        onSelectMatchAnalysis={(matchId) => {
+          setAnalysisTargetMatchId(matchId);
+          setActiveTab('analysis');
+          setIsOpportunitiesHubOpen(false);
+        }}
+        onRegisterBetToBankroll={handleOpenBankrollWithPrefill}
+      />
+
+      {/* Bankroll Management & Tracker Modal */}
+      <BankrollTrackerModal
+        isOpen={isBankrollTrackerOpen}
+        onClose={() => {
+          setIsBankrollTrackerOpen(false);
+          setBankrollPrefillBet(null);
+        }}
+        prefillBet={bankrollPrefillBet}
       />
 
       {/* Unique ID Toast Notifications */}

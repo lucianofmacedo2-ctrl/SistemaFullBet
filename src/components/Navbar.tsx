@@ -24,7 +24,9 @@ import {
   Clock,
   Lock,
   Download,
-  Zap
+  Zap,
+  Sparkles,
+  DollarSign
 } from 'lucide-react';
 import { DbState, AppUser } from '../types';
 import { extractYMD, formatDateToYMD } from './DailyMatchesView';
@@ -49,6 +51,8 @@ interface NavbarProps {
   onOpenUserManagerModal?: () => void;
   onOpenLoginModal?: () => void;
   onLogout?: () => void;
+  onOpenOpportunitiesHub?: () => void;
+  onOpenBankrollTracker?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -68,6 +72,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenUserManagerModal,
   onOpenLoginModal,
   onLogout,
+  onOpenOpportunitiesHub,
+  onOpenBankrollTracker,
 }) => {
   const isMaster = currentUser?.role === 'MASTER';
   const effStatus = currentUser ? getUserEffectiveStatus(currentUser) : null;
@@ -367,7 +373,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Módulo de Análise & Power Ranking - Destaque em Posição Nobre */}
             <button
               onClick={() => setActiveTab('analysis')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all shadow-sm ${
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all shadow-sm cursor-pointer ${
                 activeTab === 'analysis'
                   ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white border border-indigo-400 shadow-md shadow-indigo-500/30 ring-2 ring-indigo-300'
                   : 'bg-indigo-50 text-indigo-800 hover:bg-indigo-100/90 border border-indigo-200 hover:border-indigo-400 hover:scale-[1.02]'
@@ -376,9 +382,36 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Zap className="w-4 h-4 text-amber-500 fill-amber-400 animate-pulse" />
               <span className="tracking-wide">ANÁLISE & POWER RANKING</span>
               <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-400 text-slate-950 uppercase tracking-tighter shadow-xs">
-                NOVO
+                PRO
               </span>
             </button>
+
+            {/* Central de Oportunidades & Scanner +EV */}
+            {onOpenOpportunitiesHub && (
+              <button
+                type="button"
+                onClick={onOpenOpportunitiesHub}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-700 text-slate-950 shadow-sm shadow-orange-500/20 cursor-pointer hover:scale-[1.02]"
+              >
+                <Sparkles className="w-4 h-4 text-slate-950" />
+                <span>OPORTUNIDADES (+EV & Bilhetes)</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-slate-950 text-amber-300 uppercase">
+                  AI
+                </span>
+              </button>
+            )}
+
+            {/* Gestão de Banca */}
+            {onOpenBankrollTracker && (
+              <button
+                type="button"
+                onClick={onOpenBankrollTracker}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all bg-emerald-50 hover:bg-emerald-100/90 text-emerald-900 border border-emerald-300 shadow-2xs cursor-pointer hover:scale-[1.02]"
+              >
+                <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                <span>GESTÃO DE BANCA</span>
+              </button>
+            )}
 
             {/* Tabela de Classificação / Standings */}
             <button

@@ -99,6 +99,7 @@ export interface MatchAnalysisResult {
   htFtAnalysis: HtFtDifferential;
   refereeAnalysis?: RefereeCardAnalysis;
   valueBets: ValueBetOpportunity[];
+  activeMatch?: Match;
 }
 
 export interface TeamPowerRating {
@@ -1178,5 +1179,6 @@ export function runFullMatchAnalysis(
     htFtAnalysis,
     refereeAnalysis,
     valueBets,
+    activeMatch: options?.activeMatch,
   };
 }
