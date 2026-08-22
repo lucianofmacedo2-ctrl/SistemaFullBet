@@ -784,45 +784,88 @@ export function runFullMatchAnalysis(
   const leagueMatches = league ? dbState.matches.filter(m => m.leagueId === league.id) : dbState.matches;
   const baselines = calculateLeagueBaselines(leagueMatches);
 
-  // Continuous Projections (Attack x Defense Model)
-  // Expectativa Mandante = (Ataque Mandante / Liga Casa) * (Defesa Visitante / Liga Fora) * Liga Casa
-  const homeAttRating = baselines.avgGoalsHome > 0 ? homePower.goalsForAvg / baselines.avgGoalsHome : 1.0;
-  const awayDefRating = baselines.avgGoalsHome > 0 ? awayPower.goalsAgainstAvg / baselines.avgGoalsHome : 1.0;
-  const lambdaHome = Math.max(0.2, homeAttRating * awayDefRating * baselines.avgGoalsHome);
+  const homeSampleCount = homeActiveSample.length;
+  const awaySampleCount = awayActiveSample.length;
+  // Prior weight (pseudo-matches) to smooth small sample sizes towards league baseline
+  const PRIOR_MATCHES = 5;
 
-  const awayAttRating = baselines.avgGoalsAway > 0 ? awayPower.goalsForAvg / baselines.avgGoalsAway : 1.0;
-  const homeDefRating = baselines.avgGoalsAway > 0 ? homePower.goalsAgainstAvg / baselines.avgGoalsAway : 1.0;
-  const lambdaAway = Math.max(0.15, awayAttRating * homeDefRating * baselines.avgGoalsAway);
+  const baseGoalsHome = baselines.avgGoalsHome > 0 ? baselines.avgGoalsHome : 1.45;
+  const baseGoalsAway = baselines.avgGoalsAway > 0 ? baselines.avgGoalsAway : 1.15;
 
-  // Corners Projections
-  const homeCornerAtt = baselines.avgCornersHome > 0
-    ? calculateMean(homeActiveSample.map(s => s.cornersFor ?? baselines.avgCornersHome)) / baselines.avgCornersHome
-    : 1.0;
-  const awayCornerDef = baselines.avgCornersHome > 0
-    ? calculateMean(awayActiveSample.map(s => s.cornersAgainst ?? baselines.avgCornersHome)) / baselines.avgCornersHome
-    : 1.0;
-  const expCornersHome = Math.max(1.5, homeCornerAtt * awayCornerDef * baselines.avgCornersHome);
+  // Continuous Projections (Attack x Defense Model with Empirical Bayes Shrinkage)
+  // Raw ratios
+  const rawHomeAtt = (homePower.goalsForAvg > 0 ? homePower.goalsForAvg : baseGoalsHome) / baseGoalsHome;
+  const rawAwayDef = (awayPower.goalsAgainstAvg > 0 ? awayPower.goalsAgainstAvg : baseGoalsHome) / baseGoalsHome;
 
-  const awayCornerAtt = baselines.avgCornersAway > 0
-    ? calculateMean(awayActiveSample.map(s => s.cornersFor ?? baselines.avgCornersAway)) / baselines.avgCornersAway
-    : 1.0;
-  const homeCornerDef = baselines.avgCornersAway > 0
-    ? calculateMean(homeActiveSample.map(s => s.cornersAgainst ?? baselines.avgCornersAway)) / baselines.avgCornersAway
-    : 1.0;
-  const expCornersAway = Math.max(1.0, awayCornerAtt * homeCornerDef * baselines.avgCornersAway);
+  const rawAwayAtt = (awayPower.goalsForAvg > 0 ? awayPower.goalsForAvg : baseGoalsAway) / baseGoalsAway;
+  const rawHomeDef = (homePower.goalsAgainstAvg > 0 ? homePower.goalsAgainstAvg : baseGoalsAway) / baseGoalsAway;
+
+  // Regressed ratios (Shrinkage to 1.0 based on sample size)
+  const homeAttRating = (rawHomeAtt * homeSampleCount + 1.0 * PRIOR_MATCHES) / (homeSampleCount + PRIOR_MATCHES);
+  const awayDefRating = (rawAwayDef * awaySampleCount + 1.0 * PRIOR_MATCHES) / (awaySampleCount + PRIOR_MATCHES);
+
+  const awayAttRating = (rawAwayAtt * awaySampleCount + 1.0 * PRIOR_MATCHES) / (awaySampleCount + PRIOR_MATCHES);
+  const homeDefRating = (rawHomeDef * homeSampleCount + 1.0 * PRIOR_MATCHES) / (homeSampleCount + PRIOR_MATCHES);
+
+  // Model formula with power dampening (exponent 0.72) to prevent quadratic divergence
+  let lambdaHome = baseGoalsHome * Math.pow(homeAttRating, 0.72) * Math.pow(awayDefRating, 0.72);
+  let lambdaAway = baseGoalsAway * Math.pow(awayAttRating, 0.72) * Math.pow(homeDefRating, 0.72);
+
+  // Realistic football boundaries for single-team expected goals
+  lambdaHome = Math.max(0.40, Math.min(3.40, lambdaHome));
+  lambdaAway = Math.max(0.30, Math.min(3.10, lambdaAway));
+
+  // Corners Projections with Shrinkage & Dampening
+  const baseCornersHome = baselines.avgCornersHome > 0 ? baselines.avgCornersHome : 5.4;
+  const baseCornersAway = baselines.avgCornersAway > 0 ? baselines.avgCornersAway : 4.4;
+
+  const rawHomeCornerAtt = (calculateMean(homeActiveSample.map(s => s.cornersFor ?? baseCornersHome)) || baseCornersHome) / baseCornersHome;
+  const rawAwayCornerDef = (calculateMean(awayActiveSample.map(s => s.cornersAgainst ?? baseCornersHome)) || baseCornersHome) / baseCornersHome;
+
+  const homeCornerAtt = (rawHomeCornerAtt * homeSampleCount + 1.0 * PRIOR_MATCHES) / (homeSampleCount + PRIOR_MATCHES);
+  const awayCornerDef = (rawAwayCornerDef * awaySampleCount + 1.0 * PRIOR_MATCHES) / (awaySampleCount + PRIOR_MATCHES);
+
+  let expCornersHome = baseCornersHome * Math.pow(homeCornerAtt, 0.70) * Math.pow(awayCornerDef, 0.70);
+  expCornersHome = Math.max(2.5, Math.min(8.8, expCornersHome));
+
+  const rawAwayCornerAtt = (calculateMean(awayActiveSample.map(s => s.cornersFor ?? baseCornersAway)) || baseCornersAway) / baseCornersAway;
+  const rawHomeCornerDef = (calculateMean(homeActiveSample.map(s => s.cornersAgainst ?? baseCornersAway)) || baseCornersAway) / baseCornersAway;
+
+  const awayCornerAtt = (rawAwayCornerAtt * awaySampleCount + 1.0 * PRIOR_MATCHES) / (awaySampleCount + PRIOR_MATCHES);
+  const homeCornerDef = (rawHomeCornerDef * homeSampleCount + 1.0 * PRIOR_MATCHES) / (homeSampleCount + PRIOR_MATCHES);
+
+  let expCornersAway = baseCornersAway * Math.pow(awayCornerAtt, 0.70) * Math.pow(homeCornerDef, 0.70);
+  expCornersAway = Math.max(2.0, Math.min(7.8, expCornersAway));
 
   // Shots Projections
-  const expShotsHome = Math.max(3.0, (homePower.shotsVolumeAvg || baselines.avgShotsHome) * 0.55 + (awayPower.shotsConcededAvg || baselines.avgShotsHome) * 0.45);
-  const expShotsAway = Math.max(2.5, (awayPower.shotsVolumeAvg || baselines.avgShotsAway) * 0.55 + (homePower.shotsConcededAvg || baselines.avgShotsAway) * 0.45);
+  const baseShotsHome = baselines.avgShotsHome > 0 ? baselines.avgShotsHome : 12.5;
+  const baseShotsAway = baselines.avgShotsAway > 0 ? baselines.avgShotsAway : 10.2;
+  const hShotsFor = (homePower.shotsVolumeAvg * homeSampleCount + baseShotsHome * PRIOR_MATCHES) / (homeSampleCount + PRIOR_MATCHES);
+  const aShotsAgainst = (awayPower.shotsConcededAvg * awaySampleCount + baseShotsHome * PRIOR_MATCHES) / (awaySampleCount + PRIOR_MATCHES);
+  const expShotsHome = Math.max(7.0, Math.min(21.0, hShotsFor * 0.55 + aShotsAgainst * 0.45));
 
-  const expShotsOnTargetHome = Math.max(1.0, (homePower.shotsOnTargetAvg || baselines.avgShotsOnTargetHome) * 0.55 + (awayPower.shotsOnTargetConcededAvg || baselines.avgShotsOnTargetHome) * 0.45);
-  const expShotsOnTargetAway = Math.max(0.8, (awayPower.shotsOnTargetAvg || baselines.avgShotsOnTargetAway) * 0.55 + (homePower.shotsOnTargetConcededAvg || baselines.avgShotsOnTargetAway) * 0.45);
+  const aShotsFor = (awayPower.shotsVolumeAvg * awaySampleCount + baseShotsAway * PRIOR_MATCHES) / (awaySampleCount + PRIOR_MATCHES);
+  const hShotsAgainst = (homePower.shotsConcededAvg * homeSampleCount + baseShotsAway * PRIOR_MATCHES) / (homeSampleCount + PRIOR_MATCHES);
+  const expShotsAway = Math.max(5.5, Math.min(18.0, aShotsFor * 0.55 + hShotsAgainst * 0.45));
+
+  // Shots on Target
+  const baseSTHome = baselines.avgShotsOnTargetHome > 0 ? baselines.avgShotsOnTargetHome : 4.8;
+  const baseSTAway = baselines.avgShotsOnTargetAway > 0 ? baselines.avgShotsOnTargetAway : 3.8;
+  const hSTFor = (homePower.shotsOnTargetAvg * homeSampleCount + baseSTHome * PRIOR_MATCHES) / (homeSampleCount + PRIOR_MATCHES);
+  const aSTAgainst = (awayPower.shotsOnTargetConcededAvg * awaySampleCount + baseSTHome * PRIOR_MATCHES) / (awaySampleCount + PRIOR_MATCHES);
+  const expShotsOnTargetHome = Math.max(2.0, Math.min(8.5, hSTFor * 0.55 + aSTAgainst * 0.45));
+
+  const aSTFor = (awayPower.shotsOnTargetAvg * awaySampleCount + baseSTAway * PRIOR_MATCHES) / (awaySampleCount + PRIOR_MATCHES);
+  const hSTAgainst = (homePower.shotsOnTargetConcededAvg * homeSampleCount + baseSTAway * PRIOR_MATCHES) / (homeSampleCount + PRIOR_MATCHES);
+  const expShotsOnTargetAway = Math.max(1.6, Math.min(7.5, aSTFor * 0.55 + hSTAgainst * 0.45));
 
   // Cards Projections
-  const homeCardAvg = calculateMean(homeActiveSample.map(s => s.cardPointsFor || 2.0));
-  const awayCardAvg = calculateMean(awayActiveSample.map(s => s.cardPointsFor || 2.3));
-  const expCardsHome = homeCardAvg || baselines.avgCardsHome;
-  const expCardsAway = awayCardAvg || baselines.avgCardsAway;
+  const baseCardsHome = baselines.avgCardsHome > 0 ? baselines.avgCardsHome : 2.1;
+  const baseCardsAway = baselines.avgCardsAway > 0 ? baselines.avgCardsAway : 2.4;
+  const rawHCard = calculateMean(homeActiveSample.map(s => s.cardPointsFor || baseCardsHome)) || baseCardsHome;
+  const rawACard = calculateMean(awayActiveSample.map(s => s.cardPointsFor || baseCardsAway)) || baseCardsAway;
+  const expCardsHome = Math.max(1.0, Math.min(4.8, (rawHCard * homeSampleCount + baseCardsHome * PRIOR_MATCHES) / (homeSampleCount + PRIOR_MATCHES)));
+  const expCardsAway = Math.max(1.0, Math.min(5.2, (rawACard * awaySampleCount + baseCardsAway * PRIOR_MATCHES) / (awaySampleCount + PRIOR_MATCHES)));
 
   const projections: ContinuousProjections = {
     expectedGoalsHome: lambdaHome,
@@ -840,32 +883,48 @@ export function runFullMatchAnalysis(
     expectedCardsHome: expCardsHome,
     expectedCardsAway: expCardsAway,
     totalExpectedCards: expCardsHome + expCardsAway,
-    leagueAvgGoalsHome: baselines.avgGoalsHome,
-    leagueAvgGoalsAway: baselines.avgGoalsAway,
-    leagueAvgCornersHome: baselines.avgCornersHome,
-    leagueAvgCornersAway: baselines.avgCornersAway,
+    leagueAvgGoalsHome: baseGoalsHome,
+    leagueAvgGoalsAway: baseGoalsAway,
+    leagueAvgCornersHome: baseCornersHome,
+    leagueAvgCornersAway: baseCornersAway,
   };
 
-  // Poisson Distribution Matrix (0..5 x 0..5)
+  // Exact Analytical Poisson Probabilities for Over / Under & BTTS
+  const lambdaTotal = lambdaHome + lambdaAway;
+  const pTotal0 = Math.exp(-lambdaTotal);
+  const pTotal1 = pTotal0 * lambdaTotal;
+  const pTotal2 = (pTotal1 * lambdaTotal) / 2;
+  const pTotal3 = (pTotal2 * lambdaTotal) / 3;
+
+  const probOver05 = Math.max(0.01, Math.min(0.99, 1 - pTotal0));
+  const probOver15 = Math.max(0.01, Math.min(0.99, 1 - (pTotal0 + pTotal1)));
+  const probOver25 = Math.max(0.01, Math.min(0.99, 1 - (pTotal0 + pTotal1 + pTotal2)));
+  const probUnder25 = Math.max(0.01, Math.min(0.99, 1 - probOver25));
+  const probOver35 = Math.max(0.01, Math.min(0.99, 1 - (pTotal0 + pTotal1 + pTotal2 + pTotal3)));
+
+  // Exact BTTS Formula: P(Home >= 1) * P(Away >= 1) = (1 - e^-lambdaHome) * (1 - e^-lambdaAway)
+  const pHomeZero = Math.exp(-lambdaHome);
+  const pAwayZero = Math.exp(-lambdaAway);
+  const probBttsYes = Math.max(0.01, Math.min(0.99, (1 - pHomeZero) * (1 - pAwayZero)));
+  const probBttsNo = Math.max(0.01, Math.min(0.99, 1 - probBttsYes));
+
+  // Poisson Distribution Matrix (0..5 x 0..5) & 1X2 Probabilities (computed up to 8 goals)
   const matrix: number[][] = [];
   let probHomeWin = 0;
   let probDraw = 0;
   let probAwayWin = 0;
-  let probOver05 = 0;
-  let probOver15 = 0;
-  let probOver25 = 0;
-  let probOver35 = 0;
-  let probBttsYes = 0;
-
   const exactScores: PoissonOutcome[] = [];
 
-  for (let i = 0; i <= 5; i++) {
-    matrix[i] = [];
+  for (let i = 0; i <= 8; i++) {
     const pHome = poissonProbability(i, lambdaHome);
-    for (let j = 0; j <= 5; j++) {
+    for (let j = 0; j <= 8; j++) {
       const pAway = poissonProbability(j, lambdaAway);
       const pExact = pHome * pAway;
-      matrix[i][j] = pExact;
+
+      if (i <= 5 && j <= 5) {
+        if (!matrix[i]) matrix[i] = [];
+        matrix[i][j] = pExact;
+      }
 
       exactScores.push({
         score: `${i} - ${j}`,
@@ -877,13 +936,6 @@ export function runFullMatchAnalysis(
       if (i > j) probHomeWin += pExact;
       else if (i === j) probDraw += pExact;
       else probAwayWin += pExact;
-
-      const totalGoals = i + j;
-      if (totalGoals > 0.5) probOver05 += pExact;
-      if (totalGoals > 1.5) probOver15 += pExact;
-      if (totalGoals > 2.5) probOver25 += pExact;
-      if (totalGoals > 3.5) probOver35 += pExact;
-      if (i > 0 && j > 0) probBttsYes += pExact;
     }
   }
 
@@ -906,9 +958,9 @@ export function runFullMatchAnalysis(
     probOver15,
     probOver25,
     probOver35,
-    probUnder25: 1 - probOver25,
+    probUnder25,
     probBttsYes,
-    probBttsNo: 1 - probBttsYes,
+    probBttsNo,
     topExactScores,
   };
 
