@@ -183,6 +183,8 @@ export default function App() {
       // Verify active user validity against latest users
       const savedUser = getCurrentAuthUser();
       let targetUser = savedUser;
+      let shouldOpenLogin = false;
+
       if (typeof window !== 'undefined') {
         try {
           const urlParams = new URLSearchParams(window.location.search);
@@ -205,16 +207,20 @@ export default function App() {
               finalState.users = guaranteedUsers;
               saveDatabaseState(finalState);
               saveUsersList(guaranteedUsers);
-              setLoginInitialUsername(importedUser.username);
-              setIsLoginModalOpen(true);
+              
+              // Automatically authenticate as the imported user
+              targetUser = importedUser;
+              setCurrentUser(importedUser);
+              setCurrentAuthUser(importedUser);
+              shouldOpenLogin = false;
             }
           }
 
           if (modeParam === 'consulta' || modeParam === 'viewer') {
             setIsConsultaPortalMode(true);
-            // If currently Master or no valid user, force open the Login modal
-            if (!savedUser || savedUser.role === 'MASTER') {
-              setIsLoginModalOpen(true);
+            // Only open login if there is NO active authenticated user on this device
+            if (!savedUser) {
+              shouldOpenLogin = true;
             }
           }
 
@@ -225,22 +231,35 @@ export default function App() {
             );
             if (foundByUserParam) {
               setLoginInitialUsername(foundByUserParam.username);
+              // Only open login if there is no active session matching this user
               if (!savedUser || savedUser.id !== foundByUserParam.id) {
-                setIsLoginModalOpen(true);
+                shouldOpenLogin = true;
               }
-            } else {
+            } else if (!savedUser) {
               setLoginInitialUsername(userParam.trim());
-              setIsLoginModalOpen(true);
+              shouldOpenLogin = true;
             }
+          }
+
+          // Clean URL query params to prevent re-triggering on subsequent page refreshes (F5)
+          if (accParam || userParam || modeParam) {
+            const cleanPath = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanPath);
           }
         } catch {
           // Ignore URL parsing errors
         }
       }
 
+      if (shouldOpenLogin) {
+        setIsLoginModalOpen(true);
+      }
+
       // Verify active user validity against latest users
       if (targetUser) {
-        const found = guaranteedUsers.find(u => u.id === targetUser.id);
+        const found = guaranteedUsers.find(
+          u => u.id === targetUser.id || u.username.toLowerCase() === targetUser.username.toLowerCase()
+        );
         if (found) {
           setCurrentUser(found);
           setCurrentAuthUser(found);
@@ -1559,7 +1578,7 @@ export default function App() {
 
       {/* Login Modal */}
       <LoginModal
-        isOpen={isLoginModalOpen || !currentUser}
+        isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         users={ensureDefaultUsers(dbState.users)}
         onLoginSuccess={handleLoginSuccess}

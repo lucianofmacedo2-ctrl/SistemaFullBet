@@ -208,6 +208,8 @@ export function ensureDefaultUsers(users?: AppUser[]): AppUser[] {
  */
 export function touchUserActivity(): void {
   try {
+    const raw = localStorage.getItem(ACTIVE_USER_STORAGE_KEY) || sessionStorage.getItem(ACTIVE_USER_STORAGE_KEY);
+    if (!raw) return;
     const now = Date.now();
     const expiry = now + SESSION_DURATION_MS;
     localStorage.setItem(SESSION_EXPIRY_KEY, expiry.toString());
