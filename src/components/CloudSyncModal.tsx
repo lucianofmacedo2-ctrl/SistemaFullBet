@@ -59,17 +59,17 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
     setIsUploading(true);
     setStatusMessage({ type: 'info', text: 'Enviando todos os dados para a Nuvem Firestore...' });
     try {
-      const ok = await saveDbToFirestore(dbState);
-      if (ok) {
+      const res = await saveDbToFirestore(dbState);
+      if (res.success) {
         setStats(computeCloudStats(dbState));
         setStatusMessage({
           type: 'success',
-          text: 'Banco de dados enviado e sincronizado com sucesso no Firestore! Todos os celulares e computadores agora têm acesso aos mesmos dados em tempo real.',
+          text: `Banco de dados enviado e sincronizado com sucesso no Firestore (${res.count || dbState.matches.length} partidas)! Todos os celulares e computadores agora têm acesso aos mesmos dados em tempo real.`,
         });
       } else {
         setStatusMessage({
           type: 'error',
-          text: 'Erro ao enviar dados para o Firestore. Verifique a conexão com a internet.',
+          text: `Erro ao enviar para o Firestore: ${res.error || 'Falha na comunicação com o banco de dados.'}`,
         });
       }
     } catch (err: any) {

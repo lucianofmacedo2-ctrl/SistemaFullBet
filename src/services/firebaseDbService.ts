@@ -16,7 +16,20 @@ import { DbState, Country, League, Team, Match, AppUser } from '../types';
 // Initialize Firebase App instance
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || undefined);
+
+// Smart Firestore instance with database ID fallback
+function createFirestoreInstance() {
+  try {
+    if (firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId.trim() !== '') {
+      return getFirestore(app, firebaseConfig.firestoreDatabaseId);
+    }
+  } catch (e) {
+    console.warn('Failed to init Firestore with specific databaseId, falling back to default:', e);
+  }
+  return getFirestore(app);
+}
+
+export let db = createFirestoreInstance();
 
 // Ensure Firebase Auth is ready (Anonymous sign-in)
 let authPromise: Promise<FirebaseUser | null> | null = null;
@@ -41,7 +54,7 @@ export async function ensureFirebaseAuth(): Promise<FirebaseUser | null> {
           unsubscribe();
           resolve(cred.user);
         } catch (error) {
-          console.warn('Anonymous auth failed or delayed:', error);
+          console.warn('Anonymous auth note (proceeding with rule access):', error);
           unsubscribe();
           resolve(null);
         }
@@ -52,8 +65,15 @@ export async function ensureFirebaseAuth(): Promise<FirebaseUser | null> {
   return authPromise;
 }
 
+// Helper to remove any `undefined` properties which Firestore strictly rejects
+function sanitizeForFirestore<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data, (key, value) => {
+    return value === undefined ? null : value;
+  }));
+}
+
 // Chunking helper to respect Firestore document size limit (1MB max per doc)
-const CHUNK_SIZE = 400; // max items per chunk
+const CHUNK_SIZE = 300; // max items per chunk
 const COLLECTION_NAME = 'app_data';
 
 export interface CloudSyncStats {
@@ -69,40 +89,44 @@ export interface CloudSyncStats {
   lastUpdated: string;
 }
 
+export interface SyncResult {
+  success: boolean;
+  error?: string;
+  count?: number;
+}
+
 /**
  * Saves the entire DbState to Firestore partitioned across sub-documents.
  */
-export async function saveDbToFirestore(state: DbState): Promise<boolean> {
+export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
   try {
     await ensureFirebaseAuth();
-    const batch = writeBatch(db);
 
     // 1. Countries
-    const countriesDoc = doc(db, COLLECTION_NAME, 'countries');
-    batch.set(countriesDoc, {
-      list: state.countries || [],
+    const cleanCountries = sanitizeForFirestore(state.countries || []);
+    await setDoc(doc(db, COLLECTION_NAME, 'countries'), {
+      list: cleanCountries,
       updatedAt: new Date().toISOString(),
     });
 
     // 2. Leagues
-    const leaguesDoc = doc(db, COLLECTION_NAME, 'leagues');
-    batch.set(leaguesDoc, {
-      list: state.leagues || [],
+    const cleanLeagues = sanitizeForFirestore(state.leagues || []);
+    await setDoc(doc(db, COLLECTION_NAME, 'leagues'), {
+      list: cleanLeagues,
       updatedAt: new Date().toISOString(),
     });
 
     // 3. Users
-    const usersDoc = doc(db, COLLECTION_NAME, 'users');
-    batch.set(usersDoc, {
-      list: state.users || [],
+    const cleanUsers = sanitizeForFirestore(state.users || []);
+    await setDoc(doc(db, COLLECTION_NAME, 'users'), {
+      list: cleanUsers,
       updatedAt: new Date().toISOString(),
     });
 
     // 4. Teams (Chunked if needed)
     const teams = state.teams || [];
     const teamChunks = Math.ceil(teams.length / CHUNK_SIZE) || 1;
-    const teamsMetaDoc = doc(db, COLLECTION_NAME, 'teams_meta');
-    batch.set(teamsMetaDoc, {
+    await setDoc(doc(db, COLLECTION_NAME, 'teams_meta'), {
       total: teams.length,
       chunks: teamChunks,
       updatedAt: new Date().toISOString(),
@@ -110,15 +134,14 @@ export async function saveDbToFirestore(state: DbState): Promise<boolean> {
 
     for (let i = 0; i < teamChunks; i++) {
       const chunkTeams = teams.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-      const teamChunkDoc = doc(db, COLLECTION_NAME, `teams_${i}`);
-      batch.set(teamChunkDoc, { list: chunkTeams });
+      const cleanChunk = sanitizeForFirestore(chunkTeams);
+      await setDoc(doc(db, COLLECTION_NAME, `teams_${i}`), { list: cleanChunk });
     }
 
     // 5. Matches (Chunked if needed)
     const matches = state.matches || [];
     const matchChunks = Math.ceil(matches.length / CHUNK_SIZE) || 1;
-    const matchesMetaDoc = doc(db, COLLECTION_NAME, 'matches_meta');
-    batch.set(matchesMetaDoc, {
+    await setDoc(doc(db, COLLECTION_NAME, 'matches_meta'), {
       total: matches.length,
       chunks: matchChunks,
       updatedAt: new Date().toISOString(),
@@ -126,13 +149,12 @@ export async function saveDbToFirestore(state: DbState): Promise<boolean> {
 
     for (let i = 0; i < matchChunks; i++) {
       const chunkMatches = matches.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-      const matchChunkDoc = doc(db, COLLECTION_NAME, `matches_${i}`);
-      batch.set(matchChunkDoc, { list: chunkMatches });
+      const cleanChunk = sanitizeForFirestore(chunkMatches);
+      await setDoc(doc(db, COLLECTION_NAME, `matches_${i}`), { list: cleanChunk });
     }
 
     // 6. Meta info
-    const metaDoc = doc(db, COLLECTION_NAME, 'meta');
-    batch.set(metaDoc, {
+    await setDoc(doc(db, COLLECTION_NAME, 'meta'), {
       lastUpdated: new Date().toISOString(),
       counts: {
         countries: state.countries?.length || 0,
@@ -143,11 +165,21 @@ export async function saveDbToFirestore(state: DbState): Promise<boolean> {
       },
     });
 
-    await batch.commit();
-    return true;
-  } catch (error) {
+    return { success: true, count: matches.length };
+  } catch (error: any) {
     console.error('Error saving state to Firestore:', error);
-    return false;
+    
+    // Attempt fallback to default database if named database failed
+    if (error?.message?.includes('not found') || error?.code === 'not-found') {
+      try {
+        db = getFirestore(app);
+        return await saveDbToFirestore(state);
+      } catch (fallbackErr: any) {
+        return { success: false, error: fallbackErr?.message || String(fallbackErr) };
+      }
+    }
+
+    return { success: false, error: error?.message || String(error) };
   }
 }
 
@@ -209,8 +241,16 @@ export async function fetchDbFromFirestore(): Promise<DbState | null> {
       matches,
       users,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching state from Firestore:', error);
+    if (error?.message?.includes('not found') || error?.code === 'not-found') {
+      try {
+        db = getFirestore(app);
+        return await fetchDbFromFirestore();
+      } catch (fallbackErr) {
+        console.error('Fallback fetch also failed:', fallbackErr);
+      }
+    }
     return null;
   }
 }
