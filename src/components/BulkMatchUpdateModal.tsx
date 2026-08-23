@@ -26,7 +26,8 @@ import {
   parseMatchUpdateExcelOrCsvFile,
   parseFinishedMatchesText,
   downloadFinishedMatchesTemplate,
-  FINISHED_MATCHES_COLUMNS
+  FINISHED_MATCHES_COLUMNS,
+  formatIsoToDDMMYYYY
 } from '../utils/excelHelper';
 
 interface BulkMatchUpdateModalProps {
@@ -339,7 +340,7 @@ export const BulkMatchUpdateModal: React.FC<BulkMatchUpdateModalProps> = ({
               <textarea
                 value={pastedText}
                 onChange={(e) => setPastedText(e.target.value)}
-                placeholder="Pais	Liga	Data	Hora	Mandante	Visitante	Placar_Mandante_FT	Placar_Visitante_FT	Placar_Mandante_HT	Placar_Visitante_HT	Arbitro	Estadio	Publico	Capacidade	xG_Mandante_FT	xG_Visitante_FT	Finalizacoes_Mandante_FT	Finalizacoes_Visitante_FT	Chutes_Gol_Mandante_FT	Chutes_Gol_Visitante_FT	Faltas_Mandante_FT	Faltas_Visitante_FT	Escanteios_Mandante_FT	Escanteios_Visitante_FT	Cartao_Amarelo_Mandante_FT	Cartao_Amarelo_Visitante_FT	Cartao_Vermelho_Mandante_FT	Cartao_Vermelho_Visitante_FT	Odd_Home_FT	Odd_Draw_FT	Odd_Away_FT	Odd_Over25_FT	Odd_Under25_FT&#10;Inglaterra	Premier League ING	2026-08-23	16:00	Arsenal	Chelsea	2	1	1	0	Michael Oliver	Emirates Stadium	60214	60704	2.15	1.08	15	9	6	3	11	14	7	4	2	3	0	0	2.10	3.40	3.50	1.85	1.95"
+                placeholder="Pais	Liga	Data	Hora	Mandante	Visitante	Placar_Mandante_FT	Placar_Visitante_FT	Placar_Mandante_HT	Placar_Visitante_HT	Arbitro	Estadio	Publico	Capacidade	xG_Mandante_FT	xG_Visitante_FT	Finalizacoes_Mandante_FT	Finalizacoes_Visitante_FT	Chutes_Gol_Mandante_FT	Chutes_Gol_Visitante_FT	Faltas_Mandante_FT	Faltas_Visitante_FT	Escanteios_Mandante_FT	Escanteios_Visitante_FT	Cartao_Amarelo_Mandante_FT	Cartao_Amarelo_Visitante_FT	Cartao_Vermelho_Mandante_FT	Cartao_Vermelho_Visitante_FT	Odd_Home_FT	Odd_Draw_FT	Odd_Away_FT	Odd_Over25_FT	Odd_Under25_FT&#10;Inglaterra	Premier League ING	23/08/2026	16:00	Arsenal	Chelsea	2	1	1	0	Michael Oliver	Emirates Stadium	60214	60704	2.15	1.08	15	9	6	3	11	14	7	4	2	3	0	0	2.10	3.40	3.50	1.85	1.95"
                 rows={5}
                 className="w-full p-3 font-mono text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-slate-50"
               />
@@ -428,7 +429,7 @@ export const BulkMatchUpdateModal: React.FC<BulkMatchUpdateModalProps> = ({
                         <td className="p-2.5 whitespace-nowrap">
                           <div className="font-semibold text-slate-900">{row.leagueName}</div>
                           <div className="text-[11px] text-slate-500">
-                            {row.matchDate ? row.matchDate.replace('T', ' ').slice(0, 16) : ''}
+                            {row.matchDate ? formatIsoToDDMMYYYY(row.matchDate) : ''}
                           </div>
                         </td>
                         <td className="p-2.5 font-bold text-slate-900 whitespace-nowrap">

@@ -125,12 +125,72 @@ function normalizeTextForMatch(text: string): string {
 
 function splitDateTimeForExcel(isoString: string): { date: string; time: string } {
   try {
+    if (!isoString) return { date: '', time: '' };
+
+    let year = '';
+    let month = '';
+    let day = '';
+    let hours = '16';
+    let mins = '00';
+
+    if (isoString.includes('T')) {
+      const [dPart, tPart] = isoString.split('T');
+      const dPieces = dPart.split('-');
+      if (dPieces.length === 3) {
+        year = dPieces[0];
+        month = dPieces[1].padStart(2, '0');
+        day = dPieces[2].padStart(2, '0');
+      }
+      if (tPart) {
+        const tPieces = tPart.split(':');
+        if (tPieces.length >= 2) {
+          hours = tPieces[0].padStart(2, '0');
+          mins = tPieces[1].slice(0, 2).padStart(2, '0');
+        }
+      }
+    } else if (isoString.includes('-')) {
+      const dPieces = isoString.trim().split('-');
+      if (dPieces.length === 3) {
+        if (dPieces[0].length === 4) {
+          year = dPieces[0];
+          month = dPieces[1].padStart(2, '0');
+          day = dPieces[2].padStart(2, '0');
+        } else if (dPieces[2].length === 4) {
+          day = dPieces[0].padStart(2, '0');
+          month = dPieces[1].padStart(2, '0');
+          year = dPieces[2];
+        }
+      }
+    } else if (isoString.includes('/')) {
+      const dPieces = isoString.trim().split('/');
+      if (dPieces.length === 3) {
+        if (dPieces[2].length === 4) {
+          day = dPieces[0].padStart(2, '0');
+          month = dPieces[1].padStart(2, '0');
+          year = dPieces[2];
+        } else if (dPieces[0].length === 4) {
+          year = dPieces[0];
+          month = dPieces[1].padStart(2, '0');
+          day = dPieces[2].padStart(2, '0');
+        }
+      }
+    }
+
+    if (year && month && day) {
+      return {
+        date: `${day}/${month}/${year}`,
+        time: `${hours}:${mins}`,
+      };
+    }
+
     const d = new Date(isoString);
     if (isNaN(d.getTime())) return { date: '', time: '' };
-    const date = d.toISOString().slice(0, 10);
-    const hours = String(d.getHours()).padStart(2, '0');
-    const mins = String(d.getMinutes()).padStart(2, '0');
-    return { date, time: `${hours}:${mins}` };
+    const dayStr = String(d.getUTCDate ? d.getUTCDate() : d.getDate()).padStart(2, '0');
+    const monStr = String((d.getUTCMonth ? d.getUTCMonth() : d.getMonth()) + 1).padStart(2, '0');
+    const yrStr = String(d.getUTCFullYear ? d.getUTCFullYear() : d.getFullYear());
+    const hStr = String(d.getHours()).padStart(2, '0');
+    const minStr = String(d.getMinutes()).padStart(2, '0');
+    return { date: `${dayStr}/${monStr}/${yrStr}`, time: `${hStr}:${minStr}` };
   } catch {
     return { date: '', time: '' };
   }
@@ -143,12 +203,27 @@ function formatIsoDateTime(dateVal: any, timeVal: any): string {
   if (dateVal instanceof Date) {
     const d = dateVal;
     if (!isNaN(d.getTime())) {
-      dateStr = d.toISOString().slice(0, 10);
+      // Use UTC if hours/mins are 0 to prevent date shifting
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      dateStr = `${year}-${month}-${day}`;
       const hh = String(d.getHours()).padStart(2, '0');
       const mm = String(d.getMinutes()).padStart(2, '0');
       if (hh !== '00' || mm !== '00') {
         timeStr = `${hh}:${mm}`;
       }
+    }
+  } else if (typeof dateVal === 'number') {
+    try {
+      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+      const d = new Date(excelEpoch.getTime() + dateVal * 86400000);
+      const year = d.getUTCFullYear();
+      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      dateStr = `${year}-${month}-${day}`;
+    } catch {
+      // fallback
     }
   } else if (typeof dateVal === 'string') {
     const raw = dateVal.trim();
@@ -161,6 +236,10 @@ function formatIsoDateTime(dateVal: any, timeVal: any): string {
         } else if (parts[0].length === 4) {
           // YYYY/MM/DD
           dateStr = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+        } else {
+          // 2-digit year DD/MM/YY
+          const y = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+          dateStr = `${y}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
         }
       }
     } else if (raw.includes('-')) {
@@ -169,6 +248,15 @@ function formatIsoDateTime(dateVal: any, timeVal: any): string {
         if (parts[0].length === 4) {
           dateStr = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
         } else if (parts[2].length === 4) {
+          // DD-MM-YYYY
+          dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        }
+      }
+    } else if (raw.includes('.')) {
+      const parts = raw.split('.');
+      if (parts.length === 3) {
+        if (parts[2].length === 4) {
+          // DD.MM.YYYY
           dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
         }
       }
@@ -179,18 +267,31 @@ function formatIsoDateTime(dateVal: any, timeVal: any): string {
   }
 
   if (timeVal) {
-    const tStr = String(timeVal).trim();
-    if (tStr.includes(':')) {
-      const parts = tStr.split(':');
-      timeStr = `${parts[0].padStart(2, '0')}:${parts[1].slice(0, 2).padStart(2, '0')}`;
+    if (timeVal instanceof Date) {
+      const hh = String(timeVal.getHours()).padStart(2, '0');
+      const mm = String(timeVal.getMinutes()).padStart(2, '0');
+      timeStr = `${hh}:${mm}`;
+    } else {
+      const tStr = String(timeVal).trim();
+      if (tStr.includes(':')) {
+        const parts = tStr.split(':');
+        timeStr = `${parts[0].padStart(2, '0')}:${parts[1].slice(0, 2).padStart(2, '0')}`;
+      }
     }
   }
 
   if (!dateStr) {
-    dateStr = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   }
 
   return `${dateStr}T${timeStr}:00`;
+}
+
+export function formatIsoToDDMMYYYY(isoString?: string): string {
+  if (!isoString) return '';
+  const { date, time } = splitDateTimeForExcel(isoString);
+  return time ? `${date} ${time}` : date;
 }
 
 export function isMatchComplete(match: Match): boolean {
@@ -229,7 +330,7 @@ export async function downloadFutureMatchesTemplate(format: 'xlsx' | 'csv' = 'xl
     {
       pais: 'Inglaterra',
       liga: 'Premier League ING',
-      data: '2026-08-29',
+      data: '29/08/2026',
       hora: '16:00',
       mandante: 'Arsenal',
       visitante: 'Chelsea',
@@ -245,7 +346,7 @@ export async function downloadFutureMatchesTemplate(format: 'xlsx' | 'csv' = 'xl
     {
       pais: 'Espanha',
       liga: 'La Liga 1 ESP',
-      data: '2026-08-30',
+      data: '30/08/2026',
       hora: '17:00',
       mandante: 'Real Madrid',
       visitante: 'Barcelona',
@@ -261,7 +362,7 @@ export async function downloadFutureMatchesTemplate(format: 'xlsx' | 'csv' = 'xl
     {
       pais: 'Brasil',
       liga: 'Brasileirão Série A',
-      data: '2026-08-30',
+      data: '30/08/2026',
       hora: '18:30',
       mandante: 'Flamengo',
       visitante: 'Palmeiras',
@@ -414,7 +515,7 @@ export async function downloadFinishedMatchesTemplate(
     {
       pais: 'Inglaterra',
       liga: 'Premier League ING',
-      data: '2026-08-23',
+      data: '23/08/2026',
       hora: '16:00',
       mandante: 'Arsenal',
       visitante: 'Chelsea',
@@ -449,7 +550,7 @@ export async function downloadFinishedMatchesTemplate(
     {
       pais: 'Espanha',
       liga: 'La Liga 1 ESP',
-      data: '2026-08-23',
+      data: '23/08/2026',
       hora: '17:00',
       mandante: 'Real Madrid',
       visitante: 'Barcelona',

@@ -22,7 +22,8 @@ import {
   parseMatchExcelOrCsvFile,
   parseFutureMatchesText,
   downloadFutureMatchesTemplate,
-  FUTURE_MATCHES_COLUMNS
+  FUTURE_MATCHES_COLUMNS,
+  formatIsoToDDMMYYYY
 } from '../utils/excelHelper';
 
 interface BulkMatchImportModalProps {
@@ -296,7 +297,7 @@ export const BulkMatchImportModal: React.FC<BulkMatchImportModalProps> = ({
               <textarea
                 value={pastedText}
                 onChange={(e) => setPastedText(e.target.value)}
-                placeholder="Pais	Liga	Data	Hora	Mandante	Visitante	Odd_Home_FT	Odd_Draw_FT	Odd_Away_FT	Odd_Over25_FT	Odd_Under25_FT	Arbitro	Estadio	Capacidade&#10;Inglaterra	Premier League ING	2026-08-29	16:00	Arsenal	Chelsea	2.10	3.40	3.50	1.85	1.95	Michael Oliver	Emirates Stadium	60704"
+                placeholder="Pais	Liga	Data	Hora	Mandante	Visitante	Odd_Home_FT	Odd_Draw_FT	Odd_Away_FT	Odd_Over25_FT	Odd_Under25_FT	Arbitro	Estadio	Capacidade&#10;Inglaterra	Premier League ING	29/08/2026	16:00	Arsenal	Chelsea	2.10	3.40	3.50	1.85	1.95	Michael Oliver	Emirates Stadium	60704"
                 rows={5}
                 className="w-full p-3 font-mono text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-slate-50"
               />
@@ -357,7 +358,7 @@ export const BulkMatchImportModal: React.FC<BulkMatchImportModalProps> = ({
                       >
                         <td className="p-2.5 font-mono text-slate-400">{row.rowIndex}</td>
                         <td className="p-2.5 font-medium text-slate-900 whitespace-nowrap">
-                          {row.matchDate ? row.matchDate.replace('T', ' ').slice(0, 16) : 'A definir'}
+                          {row.matchDate ? formatIsoToDDMMYYYY(row.matchDate) : 'A definir'}
                         </td>
                         <td className="p-2.5">
                           <div className="font-semibold text-slate-900">{row.leagueName}</div>
