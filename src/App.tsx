@@ -1289,6 +1289,8 @@ export default function App() {
                   setActiveTab('analysis');
                 }}
                 onNavigateToAnalysis={() => setActiveTab('analysis')}
+                onOpenCloudModal={() => setIsCloudModalOpen(true)}
+                onNavigateToAllMatches={() => setActiveTab('matches')}
               />
             )}
 

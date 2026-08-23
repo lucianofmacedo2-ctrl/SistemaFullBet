@@ -47,6 +47,8 @@ interface DailyMatchesViewProps {
   onOpenPressureChartModal?: (matchId: string) => void;
   onAnalyzeMatch?: (match: Match) => void;
   onNavigateToAnalysis?: () => void;
+  onOpenCloudModal?: () => void;
+  onNavigateToAllMatches?: () => void;
 }
 
 export type DaySelectionMode = 'TODAY' | 'TOMORROW' | 'AFTER_TOMORROW' | 'THREE_DAYS' | 'CUSTOM';
@@ -136,6 +138,8 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   onOpenPressureChartModal,
   onAnalyzeMatch,
   onNavigateToAnalysis,
+  onOpenCloudModal,
+  onNavigateToAllMatches,
 }) => {
   // Base reference date (today)
   const today = useMemo(() => new Date(), []);
@@ -186,6 +190,13 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   const tomorrowCount = (matchesByDateMap[tomorrowYMD] || []).length;
   const afterTomorrowCount = (matchesByDateMap[afterTomorrowYMD] || []).length;
   const threeDaysCount = todayCount + tomorrowCount + afterTomorrowCount;
+
+  // List of all dates in the database that have matches
+  const availableDatesWithMatches = useMemo(() => {
+    return Object.keys(matchesByDateMap)
+      .filter(d => (matchesByDateMap[d] || []).length > 0)
+      .sort((a, b) => a.localeCompare(b));
+  }, [matchesByDateMap]);
 
   // Active dates to filter
   const targetDates = useMemo<string[]>(() => {
@@ -634,7 +645,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
 
       {/* 3. Daily Match Cards List */}
       {dailyMatches.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center space-y-4 shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 sm:p-10 text-center space-y-5 shadow-xs">
           <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 mx-auto">
             <Calendar className="w-7 h-7" />
           </div>
@@ -642,19 +653,81 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
             <h3 className="text-base font-bold text-slate-900">
               Nenhuma partida cadastrada para {activeHeaderInfo.label.toLowerCase()}
             </h3>
-            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
-              Não encontramos jogos para {activeHeaderInfo.detail}. Você pode cadastrar um jogo agora ou importar partidas em lote.
+            <p className="text-xs text-slate-500 max-w-lg mx-auto mt-1 leading-relaxed">
+              Não foram encontrados jogos agendados para {activeHeaderInfo.detail}.
+              {dbState.matches.length > 0 && (
+                <span className="block mt-1 font-semibold text-slate-700">
+                  Seu banco de dados possui <span className="text-blue-600 font-bold">{dbState.matches.length} partidas</span> cadastradas no total.
+                </span>
+              )}
             </p>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <button
-              onClick={onOpenMatchModal}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 border border-blue-500 cursor-pointer"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" /> Cadastrar Jogo Nesta Data
-            </button>
 
-            {onOpenBulkMatchImportModal && (
+          {/* Quick jump to dates that have matches */}
+          {availableDatesWithMatches.length > 0 && (
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 max-w-xl mx-auto text-left space-y-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Datas com partidas cadastradas no sistema:</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {availableDatesWithMatches.slice(0, 10).map((dateKey) => {
+                  const info = formatFriendlyDate(dateKey);
+                  const count = (matchesByDateMap[dateKey] || []).length;
+                  return (
+                    <button
+                      key={dateKey}
+                      type="button"
+                      onClick={() => {
+                        setCustomDateYMD(dateKey);
+                        setDayMode('CUSTOM');
+                      }}
+                      className="px-2.5 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-xs font-semibold text-slate-800 hover:text-blue-700 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                    >
+                      <span>{info.subtitle}</span>
+                      <span className="px-1.5 py-0.2 bg-blue-100 text-blue-800 rounded-md text-[10px] font-black font-mono">
+                        {count} {count === 1 ? 'jogo' : 'jogos'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+            {onOpenCloudModal && (
+              <button
+                type="button"
+                onClick={onOpenCloudModal}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 border border-blue-500 cursor-pointer"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>Sincronizar com Nuvem Firestore</span>
+              </button>
+            )}
+
+            {onNavigateToAllMatches && (
+              <button
+                type="button"
+                onClick={onNavigateToAllMatches}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all border border-slate-200 cursor-pointer"
+              >
+                <LayoutGrid className="w-4 h-4 text-slate-600" />
+                <span>Ver Todas as Partidas ({dbState.matches.length})</span>
+              </button>
+            )}
+
+            {isMaster && (
+              <button
+                onClick={onOpenMatchModal}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 border border-blue-500 cursor-pointer"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" /> Cadastrar Jogo Nesta Data
+              </button>
+            )}
+
+            {isMaster && onOpenBulkMatchImportModal && (
               <button
                 onClick={onOpenBulkMatchImportModal}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
