@@ -505,6 +505,7 @@ export const MatchFormModal: React.FC<MatchFormModalProps> = ({
             <MultiMatchQuickEntry
               dbState={dbState}
               onClose={onClose}
+              onSaveMatches={onSaveMatch}
               onSaveAllMatches={onSaveMatch}
             />
           </div>

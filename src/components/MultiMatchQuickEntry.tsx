@@ -36,7 +36,11 @@ export interface MultiMatchRow {
 
 interface MultiMatchQuickEntryProps {
   dbState: DbState;
-  onSaveMatches: (
+  onSaveMatches?: (
+    updatedDbState: DbState,
+    notifications: NewEntityCreatedNotification[]
+  ) => void;
+  onSaveAllMatches?: (
     updatedDbState: DbState,
     notifications: NewEntityCreatedNotification[]
   ) => void;
@@ -46,8 +50,10 @@ interface MultiMatchQuickEntryProps {
 export const MultiMatchQuickEntry: React.FC<MultiMatchQuickEntryProps> = ({
   dbState,
   onSaveMatches,
+  onSaveAllMatches,
   onClose,
 }) => {
+  const saveCallback = onSaveMatches || onSaveAllMatches;
   // Today's date string YYYY-MM-DD
   const getTodayDateStr = () => {
     const d = new Date();
@@ -540,8 +546,12 @@ export const MultiMatchQuickEntry: React.FC<MultiMatchQuickEntryProps> = ({
         matches: currentMatches,
       };
 
-      onSaveMatches(updatedState, notifications);
-      onClose();
+      if (typeof saveCallback === 'function') {
+        saveCallback(updatedState, notifications);
+      }
+      if (typeof onClose === 'function') {
+        onClose();
+      }
     } catch (err: any) {
       setErrorMsg(err?.message || 'Erro ao processar o cadastro em lote.');
     } finally {
