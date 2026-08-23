@@ -5,26 +5,36 @@ export function getNextUniqueId(
   existingIds: (string | { id?: string } | any)[]
 ): string {
   let maxNum = 0;
-  const regex = new RegExp(`^${prefix}-(\\d+)$`, 'i');
+  const regex = new RegExp(`^${prefix}[-_]?(\\d+)$`, 'i');
+  const existingSet = new Set<string>();
 
   for (const item of existingIds) {
     if (!item) continue;
     const strId = typeof item === 'string' ? item : (typeof item === 'object' && item.id ? String(item.id) : String(item));
-    if (typeof strId === 'string' && typeof strId.match === 'function') {
-      const match = strId.match(regex);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        if (!isNaN(num) && num > maxNum) {
-          maxNum = num;
+    if (typeof strId === 'string') {
+      existingSet.add(strId);
+      if (typeof strId.match === 'function') {
+        const match = strId.match(regex);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+          }
         }
       }
     }
   }
 
-  const nextNum = maxNum + 1;
-  // Format as PAIS-001, PAIS-002, PAIS-010, PAIS-100, etc.
-  const padded = nextNum.toString().padStart(3, '0');
-  return `${prefix}-${padded}`;
+  let nextNum = maxNum + 1;
+  let candidateId = `${prefix}-${nextNum.toString().padStart(3, '0')}`;
+  
+  // Guarantee absolute uniqueness against existing set
+  while (existingSet.has(candidateId)) {
+    nextNum++;
+    candidateId = `${prefix}-${nextNum.toString().padStart(3, '0')}`;
+  }
+
+  return candidateId;
 }
 
 export function findOrCreateCountry(

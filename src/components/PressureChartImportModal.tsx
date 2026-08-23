@@ -289,8 +289,8 @@ export const PressureChartImportModal: React.FC<PressureChartImportModalProps> =
                 className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:border-blue-500 shadow-sm"
               >
                 <option value="">-- Selecione uma partida cadastrada --</option>
-                {matches.map((m) => (
-                  <option key={m.id} value={m.id}>
+                {matches.map((m, idx) => (
+                  <option key={`${m.id || 'm'}_${idx}`} value={m.id}>
                     {m.id} • {m.homeTeamName} {m.homeScore !== null ? m.homeScore : ''} x{' '}
                     {m.awayScore !== null ? m.awayScore : ''} {m.awayTeamName} ({m.leagueName} -{' '}
                     {new Date(m.matchDate).toLocaleDateString('pt-BR')})

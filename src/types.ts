@@ -21,6 +21,11 @@ export interface MatchStats {
   redCardsHomeFT?: number | null; // Cartão Vermelho Mandante FT
   redCardsAwayFT?: number | null; // Cartão Vermelho Visitante FT
 
+  // Informações de Estádio e Público
+  stadium?: string; // Estadio
+  stadiumCapacity?: number | null; // Capacidade
+  attendance?: number | null; // Publico
+
   // Posse de bola FT opcional se disponível
   possessionHomeFT?: number | null;
   possessionAwayFT?: number | null;
@@ -169,6 +174,9 @@ export interface Match {
   awayScore: number | null;
   matchDate: string; // ISO date-time string
   referee?: string; // Arbitro
+  stadium?: string; // Estadio
+  stadiumCapacity?: number | null; // Capacidade
+  attendance?: number | null; // Publico
   status: MatchStatus;
   notes?: string;
   stats?: MatchStats;

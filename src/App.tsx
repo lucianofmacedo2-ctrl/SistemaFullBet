@@ -804,49 +804,82 @@ export default function App() {
         });
       }
 
-      // 5. Create Match
-      const matchId = getNextUniqueId('JOGO', currentMatches.map(m => m.id));
-      const newMatch: Match = {
-        id: matchId,
-        countryId: countryRes.country.id,
-        countryName: countryRes.country.name,
-        countryFlagUrl: countryRes.country.flagUrl,
-        leagueId: leagueRes.league.id,
-        leagueName: leagueRes.league.name,
-        leagueLogoUrl: leagueRes.league.logoUrl,
-        homeTeamId: homeTeamRes.team.id,
-        homeTeamName: homeTeamRes.team.name,
-        homeTeamLogoUrl: homeTeamRes.team.logoUrl,
-        awayTeamId: awayTeamRes.team.id,
-        awayTeamName: awayTeamRes.team.name,
-        awayTeamLogoUrl: awayTeamRes.team.logoUrl,
-        homeScore: null,
-        awayScore: null,
-        matchDate: row.matchDate || new Date().toISOString(),
-        referee: row.referee || '',
-        status: 'AGENDADO',
-        notes: row.notes || '',
-        odds: {
-          homeFT: row.oddHomeFT ?? null,
-          drawFT: row.oddDrawFT ?? null,
-          awayFT: row.oddAwayFT ?? null,
-          over25FT: row.oddOver25FT ?? null,
-          under25FT: row.oddUnder25FT ?? null,
-          asianHandicapHomeLine: row.asianHandicapHomeLine ?? null,
-          asianHandicapHomeOdd: row.asianHandicapHomeOdd ?? null,
-          asianHandicapAwayLine: row.asianHandicapAwayLine ?? null,
-          asianHandicapAwayOdd: row.asianHandicapAwayOdd ?? null,
-        },
-        createdAt: new Date().toISOString(),
-      };
-
-      currentMatches.push(newMatch);
-
-      newNotifs.push({
-        type: 'match',
-        id: matchId,
-        name: `${homeTeamRes.team.name} x ${awayTeamRes.team.name}`,
+      // 5. Create Match or Update if already exists
+      const existingMatchIdx = currentMatches.findIndex(m => {
+        const hMatch = m.homeTeamId === homeTeamRes.team.id || m.homeTeamName.toLowerCase() === row.homeTeamName.toLowerCase();
+        const aMatch = m.awayTeamId === awayTeamRes.team.id || m.awayTeamName.toLowerCase() === row.awayTeamName.toLowerCase();
+        const dMatch = m.matchDate.slice(0, 10) === (row.matchDate ? row.matchDate.slice(0, 10) : '');
+        return hMatch && aMatch && dMatch;
       });
+
+      if (existingMatchIdx !== -1) {
+        const existing = currentMatches[existingMatchIdx];
+        const existingOdds = existing.odds || {};
+        currentMatches[existingMatchIdx] = {
+          ...existing,
+          referee: row.referee || existing.referee,
+          stadium: row.stadium || existing.stadium,
+          stadiumCapacity: row.stadiumCapacity ?? existing.stadiumCapacity,
+          odds: {
+            ...existingOdds,
+            homeFT: row.oddHomeFT !== null && row.oddHomeFT !== undefined ? row.oddHomeFT : existingOdds.homeFT,
+            drawFT: row.oddDrawFT !== null && row.oddDrawFT !== undefined ? row.oddDrawFT : existingOdds.drawFT,
+            awayFT: row.oddAwayFT !== null && row.oddAwayFT !== undefined ? row.oddAwayFT : existingOdds.awayFT,
+            over25FT: row.oddOver25FT !== null && row.oddOver25FT !== undefined ? row.oddOver25FT : existingOdds.over25FT,
+            under25FT: row.oddUnder25FT !== null && row.oddUnder25FT !== undefined ? row.oddUnder25FT : existingOdds.under25FT,
+            asianHandicapHomeLine: row.asianHandicapHomeLine ?? existingOdds.asianHandicapHomeLine,
+            asianHandicapHomeOdd: row.asianHandicapHomeOdd ?? existingOdds.asianHandicapHomeOdd,
+            asianHandicapAwayLine: row.asianHandicapAwayLine ?? existingOdds.asianHandicapAwayLine,
+            asianHandicapAwayOdd: row.asianHandicapAwayOdd ?? existingOdds.asianHandicapAwayOdd,
+          },
+        };
+      } else {
+        const matchId = getNextUniqueId('JOGO', currentMatches.map(m => m.id));
+        const newMatch: Match = {
+          id: matchId,
+          countryId: countryRes.country.id,
+          countryName: countryRes.country.name,
+          countryFlagUrl: countryRes.country.flagUrl,
+          leagueId: leagueRes.league.id,
+          leagueName: leagueRes.league.name,
+          leagueLogoUrl: leagueRes.league.logoUrl,
+          homeTeamId: homeTeamRes.team.id,
+          homeTeamName: homeTeamRes.team.name,
+          homeTeamLogoUrl: homeTeamRes.team.logoUrl,
+          awayTeamId: awayTeamRes.team.id,
+          awayTeamName: awayTeamRes.team.name,
+          awayTeamLogoUrl: awayTeamRes.team.logoUrl,
+          homeScore: null,
+          awayScore: null,
+          matchDate: row.matchDate || new Date().toISOString(),
+          referee: row.referee || '',
+          stadium: row.stadium || '',
+          stadiumCapacity: row.stadiumCapacity ?? null,
+          attendance: null,
+          status: 'AGENDADO',
+          notes: row.notes || '',
+          odds: {
+            homeFT: row.oddHomeFT ?? null,
+            drawFT: row.oddDrawFT ?? null,
+            awayFT: row.oddAwayFT ?? null,
+            over25FT: row.oddOver25FT ?? null,
+            under25FT: row.oddUnder25FT ?? null,
+            asianHandicapHomeLine: row.asianHandicapHomeLine ?? null,
+            asianHandicapHomeOdd: row.asianHandicapHomeOdd ?? null,
+            asianHandicapAwayLine: row.asianHandicapAwayLine ?? null,
+            asianHandicapAwayOdd: row.asianHandicapAwayOdd ?? null,
+          },
+          createdAt: new Date().toISOString(),
+        };
+
+        currentMatches.push(newMatch);
+
+        newNotifs.push({
+          type: 'match',
+          id: matchId,
+          name: `${homeTeamRes.team.name} x ${awayTeamRes.team.name}`,
+        });
+      }
     }
 
     const newState: DbState = {
@@ -864,7 +897,7 @@ export default function App() {
     }
   };
 
-  // Bulk Update Matches (Complete Missing Data)
+  // Bulk Update Matches (Complete Missing Data / Finalized Matches Auto-Merge)
   const handleBulkUpdateMatches = async (rows: ParsedMatchUpdateRow[]) => {
     let currentCountries = [...dbState.countries];
     let currentLeagues = [...dbState.leagues];
@@ -875,10 +908,23 @@ export default function App() {
     for (const row of rows) {
       if (!row.isValid) continue;
 
-      // Check if this row matches an existing match (by matchedMatch or matchId)
-      const existingMatchIndex = currentMatches.findIndex(
-        m => (row.matchId && m.id === row.matchId) || (row.matchedMatch && m.id === row.matchedMatch.id)
-      );
+      // Check if this row matches an existing match (by matchedMatch, matchId, or by team names + date)
+      const existingMatchIndex = currentMatches.findIndex(m => {
+        if (row.matchId && m.id === row.matchId) return true;
+        if (row.matchedMatch && m.id === row.matchedMatch.id) return true;
+        const normH = m.homeTeamName.toLowerCase().trim();
+        const normA = m.awayTeamName.toLowerCase().trim();
+        const rowH = row.homeTeamName.toLowerCase().trim();
+        const rowA = row.awayTeamName.toLowerCase().trim();
+        const isSameTeams = normH === rowH && normA === rowA;
+        if (!isSameTeams) return false;
+
+        const mDate = m.matchDate.slice(0, 10);
+        const rDate = row.matchDate.slice(0, 10);
+        if (mDate === rDate) return true;
+        if (m.status === 'AGENDADO') return true;
+        return false;
+      });
 
       if (existingMatchIndex !== -1) {
         const existing = currentMatches[existingMatchIndex];
@@ -896,8 +942,8 @@ export default function App() {
         };
 
         // Determine new scores
-        const homeScore = row.homeScore !== null ? row.homeScore : existing.homeScore;
-        const awayScore = row.awayScore !== null ? row.awayScore : existing.awayScore;
+        const homeScore = row.homeScore !== null && row.homeScore !== undefined ? row.homeScore : existing.homeScore;
+        const awayScore = row.awayScore !== null && row.awayScore !== undefined ? row.awayScore : existing.awayScore;
 
         // Determine status
         let newStatus = existing.status;
@@ -910,8 +956,8 @@ export default function App() {
         // Updated Stats merge
         const updatedStats: MatchStats = {
           ...existingStats,
-          halftimeHomeScore: row.halftimeHomeScore !== null ? row.halftimeHomeScore : existingStats.halftimeHomeScore,
-          halftimeAwayScore: row.halftimeAwayScore !== null ? row.halftimeAwayScore : existingStats.halftimeAwayScore,
+          halftimeHomeScore: row.halftimeHomeScore !== null && row.halftimeHomeScore !== undefined ? row.halftimeHomeScore : existingStats.halftimeHomeScore,
+          halftimeAwayScore: row.halftimeAwayScore !== null && row.halftimeAwayScore !== undefined ? row.halftimeAwayScore : existingStats.halftimeAwayScore,
           xgHomeFT: row.xgHomeFT !== null && row.xgHomeFT !== undefined ? row.xgHomeFT : existingStats.xgHomeFT,
           xgAwayFT: row.xgAwayFT !== null && row.xgAwayFT !== undefined ? row.xgAwayFT : existingStats.xgAwayFT,
           shotsHomeFT: row.shotsHomeFT !== null && row.shotsHomeFT !== undefined ? row.shotsHomeFT : existingStats.shotsHomeFT,
@@ -926,25 +972,31 @@ export default function App() {
           yellowCardsAwayFT: row.yellowCardsAwayFT !== null && row.yellowCardsAwayFT !== undefined ? row.yellowCardsAwayFT : existingStats.yellowCardsAwayFT,
           redCardsHomeFT: row.redCardsHomeFT !== null && row.redCardsHomeFT !== undefined ? row.redCardsHomeFT : existingStats.redCardsHomeFT,
           redCardsAwayFT: row.redCardsAwayFT !== null && row.redCardsAwayFT !== undefined ? row.redCardsAwayFT : existingStats.redCardsAwayFT,
+          stadium: row.stadium || existingStats.stadium || existing.stadium || '',
+          stadiumCapacity: row.stadiumCapacity ?? existingStats.stadiumCapacity ?? existing.stadiumCapacity ?? null,
+          attendance: row.attendance ?? existingStats.attendance ?? existing.attendance ?? null,
         };
 
         // Updated Odds merge
         const updatedOdds: MatchOdds = {
-          homeFT: row.oddHomeFT !== null ? row.oddHomeFT : existingOdds.homeFT,
-          drawFT: row.oddDrawFT !== null ? row.oddDrawFT : existingOdds.drawFT,
-          awayFT: row.oddAwayFT !== null ? row.oddAwayFT : existingOdds.awayFT,
-          over25FT: row.oddOver25FT !== null ? row.oddOver25FT : existingOdds.over25FT,
-          under25FT: row.oddUnder25FT !== null ? row.oddUnder25FT : existingOdds.under25FT,
-          asianHandicapHomeLine: row.asianHandicapHomeLine !== null ? row.asianHandicapHomeLine : existingOdds.asianHandicapHomeLine,
-          asianHandicapHomeOdd: row.asianHandicapHomeOdd !== null ? row.asianHandicapHomeOdd : existingOdds.asianHandicapHomeOdd,
-          asianHandicapAwayLine: row.asianHandicapAwayLine !== null ? row.asianHandicapAwayLine : existingOdds.asianHandicapAwayLine,
-          asianHandicapAwayOdd: row.asianHandicapAwayOdd !== null ? row.asianHandicapAwayOdd : existingOdds.asianHandicapAwayOdd,
+          homeFT: row.oddHomeFT !== null && row.oddHomeFT !== undefined ? row.oddHomeFT : existingOdds.homeFT,
+          drawFT: row.oddDrawFT !== null && row.oddDrawFT !== undefined ? row.oddDrawFT : existingOdds.drawFT,
+          awayFT: row.oddAwayFT !== null && row.oddAwayFT !== undefined ? row.oddAwayFT : existingOdds.awayFT,
+          over25FT: row.oddOver25FT !== null && row.oddOver25FT !== undefined ? row.oddOver25FT : existingOdds.over25FT,
+          under25FT: row.oddUnder25FT !== null && row.oddUnder25FT !== undefined ? row.oddUnder25FT : existingOdds.under25FT,
+          asianHandicapHomeLine: row.asianHandicapHomeLine ?? existingOdds.asianHandicapHomeLine,
+          asianHandicapHomeOdd: row.asianHandicapHomeOdd ?? existingOdds.asianHandicapHomeOdd,
+          asianHandicapAwayLine: row.asianHandicapAwayLine ?? existingOdds.asianHandicapAwayLine,
+          asianHandicapAwayOdd: row.asianHandicapAwayOdd ?? existingOdds.asianHandicapAwayOdd,
         };
 
         const updatedMatch: Match = {
           ...existing,
           matchDate: row.matchDate || existing.matchDate,
           referee: row.referee || existing.referee,
+          stadium: row.stadium || existing.stadium || '',
+          stadiumCapacity: row.stadiumCapacity ?? existing.stadiumCapacity ?? null,
+          attendance: row.attendance ?? existing.attendance ?? null,
           notes: row.notes !== undefined && row.notes !== '' ? row.notes : existing.notes,
           homeScore,
           awayScore,
@@ -954,6 +1006,11 @@ export default function App() {
         };
 
         currentMatches[existingMatchIndex] = updatedMatch;
+        newNotifs.push({
+          type: 'match',
+          id: existing.id,
+          name: `${existing.homeTeamName} ${homeScore ?? 0} x ${awayScore ?? 0} ${existing.awayTeamName} (Atualizado)`,
+        });
       } else {
         // New match creation flow (if row is completely new)
         const countryRes = findOrCreateCountry(row.countryName || 'Outro', currentCountries);
@@ -1010,6 +1067,9 @@ export default function App() {
           awayScore: row.awayScore,
           matchDate: row.matchDate || new Date().toISOString(),
           referee: row.referee || '',
+          stadium: row.stadium || '',
+          stadiumCapacity: row.stadiumCapacity ?? null,
+          attendance: row.attendance ?? null,
           status: row.status || (row.homeScore !== null && row.awayScore !== null ? 'FINALIZADO' : 'AGENDADO'),
           notes: row.notes || '',
           odds: {
@@ -1040,6 +1100,9 @@ export default function App() {
             yellowCardsAwayFT: row.yellowCardsAwayFT ?? null,
             redCardsHomeFT: row.redCardsHomeFT ?? null,
             redCardsAwayFT: row.redCardsAwayFT ?? null,
+            stadium: row.stadium || '',
+            stadiumCapacity: row.stadiumCapacity ?? null,
+            attendance: row.attendance ?? null,
           },
           createdAt: new Date().toISOString(),
         };

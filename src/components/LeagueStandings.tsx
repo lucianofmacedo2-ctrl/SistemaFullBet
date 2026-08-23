@@ -676,14 +676,14 @@ export const LeagueStandings: React.FC<LeagueStandingsProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
-                    {rows.map((row) => {
+                    {rows.map((row, idx) => {
                       const isHighlightedHome = row.teamId === highlightHomeTeamId;
                       const isHighlightedAway = row.teamId === highlightAwayTeamId;
                       const zone = row.zone;
 
                       return (
                         <tr
-                          key={row.teamId}
+                          key={`${row.teamId || 'team'}_${idx}`}
                           className={`transition-colors relative group ${
                             isHighlightedHome
                               ? 'bg-blue-100/90 font-bold ring-2 ring-blue-500 ring-inset'
@@ -933,7 +933,7 @@ export const LeagueStandings: React.FC<LeagueStandingsProps> = ({
                     const isUnderperforming = row.xPointsDiff < -2.5;
 
                     return (
-                      <tr key={row.teamId} className="hover:bg-slate-50 transition-colors">
+                      <tr key={`${row.teamId || 'xp'}_${idx}`} className="hover:bg-slate-50 transition-colors">
                         <td className="p-3.5 text-center font-mono font-bold text-slate-600">
                           {row.position}º
                         </td>
@@ -1067,8 +1067,8 @@ export const LeagueStandings: React.FC<LeagueStandingsProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {rows.map((row) => (
-                    <tr key={row.teamId} className="hover:bg-slate-50 transition-colors">
+                  {rows.map((row, idx) => (
+                    <tr key={`${row.teamId || 'goal'}_${idx}`} className="hover:bg-slate-50 transition-colors">
                       <td className="p-3.5 text-center font-mono font-bold text-slate-600">
                         {row.position}º
                       </td>
@@ -1182,8 +1182,8 @@ export const LeagueStandings: React.FC<LeagueStandingsProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {[...rows].sort((a, b) => b.homeDominanceFactor - a.homeDominanceFactor).map((row) => (
-                    <tr key={row.teamId} className="hover:bg-slate-50 transition-colors">
+                  {[...rows].sort((a, b) => b.homeDominanceFactor - a.homeDominanceFactor).map((row, idx) => (
+                    <tr key={`${row.teamId || 'home'}_${idx}`} className="hover:bg-slate-50 transition-colors">
                       <td className="p-3.5 text-center font-mono font-bold text-slate-600">
                         {row.position}º
                       </td>

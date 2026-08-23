@@ -259,19 +259,41 @@ export const Navbar: React.FC<NavbarProps> = ({
                         Ferramentas de Carga & Massa
                       </div>
 
+                      {onOpenBulkMatchImportModal && (
+                        <button
+                          onClick={() => {
+                            setIsImportMenuOpen(false);
+                            onOpenBulkMatchImportModal();
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-900 flex items-center gap-2 transition-colors border-t border-slate-50"
+                        >
+                          <CalendarDays className="w-4 h-4 text-blue-600 shrink-0" />
+                          <div>
+                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                              Planilha: Jogos Futuros
+                              <span className="text-[9px] bg-blue-100 text-blue-800 font-bold px-1.5 py-0.2 rounded">14 Cols</span>
+                            </div>
+                            <div className="text-[10px] text-slate-500">Cadastre pré-jogo, estádio, odds e árbitro</div>
+                          </div>
+                        </button>
+                      )}
+
                       {onOpenBulkMatchUpdateModal && (
                         <button
                           onClick={() => {
                             setIsImportMenuOpen(false);
                             onOpenBulkMatchUpdateModal();
                           }}
-                          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 flex items-center justify-between transition-colors"
+                          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-teal-50 hover:text-teal-900 flex items-center justify-between transition-colors border-t border-slate-50"
                         >
                           <div className="flex items-center gap-2">
-                            <UploadCloud className="w-4 h-4 text-indigo-600 shrink-0" />
+                            <UploadCloud className="w-4 h-4 text-teal-600 shrink-0" />
                             <div>
-                              <div className="font-bold text-slate-900">Subir Dados em Massa</div>
-                              <div className="text-[10px] text-slate-500">Planilha de jogos pendentes</div>
+                              <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                                Planilha: Jogos Finalizados
+                                <span className="text-[9px] bg-teal-100 text-teal-800 font-bold px-1.5 py-0.2 rounded">33 Cols</span>
+                              </div>
+                              <div className="text-[10px] text-slate-500">Resultados, xG, stats e auto-merge no banco</div>
                             </div>
                           </div>
                           {incompleteMatchesCount > 0 && (
@@ -294,22 +316,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <div>
                             <div className="font-bold text-slate-900">Subir CSV Consolidado</div>
                             <div className="text-[10px] text-slate-500">Auto-cadastra ligas, times e odds</div>
-                          </div>
-                        </button>
-                      )}
-
-                      {onOpenBulkMatchImportModal && (
-                        <button
-                          onClick={() => {
-                            setIsImportMenuOpen(false);
-                            onOpenBulkMatchImportModal();
-                          }}
-                          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-900 flex items-center gap-2 transition-colors border-t border-slate-50"
-                        >
-                          <CalendarDays className="w-4 h-4 text-blue-600 shrink-0" />
-                          <div>
-                            <div className="font-bold text-slate-900">Importar Jogos Futuros</div>
-                            <div className="text-[10px] text-slate-500">Planilha Excel (.xlsx)</div>
                           </div>
                         </button>
                       )}
@@ -591,23 +597,37 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-2xs space-y-2">
                 <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 pb-1.5 border-b border-slate-100">
                   <UploadCloud className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>Importações & Cargas</span>
+                  <span>Importações & Planilhas</span>
                 </div>
                 <div className="space-y-1.5">
+                  {onOpenBulkMatchImportModal && (
+                    <button
+                      onClick={() => {
+                        setIsMasterPanelOpen(false);
+                        onOpenBulkMatchImportModal();
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 rounded-lg text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <CalendarDays className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Planilha Jogos Futuros</span>
+                      </div>
+                      <span className="text-[9px] bg-blue-200 text-blue-900 font-bold px-1 rounded">14 cols</span>
+                    </button>
+                  )}
                   {onOpenBulkMatchUpdateModal && (
                     <button
                       onClick={() => {
                         setIsMasterPanelOpen(false);
                         onOpenBulkMatchUpdateModal();
                       }}
-                      className="w-full text-left px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                      className="w-full text-left px-2.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-900 rounded-lg text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
                     >
-                      <span className="truncate">Subir Dados em Massa</span>
-                      {incompleteMatchesCount > 0 && (
-                        <span className="px-1.5 py-0.2 bg-amber-500 text-white text-[10px] font-bold rounded-full">
-                          {incompleteMatchesCount}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        <UploadCloud className="w-3.5 h-3.5 text-teal-600" />
+                        <span>Planilha Jogos Finalizados</span>
+                      </div>
+                      <span className="text-[9px] bg-teal-200 text-teal-900 font-bold px-1 rounded">33 cols</span>
                     </button>
                   )}
                   {onOpenCsvImportModal && (
@@ -620,18 +640,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       <span>Subir CSV Consolidado</span>
                       <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-                    </button>
-                  )}
-                  {onOpenBulkMatchImportModal && (
-                    <button
-                      onClick={() => {
-                        setIsMasterPanelOpen(false);
-                        onOpenBulkMatchImportModal();
-                      }}
-                      className="w-full text-left px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
-                    >
-                      <span>Importar Jogos Futuros (.xlsx)</span>
-                      <CalendarDays className="w-3.5 h-3.5 text-blue-600" />
                     </button>
                   )}
                   {onOpenBulkImportModal && (

@@ -329,15 +329,27 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
     cleanedTeams.push(cloned);
   }
 
-  // 2. Corrigir referências nas partidas
+  // 2. Corrigir referências, deduplicar e garantir IDs únicos nas partidas
   const teamById = new Map<string, Team>(cleanedTeams.map(t => [t.id, t]));
-  const teamByCountryAndName = new Map<string, Team>();
-  cleanedTeams.forEach(t => {
-    teamByCountryAndName.set(`${t.countryId}_${t.name.trim().toLowerCase()}`, t);
-    teamByCountryAndName.set(t.name.trim().toLowerCase(), t);
-  });
+  const seenMatchIds = new Set<string>();
+  const seenMatchSignatures = new Map<string, Match>();
+  const cleanedMatches: Match[] = [];
 
-  const cleanedMatches = matches.map(m => {
+  // Calcular o maior ID de partida já existente para resolver conflitos de ID
+  let maxMatchNum = 0;
+  const matchNumRegex = /^JOGO[-_]?(\d+)$/i;
+  for (const m of matches) {
+    if (m?.id) {
+      const matchFound = String(m.id).match(matchNumRegex);
+      if (matchFound) {
+        const n = parseInt(matchFound[1], 10);
+        if (!isNaN(n) && n > maxMatchNum) maxMatchNum = n;
+      }
+    }
+  }
+
+  for (const m of matches) {
+    if (!m) continue;
     let matchModified = false;
     const match = { ...m };
 
@@ -380,12 +392,45 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
       }
     }
 
+    // Identificar e mesclar jogos idênticos (mesma data e mesmos times)
+    const matchDateYmd = match.matchDate ? match.matchDate.substring(0, 10) : 'NO_DATE';
+    const normHome = (match.homeTeamName || '').trim().toLowerCase();
+    const normAway = (match.awayTeamName || '').trim().toLowerCase();
+    const matchSig = `${matchDateYmd}__${normHome}__vs__${normAway}`;
+
+    if (normHome && normAway && seenMatchSignatures.has(matchSig)) {
+      const existingMatch = seenMatchSignatures.get(matchSig)!;
+      // Mesclar propriedades caso a cópia duplicada tenha preenchimentos mais recentes
+      if (existingMatch.homeScore === null && match.homeScore !== null) existingMatch.homeScore = match.homeScore;
+      if (existingMatch.awayScore === null && match.awayScore !== null) existingMatch.awayScore = match.awayScore;
+      if (!existingMatch.stats && match.stats) existingMatch.stats = match.stats;
+      if (!existingMatch.odds && match.odds) existingMatch.odds = match.odds;
+      if (!existingMatch.pressureData && match.pressureData) existingMatch.pressureData = match.pressureData;
+      stats.duplicatesRemoved++;
+      stats.details.push(`Partida duplicada mesclada: ${match.homeTeamName} x ${match.awayTeamName} (${matchDateYmd}).`);
+      continue;
+    }
+
+    // Garantir que o ID da partida seja único e não duplique (ex: JOGO-100)
+    if (!match.id || seenMatchIds.has(match.id)) {
+      maxMatchNum++;
+      const newId = `JOGO-${String(maxMatchNum).padStart(3, '0')}`;
+      stats.details.push(`ID duplicado corrigido: Partida "${match.homeTeamName} x ${match.awayTeamName}" reatribuída de "${match.id}" para "${newId}".`);
+      match.id = newId;
+      matchModified = true;
+    }
+
+    seenMatchIds.add(match.id);
+    if (normHome && normAway) {
+      seenMatchSignatures.set(matchSig, match);
+    }
+
     if (matchModified) {
       stats.matchesFixed++;
     }
 
-    return match;
-  });
+    cleanedMatches.push(match);
+  }
 
   return {
     cleanedDb: {

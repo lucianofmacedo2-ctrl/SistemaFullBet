@@ -235,6 +235,11 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
       // Posse FT opcional
       possessionHomeFT: parseIntOrNull(possHomeFT),
       possessionAwayFT: parseIntOrNull(possAwayFT),
+
+      // Estádio, Público e Capacidade
+      stadium: match.stadium || match.stats?.stadium || '',
+      stadiumCapacity: match.stadiumCapacity ?? match.stats?.stadiumCapacity ?? null,
+      attendance: match.attendance ?? match.stats?.attendance ?? null,
     };
 
     onSaveStats(

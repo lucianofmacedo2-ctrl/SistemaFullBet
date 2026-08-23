@@ -873,7 +873,7 @@ export const MatchList: React.FC<MatchListProps> = ({
 
               {!collapsedSections['full100'] && (
                 <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                  {full100Group.map(match => renderMatchCard(match))}
+                  {full100Group.map((match, idx) => renderMatchCard(match, `full_${idx}`))}
                 </div>
               )}
             </div>
@@ -914,7 +914,7 @@ export const MatchList: React.FC<MatchListProps> = ({
 
               {!collapsedSections['preMatch'] && (
                 <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                  {preMatchScheduled.map(match => renderMatchCard(match))}
+                  {preMatchScheduled.map((match, idx) => renderMatchCard(match, `pre_${idx}`))}
                 </div>
               )}
             </div>
@@ -955,7 +955,7 @@ export const MatchList: React.FC<MatchListProps> = ({
 
               {!collapsedSections['incomplete'] && (
                 <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                  {incompleteScheduled.map(match => renderMatchCard(match))}
+                  {incompleteScheduled.map((match, idx) => renderMatchCard(match, `inc_${idx}`))}
                 </div>
               )}
             </div>
@@ -993,7 +993,7 @@ export const MatchList: React.FC<MatchListProps> = ({
 
               {!collapsedSections['other'] && (
                 <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                  {otherMatches.map(match => renderMatchCard(match))}
+                  {otherMatches.map((match, idx) => renderMatchCard(match, `oth_${idx}`))}
                 </div>
               )}
             </div>
@@ -1004,7 +1004,7 @@ export const MatchList: React.FC<MatchListProps> = ({
   );
 
   // Helper function to render individual match card
-  function renderMatchCard(match: Match) {
+  function renderMatchCard(match: Match, keySuffix?: string | number) {
     const isExpanded = expandedStatsMatchId === match.id;
     const fullComp = checkMatchFullCompleteness(match);
     const hasStats = fullComp.hasStats;
@@ -1031,7 +1031,7 @@ export const MatchList: React.FC<MatchListProps> = ({
 
     return (
       <div
-        key={match.id}
+        key={keySuffix !== undefined ? `${match.id || 'm'}_${keySuffix}` : (match.id || 'match')}
         className={`${
           fullComp.is100PercentComplete
             ? 'bg-linear-to-b from-emerald-50/80 via-white to-teal-50/30 border-2 border-emerald-500 shadow-md ring-4 ring-emerald-500/20 hover:border-emerald-600'

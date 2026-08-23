@@ -301,9 +301,9 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             </div>
 
             <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
-              {filteredMatchesForPicker.map(m => (
+              {filteredMatchesForPicker.map((m, idx) => (
                 <div
-                  key={m.id}
+                  key={`${m.id || 'm'}_${idx}`}
                   onClick={() => handleSelectFromMatch(m)}
                   className="flex items-center justify-between p-2.5 bg-white hover:bg-blue-50/80 rounded-xl border border-slate-200 hover:border-blue-300 transition-all cursor-pointer text-xs"
                 >

@@ -782,7 +782,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
           </div>
 
           <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-            {dailyMatches.map(match => {
+            {dailyMatches.map((match, idx) => {
               const fullComp = checkMatchFullCompleteness(match);
               const isExpanded = expandedMatchId === match.id;
               const matchTime = extractTime(match.matchDate);
@@ -811,7 +811,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
 
               return (
                 <div
-                  key={match.id}
+                  key={`${match.id || 'match'}_${idx}`}
                   className={`${
                     fullComp.is100PercentComplete
                       ? 'bg-linear-to-b from-emerald-50/80 via-white to-teal-50/30 border-2 border-emerald-500 shadow-md ring-3 ring-emerald-500/20 hover:border-emerald-600'
@@ -1016,8 +1016,24 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
                   {/* Match Location & Referee Info */}
                   <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-200 gap-2">
                     <div className="flex items-center gap-3 flex-wrap">
+                      {(match.stadium || match.stats?.stadium) && (
+                        <span className="text-slate-700 flex items-center gap-1 font-medium">
+                          📍 {match.stadium || match.stats?.stadium}
+                          {(match.stadiumCapacity || match.stats?.stadiumCapacity) ? (
+                            <span className="text-slate-400">
+                              (Cap: {(match.stadiumCapacity || match.stats?.stadiumCapacity)?.toLocaleString('pt-BR')})
+                            </span>
+                          ) : null}
+                          {(match.attendance || match.stats?.attendance) ? (
+                            <span className="text-slate-600 font-semibold ml-1">
+                              • Público: {(match.attendance || match.stats?.attendance)?.toLocaleString('pt-BR')}
+                            </span>
+                          ) : null}
+                        </span>
+                      )}
+
                       {match.referee && (
-                        <span className="text-slate-600">
+                        <span className="text-slate-600 flex items-center gap-1">
                           🧑‍⚖️ {match.referee}
                         </span>
                       )}
