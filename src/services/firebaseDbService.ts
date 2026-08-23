@@ -72,8 +72,9 @@ function sanitizeForFirestore<T>(data: T): T {
   }));
 }
 
-// Chunking helper to respect Firestore document size limit (1MB max per doc)
-const CHUNK_SIZE = 300; // max items per chunk
+// Chunking helpers to strictly respect Firestore document size limit (1MB max per doc)
+const MATCH_CHUNK_SIZE = 50; // max 50 matches per doc (~150-200 KB, well under 1MB)
+const TEAM_CHUNK_SIZE = 150; // max 150 teams per doc (~50 KB, well under 1MB)
 const COLLECTION_NAME = 'app_data';
 
 export interface CloudSyncStats {
@@ -125,7 +126,7 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
 
     // 4. Teams (Chunked if needed)
     const teams = state.teams || [];
-    const teamChunks = Math.ceil(teams.length / CHUNK_SIZE) || 1;
+    const teamChunks = Math.ceil(teams.length / TEAM_CHUNK_SIZE) || 1;
     await setDoc(doc(db, COLLECTION_NAME, 'teams_meta'), {
       total: teams.length,
       chunks: teamChunks,
@@ -133,14 +134,14 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
     });
 
     for (let i = 0; i < teamChunks; i++) {
-      const chunkTeams = teams.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+      const chunkTeams = teams.slice(i * TEAM_CHUNK_SIZE, (i + 1) * TEAM_CHUNK_SIZE);
       const cleanChunk = sanitizeForFirestore(chunkTeams);
       await setDoc(doc(db, COLLECTION_NAME, `teams_${i}`), { list: cleanChunk });
     }
 
     // 5. Matches (Chunked if needed)
     const matches = state.matches || [];
-    const matchChunks = Math.ceil(matches.length / CHUNK_SIZE) || 1;
+    const matchChunks = Math.ceil(matches.length / MATCH_CHUNK_SIZE) || 1;
     await setDoc(doc(db, COLLECTION_NAME, 'matches_meta'), {
       total: matches.length,
       chunks: matchChunks,
@@ -148,7 +149,7 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
     });
 
     for (let i = 0; i < matchChunks; i++) {
-      const chunkMatches = matches.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+      const chunkMatches = matches.slice(i * MATCH_CHUNK_SIZE, (i + 1) * MATCH_CHUNK_SIZE);
       const cleanChunk = sanitizeForFirestore(chunkMatches);
       await setDoc(doc(db, COLLECTION_NAME, `matches_${i}`), { list: cleanChunk });
     }
