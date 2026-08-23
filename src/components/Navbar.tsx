@@ -61,6 +61,7 @@ interface NavbarProps {
   onOpenOpportunitiesHub?: () => void;
   onOpenBankrollTracker?: () => void;
   onOpenTeamsReportModal?: () => void;
+  onOpenCloudModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -84,6 +85,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenOpportunitiesHub,
   onOpenBankrollTracker,
   onOpenTeamsReportModal,
+  onOpenCloudModal,
 }) => {
   const isMaster = currentUser?.role === 'MASTER';
   const effStatus = currentUser ? getUserEffectiveStatus(currentUser) : null;
@@ -203,6 +205,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* MASTER-ONLY QUICK ACTIONS (Compact, Accessible, No Overflow) */}
             {isMaster ? (
               <div className="flex items-center gap-1.5 sm:gap-2">
+                {/* Nuvem Firestore (Ao Vivo) Button */}
+                {onOpenCloudModal && (
+                  <button
+                    onClick={onOpenCloudModal}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm rounded-lg shadow-sm shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                    title="Central de Controle da Nuvem Firestore (Ao Vivo)"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="hidden sm:inline">Nuvem Firestore</span>
+                    <span className="sm:hidden">Nuvem</span>
+                  </button>
+                )}
+
                 {/* 1. Cadastrar Jogo */}
                 <button
                   onClick={onOpenMatchModal}
@@ -693,6 +708,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span>Banco & Manutenção</span>
                 </div>
                 <div className="space-y-1.5">
+                  {onOpenCloudModal && (
+                    <button
+                      onClick={() => {
+                        setIsMasterPanelOpen(false);
+                        onOpenCloudModal();
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-900 rounded-lg text-xs font-bold flex items-center justify-between transition-colors cursor-pointer border border-blue-200"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                        <span>Nuvem Firestore (Ao Vivo)</span>
+                      </div>
+                      <span className="text-[10px] text-emerald-700 font-black">SYNC</span>
+                    </button>
+                  )}
+
                   {onOpenSanitizerModal && (
                     <button
                       onClick={() => {

@@ -215,6 +215,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <ArrowRight className="w-4 h-4" />
           </button>
 
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 font-medium pt-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            <span>Sessão segura persistente de 8 horas ativada</span>
+          </div>
+
           {allowClose && onClose && (
             <div className="pt-2 text-center">
               <button

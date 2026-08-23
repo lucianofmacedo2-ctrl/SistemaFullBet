@@ -38,6 +38,7 @@ import { AccessExpiredOverlay } from './components/AccessExpiredOverlay';
 import { ToastNotification } from './components/ToastNotification';
 import { TeamsReportModal } from './components/TeamsReportModal';
 import { DbSanitizerModal } from './components/DbSanitizerModal';
+import { CloudSyncModal } from './components/CloudSyncModal';
 import { MatchOdds, MatchStats, MatchStatus, MatchPressureData } from './types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from './utils/idGenerator';
 import { ParsedMatchRow, ParsedMatchUpdateRow } from './utils/excelHelper';
@@ -50,7 +51,12 @@ import {
   DEFAULT_MASTER_USER,
   DEFAULT_CONSULTA_USER,
   decodeUserFromToken,
+  touchUserActivity,
 } from './services/authService';
+import {
+  subscribeToFirestoreSync,
+  fetchDbFromFirestore,
+} from './services/firebaseDbService';
 import defaultDatabaseData from './data/defaultDatabase.json';
 
 export default function App() {
@@ -105,6 +111,7 @@ export default function App() {
   const [pressureSelectedMatchId, setPressureSelectedMatchId] = useState<string | null>(null);
   const [isTeamsReportModalOpen, setIsTeamsReportModalOpen] = useState(false);
   const [isSanitizerModalOpen, setIsSanitizerModalOpen] = useState(false);
+  const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
 
   // Opportunities Hub & Bankroll Tracker Modals
   const [isOpportunitiesHubOpen, setIsOpportunitiesHubOpen] = useState(false);
@@ -252,6 +259,42 @@ export default function App() {
       setIsLoading(false);
     }
     initDb();
+
+    // 1. Subscribe to real-time bi-directional Firestore cloud synchronization
+    const unsubscribe = subscribeToFirestoreSync(
+      (cloudDb) => {
+        if (!cloudDb) return;
+        setDbState(prev => {
+          // If cloud data is richer or updated, seamlessly update local UI
+          return {
+            countries: cloudDb.countries?.length > 0 ? cloudDb.countries : prev.countries,
+            leagues: cloudDb.leagues?.length > 0 ? cloudDb.leagues : prev.leagues,
+            teams: cloudDb.teams?.length > 0 ? cloudDb.teams : prev.teams,
+            matches: cloudDb.matches?.length > 0 ? cloudDb.matches : prev.matches,
+            users: ensureDefaultUsers(cloudDb.users?.length > 0 ? cloudDb.users : prev.users),
+          };
+        });
+      },
+      (err) => {
+        console.warn('Realtime cloud sync notification:', err.message);
+      }
+    );
+
+    // 2. Activity tracker to maintain sliding 8-hour session window
+    const handleUserInteraction = () => {
+      touchUserActivity();
+    };
+
+    window.addEventListener('click', handleUserInteraction);
+    window.addEventListener('keydown', handleUserInteraction);
+    window.addEventListener('touchstart', handleUserInteraction);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('click', handleUserInteraction);
+      window.removeEventListener('keydown', handleUserInteraction);
+      window.removeEventListener('touchstart', handleUserInteraction);
+    };
   }, []);
 
   const handleLoginSuccess = (user: AppUser) => {
@@ -1195,6 +1238,7 @@ export default function App() {
         onOpenOpportunitiesHub={() => setIsOpportunitiesHubOpen(true)}
         onOpenBankrollTracker={() => setIsBankrollTrackerOpen(true)}
         onOpenTeamsReportModal={() => setIsTeamsReportModalOpen(true)}
+        onOpenCloudModal={() => setIsCloudModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -1495,6 +1539,26 @@ export default function App() {
         onClose={() => setIsSanitizerModalOpen(false)}
         dbState={dbState}
         onApplyCleanedDb={handleApplyCleanedDb}
+      />
+
+      {/* Central de Controle da Nuvem Firestore (Ao Vivo) */}
+      <CloudSyncModal
+        isOpen={isCloudModalOpen}
+        onClose={() => setIsCloudModalOpen(false)}
+        dbState={dbState}
+        onApplyCloudDb={async (cloudDb) => {
+          setDbState(cloudDb);
+          setNotifications(prev => [
+            ...prev,
+            {
+              id: `cloud-sync-${Date.now()}`,
+              type: 'team',
+              entityId: 'FIRESTORE',
+              name: 'Banco de Dados Sincronizado com a Nuvem Firestore!',
+              timestamp: Date.now(),
+            },
+          ]);
+        }}
       />
 
       {/* Unique ID Toast Notifications */}

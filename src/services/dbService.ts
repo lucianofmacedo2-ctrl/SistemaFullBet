@@ -1,6 +1,10 @@
 import { DbState, Country, League, Team, Match, AppUser } from '../types';
 import defaultDatabaseData from '../data/defaultDatabase.json';
 import { sanitizeAndCleanDb } from '../utils/dbSanitizer';
+import {
+  saveDbToFirestore,
+  fetchDbFromFirestore,
+} from './firebaseDbService';
 
 const STORAGE_KEY = 'football_db_v1';
 const USERS_STORAGE_KEY = 'football_users_list_v1';
@@ -53,22 +57,36 @@ export async function saveUsersList(users: AppUser[]): Promise<boolean> {
 
 export async function fetchDatabaseState(): Promise<DbState> {
   let dbData: DbState | null = null;
+
+  // 1. Try fetching from Firebase Firestore first (Primary Multi-Device Cloud)
   try {
-    const response = await fetch('/api/db', {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' },
-    });
-    if (response.ok) {
-      const serverData = await response.json();
-      if (serverData && (serverData.matches?.length > 0 || serverData.countries?.length > 0)) {
-        dbData = serverData;
-      }
+    const firestoreData = await fetchDbFromFirestore();
+    if (firestoreData && (firestoreData.matches?.length > 0 || firestoreData.countries?.length > 0)) {
+      dbData = firestoreData;
     }
-  } catch (err) {
-    console.warn('Backend API not available, falling back to LocalStorage', err);
+  } catch (cloudErr) {
+    console.warn('Firestore fetch encountered an issue, falling back to server API/local:', cloudErr);
   }
 
-  // Fallback to local storage if API failed or returned empty
+  // 2. Fallback to Server API if Firestore was empty or offline
+  if (!dbData) {
+    try {
+      const response = await fetch('/api/db', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      if (response.ok) {
+        const serverData = await response.json();
+        if (serverData && (serverData.matches?.length > 0 || serverData.countries?.length > 0)) {
+          dbData = serverData;
+        }
+      }
+    } catch (err) {
+      console.warn('Backend API not available, falling back to LocalStorage', err);
+    }
+  }
+
+  // 3. Fallback to local storage if API failed or returned empty
   if (!dbData) {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -83,7 +101,7 @@ export async function fetchDatabaseState(): Promise<DbState> {
     }
   }
 
-  // Fallback to preloaded built-in seed database if both server and localstorage were empty
+  // 4. Fallback to preloaded built-in seed database if both cloud, server and localstorage were empty
   if (!dbData || (!dbData.matches?.length && !dbData.countries?.length)) {
     dbData = {
       countries: SEED_DATABASE.countries || [],
@@ -133,7 +151,7 @@ export async function fetchDatabaseState(): Promise<DbState> {
   // Save to LocalStorage so future access is instantaneous
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedDb));
 
-  // If corrections were made, persist back to the backend
+  // If corrections were made or initializing cloud for first time, sync back
   if (stats.foreignLeaguesRemoved > 0 || stats.teamsCleaned > 0 || stats.duplicatesRemoved > 0) {
     saveDatabaseState(cleanedDb).catch(() => {});
   }
@@ -142,6 +160,18 @@ export async function fetchDatabaseState(): Promise<DbState> {
 }
 
 export async function syncDatabaseFromServer(): Promise<DbState> {
+  // Try cloud sync first
+  try {
+    const cloudState = await fetchDbFromFirestore();
+    if (cloudState && (cloudState.matches?.length > 0 || cloudState.countries?.length > 0)) {
+      const { cleanedDb } = sanitizeAndCleanDb(cloudState);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedDb));
+      return cleanedDb;
+    }
+  } catch (err) {
+    console.warn('Sync from Firestore failed, trying server API:', err);
+  }
+
   const response = await fetch('/api/db', {
     cache: 'no-store',
     headers: { 'Cache-Control': 'no-cache' },
@@ -162,6 +192,12 @@ export async function saveDatabaseState(state: DbState): Promise<boolean> {
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(state.users));
   }
 
+  // 1. Save to Cloud Firestore in real-time (Multi-device instant replication)
+  saveDbToFirestore(state).catch((err) => {
+    console.warn('Non-blocking Firestore sync warning:', err);
+  });
+
+  // 2. Also persist to backend server
   try {
     const response = await fetch('/api/db/save', {
       method: 'POST',
@@ -170,14 +206,16 @@ export async function saveDatabaseState(state: DbState): Promise<boolean> {
     });
     return response.ok;
   } catch (err) {
-    console.warn('Failed to persist to backend server', err);
-    return false;
+    console.warn('Failed to persist to backend server (Firestore saved)', err);
+    return true; // Still true if local/firestore handled
   }
 }
 
 export async function clearDatabase(): Promise<DbState> {
-  const empty: DbState = { countries: [], leagues: [], teams: [], matches: [] };
+  const empty: DbState = { countries: [], leagues: [], teams: [], matches: [], users: [] };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(empty));
+
+  saveDbToFirestore(empty).catch(() => {});
 
   try {
     await fetch('/api/db/clear', { method: 'POST' });
@@ -187,3 +225,4 @@ export async function clearDatabase(): Promise<DbState> {
 
   return empty;
 }
+

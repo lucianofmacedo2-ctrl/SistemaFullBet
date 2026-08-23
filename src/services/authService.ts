@@ -1,6 +1,9 @@
 import { AppUser, UserRole, UserAccessDuration, UserStatus } from '../types';
 
 const ACTIVE_USER_STORAGE_KEY = 'football_active_user_session_v1';
+const SESSION_EXPIRY_KEY = 'football_session_expires_at_v1';
+const SESSION_DURATION_HOURS = 8;
+const SESSION_DURATION_MS = SESSION_DURATION_HOURS * 60 * 60 * 1000;
 
 export const DEFAULT_MASTER_USER: AppUser = {
   id: 'USER-MASTER-001',
@@ -201,30 +204,82 @@ export function ensureDefaultUsers(users?: AppUser[]): AppUser[] {
 }
 
 /**
- * Gets currently logged in user session from LocalStorage.
+ * Updates sliding window activity timestamp (extends 8-hour session window on user interaction).
+ */
+export function touchUserActivity(): void {
+  try {
+    const now = Date.now();
+    const expiry = now + SESSION_DURATION_MS;
+    localStorage.setItem(SESSION_EXPIRY_KEY, expiry.toString());
+    sessionStorage.setItem(SESSION_EXPIRY_KEY, expiry.toString());
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Gets currently logged in user session from LocalStorage / SessionStorage with 8-hour validity check.
  */
 export function getCurrentAuthUser(): AppUser | null {
   try {
-    const raw = localStorage.getItem(ACTIVE_USER_STORAGE_KEY);
+    const expiryRaw = localStorage.getItem(SESSION_EXPIRY_KEY) || sessionStorage.getItem(SESSION_EXPIRY_KEY);
+    const raw = localStorage.getItem(ACTIVE_USER_STORAGE_KEY) || sessionStorage.getItem(ACTIVE_USER_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+
+    if (expiryRaw) {
+      const expiry = parseInt(expiryRaw, 10);
+      if (!isNaN(expiry) && Date.now() > expiry) {
+        // Session expired (older than 8h of inactivity)
+        setCurrentAuthUser(null);
+        return null;
+      }
+    }
+
+    const user: AppUser = JSON.parse(raw);
+    touchUserActivity(); // Extend on valid retrieval
+    return user;
   } catch {
     return null;
   }
 }
 
 /**
- * Stores active user session in LocalStorage.
+ * Stores active user session in LocalStorage + SessionStorage with 8-hour expiration.
  */
 export function setCurrentAuthUser(user: AppUser | null): void {
   try {
     if (!user) {
       localStorage.removeItem(ACTIVE_USER_STORAGE_KEY);
+      localStorage.removeItem(SESSION_EXPIRY_KEY);
+      sessionStorage.removeItem(ACTIVE_USER_STORAGE_KEY);
+      sessionStorage.removeItem(SESSION_EXPIRY_KEY);
     } else {
-      localStorage.setItem(ACTIVE_USER_STORAGE_KEY, JSON.stringify(user));
+      const str = JSON.stringify(user);
+      const expiry = (Date.now() + SESSION_DURATION_MS).toString();
+      localStorage.setItem(ACTIVE_USER_STORAGE_KEY, str);
+      localStorage.setItem(SESSION_EXPIRY_KEY, expiry);
+      sessionStorage.setItem(ACTIVE_USER_STORAGE_KEY, str);
+      sessionStorage.setItem(SESSION_EXPIRY_KEY, expiry);
     }
   } catch (err) {
     console.error('Failed to save user session in storage', err);
+  }
+}
+
+/**
+ * Gets remaining hours of active 8-hour session.
+ */
+export function getActiveSessionRemainingHours(): number {
+  try {
+    const expiryRaw = localStorage.getItem(SESSION_EXPIRY_KEY) || sessionStorage.getItem(SESSION_EXPIRY_KEY);
+    if (!expiryRaw) return SESSION_DURATION_HOURS;
+    const expiry = parseInt(expiryRaw, 10);
+    if (isNaN(expiry)) return SESSION_DURATION_HOURS;
+    const diff = expiry - Date.now();
+    if (diff <= 0) return 0;
+    return Math.round((diff / (1000 * 60 * 60)) * 10) / 10;
+  } catch {
+    return SESSION_DURATION_HOURS;
   }
 }
 
@@ -286,3 +341,4 @@ export function decodeUserFromToken(token: string): AppUser | null {
   }
   return null;
 }
+
