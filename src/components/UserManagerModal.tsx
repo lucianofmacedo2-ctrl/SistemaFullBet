@@ -98,7 +98,8 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
   const [formUsername, setFormUsername] = useState('');
   const [formPassword, setFormPassword] = useState('');
   const [formRole, setFormRole] = useState<UserRole>('CONSULTOR');
-  const [formDuration, setFormDuration] = useState<UserAccessDuration>('30_DAYS');
+  const [formDuration, setFormDuration] = useState<UserAccessDuration>('60_DAYS');
+  const [formCustomDays, setFormCustomDays] = useState<number>(60);
   const [formNotes, setFormNotes] = useState('');
   const [formError, setFormError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -141,7 +142,8 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
     setFormUsername('');
     setFormPassword(Math.random().toString(36).substring(2, 8)); // auto-generated friendly password
     setFormRole('CONSULTOR');
-    setFormDuration('30_DAYS');
+    setFormDuration('60_DAYS');
+    setFormCustomDays(60);
     setFormNotes('');
     setFormError('');
     setIsFormOpen(true);
@@ -154,6 +156,7 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
     setFormPassword(user.password || '');
     setFormRole(user.role);
     setFormDuration(user.duration);
+    setFormCustomDays(user.customDays || 60);
     setFormNotes(user.notes || '');
     setFormError('');
     setIsFormOpen(true);
@@ -180,6 +183,13 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
       return;
     }
 
+    if (formRole === 'CONSULTOR' && formDuration === 'CUSTOM') {
+      if (!formCustomDays || isNaN(formCustomDays) || formCustomDays < 1) {
+        setFormError('Por favor, informe uma quantidade válida de dias (mínimo 1 dia).');
+        return;
+      }
+    }
+
     // Check duplicate username
     const isDuplicate = users.some(
       u => u.id !== editingUserId && u.username.toLowerCase() === trimmedUsername
@@ -189,6 +199,8 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
       return;
     }
 
+    const effectiveCustomDays = formDuration === 'CUSTOM' ? formCustomDays : null;
+
     if (editingUserId) {
       // Update existing
       const updated = users.map(u => {
@@ -196,9 +208,9 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
           let newExpiresAt = u.expiresAt;
           if (formRole === 'MASTER' || formDuration === 'LIFETIME') {
             newExpiresAt = null;
-          } else if (formDuration !== u.duration) {
+          } else if (formDuration !== u.duration || (formDuration === 'CUSTOM' && effectiveCustomDays !== u.customDays)) {
             // Recompute duration from today
-            newExpiresAt = calculateExpirationDate(formDuration);
+            newExpiresAt = calculateExpirationDate(formDuration, new Date(), effectiveCustomDays);
           }
 
           return {
@@ -208,6 +220,7 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
             password: trimmedPassword,
             role: formRole,
             duration: formDuration,
+            customDays: effectiveCustomDays,
             expiresAt: newExpiresAt,
             notes: formNotes.trim(),
             status: u.status === 'BLOCKED' ? ('BLOCKED' as UserStatus) : ('ACTIVE' as UserStatus),
@@ -220,7 +233,10 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
     } else {
       // Create new user
       const newId = getNextUniqueId('USER', users.map(u => u.id));
-      const expiresAt = formRole === 'MASTER' ? null : calculateExpirationDate(formDuration);
+      const expiresAt =
+        formRole === 'MASTER'
+          ? null
+          : calculateExpirationDate(formDuration, new Date(), effectiveCustomDays);
 
       const newUser: AppUser = {
         id: newId,
@@ -229,6 +245,7 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
         password: trimmedPassword,
         role: formRole,
         duration: formDuration,
+        customDays: effectiveCustomDays,
         status: 'ACTIVE',
         createdAt: new Date().toISOString(),
         expiresAt,
@@ -340,7 +357,7 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Controle quem pode acessar o sistema e defina prazos de uso (30d, 90d, 180d, 1 ano ou Vitalício).
+                Controle quem pode acessar o sistema e defina prazos de uso (30d, 60d, 90d, 180d, 1 ano, manual personalizado ou Vitalício).
               </p>
             </div>
           </div>
@@ -676,6 +693,13 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
                                   <Clock className="w-3.5 h-3.5 text-emerald-600" />
                                 </button>
                                 <button
+                                  onClick={() => handleQuickExtend(user.id, '60_DAYS')}
+                                  className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center justify-between"
+                                >
+                                  <span>+ 60 Dias (2 Meses)</span>
+                                  <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                                </button>
+                                <button
                                   onClick={() => handleQuickExtend(user.id, '90_DAYS')}
                                   className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center justify-between"
                                 >
@@ -962,23 +986,25 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                     <span>Prazo de Validade do Acesso *</span>
                     <span className="text-emerald-600 font-bold text-[11px]">
-                      {formatDurationLabel(formDuration)}
+                      {formatDurationLabel(formDuration, formDuration === 'CUSTOM' ? formCustomDays : null)}
                     </span>
                   </label>
 
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
                     {[
                       { id: '30_DAYS', label: '30 dias', tag: '1 mês' },
+                      { id: '60_DAYS', label: '60 dias', tag: '2 meses' },
                       { id: '90_DAYS', label: '90 dias', tag: '3 meses' },
                       { id: '180_DAYS', label: '180 dias', tag: '6 meses' },
                       { id: '1_YEAR', label: '1 ano', tag: '12 meses' },
                       { id: 'LIFETIME', label: 'Vitalício', tag: 'Sem limite' },
+                      { id: 'CUSTOM', label: 'Manual', tag: 'Personalizar' },
                     ].map((dur) => (
                       <button
                         key={dur.id}
                         type="button"
                         onClick={() => setFormDuration(dur.id as UserAccessDuration)}
-                        className={`p-2 rounded-xl border text-center transition-all ${
+                        className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
                           formDuration === dur.id
                             ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
                             : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 font-medium'
@@ -991,6 +1017,73 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
                       </button>
                     ))}
                   </div>
+
+                  {/* Campo Manual para Quantidade de Dias Personalizada */}
+                  {formDuration === 'CUSTOM' && (
+                    <div className="mt-2.5 p-3 bg-blue-50/70 border border-blue-200 rounded-xl space-y-2 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-blue-950 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Definir Quantidade de Dias Manualmente:</span>
+                        </label>
+                        <span className="text-[11px] font-bold text-blue-700">
+                          {formCustomDays > 0 ? `${formCustomDays} dias de acesso` : 'Informe os dias'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="number"
+                            min={1}
+                            max={3650}
+                            required
+                            placeholder="Ex: 15, 45, 60, 120..."
+                            value={formCustomDays || ''}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              setFormCustomDays(isNaN(val) ? 0 : Math.max(1, val));
+                            }}
+                            className="w-full bg-white border border-blue-300 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">
+                            dias
+                          </span>
+                        </div>
+
+                        {/* Atalhos Rápidos */}
+                        <div className="flex items-center gap-1">
+                          {[7, 15, 45, 60, 120].map((d) => (
+                            <button
+                              key={d}
+                              type="button"
+                              onClick={() => setFormCustomDays(d)}
+                              className={`px-2 py-1.5 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+                                formCustomDays === d
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                                  : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-100'
+                              }`}
+                            >
+                              {d}d
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-blue-800">
+                        {formCustomDays > 0 ? (
+                          <>
+                            Acesso válido a partir de hoje até{' '}
+                            <strong>
+                              {new Date(Date.now() + formCustomDays * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}
+                            </strong>.
+                          </>
+                        ) : (
+                          'Digite a quantidade de dias que o usuário terá de acesso.'
+                        )}
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2">

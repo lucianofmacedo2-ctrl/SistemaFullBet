@@ -187,7 +187,7 @@ export interface Match {
 }
 
 export type UserRole = 'MASTER' | 'CONSULTOR';
-export type UserAccessDuration = '30_DAYS' | '90_DAYS' | '180_DAYS' | '1_YEAR' | 'LIFETIME' | 'CUSTOM';
+export type UserAccessDuration = '30_DAYS' | '60_DAYS' | '90_DAYS' | '180_DAYS' | '1_YEAR' | 'LIFETIME' | 'CUSTOM';
 export type UserStatus = 'ACTIVE' | 'EXPIRED' | 'BLOCKED';
 
 export interface AppUser {
@@ -197,6 +197,7 @@ export interface AppUser {
   password?: string;
   role: UserRole;
   duration: UserAccessDuration;
+  customDays?: number | null;
   status: UserStatus;
   createdAt: string; // ISO date
   expiresAt: string | null; // ISO date string or null for lifetime

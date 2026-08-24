@@ -52,7 +52,7 @@ export const AccessExpiredOverlay: React.FC<AccessExpiredOverlayProps> = ({
             </span>
           </div>
           <div className="border-t border-slate-200 pt-2 text-[11px] text-slate-500 italic">
-            Para renovar seu acesso (30, 90, 180 dias ou 1 ano), entre em contato com o administrador master do sistema.
+            Para renovar seu acesso (30, 60, 90, 180 dias ou personalizado), entre em contato com o administrador master do sistema.
           </div>
         </div>
 

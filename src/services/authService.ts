@@ -36,19 +36,25 @@ export const DEFAULT_CONSULTA_USER: AppUser = {
  */
 export function calculateExpirationDate(
   duration: UserAccessDuration,
-  baseDate: Date = new Date()
+  baseDate: Date = new Date(),
+  customDays?: number | null
 ): string | null {
   if (duration === 'LIFETIME') return null;
 
   const target = new Date(baseDate);
   if (duration === '30_DAYS') {
     target.setDate(target.getDate() + 30);
+  } else if (duration === '60_DAYS') {
+    target.setDate(target.getDate() + 60);
   } else if (duration === '90_DAYS') {
     target.setDate(target.getDate() + 90);
   } else if (duration === '180_DAYS') {
     target.setDate(target.getDate() + 180);
   } else if (duration === '1_YEAR') {
     target.setDate(target.getDate() + 365);
+  } else if (duration === 'CUSTOM') {
+    const days = typeof customDays === 'number' && customDays > 0 ? customDays : 30;
+    target.setDate(target.getDate() + days);
   }
   return target.toISOString();
 }
@@ -60,10 +66,11 @@ export function calculateExpirationDate(
  */
 export function extendUserAccess(
   currentUser: AppUser,
-  durationToAdd: UserAccessDuration
-): { expiresAt: string | null; duration: UserAccessDuration } {
+  durationToAdd: UserAccessDuration,
+  customDays?: number | null
+): { expiresAt: string | null; duration: UserAccessDuration; customDays?: number | null } {
   if (durationToAdd === 'LIFETIME') {
-    return { expiresAt: null, duration: 'LIFETIME' };
+    return { expiresAt: null, duration: 'LIFETIME', customDays: null };
   }
 
   const now = new Date();
@@ -76,10 +83,11 @@ export function extendUserAccess(
     }
   }
 
-  const newExpiresAt = calculateExpirationDate(durationToAdd, baseDate);
+  const newExpiresAt = calculateExpirationDate(durationToAdd, baseDate, customDays);
   return {
     expiresAt: newExpiresAt,
     duration: durationToAdd,
+    customDays: durationToAdd === 'CUSTOM' ? (customDays ?? currentUser.customDays ?? 30) : null,
   };
 }
 
@@ -288,10 +296,12 @@ export function getActiveSessionRemainingHours(): number {
 /**
  * Formats duration key into readable Portuguese text
  */
-export function formatDurationLabel(duration: UserAccessDuration): string {
+export function formatDurationLabel(duration: UserAccessDuration, customDays?: number | null): string {
   switch (duration) {
     case '30_DAYS':
-      return '30 Dias';
+      return '30 Dias (1 Mês)';
+    case '60_DAYS':
+      return '60 Dias (Bimestral)';
     case '90_DAYS':
       return '90 Dias (Trimestral)';
     case '180_DAYS':
@@ -300,6 +310,8 @@ export function formatDurationLabel(duration: UserAccessDuration): string {
       return '1 Ano (Anual)';
     case 'LIFETIME':
       return 'Vitalício (Sem limite)';
+    case 'CUSTOM':
+      return customDays ? `${customDays} Dias (Manual)` : 'Personalizado';
     default:
       return duration;
   }
@@ -317,6 +329,7 @@ export function encodeUserToToken(user: AppUser): string {
       password: user.password,
       role: user.role,
       duration: user.duration,
+      customDays: user.customDays,
       status: user.status,
       expiresAt: user.expiresAt,
       createdAt: user.createdAt,
