@@ -117,8 +117,29 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
       updatedAt: new Date().toISOString(),
     });
 
-    // 3. Users
-    const cleanUsers = sanitizeForFirestore(state.users || []);
+    // 3. Users (Merged with existing Firestore users to prevent any accidental wipe)
+    let finalUsers = state.users || [];
+    try {
+      const existingUsersSnap = await getDoc(doc(db, COLLECTION_NAME, 'users'));
+      if (existingUsersSnap.exists()) {
+        const remoteUsers: AppUser[] = existingUsersSnap.data().list || [];
+        const map = new Map<string, AppUser>();
+        for (const u of remoteUsers) {
+          if (u && (u.id || u.username)) map.set((u.id || u.username).toLowerCase(), u);
+        }
+        for (const u of finalUsers) {
+          if (u && (u.id || u.username)) {
+            const key = (u.id || u.username).toLowerCase();
+            map.set(key, { ...(map.get(key) || {}), ...u });
+          }
+        }
+        finalUsers = Array.from(map.values());
+      }
+    } catch {
+      // non-fatal
+    }
+
+    const cleanUsers = sanitizeForFirestore(finalUsers);
     await setDoc(doc(db, COLLECTION_NAME, 'users'), {
       list: cleanUsers,
       updatedAt: new Date().toISOString(),
@@ -330,3 +351,24 @@ export function computeCloudStats(dbState: DbState): CloudSyncStats {
     lastUpdated: new Date().toISOString(),
   };
 }
+
+/**
+ * Explicitly removes a user from Firestore (used only when Admin deletes user).
+ */
+export async function deleteUserFromFirestore(userId: string): Promise<void> {
+  try {
+    await ensureFirebaseAuth();
+    const snap = await getDoc(doc(db, COLLECTION_NAME, 'users'));
+    if (snap.exists()) {
+      const list: AppUser[] = snap.data().list || [];
+      const filtered = list.filter(u => u.id !== userId && u.username.toLowerCase() !== userId.toLowerCase());
+      await setDoc(doc(db, COLLECTION_NAME, 'users'), {
+        list: sanitizeForFirestore(filtered),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+  } catch (err) {
+    console.warn('Could not delete user from Firestore:', err);
+  }
+}
+

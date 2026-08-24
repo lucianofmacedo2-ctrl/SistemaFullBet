@@ -4,15 +4,59 @@ import { sanitizeAndCleanDb } from '../utils/dbSanitizer';
 import {
   saveDbToFirestore,
   fetchDbFromFirestore,
+  deleteUserFromFirestore,
 } from './firebaseDbService';
 
 const STORAGE_KEY = 'football_db_v1';
 const USERS_STORAGE_KEY = 'football_users_list_v1';
+const USERS_BACKUP_STORAGE_KEY = 'football_users_backup_v1';
 
 // Preloaded database built into client bundle (contains all 641+ matches, 22 leagues, 11 countries)
 const SEED_DATABASE: DbState = defaultDatabaseData as unknown as DbState;
 
+/**
+ * Robustly merges multiple user lists, preserving all unique users by ID / username.
+ */
+export function mergeUsersLists(...lists: (AppUser[] | undefined | null)[]): AppUser[] {
+  const userMap = new Map<string, AppUser>();
+
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const u of list) {
+      if (!u || (!u.id && !u.username)) continue;
+      const key = (u.id || u.username).toLowerCase().trim();
+      const existing = userMap.get(key);
+      if (!existing) {
+        userMap.set(key, { ...u });
+      } else {
+        // Merge preferring newer or non-empty fields
+        userMap.set(key, {
+          ...existing,
+          ...u,
+          password: u.password || existing.password,
+          expiresAt: u.expiresAt !== undefined ? u.expiresAt : existing.expiresAt,
+          duration: u.duration || existing.duration,
+          status: u.status || existing.status,
+          notes: u.notes || existing.notes,
+        });
+      }
+    }
+  }
+
+  const merged = Array.from(userMap.values());
+  // Backup merged users locally
+  if (merged.length > 0) {
+    try {
+      localStorage.setItem(USERS_BACKUP_STORAGE_KEY, JSON.stringify(merged));
+    } catch {
+      // ignore
+    }
+  }
+  return merged;
+}
+
 export async function fetchUsersList(): Promise<AppUser[]> {
+  let serverUsers: AppUser[] = [];
   try {
     const res = await fetch('/api/users', {
       cache: 'no-store',
@@ -20,33 +64,47 @@ export async function fetchUsersList(): Promise<AppUser[]> {
     });
     if (res.ok) {
       const users = await res.json();
-      if (Array.isArray(users) && users.length > 0) {
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-        return users;
+      if (Array.isArray(users)) {
+        serverUsers = users;
       }
     }
   } catch (err) {
     console.warn('Could not fetch users from server', err);
   }
 
-  const saved = localStorage.getItem(USERS_STORAGE_KEY);
+  let localUsers: AppUser[] = [];
+  const saved = localStorage.getItem(USERS_STORAGE_KEY) || localStorage.getItem(USERS_BACKUP_STORAGE_KEY);
   if (saved) {
     try {
-      return JSON.parse(saved);
+      localUsers = JSON.parse(saved);
     } catch {
       // ignore
     }
   }
-  return [];
+
+  const merged = mergeUsersLists(localUsers, serverUsers);
+  if (merged.length > 0) {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(merged));
+  }
+  return merged;
 }
 
-export async function saveUsersList(users: AppUser[]): Promise<boolean> {
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+export async function saveUsersList(users: AppUser[], isExplicitReplacement: boolean = false): Promise<boolean> {
+  let usersToSave = users;
+  if (!isExplicitReplacement) {
+    // Merge with any cached users to never lose previously created users
+    const existing = await fetchUsersList();
+    usersToSave = mergeUsersLists(existing, users);
+  }
+
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersToSave));
+  localStorage.setItem(USERS_BACKUP_STORAGE_KEY, JSON.stringify(usersToSave));
+
   try {
     const res = await fetch('/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ users }),
+      body: JSON.stringify({ users: usersToSave, replaceAll: isExplicitReplacement }),
     });
     return res.ok;
   } catch (err) {
@@ -55,14 +113,40 @@ export async function saveUsersList(users: AppUser[]): Promise<boolean> {
   }
 }
 
+export async function deleteUserPermanently(userId: string): Promise<boolean> {
+  try {
+    const current = await fetchUsersList();
+    const filtered = current.filter(u => u.id !== userId && u.username.toLowerCase() !== userId.toLowerCase());
+    await saveUsersList(filtered, true);
+
+    deleteUserFromFirestore(userId).catch(() => {});
+
+    await fetch('/api/users/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+    return true;
+  } catch (err) {
+    console.warn('Error deleting user:', err);
+    return false;
+  }
+}
+
 export async function fetchDatabaseState(): Promise<DbState> {
   let dbData: DbState | null = null;
+  let firestoreUsers: AppUser[] = [];
 
   // 1. Try fetching from Firebase Firestore first (Primary Multi-Device Cloud)
   try {
     const firestoreData = await fetchDbFromFirestore();
-    if (firestoreData && (firestoreData.matches?.length > 0 || firestoreData.countries?.length > 0)) {
-      dbData = firestoreData;
+    if (firestoreData) {
+      if (firestoreData.matches?.length > 0 || firestoreData.countries?.length > 0) {
+        dbData = firestoreData;
+      }
+      if (Array.isArray(firestoreData.users) && firestoreData.users.length > 0) {
+        firestoreUsers = firestoreData.users;
+      }
     }
   } catch (cloudErr) {
     console.warn('Firestore fetch encountered an issue, falling back to server API/local:', cloudErr);
@@ -126,30 +210,40 @@ export async function fetchDatabaseState(): Promise<DbState> {
     }
   }
 
+  // Resilient User Union across Firestore, LocalStorage, Server and Seed
+  const localSavedUsersRaw = localStorage.getItem(USERS_STORAGE_KEY) || localStorage.getItem(USERS_BACKUP_STORAGE_KEY);
+  let localSavedUsers: AppUser[] = [];
+  if (localSavedUsersRaw) {
+    try {
+      localSavedUsers = JSON.parse(localSavedUsersRaw);
+    } catch {
+      // ignore
+    }
+  }
+
+  const mergedUsers = mergeUsersLists(
+    dbData.users,
+    firestoreUsers,
+    localSavedUsers,
+    SEED_DATABASE.users
+  );
+
   const rawResult: DbState = {
     countries: dbData.countries || [],
     leagues: dbData.leagues || [],
     teams: dbData.teams || [],
     matches: dbData.matches || [],
-    users: dbData.users || [],
+    users: mergedUsers,
   };
 
   // Sanitiza e corrige o banco de dados contra anomalias/duplicidades/ligas cruzadas
   const { cleanedDb, stats } = sanitizeAndCleanDb(rawResult);
-
-  // If result has users, also sync local USERS_STORAGE_KEY
-  if (Array.isArray(cleanedDb.users) && cleanedDb.users.length > 0) {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(cleanedDb.users));
-  } else {
-    // Try fetching dedicated users
-    const users = await fetchUsersList();
-    if (users.length > 0) {
-      cleanedDb.users = users;
-    }
-  }
+  cleanedDb.users = mergedUsers;
 
   // Save to LocalStorage so future access is instantaneous
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedDb));
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(mergedUsers));
+  localStorage.setItem(USERS_BACKUP_STORAGE_KEY, JSON.stringify(mergedUsers));
 
   // If corrections were made or initializing cloud for first time, sync back
   if (stats.foreignLeaguesRemoved > 0 || stats.teamsCleaned > 0 || stats.duplicatesRemoved > 0) {

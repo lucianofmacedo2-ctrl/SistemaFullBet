@@ -55,6 +55,31 @@ const DEFAULT_CONSULTA_USER = {
 };
 
 // Helper to load users safely from users.json and fallback to football_db.json
+function mergeUsers(existingList: any[], incomingList: any[]): any[] {
+  const map = new Map<string, any>();
+  for (const u of existingList) {
+    if (u && (u.id || u.username)) {
+      const key = (u.id || u.username).toLowerCase();
+      map.set(key, u);
+    }
+  }
+  for (const u of incomingList) {
+    if (u && (u.id || u.username)) {
+      const key = (u.id || u.username).toLowerCase();
+      const prev = map.get(key) || {};
+      map.set(key, { ...prev, ...u });
+    }
+  }
+  const result = Array.from(map.values());
+  if (!result.some(u => u.role === 'MASTER')) {
+    result.unshift(DEFAULT_MASTER_USER);
+  }
+  if (!result.some(u => u.username === 'usuario.teste')) {
+    result.push(DEFAULT_CONSULTA_USER);
+  }
+  return result;
+}
+
 function loadUsers(): any[] {
   let list: any[] = [];
   if (fs.existsSync(USERS_FILE)) {
@@ -94,18 +119,35 @@ function loadUsers(): any[] {
     list.push(DEFAULT_CONSULTA_USER);
   }
 
-  saveUsers(list);
   return list;
 }
 
-function saveUsers(users: any[]) {
+function saveUsers(users: any[], replaceAll: boolean = false) {
   try {
-    const ensuredUsers = Array.isArray(users) && users.length > 0 ? users : [DEFAULT_MASTER_USER];
-    fs.writeFileSync(USERS_FILE, JSON.stringify(ensuredUsers, null, 2), 'utf-8');
+    let finalUsers: any[];
+    if (replaceAll) {
+      finalUsers = Array.isArray(users) && users.length > 0 ? users : [DEFAULT_MASTER_USER];
+      if (!finalUsers.some(u => u.role === 'MASTER')) finalUsers.unshift(DEFAULT_MASTER_USER);
+    } else {
+      const existing = loadUsers();
+      finalUsers = mergeUsers(existing, users);
+    }
+    fs.writeFileSync(USERS_FILE, JSON.stringify(finalUsers, null, 2), 'utf-8');
   } catch (err) {
     console.error('Error writing users.json:', err);
   }
 }
+
+// In-Memory Active Session Tracker for single-device session locking
+interface ActiveSession {
+  sessionId: string;
+  userId: string;
+  username: string;
+  updatedAt: string;
+  lastHeartbeat: number;
+  clientInfo?: string;
+}
+const activeSessions = new Map<string, ActiveSession>();
 
 // Lazy Gemini AI initialization
 function getGeminiAI(): GoogleGenAI | null {
@@ -182,12 +224,82 @@ app.get('/api/users', (req, res) => {
 });
 
 app.post('/api/users', (req, res) => {
-  const { users } = req.body;
+  const { users, replaceAll } = req.body;
   if (!Array.isArray(users)) {
     return res.status(400).json({ error: 'Array de usuários esperado.' });
   }
-  saveUsers(users);
-  res.json({ success: true, users });
+  saveUsers(users, Boolean(replaceAll));
+  res.json({ success: true, users: loadUsers() });
+});
+
+// Explicit user delete route so deletions aren't accidentally re-merged
+app.post('/api/users/delete', (req, res) => {
+  const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: 'userId obrigatório' });
+  }
+  const current = loadUsers();
+  const filtered = current.filter(u => u.id !== userId && u.username.toLowerCase() !== String(userId).toLowerCase());
+  saveUsers(filtered, true);
+  res.json({ success: true, users: loadUsers() });
+});
+
+// Single-device Active Session Endpoints
+app.post('/api/sessions/register', (req, res) => {
+  const { userId, username, sessionId, clientInfo } = req.body;
+  if (!userId || !sessionId) {
+    return res.status(400).json({ error: 'Dados de sessão incompletos.' });
+  }
+  const record: ActiveSession = {
+    userId,
+    username: username || '',
+    sessionId,
+    updatedAt: new Date().toISOString(),
+    lastHeartbeat: Date.now(),
+    clientInfo: clientInfo || '',
+  };
+  activeSessions.set(userId, record);
+  if (username) {
+    activeSessions.set(`user_${username.toLowerCase()}`, record);
+  }
+  res.json({ success: true, record });
+});
+
+app.get('/api/sessions/status/:userId', (req, res) => {
+  const { userId } = req.params;
+  const clientSessionId = String(req.query.sessionId || '');
+  const record = activeSessions.get(userId);
+
+  if (!record || !record.sessionId) {
+    return res.json({ isValid: true });
+  }
+
+  if (record.sessionId !== clientSessionId) {
+    return res.json({ isValid: false, remoteInfo: record });
+  }
+
+  return res.json({ isValid: true, record });
+});
+
+app.post('/api/sessions/heartbeat', (req, res) => {
+  const { userId, sessionId } = req.body;
+  if (userId && sessionId) {
+    const record = activeSessions.get(userId);
+    if (record && record.sessionId === sessionId) {
+      record.lastHeartbeat = Date.now();
+      record.updatedAt = new Date().toISOString();
+      activeSessions.set(userId, record);
+    }
+  }
+  res.json({ success: true });
+});
+
+app.post('/api/sessions/clear', (req, res) => {
+  const { userId } = req.body;
+  if (userId) {
+    activeSessions.delete(userId);
+  }
+  res.json({ success: true });
 });
 
 // Dedicated Auth Login verification API

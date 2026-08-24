@@ -37,6 +37,7 @@ import {
   DEFAULT_MASTER_USER,
   encodeUserToToken,
 } from '../services/authService';
+import { deleteUserPermanently } from '../services/dbService';
 import { getNextUniqueId } from '../utils/idGenerator';
 
 // Helper to determine clean base app URL
@@ -74,7 +75,7 @@ interface UserManagerModalProps {
   onClose: () => void;
   users: AppUser[];
   currentAuthUser: AppUser | null;
-  onSaveUsers: (updatedUsers: AppUser[]) => void;
+  onSaveUsers: (updatedUsers: AppUser[], isExplicitReplacement?: boolean) => void;
   onSwitchUser?: (user: AppUser) => void;
 }
 
@@ -292,7 +293,7 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
     setQuickExtendUserId(null);
   };
 
-  const handleDeleteUser = (userId: string, userName: string) => {
+  const handleDeleteUser = async (userId: string, userName: string) => {
     if (userId === currentAuthUser?.id) {
       alert('Você não pode excluir o seu próprio perfil atual!');
       return;
@@ -307,7 +308,8 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
 
     if (window.confirm(`Tem certeza que deseja excluir o usuário "${userName}"?`)) {
       const updated = users.filter(u => u.id !== userId);
-      onSaveUsers(updated);
+      await deleteUserPermanently(userId);
+      onSaveUsers(updated, true);
     }
   };
 
