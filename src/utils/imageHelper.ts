@@ -10,11 +10,8 @@ export function isValidImageUrl(url?: any): boolean {
   if (!url || typeof url !== 'string') return false;
   
   // Strip surrounding quotes or whitespace
-  const trimmed = url.replace(/^['"\s]+|['"\s]+$/g, '').trim();
+  let trimmed = url.replace(/^['"\s]+|['"\s]+$/g, '').trim();
   if (!trimmed || trimmed.length < 8) return false;
-
-  // Cannot contain spaces or newlines
-  if (/\s/.test(trimmed)) return false;
 
   const lower = trimmed.toLowerCase();
 
@@ -58,22 +55,30 @@ export function isValidImageUrl(url?: any): boolean {
 
   // Base64 image support
   if (lower.startsWith('data:image/')) {
-    return trimmed.length > 25 && trimmed.includes(';base64,');
+    return trimmed.length > 20 && trimmed.includes(';base64,');
   }
 
-  // Must start with https://, http:// or protocol-relative //
-  const hasValidProtocol =
-    lower.startsWith('https://') ||
-    lower.startsWith('http://') ||
-    lower.startsWith('//');
+  // Auto-prepend https: for protocol-relative URLs
+  let urlToTest = trimmed;
+  if (lower.startsWith('//')) {
+    urlToTest = `https:${trimmed}`;
+  } else if (lower.startsWith('www.')) {
+    urlToTest = `https://${trimmed}`;
+  }
 
-  if (!hasValidProtocol) {
+  // Must start with https:// or http://
+  const testLower = urlToTest.toLowerCase();
+  if (!testLower.startsWith('http://') && !testLower.startsWith('https://')) {
     return false;
+  }
+
+  // Replace any spaces inside URL path safely
+  if (/\s/.test(urlToTest)) {
+    urlToTest = encodeURI(urlToTest.replace(/\s+/g, '%20'));
   }
 
   // Parse as real URL
   try {
-    const urlToTest = lower.startsWith('//') ? `https:${trimmed}` : trimmed;
     const parsed = new URL(urlToTest);
 
     // Protocol must be http or https
@@ -81,18 +86,9 @@ export function isValidImageUrl(url?: any): boolean {
       return false;
     }
 
-    // Hostname must be valid and contain at least one dot (or localhost)
+    // Hostname must be valid
     const hostname = parsed.hostname;
     if (!hostname || hostname.length < 3) return false;
-    if (hostname !== 'localhost' && !hostname.includes('.')) return false;
-
-    // Check that host doesn't end with a dot and has valid TLD
-    const parts = hostname.split('.');
-    const tld = parts[parts.length - 1];
-    if (!tld || tld.length < 2 || /\d+$/.test(tld) && parts.length < 4) {
-      // Valid if not just an incomplete domain
-      if (parts.length < 2) return false;
-    }
 
     return true;
   } catch {

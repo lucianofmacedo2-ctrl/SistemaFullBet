@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   RotateCcw,
   CheckSquare,
+  Wand2,
 } from 'lucide-react';
 import { DbState, Team, League, Country } from '../types';
 import {
@@ -32,6 +33,10 @@ import {
   PendingLogoItem,
 } from '../utils/excelHelper';
 import { isValidImageUrl, sanitizeImageUrl } from '../utils/imageHelper';
+import {
+  findOfficialTeamLogo,
+  findOfficialLeagueLogo,
+} from '../utils/officialLogosCatalog';
 
 interface PendingLogosManagerProps {
   dbState: DbState;
@@ -230,6 +235,68 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
     setTimeout(() => {
       setSavedStatus(prev => ({ ...prev, [item.id]: false }));
     }, 1500);
+  };
+
+  const handleBlurSave = async (item: UnifiedItem) => {
+    const userVal = inputUrls[item.id];
+    if (userVal === undefined) return; // Not modified
+    if (userVal.trim() === (item.currentUrl || '').trim()) return; // Same
+    if (userVal.trim() === '') return; // Let user explicitly clear or save
+    await handleSaveSingle(item);
+  };
+
+  const handleAutoFillOfficialLogos = async () => {
+    const countryUpdates: Record<string, string> = {};
+    const leagueUpdates: Record<string, string> = {};
+    const teamUpdates: Record<string, string> = {};
+    const newInputUrls: Record<string, string> = { ...inputUrls };
+    let matchCount = 0;
+
+    // Scan all pending items in DB
+    allItems.forEach(item => {
+      if (item.hasValidUrl) return; // already has valid logo
+
+      if (item.type === 'TEAM') {
+        const logo = findOfficialTeamLogo(item.name);
+        if (logo) {
+          teamUpdates[item.id] = logo;
+          newInputUrls[item.id] = logo;
+          matchCount++;
+        }
+      } else if (item.type === 'LEAGUE') {
+        const logo = findOfficialLeagueLogo(item.name);
+        if (logo) {
+          leagueUpdates[item.id] = logo;
+          newInputUrls[item.id] = logo;
+          matchCount++;
+        }
+      }
+    });
+
+    if (matchCount === 0) {
+      setBatchSaveToast('Nenhum escudo correspondente foi encontrado no catálogo oficial.');
+      setTimeout(() => setBatchSaveToast(null), 3000);
+      return;
+    }
+
+    setInputUrls(newInputUrls);
+
+    if (onBulkUpdateLogos) {
+      await onBulkUpdateLogos({ countryUpdates, leagueUpdates, teamUpdates });
+    } else {
+      Object.entries(countryUpdates).forEach(([id, url]) => onUpdateCountryFlag(id, url));
+      Object.entries(leagueUpdates).forEach(([id, url]) => onUpdateLeagueLogo(id, url));
+      Object.entries(teamUpdates).forEach(([id, url]) => onUpdateTeamLogo(id, url));
+    }
+
+    setBatchSaveToast(`🎉 ${matchCount} escudo(s) e logo(s) oficiais foram preenchidos e salvos com sucesso!`);
+    setTimeout(() => setBatchSaveToast(null), 4500);
+  };
+
+  const handleDiscardAll = () => {
+    setInputUrls({});
+    setBatchSaveToast('Edições pendentes descartadas.');
+    setTimeout(() => setBatchSaveToast(null), 2000);
   };
 
   const handleSaveAllFilled = async () => {
@@ -538,6 +605,16 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
 
           {/* Quick Action Tools */}
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              id="btn-autofill-official-logos"
+              onClick={handleAutoFillOfficialLogos}
+              className="px-4 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 cursor-pointer hover:scale-103 active:scale-95"
+              title="Preencher automaticamente todos os escudos e logos conhecidos (clubes brasileiros, ligas e países)"
+            >
+              <Wand2 className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+              <span>Auto-Preencher Escudos Oficiais</span>
+            </button>
+
             {filledInputsCount > 0 && (
               <button
                 id="btn-save-all-filled-logos"
@@ -990,6 +1067,7 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                       placeholder="Cole a URL da imagem (https://...)"
                       value={inputVal}
                       onChange={(e) => handleUrlChange(item.id, e.target.value)}
+                      onBlur={() => handleBlurSave(item)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           handleSaveSingle(item);
@@ -1109,6 +1187,7 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                           placeholder="https://..."
                           value={inputVal}
                           onChange={(e) => handleUrlChange(item.id, e.target.value)}
+                          onBlur={() => handleBlurSave(item)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               handleSaveSingle(item);
@@ -1147,6 +1226,34 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Bottom Action Bar for Bulk Unsaved Changes */}
+      {filledInputsCount > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-950/95 backdrop-blur-md text-white border border-emerald-500/40 rounded-2xl px-5 py-3 shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-5">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+            <span className="text-xs font-bold text-slate-200">
+              <strong className="text-white font-black">{filledInputsCount}</strong> URL(s) preenchida(s) aguardando salvamento
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDiscardAll}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+            >
+              Descartar
+            </button>
+            <button
+              onClick={handleSaveAllFilled}
+              className="px-4 py-1.5 rounded-xl text-xs font-black bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span>Salvar Todas ({filledInputsCount})</span>
+            </button>
           </div>
         </div>
       )}
