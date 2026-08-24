@@ -31,7 +31,8 @@ import {
   SlidersHorizontal,
   RefreshCw,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Scale
 } from 'lucide-react';
 import { DbState, AppUser } from '../types';
 import { extractYMD, formatDateToYMD } from './DailyMatchesView';
@@ -43,8 +44,8 @@ import { diagnoseDatabaseAnomalies } from '../utils/dbSanitizer';
 interface NavbarProps {
   dbState: DbState;
   currentUser: AppUser | null;
-  activeTab: 'matches' | 'schedule' | 'standings' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos';
-  setActiveTab: (tab: 'matches' | 'schedule' | 'standings' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos') => void;
+  activeTab: 'matches' | 'schedule' | 'standings' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos' | 'referees';
+  setActiveTab: (tab: 'matches' | 'schedule' | 'standings' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos' | 'referees') => void;
   onOpenMatchModal: () => void;
   onOpenEntityModal: (type?: 'country' | 'league' | 'team') => void;
   onOpenBulkImportModal?: () => void;
@@ -142,6 +143,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   const activeUsersCount = dbState.users?.filter(
     u => getUserEffectiveStatus(u).status === 'ACTIVE'
   ).length || 1;
+
+  const refereeCount = useMemo(() => {
+    const set = new Set<string>();
+    dbState.matches.forEach(m => {
+      const r = (m.referee || '').trim();
+      if (r && r.toLowerCase() !== 'n/a' && r.toLowerCase() !== 'desconhecido') {
+        set.add(r.toLowerCase());
+      }
+    });
+    return set.size;
+  }, [dbState.matches]);
 
   return (
     <header className="bg-white border-b border-slate-200 text-slate-800 sticky top-0 z-40 shadow-xs">
@@ -936,6 +948,27 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Estatísticas
               </button>
 
+              {/* Árbitros */}
+              <button
+                onClick={() => setActiveTab('referees')}
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+                  activeTab === 'referees'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+                title="Estatísticas de Árbitros (Cartões, Faltas e Médias de Gols)"
+              >
+                <Scale className="w-3.5 h-3.5 text-amber-500" />
+                <span>Árbitros</span>
+                {refereeCount > 0 && (
+                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black ${
+                    activeTab === 'referees' ? 'bg-amber-800 text-amber-200' : 'bg-amber-100 text-amber-900'
+                  }`}>
+                    {refereeCount}
+                  </span>
+                )}
+              </button>
+
               {/* Escudos Pendentes (Master) */}
               {isMaster && (
                 <button
@@ -972,6 +1005,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-slate-700">
               {dbState.teams.length} Times
             </span>
+            {refereeCount > 0 && (
+              <span className="px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-md text-amber-900 font-bold">
+                {refereeCount} Árbitros
+              </span>
+            )}
           </div>
         </div>
       </div>

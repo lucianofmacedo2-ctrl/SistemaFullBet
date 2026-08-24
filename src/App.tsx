@@ -21,6 +21,7 @@ import { TeamManager } from './components/TeamManager';
 import { StatsDashboard } from './components/StatsDashboard';
 import { DailyMatchesView } from './components/DailyMatchesView';
 import { PendingLogosManager } from './components/PendingLogosManager';
+import { RefereeStatsModule } from './components/RefereeStatsModule';
 import { AnalysisDashboard } from './components/analysis/AnalysisDashboard';
 import { LeagueStandings } from './components/LeagueStandings';
 import { OpportunitiesHubModal } from './components/opportunities/OpportunitiesHubModal';
@@ -84,8 +85,9 @@ export default function App() {
   });
 
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'matches' | 'schedule' | 'standings' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos'>('matches');
+  const [activeTab, setActiveTab] = useState<'matches' | 'schedule' | 'standings' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos' | 'referees'>('matches');
   const [analysisTargetMatchId, setAnalysisTargetMatchId] = useState<string | null>(null);
+  const [refereeTargetName, setRefereeTargetName] = useState<string | undefined>(undefined);
 
   // Auth Modals state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -1517,6 +1519,18 @@ export default function App() {
                 onUpdateLeagueLogo={handleUpdateLeagueLogo}
                 onUpdateCountryFlag={handleUpdateCountryFlag}
                 onBulkUpdateLogos={handleBulkUpdateLogos}
+              />
+            )}
+
+            {activeTab === 'referees' && (
+              <RefereeStatsModule
+                dbState={dbState}
+                initialRefereeName={refereeTargetName}
+                onOpenMatchStats={handleOpenStatsModal}
+                onSelectMatchAnalysis={(match) => {
+                  setAnalysisTargetMatchId(match.id);
+                  setActiveTab('analysis');
+                }}
               />
             )}
           </>

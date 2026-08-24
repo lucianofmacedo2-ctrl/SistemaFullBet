@@ -1603,3 +1603,119 @@ export async function parsePendingLogosExcelFile(file: File): Promise<ParsedPend
 
   return rows;
 }
+
+export async function exportRefereesToExcel(
+  refereesData: any[],
+  customFileName?: string
+): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Football Manager';
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet('Estatísticas de Árbitros', {
+    views: [{ state: 'frozen', ySplit: 1 }],
+  });
+
+  worksheet.columns = [
+    { header: 'Árbitro', key: 'name', width: 28 },
+    { header: 'Jogos Avaliados', key: 'finishedMatches', width: 16 },
+    { header: 'Jogos Futuros', key: 'scheduledMatches', width: 14 },
+    { header: 'Total Jogos', key: 'totalMatches', width: 14 },
+    { header: 'Média Cartões', key: 'avgTotalCards', width: 16 },
+    { header: 'Média Amarelos', key: 'avgYellowCards', width: 16 },
+    { header: 'Amarelos Mandante', key: 'avgYellowCardsHome', width: 18 },
+    { header: 'Amarelos Visitante', key: 'avgYellowCardsAway', width: 18 },
+    { header: 'Média Vermelhos', key: 'avgRedCards', width: 16 },
+    { header: '% Jogos c/ Vermelho', key: 'redCardMatchPct', width: 20 },
+    { header: 'Média Faltas', key: 'avgFouls', width: 16 },
+    { header: 'Faltas Mandante', key: 'avgFoulsHome', width: 16 },
+    { header: 'Faltas Visitante', key: 'avgFoulsAway', width: 16 },
+    { header: 'Faltas p/ Cartão', key: 'foulsPerCard', width: 16 },
+    { header: 'Média Gols', key: 'avgGoals', width: 14 },
+    { header: 'Gols Mandante', key: 'avgHomeGoals', width: 16 },
+    { header: 'Gols Visitante', key: 'avgAwayGoals', width: 16 },
+    { header: '% Over 2.5', key: 'over25Pct', width: 14 },
+    { header: '% Ambas Marcam', key: 'bttsPct', width: 16 },
+    { header: '% Vitória Mandante', key: 'homeWinPct', width: 18 },
+    { header: '% Empate', key: 'drawPct', width: 12 },
+    { header: '% Vitória Visitante', key: 'awayWinPct', width: 18 },
+    { header: 'Perfil Disciplinar', key: 'disciplineLevel', width: 20 },
+    { header: 'Ligas Atuadas', key: 'leagues', width: 35 },
+  ];
+
+  const headerRow = worksheet.getRow(1);
+  headerRow.height = 28;
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+  headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+  headerRow.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF1E293B' },
+  };
+
+  refereesData.forEach((ref, index) => {
+    const row = worksheet.addRow({
+      name: ref.name,
+      finishedMatches: ref.finishedMatches,
+      scheduledMatches: ref.scheduledMatches,
+      totalMatches: ref.totalMatches,
+      avgTotalCards: Number(ref.avgTotalCards.toFixed(2)),
+      avgYellowCards: Number(ref.avgYellowCards.toFixed(2)),
+      avgYellowCardsHome: Number(ref.avgYellowCardsHome.toFixed(2)),
+      avgYellowCardsAway: Number(ref.avgYellowCardsAway.toFixed(2)),
+      avgRedCards: Number(ref.avgRedCards.toFixed(2)),
+      redCardMatchPct: `${ref.redCardMatchPct.toFixed(1)}%`,
+      avgFouls: Number(ref.avgFouls.toFixed(1)),
+      avgFoulsHome: Number(ref.avgFoulsHome.toFixed(1)),
+      avgFoulsAway: Number(ref.avgFoulsAway.toFixed(1)),
+      foulsPerCard: Number(ref.foulsPerCard.toFixed(1)),
+      avgGoals: Number(ref.avgGoals.toFixed(2)),
+      avgHomeGoals: Number(ref.avgHomeGoals.toFixed(2)),
+      avgAwayGoals: Number(ref.avgAwayGoals.toFixed(2)),
+      over25Pct: `${ref.over25Pct.toFixed(1)}%`,
+      bttsPct: `${ref.bttsPct.toFixed(1)}%`,
+      homeWinPct: `${ref.homeWinPct.toFixed(1)}%`,
+      drawPct: `${ref.drawPct.toFixed(1)}%`,
+      awayWinPct: `${ref.awayWinPct.toFixed(1)}%`,
+      disciplineLevel:
+        ref.disciplineLevel === 'VERY_STRICT'
+          ? 'Muito Rigoroso'
+          : ref.disciplineLevel === 'STRICT'
+          ? 'Rigoroso'
+          : ref.disciplineLevel === 'LENIENT'
+          ? 'Deixa Jogar'
+          : 'Moderado',
+      leagues: (ref.leagues || []).join(', '),
+    });
+
+    if (index % 2 === 1) {
+      row.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFF8FAFC' },
+      };
+    }
+    row.alignment = { vertical: 'middle' };
+  });
+
+  worksheet.autoFilter = {
+    from: { row: 1, column: 1 },
+    to: { row: 1, column: 24 },
+  };
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const fileName =
+    customFileName || `estatisticas_arbitros_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
