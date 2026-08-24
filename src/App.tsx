@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { DbState, Match, NewEntityCreatedNotification, Country, League, Team, AppUser } from './types';
+import { DbState, Match, NewEntityCreatedNotification, Country, League, Team, AppUser, Referee } from './types';
 import { fetchDatabaseState, saveDatabaseState, clearDatabase, saveUsersList } from './services/dbService';
 
 import { Navbar } from './components/Navbar';
@@ -44,6 +44,7 @@ import { CloudSyncModal } from './components/CloudSyncModal';
 import { MatchOdds, MatchStats, MatchStatus, MatchPressureData } from './types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from './utils/idGenerator';
 import { ParsedMatchRow, ParsedMatchUpdateRow } from './utils/excelHelper';
+import { normalizeRefereeName } from './utils/refereeAnalytics';
 import { sanitizeDbImages, sanitizeImageUrl } from './utils/imageHelper';
 import {
   getCurrentAuthUser,
@@ -652,13 +653,72 @@ export default function App() {
     await saveDatabaseState(newState);
   };
 
-  // Bulk update logos/flags for countries, leagues, and teams in one batch
+  // Update Referee Photo
+  const handleUpdateRefereePhoto = async (refereeName: string, photoUrl: string) => {
+    const trimmedName = refereeName.trim();
+    if (!trimmedName) return;
+    const norm = normalizeRefereeName(trimmedName);
+    const cleanUrl = sanitizeImageUrl(photoUrl);
+
+    // 1. Update in all matches where referee matches
+    const updatedMatches = dbState.matches.map(m => {
+      if (normalizeRefereeName(m.referee) === norm) {
+        return {
+          ...m,
+          refereePhotoUrl: cleanUrl || undefined,
+        };
+      }
+      return m;
+    });
+
+    // 2. Update or insert into referees list
+    let updatedReferees = [...(dbState.referees || [])];
+    const existingIdx = updatedReferees.findIndex(r => normalizeRefereeName(r.name) === norm);
+    if (existingIdx >= 0) {
+      updatedReferees[existingIdx] = {
+        ...updatedReferees[existingIdx],
+        photoUrl: cleanUrl || undefined,
+        updatedAt: new Date().toISOString(),
+      };
+    } else {
+      updatedReferees.push({
+        id: `REF-${Date.now()}`,
+        name: trimmedName,
+        photoUrl: cleanUrl || undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    const newState: DbState = {
+      ...dbState,
+      matches: updatedMatches,
+      referees: updatedReferees,
+    };
+
+    setDbState(newState);
+    await saveDatabaseState(newState);
+
+    setNotifications(prev => [
+      ...prev,
+      {
+        id: `ref-photo-${Date.now()}`,
+        type: 'match',
+        entityId: trimmedName,
+        name: `Foto do árbitro "${trimmedName}" ${cleanUrl ? 'atualizada com sucesso!' : 'removida.'}`,
+        timestamp: Date.now(),
+      },
+    ]);
+  };
+
+  // Bulk update logos/flags for countries, leagues, teams, and referees in one batch
   const handleBulkUpdateLogos = async (updates: {
     countryUpdates?: Record<string, string>;
     leagueUpdates?: Record<string, string>;
     teamUpdates?: Record<string, string>;
+    refereeUpdates?: Record<string, string>;
   }) => {
-    const { countryUpdates = {}, leagueUpdates = {}, teamUpdates = {} } = updates;
+    const { countryUpdates = {}, leagueUpdates = {}, teamUpdates = {}, refereeUpdates = {} } = updates;
 
     const cleanCountryUpdates: Record<string, string | undefined> = {};
     Object.entries(countryUpdates).forEach(([k, v]) => {
@@ -673,6 +733,11 @@ export default function App() {
     const cleanTeamUpdates: Record<string, string | undefined> = {};
     Object.entries(teamUpdates).forEach(([k, v]) => {
       cleanTeamUpdates[k] = sanitizeImageUrl(v);
+    });
+
+    const cleanRefereeUpdates: Record<string, string | undefined> = {};
+    Object.entries(refereeUpdates).forEach(([k, v]) => {
+      cleanRefereeUpdates[normalizeRefereeName(k)] = sanitizeImageUrl(v);
     });
 
     const updatedCountries = dbState.countries.map(c => {
@@ -696,6 +761,26 @@ export default function App() {
       return t;
     });
 
+    let updatedReferees = [...(dbState.referees || [])];
+    Object.entries(cleanRefereeUpdates).forEach(([normRefName, url]) => {
+      const idx = updatedReferees.findIndex(r => normalizeRefereeName(r.name) === normRefName);
+      if (idx >= 0) {
+        updatedReferees[idx] = {
+          ...updatedReferees[idx],
+          photoUrl: url || undefined,
+          updatedAt: new Date().toISOString(),
+        };
+      } else {
+        updatedReferees.push({
+          id: `REF-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          name: normRefName,
+          photoUrl: url || undefined,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+    });
+
     const updatedMatches = dbState.matches.map(m => {
       let match = { ...m };
       if (m.countryId && cleanCountryUpdates[m.countryId] !== undefined) {
@@ -710,14 +795,22 @@ export default function App() {
       if (m.awayTeamId && cleanTeamUpdates[m.awayTeamId] !== undefined) {
         match.awayTeamLogoUrl = cleanTeamUpdates[m.awayTeamId];
       }
+      if (m.referee) {
+        const norm = normalizeRefereeName(m.referee);
+        if (cleanRefereeUpdates[norm] !== undefined) {
+          match.refereePhotoUrl = cleanRefereeUpdates[norm] || undefined;
+        }
+      }
       return match;
     });
 
-    const newState = {
+    const newState: DbState = {
       countries: updatedCountries,
       leagues: updatedLeagues,
       teams: updatedTeams,
       matches: updatedMatches,
+      referees: updatedReferees,
+      users: dbState.users,
     };
     setDbState(newState);
     await saveDatabaseState(newState);
@@ -1518,6 +1611,7 @@ export default function App() {
                 onUpdateTeamLogo={handleUpdateTeamLogo}
                 onUpdateLeagueLogo={handleUpdateLeagueLogo}
                 onUpdateCountryFlag={handleUpdateCountryFlag}
+                onUpdateRefereePhoto={handleUpdateRefereePhoto}
                 onBulkUpdateLogos={handleBulkUpdateLogos}
               />
             )}
@@ -1527,6 +1621,7 @@ export default function App() {
                 dbState={dbState}
                 initialRefereeName={refereeTargetName}
                 onOpenMatchStats={handleOpenStatsModal}
+                onUpdateRefereePhoto={handleUpdateRefereePhoto}
                 onSelectMatchAnalysis={(match) => {
                   setAnalysisTargetMatchId(match.id);
                   setActiveTab('analysis');

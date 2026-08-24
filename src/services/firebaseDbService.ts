@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { getAuth, signInAnonymously, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
-import { DbState, Country, League, Team, Match, AppUser } from '../types';
+import { DbState, Country, League, Team, Match, AppUser, Referee } from '../types';
 
 // Initialize Firebase App instance
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -175,7 +175,16 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
       await setDoc(doc(db, COLLECTION_NAME, `matches_${i}`), { list: cleanChunk });
     }
 
-    // 6. Meta info
+    // 6. Referees (if available)
+    if (state.referees && state.referees.length > 0) {
+      const cleanReferees = sanitizeForFirestore(state.referees);
+      await setDoc(doc(db, COLLECTION_NAME, 'referees'), {
+        list: cleanReferees,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    // 7. Meta info
     await setDoc(doc(db, COLLECTION_NAME, 'meta'), {
       lastUpdated: new Date().toISOString(),
       counts: {
@@ -184,6 +193,7 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
         teams: state.teams?.length || 0,
         matches: state.matches?.length || 0,
         users: state.users?.length || 0,
+        referees: state.referees?.length || 0,
       },
     });
 
@@ -252,6 +262,17 @@ export async function fetchDbFromFirestore(): Promise<DbState | null> {
       }
     }
 
+    // 6. Referees
+    let referees: Referee[] = [];
+    try {
+      const refereesSnap = await getDoc(doc(db, COLLECTION_NAME, 'referees'));
+      if (refereesSnap.exists()) {
+        referees = refereesSnap.data().list || [];
+      }
+    } catch {
+      // non-fatal
+    }
+
     if (countries.length === 0 && leagues.length === 0 && teams.length === 0 && matches.length === 0) {
       return null;
     }
@@ -262,6 +283,7 @@ export async function fetchDbFromFirestore(): Promise<DbState | null> {
       teams,
       matches,
       users,
+      referees,
     };
   } catch (error: any) {
     console.error('Error fetching state from Firestore:', error);

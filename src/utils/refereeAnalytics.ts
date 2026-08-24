@@ -3,6 +3,7 @@ import { Match, DbState } from '../types';
 export interface RefereeStats {
   id: string; // Slugified name
   name: string;
+  photoUrl?: string;
   totalMatches: number;
   finishedMatches: number;
   scheduledMatches: number;
@@ -317,10 +318,12 @@ export function computeRefereeStats(
 
     const firstMatch = sortedMatches[sortedMatches.length - 1];
     const lastMatch = sortedMatches[0];
+    const photoUrl = sortedMatches.find(m => m.refereePhotoUrl && m.refereePhotoUrl.trim() !== '')?.refereePhotoUrl;
 
     list.push({
       id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       name,
+      photoUrl,
       totalMatches,
       finishedMatches: finishedCount,
       scheduledMatches: scheduledMatchesList.length,

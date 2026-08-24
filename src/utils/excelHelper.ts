@@ -1491,7 +1491,7 @@ export async function parseExcelOrCsvFile(file: File): Promise<ParsedTeamRow[]> 
 }
 
 export interface PendingLogoItem {
-  type: 'TEAM' | 'LEAGUE' | 'COUNTRY';
+  type: 'TEAM' | 'LEAGUE' | 'COUNTRY' | 'REFEREE';
   id: string;
   name: string;
   context: string;
@@ -1500,7 +1500,7 @@ export interface PendingLogoItem {
 
 export interface ParsedPendingLogoRow {
   rowIndex: number;
-  type: 'TEAM' | 'LEAGUE' | 'COUNTRY' | 'UNKNOWN';
+  type: 'TEAM' | 'LEAGUE' | 'COUNTRY' | 'REFEREE' | 'UNKNOWN';
   id?: string;
   name?: string;
   url: string;
@@ -1575,7 +1575,7 @@ export async function parsePendingLogosExcelFile(file: File): Promise<ParsedPend
       rowData['URL_Imagem'] || rowData['URL'] || row.getCell(5).value || row.getCell(4).value || ''
     ).trim();
 
-    let type: 'TEAM' | 'LEAGUE' | 'COUNTRY' | 'UNKNOWN' = 'UNKNOWN';
+    let type: 'TEAM' | 'LEAGUE' | 'COUNTRY' | 'REFEREE' | 'UNKNOWN' = 'UNKNOWN';
     if (typeRaw.includes('TIME') || typeRaw.includes('TEAM') || id.startsWith('TIME')) {
       type = 'TEAM';
     } else if (typeRaw.includes('LIGA') || typeRaw.includes('LEAGUE') || id.startsWith('LIGA')) {
@@ -1587,6 +1587,14 @@ export async function parsePendingLogosExcelFile(file: File): Promise<ParsedPend
       id.startsWith('PAIS')
     ) {
       type = 'COUNTRY';
+    } else if (
+      typeRaw.includes('ARBITRO') ||
+      typeRaw.includes('ÁRBITRO') ||
+      typeRaw.includes('REFEREE') ||
+      typeRaw.includes('JUIZ') ||
+      id.startsWith('REF')
+    ) {
+      type = 'REFEREE';
     }
 
     if (url && (id || name)) {
@@ -1641,6 +1649,7 @@ export async function exportRefereesToExcel(
     { header: '% Vitória Visitante', key: 'awayWinPct', width: 18 },
     { header: 'Perfil Disciplinar', key: 'disciplineLevel', width: 20 },
     { header: 'Ligas Atuadas', key: 'leagues', width: 35 },
+    { header: 'URL da Foto', key: 'photoUrl', width: 45 },
   ];
 
   const headerRow = worksheet.getRow(1);
@@ -1686,6 +1695,7 @@ export async function exportRefereesToExcel(
           ? 'Deixa Jogar'
           : 'Moderado',
       leagues: (ref.leagues || []).join(', '),
+      photoUrl: ref.photoUrl || '',
     });
 
     if (index % 2 === 1) {

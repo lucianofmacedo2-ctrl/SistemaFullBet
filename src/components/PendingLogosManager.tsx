@@ -25,6 +25,8 @@ import {
   RotateCcw,
   CheckSquare,
   Wand2,
+  Scale,
+  User,
 } from 'lucide-react';
 import { DbState, Team, League, Country } from '../types';
 import {
@@ -37,20 +39,23 @@ import {
   findOfficialTeamLogo,
   findOfficialLeagueLogo,
 } from '../utils/officialLogosCatalog';
+import { normalizeRefereeName } from '../utils/refereeAnalytics';
 
 interface PendingLogosManagerProps {
   dbState: DbState;
   onUpdateTeamLogo: (teamId: string, logoUrl: string) => void;
   onUpdateLeagueLogo: (leagueId: string, logoUrl: string) => void;
   onUpdateCountryFlag: (countryId: string, flagUrl: string) => void;
+  onUpdateRefereePhoto?: (refereeName: string, photoUrl: string) => void;
   onBulkUpdateLogos?: (updates: {
     countryUpdates?: Record<string, string>;
     leagueUpdates?: Record<string, string>;
     teamUpdates?: Record<string, string>;
+    refereeUpdates?: Record<string, string>;
   }) => Promise<void>;
 }
 
-type TabType = 'all' | 'teams' | 'leagues' | 'countries';
+type TabType = 'all' | 'teams' | 'leagues' | 'countries' | 'referees';
 type StatusFilterType = 'PENDING' | 'REGISTERED' | 'ALL';
 type ViewMode = 'grid' | 'table';
 
@@ -59,6 +64,7 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
   onUpdateTeamLogo,
   onUpdateLeagueLogo,
   onUpdateCountryFlag,
+  onUpdateRefereePhoto,
   onBulkUpdateLogos,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('all');
@@ -87,7 +93,7 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
 
   // Unified item representation
   type UnifiedItem = {
-    type: 'TEAM' | 'LEAGUE' | 'COUNTRY';
+    type: 'TEAM' | 'LEAGUE' | 'COUNTRY' | 'REFEREE';
     id: string;
     name: string;
     currentUrl?: string;
@@ -131,7 +137,49 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
       context: c.code ? `Código: ${c.code}` : 'País',
     }));
 
-    return [...teamsList, ...leaguesList, ...countriesList];
+    // Build referee items from both matches and registered referee metadata
+    const refereeMap = new Map<string, { name: string; photoUrl?: string; context: string; id: string }>();
+
+    (dbState.referees || []).forEach(r => {
+      const norm = normalizeRefereeName(r.name);
+      if (norm) {
+        refereeMap.set(norm, {
+          name: r.name,
+          photoUrl: r.photoUrl,
+          context: 'Árbitro Cadastrado',
+          id: r.id,
+        });
+      }
+    });
+
+    dbState.matches.forEach(m => {
+      const ref = normalizeRefereeName(m.referee);
+      if (!ref || ref.toLowerCase() === 'n/a' || ref.toLowerCase() === 'desconhecido') return;
+      const existing = refereeMap.get(ref);
+      const photo = m.refereePhotoUrl || existing?.photoUrl;
+      const ctx = m.leagueName ? `${m.leagueName} (${m.countryName || 'Arbitragem'})` : (m.countryName || 'Árbitro');
+      if (existing) {
+        if (!existing.photoUrl && photo) existing.photoUrl = photo;
+      } else {
+        refereeMap.set(ref, {
+          name: m.referee.trim(),
+          photoUrl: photo,
+          context: ctx,
+          id: `REF-${ref.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        });
+      }
+    });
+
+    const refereesList: UnifiedItem[] = Array.from(refereeMap.values()).map(r => ({
+      type: 'REFEREE',
+      id: r.id,
+      name: r.name,
+      currentUrl: r.photoUrl,
+      hasValidUrl: isValidImageUrl(r.photoUrl),
+      context: r.context,
+    }));
+
+    return [...teamsList, ...leaguesList, ...countriesList, ...refereesList];
   }, [dbState]);
 
   // Statistics
@@ -148,9 +196,14 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
     const countriesWithFlag = dbState.countries.filter(c => isValidImageUrl(c.flagUrl)).length;
     const countriesPending = totalCountries - countriesWithFlag;
 
-    const totalPending = teamsPending + leaguesPending + countriesPending;
-    const totalRegistered = teamsWithLogo + leaguesWithLogo + countriesWithFlag;
-    const totalEntities = totalTeams + totalLeagues + totalCountries;
+    const refereesList = allItems.filter(i => i.type === 'REFEREE');
+    const totalReferees = refereesList.length;
+    const refereesWithPhoto = refereesList.filter(r => r.hasValidUrl).length;
+    const refereesPending = totalReferees - refereesWithPhoto;
+
+    const totalPending = teamsPending + leaguesPending + countriesPending + refereesPending;
+    const totalRegistered = teamsWithLogo + leaguesWithLogo + countriesWithFlag + refereesWithPhoto;
+    const totalEntities = totalTeams + totalLeagues + totalCountries + totalReferees;
 
     return {
       totalTeams,
@@ -162,11 +215,14 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
       totalCountries,
       countriesWithFlag,
       countriesPending,
+      totalReferees,
+      refereesWithPhoto,
+      refereesPending,
       totalPending,
       totalRegistered,
       totalEntities,
     };
-  }, [dbState]);
+  }, [dbState, allItems]);
 
   // Filter items by Tab & Status
   const itemsByTabAndStatus = useMemo(() => {
@@ -175,6 +231,7 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
       if (activeTab === 'teams' && item.type !== 'TEAM') return false;
       if (activeTab === 'leagues' && item.type !== 'LEAGUE') return false;
       if (activeTab === 'countries' && item.type !== 'COUNTRY') return false;
+      if (activeTab === 'referees' && item.type !== 'REFEREE') return false;
 
       // 2. Status filter
       if (statusFilter === 'PENDING' && item.hasValidUrl) return false;
@@ -229,6 +286,8 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
       onUpdateLeagueLogo(item.id, cleanUrl);
     } else if (item.type === 'COUNTRY') {
       onUpdateCountryFlag(item.id, cleanUrl);
+    } else if (item.type === 'REFEREE') {
+      onUpdateRefereePhoto?.(item.name, cleanUrl);
     }
 
     setSavedStatus(prev => ({ ...prev, [item.id]: true }));
@@ -303,6 +362,7 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
     const countryUpdates: Record<string, string> = {};
     const leagueUpdates: Record<string, string> = {};
     const teamUpdates: Record<string, string> = {};
+    const refereeUpdates: Record<string, string> = {};
     let count = 0;
 
     Object.entries(inputUrls).forEach(([id, rawUrl]) => {
@@ -320,6 +380,9 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
         } else if (item.type === 'COUNTRY') {
           countryUpdates[item.id] = cleanUrl;
           count++;
+        } else if (item.type === 'REFEREE') {
+          refereeUpdates[item.name] = cleanUrl;
+          count++;
         }
       }
     });
@@ -327,11 +390,12 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
     if (count === 0) return;
 
     if (onBulkUpdateLogos) {
-      await onBulkUpdateLogos({ countryUpdates, leagueUpdates, teamUpdates });
+      await onBulkUpdateLogos({ countryUpdates, leagueUpdates, teamUpdates, refereeUpdates });
     } else {
       Object.entries(countryUpdates).forEach(([id, url]) => onUpdateCountryFlag(id, url));
       Object.entries(leagueUpdates).forEach(([id, url]) => onUpdateLeagueLogo(id, url));
       Object.entries(teamUpdates).forEach(([id, url]) => onUpdateTeamLogo(id, url));
+      Object.entries(refereeUpdates).forEach(([name, url]) => onUpdateRefereePhoto?.(name, url));
     }
 
     setBatchSaveToast(`${count} URL(s) salvas com sucesso no banco de dados!`);
@@ -367,6 +431,7 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
       const countryUpdates: Record<string, string> = {};
       const leagueUpdates: Record<string, string> = {};
       const teamUpdates: Record<string, string> = {};
+      const refereeUpdates: Record<string, string> = {};
       let matchedCount = 0;
 
       rows.forEach(row => {
@@ -393,6 +458,12 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
             matchedCount++;
             return;
           }
+          const r = allItems.find(item => item.type === 'REFEREE' && item.id.toLowerCase() === row.id!.toLowerCase());
+          if (r) {
+            refereeUpdates[r.name] = cleanUrl;
+            matchedCount++;
+            return;
+          }
         }
 
         // Match by Name
@@ -416,18 +487,25 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
             matchedCount++;
             return;
           }
+          const r = allItems.find(item => item.type === 'REFEREE' && item.name.toLowerCase().trim() === nameLower);
+          if (r) {
+            refereeUpdates[r.name] = cleanUrl;
+            matchedCount++;
+            return;
+          }
         }
       });
 
       if (matchedCount === 0) {
-        setExcelFeedback({ error: 'Nenhum time, liga ou país correspondente aos IDs/Nomes do arquivo foi encontrado.' });
+        setExcelFeedback({ error: 'Nenhum time, liga, país ou árbitro correspondente aos IDs/Nomes do arquivo foi encontrado.' });
       } else {
         if (onBulkUpdateLogos) {
-          await onBulkUpdateLogos({ countryUpdates, leagueUpdates, teamUpdates });
+          await onBulkUpdateLogos({ countryUpdates, leagueUpdates, teamUpdates, refereeUpdates });
         } else {
           Object.entries(countryUpdates).forEach(([id, url]) => onUpdateCountryFlag(id, url));
           Object.entries(leagueUpdates).forEach(([id, url]) => onUpdateLeagueLogo(id, url));
           Object.entries(teamUpdates).forEach(([id, url]) => onUpdateTeamLogo(id, url));
+          Object.entries(refereeUpdates).forEach(([name, url]) => onUpdateRefereePhoto?.(name, url));
         }
         setExcelFeedback({ success: `${matchedCount} imagem(ns) importada(s) e atualizada(s) com sucesso!` });
       }
@@ -446,6 +524,7 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
     const countryUpdates: Record<string, string> = {};
     const leagueUpdates: Record<string, string> = {};
     const teamUpdates: Record<string, string> = {};
+    const refereeUpdates: Record<string, string> = {};
     let matchedCount = 0;
 
     lines.forEach(line => {
@@ -481,6 +560,13 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
             return;
           }
 
+          const refById = allItems.find(i => i.type === 'REFEREE' && i.id.toLowerCase() === key.toLowerCase());
+          if (refById) {
+            refereeUpdates[refById.name] = cleanUrl;
+            matchedCount++;
+            return;
+          }
+
           // Check by Name
           const keyLower = key.toLowerCase().trim();
           const teamByName = dbState.teams.find(t => t.name.toLowerCase().trim() === keyLower);
@@ -503,6 +589,13 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
             matchedCount++;
             return;
           }
+
+          const refByName = allItems.find(i => i.type === 'REFEREE' && i.name.toLowerCase().trim() === keyLower);
+          if (refByName) {
+            refereeUpdates[refByName.name] = cleanUrl;
+            matchedCount++;
+            return;
+          }
         }
       }
     });
@@ -511,11 +604,12 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
       setBulkPasteFeedback('Nenhum registro correspondente foi encontrado para as linhas coladas. Verifique o formato: Nome;URL ou ID;URL.');
     } else {
       if (onBulkUpdateLogos) {
-        await onBulkUpdateLogos({ countryUpdates, leagueUpdates, teamUpdates });
+        await onBulkUpdateLogos({ countryUpdates, leagueUpdates, teamUpdates, refereeUpdates });
       } else {
         Object.entries(countryUpdates).forEach(([id, url]) => onUpdateCountryFlag(id, url));
         Object.entries(leagueUpdates).forEach(([id, url]) => onUpdateLeagueLogo(id, url));
         Object.entries(teamUpdates).forEach(([id, url]) => onUpdateTeamLogo(id, url));
+        Object.entries(refereeUpdates).forEach(([name, url]) => onUpdateRefereePhoto?.(name, url));
       }
       setBulkPasteFeedback(`${matchedCount} URL(s) aplicada(s) com sucesso!`);
       setTimeout(() => {
@@ -540,6 +634,9 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
     if (item.type === 'LEAGUE') {
       return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`${item.name} ${item.context} logo png`)}`;
     }
+    if (item.type === 'REFEREE') {
+      return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`arbitro ${item.name} futebol foto`)}`;
+    }
     return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`${item.name} flag png icon`)}`;
   };
 
@@ -562,9 +659,9 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                 <Image className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-xl font-black tracking-tight">Central de Escudos, Logos & Bandeiras</h2>
+                <h2 className="text-xl font-black tracking-tight">Central de Escudos, Logos, Bandeiras & Fotos de Árbitros</h2>
                 <p className="text-xs text-blue-200/80 mt-0.5 max-w-2xl leading-relaxed">
-                  Gerencie, envie URLs em massa, importe planilhas e visualize em tempo real quais clubes, ligas e países possuem ou não imagens cadastradas.
+                  Gerencie, envie URLs em massa, importe planilhas e visualize em tempo real quais clubes, ligas, países e árbitros possuem ou não imagens cadastradas.
                 </p>
               </div>
             </div>
@@ -599,6 +696,16 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                 <span className="text-emerald-400 font-bold">{stats.countriesWithFlag} c/ bandeira</span>
                 <span className="text-slate-500">•</span>
                 <span className="text-amber-400 font-bold">{stats.countriesPending} pendentes</span>
+              </div>
+
+              <div className="bg-slate-950/60 border border-amber-400/30 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs">
+                <Scale className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-slate-300">Árbitros:</span>
+                <span className="font-bold text-white">{stats.totalReferees}</span>
+                <span className="text-slate-500">•</span>
+                <span className="text-emerald-400 font-bold">{stats.refereesWithPhoto} c/ foto</span>
+                <span className="text-slate-500">•</span>
+                <span className="text-amber-400 font-bold">{stats.refereesPending} pendentes</span>
               </div>
             </div>
           </div>
@@ -682,7 +789,7 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
             </div>
 
             <p className="text-xs text-slate-300">
-              Cole linhas no formato: <code className="bg-black/50 px-1.5 py-0.5 rounded text-blue-300">Nome ou ID;URL</code> ou separadas por Tabulação (copiado direto do Excel).
+              Cole linhas no formato: <code className="bg-black/50 px-1.5 py-0.5 rounded text-blue-300">Nome ou ID;URL</code> ou separadas por Tabulação (copiado direto do Excel). Suporta times, ligas, países e árbitros.
             </p>
 
             <div className="bg-black/30 border border-white/10 rounded-xl p-3 text-[11px] font-mono text-slate-400 space-y-1">
@@ -691,6 +798,7 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
               <p>TIME-002;https://exemplo.com/logos/chelsea.png</p>
               <p>Premier League;https://exemplo.com/logos/premier.png</p>
               <p>Brasil;https://exemplo.com/flags/br.png</p>
+              <p>Wilton Pereira Sampaio;https://exemplo.com/arbitros/wilton.png</p>
             </div>
 
             <textarea
@@ -809,6 +917,18 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
               <Globe className="w-3.5 h-3.5 text-emerald-600" />
               <span>Países ({stats.totalCountries})</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('referees')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'referees'
+                  ? 'bg-white text-amber-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Scale className="w-3.5 h-3.5 text-amber-600" />
+              <span>Árbitros ({stats.totalReferees})</span>
+            </button>
           </div>
 
           {/* Status Sub-Filters (Pending / Registered / All) */}
@@ -858,10 +978,11 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                 className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                   viewMode === 'grid' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
                 }`}
-                title="Modo Cards Visuais"
+                title="Modo Grid de Cartões"
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
+
               <button
                 onClick={() => setViewMode('table')}
                 className={`p-1.5 rounded-lg transition-all cursor-pointer ${
@@ -881,7 +1002,7 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
-              placeholder="Buscar por nome, ID ou país..."
+              placeholder="Buscar por nome, ID ou contexto..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-slate-900"
@@ -963,7 +1084,6 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
             const isSaved = savedStatus[item.id];
             const hasError = imageLoadErrors[item.id];
             const isFilled = Boolean(inputVal.trim());
-            const hasValidFormat = isValidImageUrl(inputVal);
 
             return (
               <div
@@ -985,7 +1105,8 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                           <img
                             src={inputVal.trim()}
                             alt={item.name}
-                            className="w-full h-full object-contain p-1"
+                            className={`w-full h-full ${item.type === 'REFEREE' ? 'object-cover' : 'object-contain p-1'}`}
+                            referrerPolicy="no-referrer"
                             onError={() => {
                               setImageLoadErrors(prev => ({ ...prev, [item.id]: true }));
                             }}
@@ -994,6 +1115,8 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                           <Shield className="w-5 h-5 text-slate-400" />
                         ) : item.type === 'LEAGUE' ? (
                           <Trophy className="w-5 h-5 text-slate-400" />
+                        ) : item.type === 'REFEREE' ? (
+                          <Scale className="w-5 h-5 text-amber-500" />
                         ) : (
                           <Globe className="w-5 h-5 text-slate-400" />
                         )}
@@ -1007,12 +1130,14 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                               ? 'bg-blue-50 text-blue-700 border border-blue-200'
                               : item.type === 'LEAGUE'
                               ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                              : item.type === 'REFEREE'
+                              ? 'bg-amber-50 text-amber-800 border border-amber-200'
                               : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           }`}>
-                            {item.type === 'TEAM' ? 'Time' : item.type === 'LEAGUE' ? 'Liga' : 'País'}
+                            {item.type === 'TEAM' ? 'Time' : item.type === 'LEAGUE' ? 'Liga' : item.type === 'REFEREE' ? 'Árbitro' : 'País'}
                           </span>
 
-                          <span className="text-[10px] font-mono text-slate-400 font-semibold">
+                          <span className="text-[10px] font-mono text-slate-400 font-semibold truncate max-w-[120px]">
                             {item.id}
                           </span>
 
@@ -1022,7 +1147,7 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                             </span>
                           ) : (
                             <span className="text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded">
-                              Sem Escudo
+                              Sem Imagem
                             </span>
                           )}
                         </div>
@@ -1134,9 +1259,11 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                             ? 'bg-blue-50 text-blue-700 border border-blue-200'
                             : item.type === 'LEAGUE'
                             ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                            : item.type === 'REFEREE'
+                            ? 'bg-amber-50 text-amber-800 border border-amber-200'
                             : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         }`}>
-                          {item.type === 'TEAM' ? 'Time' : item.type === 'LEAGUE' ? 'Liga' : 'País'}
+                          {item.type === 'TEAM' ? 'Time' : item.type === 'LEAGUE' ? 'Liga' : item.type === 'REFEREE' ? 'Árbitro' : 'País'}
                         </span>
                       </td>
 
@@ -1170,7 +1297,8 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                             <img
                               src={inputVal.trim()}
                               alt={item.name}
-                              className="w-full h-full object-contain"
+                              className={`w-full h-full ${item.type === 'REFEREE' ? 'object-cover' : 'object-contain'}`}
+                              referrerPolicy="no-referrer"
                               onError={() => {
                                 setImageLoadErrors(prev => ({ ...prev, [item.id]: true }));
                               }}
@@ -1202,17 +1330,17 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                           href={getGoogleSearchUrl(item)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1 text-slate-400 hover:text-blue-600 inline-block"
-                          title="Buscar imagem no Google"
+                          className="p-1.5 inline-flex rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                          title="Pesquisar imagem no Google Imagens"
                         >
-                          <ExternalLink className="w-3.5 h-3.5" />
+                          <ExternalLink className="w-4 h-4" />
                         </a>
                       </td>
 
                       <td className="px-4 py-2.5 text-right whitespace-nowrap">
                         <button
                           onClick={() => handleSaveSingle(item)}
-                          className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                          className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs ${
                             isSaved
                               ? 'bg-emerald-600 text-white'
                               : 'bg-blue-600 hover:bg-blue-700 text-white'

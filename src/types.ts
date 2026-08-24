@@ -156,6 +156,15 @@ export interface MatchOdds {
   asianHandicapAwayOdd?: number | null; // Odd_Handicap_Asiático_Visitante_FT
 }
 
+export interface Referee {
+  id: string; // e.g. "REF-001"
+  name: string;
+  photoUrl?: string;
+  countryId?: string;
+  countryName?: string;
+  createdAt: string;
+}
+
 export interface Match {
   id: string; // e.g. "JOGO-001"
   countryId: string;
@@ -174,6 +183,7 @@ export interface Match {
   awayScore: number | null;
   matchDate: string; // ISO date-time string
   referee?: string; // Arbitro
+  refereePhotoUrl?: string; // URL da Foto do Arbitro
   stadium?: string; // Estadio
   stadiumCapacity?: number | null; // Capacidade
   attendance?: number | null; // Publico
@@ -211,10 +221,11 @@ export interface DbState {
   teams: Team[];
   matches: Match[];
   users?: AppUser[];
+  referees?: Referee[];
 }
 
 export interface NewEntityCreatedNotification {
-  type: 'country' | 'league' | 'team' | 'match' | 'user';
+  type: 'country' | 'league' | 'team' | 'match' | 'user' | 'referee';
   id: string;
   name: string;
 }

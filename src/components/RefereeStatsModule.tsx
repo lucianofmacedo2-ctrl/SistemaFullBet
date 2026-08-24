@@ -27,6 +27,11 @@ import {
   ArrowDownRight,
   Minus,
   Sparkles,
+  Camera,
+  ExternalLink,
+  X,
+  Check,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { DbState, Match } from '../types';
 import {
@@ -34,13 +39,14 @@ import {
   RefereeStats,
   RefereeGlobalAverages,
 } from '../utils/refereeAnalytics';
-import { exportRefereesToExcel } from '../utils/excelHelper';
-import { formatIsoToDDMMYYYY } from '../utils/excelHelper';
+import { exportRefereesToExcel, formatIsoToDDMMYYYY } from '../utils/excelHelper';
+import { isValidImageUrl, sanitizeImageUrl } from '../utils/imageHelper';
 
 interface RefereeStatsModuleProps {
   dbState: DbState;
   onOpenMatchStats?: (match: Match) => void;
   onSelectMatchAnalysis?: (match: Match) => void;
+  onUpdateRefereePhoto?: (refereeName: string, photoUrl: string) => Promise<void> | void;
   initialRefereeName?: string;
 }
 
@@ -62,6 +68,7 @@ export const RefereeStatsModule: React.FC<RefereeStatsModuleProps> = ({
   dbState,
   onOpenMatchStats,
   onSelectMatchAnalysis,
+  onUpdateRefereePhoto,
   initialRefereeName,
 }) => {
   // Navigation views within Referee module
@@ -89,6 +96,73 @@ export const RefereeStatsModule: React.FC<RefereeStatsModuleProps> = ({
   // Compare referees state
   const [compareRef1Id, setCompareRef1Id] = useState<string>('');
   const [compareRef2Id, setCompareRef2Id] = useState<string>('');
+
+  // Photo editing modal state
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [photoModalReferee, setPhotoModalReferee] = useState<RefereeStats | null>(null);
+  const [photoInputUrl, setPhotoInputUrl] = useState('');
+  const [photoTestError, setPhotoTestError] = useState(false);
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
+
+  const handleOpenPhotoModal = (ref: RefereeStats, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setPhotoModalReferee(ref);
+    setPhotoInputUrl(ref.photoUrl || '');
+    setPhotoTestError(false);
+    setIsPhotoModalOpen(true);
+  };
+
+  const handleSavePhotoModal = async () => {
+    if (!photoModalReferee) return;
+    setIsSavingPhoto(true);
+    try {
+      if (onUpdateRefereePhoto) {
+        await onUpdateRefereePhoto(photoModalReferee.name, photoInputUrl);
+      }
+      setIsPhotoModalOpen(false);
+    } finally {
+      setIsSavingPhoto(false);
+    }
+  };
+
+  // Helper to render avatar/photo for a referee
+  const renderRefereeAvatar = (photoUrl?: string, name?: string, size: 'sm' | 'md' | 'lg' | 'xl' = 'md') => {
+    const sizeClasses = {
+      sm: 'w-7 h-7 text-xs rounded-full',
+      md: 'w-9 h-9 text-xs rounded-xl',
+      lg: 'w-12 h-12 text-sm rounded-2xl',
+      xl: 'w-16 h-16 text-xl rounded-2xl',
+    }[size];
+
+    const initials = (name || 'A')
+      .split(' ')
+      .slice(0, 2)
+      .map(p => p[0])
+      .join('')
+      .toUpperCase();
+
+    if (photoUrl && isValidImageUrl(photoUrl)) {
+      return (
+        <img
+          src={photoUrl}
+          alt={name || 'Árbitro'}
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            (e.target as HTMLElement).style.display = 'none';
+          }}
+          className={`${sizeClasses} object-cover border border-slate-200 shadow-2xs shrink-0 bg-slate-100`}
+        />
+      );
+    }
+
+    return (
+      <div
+        className={`${sizeClasses} bg-gradient-to-br from-slate-700 to-slate-900 text-amber-400 font-black flex items-center justify-center border border-slate-600/50 shadow-2xs shrink-0`}
+      >
+        {initials || <Scale className="w-4 h-4" />}
+      </div>
+    );
+  };
 
   // Compute all referee metrics
   const { referees, globalAverages, upcomingRefereeAssignments } = useMemo(() => {
@@ -643,17 +717,31 @@ export const RefereeStatsModule: React.FC<RefereeStatsModuleProps> = ({
                             {idx + 1}
                           </td>
                           <td className="py-3 px-4">
-                            <div className="font-bold text-slate-900 text-sm group-hover:text-blue-700 flex items-center gap-1.5">
-                              <span>{ref.name}</span>
-                              {ref.redCardMatchPct >= 25 && (
-                                <span className="px-1.5 py-0.2 bg-red-100 text-red-700 text-[10px] font-black rounded-sm" title="Expulsa frequentemente">
-                                  EXPULSÕES
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-slate-500 truncate max-w-xs mt-0.5">
-                              {ref.leagues.slice(0, 2).join(', ')}
-                              {ref.leagues.length > 2 ? ` (+${ref.leagues.length - 2})` : ''}
+                            <div className="flex items-center gap-3">
+                              <div
+                                onClick={(e) => handleOpenPhotoModal(ref, e)}
+                                className="relative group/avatar cursor-pointer shrink-0"
+                                title="Clique para adicionar ou alterar a foto do árbitro"
+                              >
+                                {renderRefereeAvatar(ref.photoUrl, ref.name, 'md')}
+                                <div className="absolute inset-0 bg-black/60 rounded-xl opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center text-amber-400 transition-opacity">
+                                  <Camera className="w-3.5 h-3.5" />
+                                </div>
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-bold text-slate-900 text-sm group-hover:text-blue-700 flex items-center gap-1.5 flex-wrap">
+                                  <span>{ref.name}</span>
+                                  {ref.redCardMatchPct >= 25 && (
+                                    <span className="px-1.5 py-0.2 bg-red-100 text-red-700 text-[10px] font-black rounded-sm" title="Expulsa frequentemente">
+                                      EXPULSÕES
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-slate-500 truncate max-w-xs mt-0.5">
+                                  {ref.leagues.slice(0, 2).join(', ')}
+                                  {ref.leagues.length > 2 ? ` (+${ref.leagues.length - 2})` : ''}
+                                </div>
+                              </div>
                             </div>
                           </td>
                           <td className="py-3 px-3 text-center">
@@ -765,14 +853,26 @@ export const RefereeStatsModule: React.FC<RefereeStatsModuleProps> = ({
                   className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md hover:border-blue-300 transition-all cursor-pointer flex flex-col justify-between space-y-4"
                 >
                   <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="text-base font-black text-slate-900 hover:text-blue-600">
-                          {ref.name}
-                        </h3>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {ref.leagues.join(', ')}
-                        </p>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          onClick={(e) => handleOpenPhotoModal(ref, e)}
+                          className="relative group/avatar cursor-pointer shrink-0"
+                          title="Clique para adicionar ou alterar a foto do árbitro"
+                        >
+                          {renderRefereeAvatar(ref.photoUrl, ref.name, 'lg')}
+                          <div className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center text-amber-400 transition-opacity">
+                            <Camera className="w-4 h-4" />
+                          </div>
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-base font-black text-slate-900 hover:text-blue-600 truncate">
+                            {ref.name}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-0.5 truncate">
+                            {ref.leagues.join(', ')}
+                          </p>
+                        </div>
                       </div>
                       {getDisciplineBadge(ref.disciplineLevel)}
                     </div>
@@ -867,11 +967,19 @@ export const RefereeStatsModule: React.FC<RefereeStatsModuleProps> = ({
             <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 p-6 text-white">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 font-black text-2xl shadow-lg border border-amber-300">
-                    <Scale className="w-8 h-8 stroke-[2.5]" />
+                  <div
+                    onClick={(e) => handleOpenPhotoModal(activeReferee, e)}
+                    className="relative group/dossier-photo cursor-pointer shrink-0"
+                    title="Clique para adicionar ou alterar a foto deste árbitro"
+                  >
+                    {renderRefereeAvatar(activeReferee.photoUrl, activeReferee.name, 'xl')}
+                    <div className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover/dossier-photo:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-black transition-opacity border border-amber-400">
+                      <Camera className="w-5 h-5 text-amber-400 mb-0.5" />
+                      <span>{activeReferee.photoUrl ? 'Alterar Foto' : 'Inserir Foto'}</span>
+                    </div>
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h2 className="text-2xl font-black tracking-tight text-white">
                         {activeReferee.name}
                       </h2>
@@ -884,7 +992,16 @@ export const RefereeStatsModule: React.FC<RefereeStatsModuleProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <button
+                    onClick={(e) => handleOpenPhotoModal(activeReferee, e)}
+                    className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-xl text-xs font-bold border border-amber-400/40 flex items-center gap-1.5 transition-all cursor-pointer hover:scale-102"
+                    title="Definir ou trocar a URL da foto do árbitro"
+                  >
+                    <Camera className="w-4 h-4 text-amber-400" />
+                    <span>{activeReferee.photoUrl ? 'Editar Foto do Árbitro' : 'Adicionar Foto'}</span>
+                  </button>
+
                   <button
                     onClick={() => {
                       setCompareRef1Id(activeReferee.id);
@@ -1278,12 +1395,24 @@ export const RefereeStatsModule: React.FC<RefereeStatsModuleProps> = ({
               {/* Ref 1 Card */}
               <div className="bg-white rounded-2xl border-2 border-blue-200 p-6 shadow-sm space-y-5">
                 <div className="flex items-center justify-between border-b border-blue-100 pb-3">
-                  <div>
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-black rounded-full uppercase">
-                      ÁRBITRO 1
-                    </span>
-                    <h3 className="text-xl font-black text-slate-900 mt-1">{ref1.name}</h3>
-                    <p className="text-xs text-slate-500">{ref1.leagues.join(', ')}</p>
+                  <div className="flex items-center gap-3">
+                    <div
+                      onClick={(e) => handleOpenPhotoModal(ref1, e)}
+                      className="relative group/ref1 cursor-pointer shrink-0"
+                      title="Alterar foto do Árbitro 1"
+                    >
+                      {renderRefereeAvatar(ref1.photoUrl, ref1.name, 'lg')}
+                      <div className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover/ref1:opacity-100 flex items-center justify-center text-amber-400 transition-opacity">
+                        <Camera className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-black rounded-full uppercase">
+                        ÁRBITRO 1
+                      </span>
+                      <h3 className="text-xl font-black text-slate-900 mt-1">{ref1.name}</h3>
+                      <p className="text-xs text-slate-500">{ref1.leagues.join(', ')}</p>
+                    </div>
                   </div>
                   {getDisciplineBadge(ref1.disciplineLevel)}
                 </div>
@@ -1327,12 +1456,24 @@ export const RefereeStatsModule: React.FC<RefereeStatsModuleProps> = ({
               {/* Ref 2 Card */}
               <div className="bg-white rounded-2xl border-2 border-amber-300 p-6 shadow-sm space-y-5">
                 <div className="flex items-center justify-between border-b border-amber-100 pb-3">
-                  <div>
-                    <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-[10px] font-black rounded-full uppercase">
-                      ÁRBITRO 2
-                    </span>
-                    <h3 className="text-xl font-black text-slate-900 mt-1">{ref2.name}</h3>
-                    <p className="text-xs text-slate-500">{ref2.leagues.join(', ')}</p>
+                  <div className="flex items-center gap-3">
+                    <div
+                      onClick={(e) => handleOpenPhotoModal(ref2, e)}
+                      className="relative group/ref2 cursor-pointer shrink-0"
+                      title="Alterar foto do Árbitro 2"
+                    >
+                      {renderRefereeAvatar(ref2.photoUrl, ref2.name, 'lg')}
+                      <div className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover/ref2:opacity-100 flex items-center justify-center text-amber-400 transition-opacity">
+                        <Camera className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-[10px] font-black rounded-full uppercase">
+                        ÁRBITRO 2
+                      </span>
+                      <h3 className="text-xl font-black text-slate-900 mt-1">{ref2.name}</h3>
+                      <p className="text-xs text-slate-500">{ref2.leagues.join(', ')}</p>
+                    </div>
                   </div>
                   {getDisciplineBadge(ref2.disciplineLevel)}
                 </div>
@@ -1428,8 +1569,8 @@ export const RefereeStatsModule: React.FC<RefereeStatsModuleProps> = ({
                   {/* Referee Card Attachment */}
                   <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Scale className="w-4 h-4 text-slate-600" />
+                      <div className="flex items-center gap-2.5">
+                        {renderRefereeAvatar(match.refereePhotoUrl || refereeStats?.photoUrl, match.referee, 'sm')}
                         <div>
                           <div className="text-xs font-bold text-slate-900">
                             {match.referee || 'Árbitro não informado'}
@@ -1480,6 +1621,121 @@ export const RefereeStatsModule: React.FC<RefereeStatsModuleProps> = ({
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Photo Edit Modal */}
+      {isPhotoModalOpen && photoModalReferee && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl text-white space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Camera className="w-5 h-5 text-amber-400" />
+                <h3 className="font-bold text-base">Foto do Árbitro</h3>
+              </div>
+              <button
+                onClick={() => setIsPhotoModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-300">
+              Insira a URL direta da imagem (PNG, JPG, WebP) para <strong>{photoModalReferee.name}</strong>.
+            </p>
+
+            {/* Live Preview */}
+            <div className="flex items-center gap-4 bg-slate-950 p-4 rounded-2xl border border-white/10">
+              <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
+                {photoInputUrl.trim() ? (
+                  <img
+                    src={photoInputUrl.trim()}
+                    alt={photoModalReferee.name}
+                    referrerPolicy="no-referrer"
+                    onError={() => setPhotoTestError(true)}
+                    onLoad={() => setPhotoTestError(false)}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Scale className="w-8 h-8 text-amber-400" />
+                )}
+              </div>
+              <div className="space-y-1">
+                <div className="text-sm font-black text-white">{photoModalReferee.name}</div>
+                <div className="text-[11px] text-slate-400">{photoModalReferee.leagues.join(', ')}</div>
+                {photoTestError && (
+                  <div className="text-[11px] text-red-400 font-bold flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>URL inválida ou imagem inacessível</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300">URL da Imagem</label>
+              <input
+                type="url"
+                value={photoInputUrl}
+                onChange={(e) => {
+                  setPhotoInputUrl(e.target.value);
+                  setPhotoTestError(false);
+                }}
+                placeholder="https://exemplo.com/fotos/juiz.png"
+                className="w-full bg-slate-950 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-amber-400 font-mono"
+              />
+            </div>
+
+            {/* Google Search Helper */}
+            <div className="flex items-center justify-between pt-1 text-xs">
+              <a
+                href={`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`arbitro ${photoModalReferee.name} futebol foto`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 text-[11px]"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Buscar foto no Google Imagens</span>
+              </a>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-white/10">
+              {photoModalReferee.photoUrl ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (onUpdateRefereePhoto) {
+                      await onUpdateRefereePhoto(photoModalReferee.name, '');
+                    }
+                    setIsPhotoModalOpen(false);
+                  }}
+                  className="text-xs text-red-400 hover:text-red-300 font-bold cursor-pointer"
+                >
+                  Remover Foto
+                </button>
+              ) : <div />}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPhotoModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePhotoModal}
+                  disabled={isSavingPhoto}
+                  className="px-5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 flex items-center gap-1.5 cursor-pointer shadow-lg shadow-amber-500/20 disabled:opacity-50"
+                >
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  <span>{isSavingPhoto ? 'Salvando...' : 'Salvar Foto'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
