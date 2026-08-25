@@ -1687,16 +1687,27 @@ export const RefereeStatsModule: React.FC<RefereeStatsModuleProps> = ({
               />
             </div>
 
-            {/* Google Search Helper */}
-            <div className="flex items-center justify-between pt-1 text-xs">
+            {/* Google Search Helper with Wikipedia priority */}
+            <div className="flex items-center justify-between flex-wrap gap-2 pt-1 text-xs">
               <a
-                href={`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`arbitro ${photoModalReferee.name} futebol foto`)}`}
+                href={`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`arbitro "${photoModalReferee.name}" futebol foto wikipedia`)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 text-[11px]"
+                className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 text-[11px] transition-colors"
+                title="Busca fotos no Google Imagens priorizando Wikipédia e Wikimedia Commons"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                <span>Buscar foto no Google Imagens</span>
+                <span>Buscar foto no Google (Wikipédia)</span>
+              </a>
+
+              <a
+                href={`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`(site:wikipedia.org OR site:wikimedia.org) arbitro "${photoModalReferee.name}" futebol`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-slate-400 hover:text-slate-200 text-[10px] font-medium underline transition-colors"
+                title="Busca fotos exclusivamente dentro da Wikipédia e Wikimedia Commons"
+              >
+                Só na Wikipédia
               </a>
             </div>
 

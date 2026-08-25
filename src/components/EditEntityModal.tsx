@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Globe, Trophy, Shield, CheckCircle2, AlertCircle, Loader2, Image as ImageIcon, Save } from 'lucide-react';
+import { X, Globe, Trophy, Shield, CheckCircle2, AlertCircle, Loader2, Image as ImageIcon, Save, ExternalLink } from 'lucide-react';
 import { DbState, Country, League, Team } from '../types';
 
 interface EditEntityModalProps {
@@ -269,13 +269,34 @@ export const EditEntityModal: React.FC<EditEntityModalProps> = ({
 
           {/* Image URL Input + Live Preview */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-gray-200">
-              {entityType === 'country'
-                ? 'Link / URL da Bandeira'
-                : entityType === 'league'
-                ? 'Link / URL do Logo da Liga'
-                : 'Link / URL do Escudo do Time'}
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-gray-200">
+                {entityType === 'country'
+                  ? 'Link / URL da Bandeira'
+                  : entityType === 'league'
+                  ? 'Link / URL do Logo da Liga'
+                  : 'Link / URL do Escudo do Time'}
+              </label>
+
+              {name.trim() && (
+                <a
+                  href={`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(
+                    entityType === 'country'
+                      ? `bandeira "${name}" flag png wikipedia`
+                      : entityType === 'league'
+                      ? `"${name}" logo png wikipedia`
+                      : `"${name}" escudo logo png wikipedia`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-400 hover:text-emerald-300 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                  title="Buscar imagem no Google Imagens priorizando a Wikipédia / Wikimedia"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Buscar no Google (Wikipédia)</span>
+                </a>
+              )}
+            </div>
 
             <input
               type="url"

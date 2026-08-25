@@ -70,6 +70,7 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>('PENDING');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [searchPreference, setSearchPreference] = useState<'wiki_pref' | 'wiki_only' | 'general'>('wiki_pref');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCountryFilter, setSelectedCountryFilter] = useState('');
   const [selectedLeagueFilter, setSelectedLeagueFilter] = useState('');
@@ -628,16 +629,44 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
   };
 
   const getGoogleSearchUrl = (item: UnifiedItem) => {
+    let query = '';
+
     if (item.type === 'TEAM') {
-      return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`${item.name} ${item.context} escudo logo png`)}`;
+      if (searchPreference === 'wiki_only') {
+        query = `(site:wikipedia.org OR site:wikimedia.org) "${item.name}" ${item.context || ''} escudo logo png`;
+      } else if (searchPreference === 'wiki_pref') {
+        query = `"${item.name}" ${item.context || ''} escudo logo png wikipedia`;
+      } else {
+        query = `"${item.name}" ${item.context || ''} escudo logo png`;
+      }
+    } else if (item.type === 'LEAGUE') {
+      if (searchPreference === 'wiki_only') {
+        query = `(site:wikipedia.org OR site:wikimedia.org) "${item.name}" ${item.context || ''} logo png`;
+      } else if (searchPreference === 'wiki_pref') {
+        query = `"${item.name}" ${item.context || ''} logo png wikipedia`;
+      } else {
+        query = `"${item.name}" ${item.context || ''} logo png`;
+      }
+    } else if (item.type === 'REFEREE') {
+      if (searchPreference === 'wiki_only') {
+        query = `(site:wikipedia.org OR site:wikimedia.org) arbitro "${item.name}" futebol foto`;
+      } else if (searchPreference === 'wiki_pref') {
+        query = `arbitro "${item.name}" futebol foto wikipedia`;
+      } else {
+        query = `arbitro "${item.name}" futebol foto`;
+      }
+    } else {
+      // COUNTRY
+      if (searchPreference === 'wiki_only') {
+        query = `(site:wikipedia.org OR site:wikimedia.org) bandeira "${item.name}" flag png`;
+      } else if (searchPreference === 'wiki_pref') {
+        query = `bandeira "${item.name}" flag png wikipedia`;
+      } else {
+        query = `bandeira "${item.name}" flag png`;
+      }
     }
-    if (item.type === 'LEAGUE') {
-      return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`${item.name} ${item.context} logo png`)}`;
-    }
-    if (item.type === 'REFEREE') {
-      return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`arbitro ${item.name} futebol foto`)}`;
-    }
-    return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`${item.name} flag png icon`)}`;
+
+    return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query.trim())}`;
   };
 
   return (
@@ -1047,11 +1076,55 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                 setSelectedCountryFilter('');
                 setSelectedLeagueFilter('');
               }}
-              className="text-xs text-blue-600 font-bold hover:underline"
+              className="text-xs text-blue-600 font-bold hover:underline cursor-pointer"
             >
               Limpar Filtros
             </button>
           )}
+
+          {/* Google Search Preference Selector */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1.5 flex items-center gap-1">
+              <Globe className="w-3 h-3 text-blue-500" />
+              Busca:
+            </span>
+            <button
+              type="button"
+              onClick={() => setSearchPreference('wiki_pref')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                searchPreference === 'wiki_pref'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+              title="Google Imagens priorizando resultados da Wikipédia e Wikimedia Commons (Recomendado)"
+            >
+              ★ Wikipédia (Recomendado)
+            </button>
+            <button
+              type="button"
+              onClick={() => setSearchPreference('wiki_only')}
+              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                searchPreference === 'wiki_only'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+              title="Restringe a busca exclusivamente para o site wikipedia.org e wikimedia.org"
+            >
+              Só Wikipédia
+            </button>
+            <button
+              type="button"
+              onClick={() => setSearchPreference('general')}
+              className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                searchPreference === 'general'
+                  ? 'bg-slate-700 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+              title="Busca geral no Google Imagens na Web inteira"
+            >
+              Web Geral
+            </button>
+          </div>
 
           <div className="text-xs text-slate-500 font-medium ml-auto">
             Exibindo <strong className="text-slate-900 font-bold">{displayedItems.length}</strong> itens
@@ -1168,7 +1241,13 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors shrink-0"
-                      title="Pesquisar imagem no Google Imagens (nova aba)"
+                      title={`Buscar no Google Imagens (${
+                        searchPreference === 'wiki_pref'
+                          ? 'Priorizando Wikipédia / Wikimedia'
+                          : searchPreference === 'wiki_only'
+                          ? 'Apenas Wikipédia'
+                          : 'Web Geral'
+                      })`}
                     >
                       <ExternalLink className="w-4 h-4" />
                     </a>
@@ -1331,7 +1410,13 @@ export const PendingLogosManager: React.FC<PendingLogosManagerProps> = ({
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-1.5 inline-flex rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                          title="Pesquisar imagem no Google Imagens"
+                          title={`Buscar no Google Imagens (${
+                            searchPreference === 'wiki_pref'
+                              ? 'Priorizando Wikipédia / Wikimedia'
+                              : searchPreference === 'wiki_only'
+                              ? 'Apenas Wikipédia'
+                              : 'Web Geral'
+                          })`}
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>

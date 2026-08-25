@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter, AlertTriangle, AlertCircle, Download, Loader2, FileText, BarChart3, Zap, Sparkles } from 'lucide-react';
+import { Shield, Plus, Search, Trash2, Globe, MapPin, Link2, Check, X, Edit2, FileSpreadsheet, Trophy, Filter, AlertTriangle, AlertCircle, Download, Loader2, FileText, BarChart3, Zap, Sparkles, ExternalLink } from 'lucide-react';
 import { DbState, Team } from '../types';
 import { isValidImageUrl, validateImageUrlInput, sanitizeImageUrl } from '../utils/imageHelper';
 import { exportTeamsToExcel, exportTeamsToCsv } from '../utils/excelHelper';
@@ -557,13 +557,22 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                                     setEditUrl(e.target.value);
                                     if (urlError) setUrlError(null);
                                   }}
-                                  className={`bg-[#1a1a1a] border rounded px-2 py-1 text-xs text-white focus:outline-none w-48 font-mono ${
+                                  className={`bg-[#1a1a1a] border rounded px-2 py-1 text-xs text-white focus:outline-none w-44 font-mono ${
                                     urlError ? 'border-rose-500' : 'border-emerald-500/50'
                                   }`}
                                 />
+                                <a
+                                  href={`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`"${t.name}" ${t.countryName || ''} escudo logo png wikipedia`)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1 bg-blue-500/20 text-blue-400 hover:text-blue-300 hover:bg-blue-500/30 rounded transition-colors"
+                                  title="Buscar escudo no Google Imagens (Priorizando Wikipédia)"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
                                 <button
                                   onClick={() => handleSaveUrl(t.id)}
-                                  className="p-1 bg-emerald-500 text-black rounded hover:bg-emerald-400"
+                                  className="p-1 bg-emerald-500 text-black rounded hover:bg-emerald-400 cursor-pointer"
                                   title="Salvar Escudo"
                                 >
                                   <Check className="w-3.5 h-3.5 stroke-[3]" />
@@ -573,7 +582,7 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                                     setEditingTeamId(null);
                                     setUrlError(null);
                                   }}
-                                  className="p-1 bg-white/10 text-gray-300 rounded hover:bg-white/20"
+                                  className="p-1 bg-white/10 text-gray-300 rounded hover:bg-white/20 cursor-pointer"
                                   title="Cancelar"
                                 >
                                   <X className="w-3.5 h-3.5" />
