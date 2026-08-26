@@ -4,6 +4,7 @@ import { Match, MatchStatus, MatchStats, MatchOdds, Team, League, Country } from
 export interface ParsedTeamRow {
   rowIndex: number;
   time: string;
+  estadio?: string;
   urlEscudo: string;
   isValid: boolean;
   validationError?: string;
@@ -112,6 +113,71 @@ function normalizeHeaderKey(header: string): string {
     .replace(/[^a-z0-9]/g, '_')
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '');
+}
+
+export const EXCEL_HEADER_ALIASES = {
+  country: ['pais', 'país', 'country', 'country_name', 'countryname', 'nacao', 'nação', 'nation', 'pais_nome', 'nome_pais', 'pais_liga', 'paisliga'],
+  league: ['liga', 'league', 'league_name', 'leaguename', 'div', 'division', 'divisao', 'divisão', 'competition', 'campeonato', 'torneio', 'nome_liga', 'nomeliga'],
+  homeTeam: ['mandante', 'home', 'hometeam', 'home_team', 'time_mandante', 'timemandante', 'clube_mandante', 'clubemandante', 'equipe_mandante', 'equipemandante', 'casa', 'time_casa', 'timecasa', 'clube_casa', 'equipe_casa', 'team_1', 'team1', 'time_1', 'time1', 'ht', 'host'],
+  awayTeam: ['visitante', 'away', 'awayteam', 'away_team', 'time_visitante', 'timevisitante', 'clube_visitante', 'clubevisitante', 'equipe_visitante', 'equipevisitante', 'fora', 'time_fora', 'timefora', 'clube_fora', 'equipe_fora', 'team_2', 'team2', 'time_2', 'time2', 'at', 'guest'],
+  date: ['data', 'date', 'match_date', 'matchdate', 'data_jogo', 'datajogo', 'dt'],
+  time: ['hora', 'time', 'match_time', 'matchtime', 'horario', 'horário', 'hora_jogo', 'horajogo', 'hr'],
+  referee: ['arbitro', 'árbitro', 'referee', 'juiz', 'arbitro_jogo'],
+  stadium: ['estadio', 'estádio', 'stadium', 'local', 'arena'],
+  capacity: ['capacidade', 'capacity', 'capacidade_estadio', 'stadium_capacity'],
+  attendance: ['publico', 'público', 'attendance', 'espectadores'],
+  matchId: ['id_jogo', 'idjogo', 'match_id', 'matchid', 'id'],
+  scoreHomeFT: ['placar_mandante_ft', 'placar_mandante', 'placarmandanteft', 'fthg', 'hg', 'gols_mandante_ft', 'gols_mandante', 'golsmandante', 'home_score_ft', 'home_score', 'homescore', 'fulltimehomegoals'],
+  scoreAwayFT: ['placar_visitante_ft', 'placar_visitante', 'placarvisitanteft', 'ftag', 'ag', 'gols_visitante_ft', 'gols_visitante', 'golsvisitante', 'away_score_ft', 'away_score', 'awayscore', 'fulltimeawaygoals'],
+  scoreHomeHT: ['placar_mandante_ht', 'placarmandanteht', 'hthg', 'gols_mandante_ht', 'home_score_ht', 'halftimehomegoals'],
+  scoreAwayHT: ['placar_visitante_ht', 'placarvisitanteht', 'htag', 'gols_visitante_ht', 'away_score_ht', 'halftimeawaygoals'],
+  oddHome: ['odd_home_ft', 'odd_home', 'oddhomeft', 'oddhome', 'odd_1', 'odd1', 'odd_mandante', 'odd_casa', 'b365h', 'b365_h', '1'],
+  oddDraw: ['odd_draw_ft', 'odd_draw', 'odddrawft', 'odddraw', 'odd_x', 'oddx', 'odd_empate', 'b365d', 'b365_d', 'x'],
+  oddAway: ['odd_away_ft', 'odd_away', 'oddawayft', 'oddaway', 'odd_2', 'odd2', 'odd_visitante', 'odd_fora', 'b365a', 'b365_a', '2'],
+  oddOver25: ['odd_over25_ft', 'odd_over_25_ft', 'odd_over25', 'odd_over_25', 'oddover25ft', 'odd_over', 'oddover', 'over25', 'b365>2.5', 'b365_over25', '>2.5'],
+  oddUnder25: ['odd_under25_ft', 'odd_under_25_ft', 'odd_under25', 'odd_under_25', 'oddunder25ft', 'odd_under', 'oddunder', 'under25', 'b365<2.5', 'b365_under25', '<2.5'],
+  ahHomeLine: ['linha_handicap_asiatico_mandante_ft', 'linha_handicap_asiático_mandante_ft', 'ahh', 'ah_home_line', 'ah_line_home'],
+  ahHomeOdd: ['odd_handicap_asiatico_mandante_ft', 'odd_handicap_asiático_mandante_ft', 'b365ahh', 'ah_home_odd', 'ah_odd_home'],
+  ahAwayLine: ['linha_handicap_asiatico_visitante_ft', 'linha_handicap_asiático_visitante_ft', 'aha', 'ah_away_line', 'ah_line_away'],
+  ahAwayOdd: ['odd_handicap_asiatico_visitante_ft', 'odd_handicap_asiático_visitante_ft', 'b365aha', 'ah_away_odd', 'ah_odd_away'],
+  xgHome: ['xg_mandante_ft', 'xg_mandante', 'xg_home_ft', 'xg_home', 'hxg', 'xg_h'],
+  xgAway: ['xg_visitante_ft', 'xg_visitante', 'xg_away_ft', 'xg_away', 'axg', 'xg_a'],
+  shotsHome: ['finalizacoes_mandante_ft', 'finalizacoes_mandante', 'chutes_mandante', 'shots_home_ft', 'shots_home', 'hs'],
+  shotsAway: ['finalizacoes_visitante_ft', 'finalizacoes_visitante', 'chutes_visitante', 'shots_away_ft', 'shots_away', 'as'],
+  shotsOnTargetHome: ['chutes_gol_mandante_ft', 'chutes_gol_mandante', 'chutes_no_alvo_mandante', 'shots_on_target_home_ft', 'shots_on_target_home', 'hst'],
+  shotsOnTargetAway: ['chutes_gol_visitante_ft', 'chutes_gol_visitante', 'chutes_no_alvo_visitante', 'shots_on_target_away_ft', 'shots_on_target_away', 'ast'],
+  foulsHome: ['faltas_mandante_ft', 'faltas_mandante', 'fouls_home_ft', 'fouls_home', 'hf'],
+  foulsAway: ['faltas_visitante_ft', 'faltas_visitante', 'fouls_away_ft', 'fouls_away', 'af'],
+  cornersHome: ['escanteios_mandante_ft', 'escanteios_mandante', 'cantos_mandante', 'corners_home_ft', 'corners_home', 'hc'],
+  cornersAway: ['escanteios_visitante_ft', 'escanteios_visitante', 'cantos_visitante', 'corners_away_ft', 'corners_away', 'ac'],
+  yellowHome: ['cartao_amarelo_mandante_ft', 'cartao_amarelo_mandante', 'amarelos_mandante', 'yellow_cards_home_ft', 'yellow_cards_home', 'hy'],
+  yellowAway: ['cartao_amarelo_visitante_ft', 'cartao_amarelo_visitante', 'amarelos_visitante', 'yellow_cards_away_ft', 'yellow_cards_away', 'ay'],
+  redHome: ['cartao_vermelho_mandante_ft', 'cartao_vermelho_mandante', 'vermelhos_mandante', 'red_cards_home_ft', 'red_cards_home', 'hr'],
+  redAway: ['cartao_vermelho_visitante_ft', 'cartao_vermelho_visitante', 'vermelhos_visitante', 'red_cards_away_ft', 'red_cards_away', 'ar']
+};
+
+export function getFlexibleValue(
+  rowData: Record<string, any>,
+  row: ExcelJS.Row | null,
+  aliases: string[],
+  fallbackCellIndex?: number
+): any {
+  for (const alias of aliases) {
+    const norm = normalizeHeaderKey(alias);
+    if (rowData[norm] !== undefined && rowData[norm] !== null && String(rowData[norm]).trim() !== '') {
+      return rowData[norm];
+    }
+    if (rowData[alias] !== undefined && rowData[alias] !== null && String(rowData[alias]).trim() !== '') {
+      return rowData[alias];
+    }
+  }
+  if (row && fallbackCellIndex !== undefined) {
+    const cellVal = row.getCell(fallbackCellIndex).value;
+    if (cellVal !== undefined && cellVal !== null && String(cellVal).trim() !== '') {
+      return cellVal;
+    }
+  }
+  return '';
 }
 
 function normalizeTextForMatch(text: string): string {
@@ -790,34 +856,42 @@ export async function parseMatchExcelOrCsvFile(file: File): Promise<ParsedMatchR
     });
 
     const countryName = String(
-      rowData['pais'] || rowData['country'] || rowData['pais_liga'] || row.getCell(1).value || ''
+      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.country, 1) || ''
     ).trim();
     const leagueName = String(
-      rowData['liga'] || rowData['league'] || row.getCell(2).value || ''
+      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.league, 2) || ''
     ).trim();
-    const dateVal = rowData['data'] || rowData['date'] || row.getCell(3).value;
-    const timeVal = rowData['hora'] || rowData['time'] || row.getCell(4).value;
+    const dateVal = getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.date, 3);
+    const timeVal = getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.time, 4);
     const homeTeamName = String(
-      rowData['mandante'] || rowData['home'] || rowData['time_mandante'] || row.getCell(5).value || ''
+      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.homeTeam, 5) || ''
     ).trim();
     const awayTeamName = String(
-      rowData['visitante'] || rowData['away'] || rowData['time_visitante'] || row.getCell(6).value || ''
+      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.awayTeam, 6) || ''
     ).trim();
     const referee = String(
-      rowData['arbitro'] || rowData['referee'] || row.getCell(12).value || ''
+      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.referee, 12) || ''
     ).trim();
     const stadium = String(
-      rowData['estadio'] || rowData['stadium'] || row.getCell(13).value || ''
+      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.stadium, 13) || ''
     ).trim();
     const stadiumCapacity = parseInteger(
-      rowData['capacidade'] || rowData['capacity'] || row.getCell(14).value
+      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.capacity, 14)
     );
 
-    const oddHomeFT = parseNumber(rowData['odd_home_ft'] || rowData['odd_home'] || rowData['odd_1'] || row.getCell(7).value);
-    const oddDrawFT = parseNumber(rowData['odd_draw_ft'] || rowData['odd_draw'] || rowData['odd_x'] || row.getCell(8).value);
-    const oddAwayFT = parseNumber(rowData['odd_away_ft'] || rowData['odd_away'] || rowData['odd_2'] || row.getCell(9).value);
-    const oddOver25FT = parseNumber(rowData['odd_over25_ft'] || rowData['odd_over_25'] || rowData['odd_over'] || row.getCell(10).value);
-    const oddUnder25FT = parseNumber(rowData['odd_under25_ft'] || rowData['odd_under_25'] || rowData['odd_under'] || row.getCell(11).value);
+    const oddHomeFT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddHome, 7));
+    const oddDrawFT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddDraw, 8));
+    const oddAwayFT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddAway, 9));
+    const oddOver25FT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddOver25, 10));
+    const oddUnder25FT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddUnder25, 11));
+
+    const ahHomeLine = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.ahHomeLine));
+    const ahHomeOdd = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.ahHomeOdd));
+    let ahAwayLine = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.ahAwayLine));
+    if (ahAwayLine === null && ahHomeLine !== null) {
+      ahAwayLine = -ahHomeLine;
+    }
+    const ahAwayOdd = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.ahAwayOdd));
 
     if (homeTeamName && awayTeamName) {
       const matchDateIso = formatIsoDateTime(dateVal, timeVal);
@@ -837,6 +911,10 @@ export async function parseMatchExcelOrCsvFile(file: File): Promise<ParsedMatchR
         oddAwayFT,
         oddOver25FT,
         oddUnder25FT,
+        asianHandicapHomeLine: ahHomeLine,
+        asianHandicapHomeOdd: ahHomeOdd,
+        asianHandicapAwayLine: ahAwayLine,
+        asianHandicapAwayOdd: ahAwayOdd,
         isValid: true,
       });
     }
@@ -863,21 +941,43 @@ export function parseFutureMatchesText(rawText: string): ParsedMatchRow[] {
       if (h) rowData[h] = cells[idx] || '';
     });
 
-    const countryName = (rowData['pais'] || rowData['country'] || cells[0] || '').trim();
-    const leagueName = (rowData['liga'] || rowData['league'] || cells[1] || '').trim();
-    const dateVal = rowData['data'] || rowData['date'] || cells[2] || '';
-    const timeVal = rowData['hora'] || rowData['time'] || cells[3] || '';
-    const homeTeamName = (rowData['mandante'] || rowData['home'] || cells[4] || '').trim();
-    const awayTeamName = (rowData['visitante'] || rowData['away'] || cells[5] || '').trim();
-    const referee = (rowData['arbitro'] || rowData['referee'] || cells[11] || '').trim();
-    const stadium = (rowData['estadio'] || rowData['stadium'] || cells[12] || '').trim();
-    const stadiumCapacity = parseInteger(rowData['capacidade'] || rowData['capacity'] || cells[13]);
+    const countryName = String(
+      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.country) || cells[0] || ''
+    ).trim();
+    const leagueName = String(
+      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.league) || cells[1] || ''
+    ).trim();
+    const dateVal = getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.date) || cells[2] || '';
+    const timeVal = getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.time) || cells[3] || '';
+    const homeTeamName = String(
+      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.homeTeam) || cells[4] || ''
+    ).trim();
+    const awayTeamName = String(
+      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.awayTeam) || cells[5] || ''
+    ).trim();
+    const referee = String(
+      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.referee) || cells[11] || ''
+    ).trim();
+    const stadium = String(
+      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.stadium) || cells[12] || ''
+    ).trim();
+    const stadiumCapacity = parseInteger(
+      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.capacity) || cells[13]
+    );
 
-    const oddHomeFT = parseNumber(rowData['odd_home_ft'] || rowData['odd_home'] || cells[6]);
-    const oddDrawFT = parseNumber(rowData['odd_draw_ft'] || rowData['odd_draw'] || cells[7]);
-    const oddAwayFT = parseNumber(rowData['odd_away_ft'] || rowData['odd_away'] || cells[8]);
-    const oddOver25FT = parseNumber(rowData['odd_over25_ft'] || rowData['odd_over_25'] || cells[9]);
-    const oddUnder25FT = parseNumber(rowData['odd_under25_ft'] || rowData['odd_under_25'] || cells[10]);
+    const oddHomeFT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddHome) || cells[6]);
+    const oddDrawFT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddDraw) || cells[7]);
+    const oddAwayFT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddAway) || cells[8]);
+    const oddOver25FT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddOver25) || cells[9]);
+    const oddUnder25FT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddUnder25) || cells[10]);
+
+    const ahHomeLine = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.ahHomeLine));
+    const ahHomeOdd = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.ahHomeOdd));
+    let ahAwayLine = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.ahAwayLine));
+    if (ahAwayLine === null && ahHomeLine !== null) {
+      ahAwayLine = -ahHomeLine;
+    }
+    const ahAwayOdd = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.ahAwayOdd));
 
     if (homeTeamName && awayTeamName) {
       const matchDateIso = formatIsoDateTime(dateVal, timeVal);
@@ -897,6 +997,10 @@ export function parseFutureMatchesText(rawText: string): ParsedMatchRow[] {
         oddAwayFT,
         oddOver25FT,
         oddUnder25FT,
+        asianHandicapHomeLine: ahHomeLine,
+        asianHandicapHomeOdd: ahHomeOdd,
+        asianHandicapAwayLine: ahAwayLine,
+        asianHandicapAwayOdd: ahAwayOdd,
         isValid: true,
       });
     }
@@ -990,53 +1094,61 @@ export async function parseBulkMatchUpdateExcel(
     });
 
     const countryName = String(
-      rowData['pais'] || rowData['country'] || rowData['país'] || row.getCell(1).value || ''
+      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.country, 1) || ''
     ).trim();
     const leagueName = String(
-      rowData['liga'] || rowData['league'] || row.getCell(2).value || ''
+      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.league, 2) || ''
     ).trim();
-    const dateVal = rowData['data'] || rowData['date'] || row.getCell(3).value;
-    const timeVal = rowData['hora'] || rowData['time'] || row.getCell(4).value;
+    const dateVal = getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.date, 3);
+    const timeVal = getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.time, 4);
     const homeTeamName = String(
-      rowData['mandante'] || rowData['home'] || rowData['time_mandante'] || row.getCell(5).value || ''
+      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.homeTeam, 5) || ''
     ).trim();
     const awayTeamName = String(
-      rowData['visitante'] || rowData['away'] || rowData['time_visitante'] || row.getCell(6).value || ''
+      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.awayTeam, 6) || ''
     ).trim();
 
-    const homeScore = parseInteger(rowData['placar_mandante_ft'] || rowData['home_score_ft'] || rowData['gols_mandante_ft'] || row.getCell(7).value);
-    const awayScore = parseInteger(rowData['placar_visitante_ft'] || rowData['away_score_ft'] || rowData['gols_visitante_ft'] || row.getCell(8).value);
-    const halftimeHomeScore = parseInteger(rowData['placar_mandante_ht'] || rowData['home_score_ht'] || rowData['gols_mandante_ht'] || row.getCell(9).value);
-    const halftimeAwayScore = parseInteger(rowData['placar_visitante_ht'] || rowData['away_score_ht'] || rowData['gols_visitante_ht'] || row.getCell(10).value);
+    const homeScore = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.scoreHomeFT, 7));
+    const awayScore = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.scoreAwayFT, 8));
+    const halftimeHomeScore = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.scoreHomeHT, 9));
+    const halftimeAwayScore = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.scoreAwayHT, 10));
 
-    const referee = String(rowData['arbitro'] || rowData['referee'] || row.getCell(11).value || '').trim();
-    const stadium = String(rowData['estadio'] || rowData['stadium'] || row.getCell(12).value || '').trim();
-    const attendance = parseInteger(rowData['publico'] || rowData['attendance'] || row.getCell(13).value);
-    const stadiumCapacity = parseInteger(rowData['capacidade'] || rowData['capacity'] || row.getCell(14).value);
+    const referee = String(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.referee, 11) || '').trim();
+    const stadium = String(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.stadium, 12) || '').trim();
+    const attendance = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.attendance, 13));
+    const stadiumCapacity = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.capacity, 14));
 
-    const xgHomeFT = parseNumber(rowData['xg_mandante_ft'] || rowData['xg_home_ft'] || row.getCell(15).value);
-    const xgAwayFT = parseNumber(rowData['xg_visitante_ft'] || rowData['xg_away_ft'] || row.getCell(16).value);
-    const shotsHomeFT = parseInteger(rowData['finalizacoes_mandante_ft'] || rowData['shots_home_ft'] || row.getCell(17).value);
-    const shotsAwayFT = parseInteger(rowData['finalizacoes_visitante_ft'] || rowData['shots_away_ft'] || row.getCell(18).value);
-    const shotsOnTargetHomeFT = parseInteger(rowData['chutes_gol_mandante_ft'] || rowData['shots_on_target_home_ft'] || row.getCell(19).value);
-    const shotsOnTargetAwayFT = parseInteger(rowData['chutes_gol_visitante_ft'] || rowData['shots_on_target_away_ft'] || row.getCell(20).value);
-    const foulsHomeFT = parseInteger(rowData['faltas_mandante_ft'] || rowData['fouls_home_ft'] || row.getCell(21).value);
-    const foulsAwayFT = parseInteger(rowData['faltas_visitante_ft'] || rowData['fouls_away_ft'] || row.getCell(22).value);
-    const cornersHomeFT = parseInteger(rowData['escanteios_mandante_ft'] || rowData['corners_home_ft'] || row.getCell(23).value);
-    const cornersAwayFT = parseInteger(rowData['escanteios_visitante_ft'] || rowData['corners_away_ft'] || row.getCell(24).value);
-    const yellowCardsHomeFT = parseInteger(rowData['cartao_amarelo_mandante_ft'] || rowData['yellow_cards_home_ft'] || row.getCell(25).value);
-    const yellowCardsAwayFT = parseInteger(rowData['cartao_amarelo_visitante_ft'] || rowData['yellow_cards_away_ft'] || row.getCell(26).value);
-    const redCardsHomeFT = parseInteger(rowData['cartao_vermelho_mandante_ft'] || rowData['red_cards_home_ft'] || row.getCell(27).value);
-    const redCardsAwayFT = parseInteger(rowData['cartao_vermelho_visitante_ft'] || rowData['red_cards_away_ft'] || row.getCell(28).value);
+    const xgHomeFT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.xgHome, 15));
+    const xgAwayFT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.xgAway, 16));
+    const shotsHomeFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.shotsHome, 17));
+    const shotsAwayFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.shotsAway, 18));
+    const shotsOnTargetHomeFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.shotsOnTargetHome, 19));
+    const shotsOnTargetAwayFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.shotsOnTargetAway, 20));
+    const foulsHomeFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.foulsHome, 21));
+    const foulsAwayFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.foulsAway, 22));
+    const cornersHomeFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.cornersHome, 23));
+    const cornersAwayFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.cornersAway, 24));
+    const yellowCardsHomeFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.yellowHome, 25));
+    const yellowCardsAwayFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.yellowAway, 26));
+    const redCardsHomeFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.redHome, 27));
+    const redCardsAwayFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.redAway, 28));
 
-    const oddHomeFT = parseNumber(rowData['odd_home_ft'] || rowData['odd_home'] || row.getCell(29).value);
-    const oddDrawFT = parseNumber(rowData['odd_draw_ft'] || rowData['odd_draw'] || row.getCell(30).value);
-    const oddAwayFT = parseNumber(rowData['odd_away_ft'] || rowData['odd_away'] || row.getCell(31).value);
-    const oddOver25FT = parseNumber(rowData['odd_over25_ft'] || rowData['odd_over_25'] || row.getCell(32).value);
-    const oddUnder25FT = parseNumber(rowData['odd_under25_ft'] || rowData['odd_under_25'] || row.getCell(33).value);
+    const oddHomeFT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddHome, 29));
+    const oddDrawFT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddDraw, 30));
+    const oddAwayFT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddAway, 31));
+    const oddOver25FT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddOver25, 32));
+    const oddUnder25FT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddUnder25, 33));
+
+    const ahHomeLine = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.ahHomeLine));
+    const ahHomeOdd = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.ahHomeOdd));
+    let ahAwayLine = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.ahAwayLine));
+    if (ahAwayLine === null && ahHomeLine !== null) {
+      ahAwayLine = -ahHomeLine;
+    }
+    const ahAwayOdd = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.ahAwayOdd));
 
     const matchDateIso = formatIsoDateTime(dateVal, timeVal);
-    const matchId = String(rowData['id_jogo'] || rowData['id'] || '').trim() || undefined;
+    const matchId = String(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.matchId) || '').trim() || undefined;
 
     const matchedMatch = findMatchingMatch(
       homeTeamName,
@@ -1120,46 +1232,62 @@ export function parseFinishedMatchesText(
       if (h) rowData[h] = cells[idx] || '';
     });
 
-    const countryName = (rowData['pais'] || rowData['country'] || cells[0] || '').trim();
-    const leagueName = (rowData['liga'] || rowData['league'] || cells[1] || '').trim();
-    const dateVal = rowData['data'] || rowData['date'] || cells[2] || '';
-    const timeVal = rowData['hora'] || rowData['time'] || cells[3] || '';
-    const homeTeamName = (rowData['mandante'] || rowData['home'] || cells[4] || '').trim();
-    const awayTeamName = (rowData['visitante'] || rowData['away'] || cells[5] || '').trim();
+    const countryName = String(
+      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.country) || cells[0] || ''
+    ).trim();
+    const leagueName = String(
+      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.league) || cells[1] || ''
+    ).trim();
+    const dateVal = getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.date) || cells[2] || '';
+    const timeVal = getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.time) || cells[3] || '';
+    const homeTeamName = String(
+      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.homeTeam) || cells[4] || ''
+    ).trim();
+    const awayTeamName = String(
+      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.awayTeam) || cells[5] || ''
+    ).trim();
 
-    const homeScore = parseInteger(rowData['placar_mandante_ft'] || rowData['home_score_ft'] || cells[6]);
-    const awayScore = parseInteger(rowData['placar_visitante_ft'] || rowData['away_score_ft'] || cells[7]);
-    const halftimeHomeScore = parseInteger(rowData['placar_mandante_ht'] || rowData['home_score_ht'] || cells[8]);
-    const halftimeAwayScore = parseInteger(rowData['placar_visitante_ht'] || rowData['away_score_ht'] || cells[9]);
+    const homeScore = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.scoreHomeFT) || cells[6]);
+    const awayScore = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.scoreAwayFT) || cells[7]);
+    const halftimeHomeScore = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.scoreHomeHT) || cells[8]);
+    const halftimeAwayScore = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.scoreAwayHT) || cells[9]);
 
-    const referee = (rowData['arbitro'] || rowData['referee'] || cells[10] || '').trim();
-    const stadium = (rowData['estadio'] || rowData['stadium'] || cells[11] || '').trim();
-    const attendance = parseInteger(rowData['publico'] || rowData['attendance'] || cells[12]);
-    const stadiumCapacity = parseInteger(rowData['capacidade'] || rowData['capacity'] || cells[13]);
+    const referee = String(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.referee) || cells[10] || '').trim();
+    const stadium = String(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.stadium) || cells[11] || '').trim();
+    const attendance = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.attendance) || cells[12]);
+    const stadiumCapacity = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.capacity) || cells[13]);
 
-    const xgHomeFT = parseNumber(rowData['xg_mandante_ft'] || rowData['xg_home_ft'] || cells[14]);
-    const xgAwayFT = parseNumber(rowData['xg_visitante_ft'] || rowData['xg_away_ft'] || cells[15]);
-    const shotsHomeFT = parseInteger(rowData['finalizacoes_mandante_ft'] || rowData['shots_home_ft'] || cells[16]);
-    const shotsAwayFT = parseInteger(rowData['finalizacoes_visitante_ft'] || rowData['shots_away_ft'] || cells[17]);
-    const shotsOnTargetHomeFT = parseInteger(rowData['chutes_gol_mandante_ft'] || rowData['shots_on_target_home_ft'] || cells[18]);
-    const shotsOnTargetAwayFT = parseInteger(rowData['chutes_gol_visitante_ft'] || rowData['shots_on_target_away_ft'] || cells[19]);
-    const foulsHomeFT = parseInteger(rowData['faltas_mandante_ft'] || rowData['fouls_home_ft'] || cells[20]);
-    const foulsAwayFT = parseInteger(rowData['faltas_visitante_ft'] || rowData['fouls_away_ft'] || cells[21]);
-    const cornersHomeFT = parseInteger(rowData['escanteios_mandante_ft'] || rowData['corners_home_ft'] || cells[22]);
-    const cornersAwayFT = parseInteger(rowData['escanteios_visitante_ft'] || rowData['corners_away_ft'] || cells[23]);
-    const yellowCardsHomeFT = parseInteger(rowData['cartao_amarelo_mandante_ft'] || rowData['yellow_cards_home_ft'] || cells[24]);
-    const yellowCardsAwayFT = parseInteger(rowData['cartao_amarelo_visitante_ft'] || rowData['yellow_cards_away_ft'] || cells[25]);
-    const redCardsHomeFT = parseInteger(rowData['cartao_vermelho_mandante_ft'] || rowData['red_cards_home_ft'] || cells[26]);
-    const redCardsAwayFT = parseInteger(rowData['cartao_vermelho_visitante_ft'] || rowData['red_cards_away_ft'] || cells[27]);
+    const xgHomeFT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.xgHome) || cells[14]);
+    const xgAwayFT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.xgAway) || cells[15]);
+    const shotsHomeFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.shotsHome) || cells[16]);
+    const shotsAwayFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.shotsAway) || cells[17]);
+    const shotsOnTargetHomeFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.shotsOnTargetHome) || cells[18]);
+    const shotsOnTargetAwayFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.shotsOnTargetAway) || cells[19]);
+    const foulsHomeFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.foulsHome) || cells[20]);
+    const foulsAwayFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.foulsAway) || cells[21]);
+    const cornersHomeFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.cornersHome) || cells[22]);
+    const cornersAwayFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.cornersAway) || cells[23]);
+    const yellowCardsHomeFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.yellowHome) || cells[24]);
+    const yellowCardsAwayFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.yellowAway) || cells[25]);
+    const redCardsHomeFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.redHome) || cells[26]);
+    const redCardsAwayFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.redAway) || cells[27]);
 
-    const oddHomeFT = parseNumber(rowData['odd_home_ft'] || rowData['odd_home'] || cells[28]);
-    const oddDrawFT = parseNumber(rowData['odd_draw_ft'] || rowData['odd_draw'] || cells[29]);
-    const oddAwayFT = parseNumber(rowData['odd_away_ft'] || rowData['odd_away'] || cells[30]);
-    const oddOver25FT = parseNumber(rowData['odd_over25_ft'] || rowData['odd_over_25'] || cells[31]);
-    const oddUnder25FT = parseNumber(rowData['odd_under25_ft'] || rowData['odd_under_25'] || cells[32]);
+    const oddHomeFT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddHome) || cells[28]);
+    const oddDrawFT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddDraw) || cells[29]);
+    const oddAwayFT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddAway) || cells[30]);
+    const oddOver25FT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddOver25) || cells[31]);
+    const oddUnder25FT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddUnder25) || cells[32]);
+
+    const ahHomeLine = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.ahHomeLine));
+    const ahHomeOdd = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.ahHomeOdd));
+    let ahAwayLine = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.ahAwayLine));
+    if (ahAwayLine === null && ahHomeLine !== null) {
+      ahAwayLine = -ahHomeLine;
+    }
+    const ahAwayOdd = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.ahAwayOdd));
 
     const matchDateIso = formatIsoDateTime(dateVal, timeVal);
-    const matchId = (rowData['id_jogo'] || rowData['id'] || '').trim() || undefined;
+    const matchId = String(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.matchId) || '').trim() || undefined;
 
     const matchedMatch = findMatchingMatch(
       homeTeamName,
@@ -1213,6 +1341,10 @@ export function parseFinishedMatchesText(
         oddAwayFT,
         oddOver25FT,
         oddUnder25FT,
+        asianHandicapHomeLine: ahHomeLine,
+        asianHandicapHomeOdd: ahHomeOdd,
+        asianHandicapAwayLine: ahAwayLine,
+        asianHandicapAwayOdd: ahAwayOdd,
 
         isValid: true,
       });
@@ -1467,21 +1599,84 @@ export function exportTeamsToCsv(
 }
 
 export async function parseExcelOrCsvFile(file: File): Promise<ParsedTeamRow[]> {
+  const fileName = file.name.toLowerCase();
+  if (fileName.endsWith('.csv') || file.type.includes('csv') || file.type.includes('text')) {
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (lines.length === 0) return [];
+    const delimiter = lines[0].includes(';') ? ';' : lines[0].includes('\t') ? '\t' : ',';
+    const headers = lines[0].split(delimiter).map(h => normalizeHeaderKey(h.replace(/^["']|["']$/g, '')));
+    const rows: ParsedTeamRow[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const cells = lines[i].split(delimiter).map(c => c.replace(/^["']|["']$/g, '').trim());
+      if (cells.length === 0 || cells.every(c => c === '')) continue;
+      const rowData: Record<string, string> = {};
+      headers.forEach((h, idx) => {
+        if (h) rowData[h] = cells[idx] || '';
+      });
+
+      const teamName = String(
+        rowData['time'] || rowData['team'] || rowData['nome'] || rowData['clube'] || cells[0] || ''
+      ).trim();
+      const estadio = String(
+        rowData['estadio'] || rowData['stadium'] || rowData['arena'] || ''
+      ).trim();
+      const urlEscudo = String(
+        rowData['url_escudo'] || rowData['urlescudo'] || rowData['escudo'] || rowData['logo'] || rowData['url'] || cells[1] || ''
+      ).trim();
+
+      if (teamName) {
+        rows.push({
+          rowIndex: i + 1,
+          time: teamName,
+          estadio,
+          urlEscudo,
+          isValid: true,
+        });
+      }
+    }
+    return rows;
+  }
+
   const arrayBuffer = await file.arrayBuffer();
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(arrayBuffer);
   const worksheet = workbook.worksheets[0];
   if (!worksheet) return [];
 
+  const headers: string[] = [];
+  const headerRow = worksheet.getRow(1);
+  headerRow.eachCell((cell, colNumber) => {
+    headers[colNumber] = normalizeHeaderKey(String(cell.value || ''));
+  });
+
   const rows: ParsedTeamRow[] = [];
   worksheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return;
-    const time = String(row.getCell(1).value || '').trim();
-    const urlEscudo = String(row.getCell(2).value || '').trim();
+    const rowData: Record<string, any> = {};
+    row.eachCell((cell, colNumber) => {
+      const headerKey = headers[colNumber];
+      if (headerKey) {
+        rowData[headerKey] = cell.value;
+      }
+    });
+
+    const time = String(
+      rowData['time'] || rowData['team'] || rowData['nome'] || rowData['clube'] || row.getCell(1).value || ''
+    ).trim();
+    const estadio = String(
+      rowData['estadio'] || rowData['stadium'] || rowData['arena'] || ''
+    ).trim();
+    const urlEscudo = String(
+      rowData['url_escudo'] || rowData['urlescudo'] || rowData['escudo'] || rowData['logo'] || rowData['url'] || row.getCell(2).value || ''
+    ).trim();
+
     if (time) {
       rows.push({
         rowIndex: rowNumber,
         time,
+        estadio,
         urlEscudo,
         isValid: true,
       });
