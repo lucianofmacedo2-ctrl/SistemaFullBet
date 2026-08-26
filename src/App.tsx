@@ -41,6 +41,7 @@ import { ToastNotification } from './components/ToastNotification';
 import { TeamsReportModal } from './components/TeamsReportModal';
 import { DbSanitizerModal } from './components/DbSanitizerModal';
 import { CloudSyncModal } from './components/CloudSyncModal';
+import { TechDocsModal } from './components/TechDocsModal';
 import { MatchOdds, MatchStats, MatchStatus, MatchPressureData } from './types';
 import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqueId } from './utils/idGenerator';
 import { ParsedMatchRow, ParsedMatchUpdateRow } from './utils/excelHelper';
@@ -127,6 +128,7 @@ export default function App() {
   const [isTeamsReportModalOpen, setIsTeamsReportModalOpen] = useState(false);
   const [isSanitizerModalOpen, setIsSanitizerModalOpen] = useState(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
+  const [isTechDocsOpen, setIsTechDocsOpen] = useState(false);
 
   // Opportunities Hub & Bankroll Tracker Modals
   const [isOpportunitiesHubOpen, setIsOpportunitiesHubOpen] = useState(false);
@@ -1488,6 +1490,7 @@ export default function App() {
         onOpenBankrollTracker={() => setIsBankrollTrackerOpen(true)}
         onOpenTeamsReportModal={() => setIsTeamsReportModalOpen(true)}
         onOpenCloudModal={() => setIsCloudModalOpen(true)}
+        onOpenTechDocs={() => setIsTechDocsOpen(true)}
       />
 
       {/* Main Container */}
@@ -1830,6 +1833,12 @@ export default function App() {
       <ToastNotification
         notifications={notifications}
         onDismiss={handleDismissNotification}
+      />
+
+      {/* Documentação Técnica Oficial (Salvar em PDF) */}
+      <TechDocsModal
+        isOpen={isTechDocsOpen}
+        onClose={() => setIsTechDocsOpen(false)}
       />
 
       {/* Concurrent / Simultaneous Session Restriction Overlay */}

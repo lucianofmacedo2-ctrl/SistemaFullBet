@@ -32,7 +32,8 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
-  Scale
+  Scale,
+  BookOpen
 } from 'lucide-react';
 import { DbState, AppUser } from '../types';
 import { extractYMD, formatDateToYMD } from './DailyMatchesView';
@@ -63,6 +64,7 @@ interface NavbarProps {
   onOpenBankrollTracker?: () => void;
   onOpenTeamsReportModal?: () => void;
   onOpenCloudModal?: () => void;
+  onOpenTechDocs?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -87,6 +89,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenBankrollTracker,
   onOpenTeamsReportModal,
   onOpenCloudModal,
+  onOpenTechDocs,
 }) => {
   const isMaster = currentUser?.role === 'MASTER';
   const effStatus = currentUser ? getUserEffectiveStatus(currentUser) : null;
@@ -485,6 +488,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <Database className="w-4 h-4 text-blue-600 shrink-0" />
                         <span>Backup & Restaurar JSON</span>
                       </button>
+
+                      {onOpenTechDocs && (
+                        <button
+                          onClick={() => {
+                            setIsSystemMenuOpen(false);
+                            onOpenTechDocs();
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 flex items-center gap-2 transition-colors border-t border-slate-50"
+                        >
+                          <BookOpen className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div>
+                            <div className="font-bold text-slate-900">Documentação Técnica</div>
+                            <div className="text-[10px] text-slate-500">Salvar em PDF / Manual Completo</div>
+                          </div>
+                        </button>
+                      )}
 
                       {onOpenResetModal && (
                         <button
