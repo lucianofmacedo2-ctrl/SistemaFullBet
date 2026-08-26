@@ -291,16 +291,26 @@ export function extractTeamMatches(
 ): TeamSampleMatch[] {
   const venue = options?.venueOnly || 'ALL';
   const leagueId = options?.leagueId;
+  const targetTeam = options?.teams?.find(t => t.id === teamId);
+  const targetTeamName = (targetTeam?.name || '').toLowerCase().trim();
 
   // Filter completed matches sorted chronologically descending (newest first)
   const finished = matches
     .filter(m => {
-      if (m.status !== 'FINALIZADO') return false;
-      if (m.homeScore === null || m.awayScore === null) return false;
-      if (leagueId && m.leagueId !== leagueId) return false;
+      // Must have scores or be marked finished
+      const hasScores = m.homeScore !== null && m.homeScore !== undefined && m.awayScore !== null && m.awayScore !== undefined;
+      const statusUpper = String(m.status || '').toUpperCase();
+      const isFinishedStatus = statusUpper === 'FINALIZADO' || statusUpper === 'FT' || statusUpper === 'ENCERRADO';
 
-      const isHome = m.homeTeamId === teamId;
-      const isAway = m.awayTeamId === teamId;
+      if (!hasScores && !isFinishedStatus) return false;
+      if (m.homeScore === null || m.awayScore === null) return false;
+      if (leagueId && m.leagueId && m.leagueId !== leagueId) return false;
+
+      const normHome = (m.homeTeamName || '').toLowerCase().trim();
+      const normAway = (m.awayTeamName || '').toLowerCase().trim();
+
+      const isHome = m.homeTeamId === teamId || (targetTeamName !== '' && normHome === targetTeamName);
+      const isAway = m.awayTeamId === teamId || (targetTeamName !== '' && normAway === targetTeamName);
 
       if (venue === 'HOME') return isHome;
       if (venue === 'AWAY') return isAway;
@@ -311,7 +321,8 @@ export function extractTeamMatches(
   const sliced = options?.maxCount ? finished.slice(0, options.maxCount) : finished;
 
   return sliced.map(m => {
-    const isHome = m.homeTeamId === teamId;
+    const normHome = (m.homeTeamName || '').toLowerCase().trim();
+    const isHome = m.homeTeamId === teamId || (targetTeamName !== '' && normHome === targetTeamName);
     const teamGoals = isHome ? (m.homeScore ?? 0) : (m.awayScore ?? 0);
     const oppGoals = isHome ? (m.awayScore ?? 0) : (m.homeScore ?? 0);
 
@@ -327,7 +338,7 @@ export function extractTeamMatches(
     const opponentId = isHome ? m.awayTeamId : m.homeTeamId;
     const opponentLogoUrl =
       (isHome ? m.awayTeamLogoUrl : m.homeTeamLogoUrl) ||
-      options?.teams?.find(t => t.id === opponentId || t.name === opponentName)?.logoUrl;
+      options?.teams?.find(t => t.id === opponentId || (opponentName && t.name.toLowerCase().trim() === opponentName.toLowerCase().trim()))?.logoUrl;
 
     const opponentOdd = isHome ? (m.odds?.awayFT ?? null) : (m.odds?.homeFT ?? null);
     const matchOdd = isHome ? (m.odds?.homeFT ?? null) : (m.odds?.awayFT ?? null);

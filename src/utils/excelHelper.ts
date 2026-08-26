@@ -1027,32 +1027,37 @@ export function findMatchingMatch(
 
   const normHome = normalizeTextForMatch(homeTeamName);
   const normAway = normalizeTextForMatch(awayTeamName);
-  const matchDateYmd = matchDateIso.slice(0, 10);
+  const matchDateYmd = matchDateIso ? matchDateIso.slice(0, 10) : '';
 
   // 1. Exact match by normalized team names AND date
-  const exactMatch = existingMatches.find(m => {
-    const h = normalizeTextForMatch(m.homeTeamName);
-    const a = normalizeTextForMatch(m.awayTeamName);
-    const mYmd = m.matchDate.slice(0, 10);
-    return h === normHome && a === normAway && mYmd === matchDateYmd;
-  });
-  if (exactMatch) return exactMatch;
+  if (matchDateYmd) {
+    const exactMatch = existingMatches.find(m => {
+      const h = normalizeTextForMatch(m.homeTeamName);
+      const a = normalizeTextForMatch(m.awayTeamName);
+      const mYmd = m.matchDate ? m.matchDate.slice(0, 10) : '';
+      return h === normHome && a === normAway && mYmd === matchDateYmd;
+    });
+    if (exactMatch) return exactMatch;
+  }
 
-  // 2. Future match by team names (status === 'AGENDADO' or incomplete) regardless of slight date differences (e.g. game shifted 1-3 days)
+  // 2. Future/Scheduled match by team names (status === 'AGENDADO' or incomplete scores) to update when results arrive
   const scheduledMatch = existingMatches.find(m => {
     const h = normalizeTextForMatch(m.homeTeamName);
     const a = normalizeTextForMatch(m.awayTeamName);
-    return h === normHome && a === normAway && (m.status === 'AGENDADO' || m.homeScore === null);
+    const isUnfinished = m.status === 'AGENDADO' || m.homeScore === null || m.awayScore === null;
+    return h === normHome && a === normAway && isUnfinished;
   });
   if (scheduledMatch) return scheduledMatch;
 
-  // 3. Fallback match by team names alone if unique
-  const anyMatchByTeams = existingMatches.filter(m => {
-    const h = normalizeTextForMatch(m.homeTeamName);
-    const a = normalizeTextForMatch(m.awayTeamName);
-    return h === normHome && a === normAway;
-  });
-  if (anyMatchByTeams.length === 1) return anyMatchByTeams[0];
+  // 3. Fallback only if no date was provided and there is an unfinished match between the teams
+  if (!matchDateYmd) {
+    const anyUnfinished = existingMatches.find(m => {
+      const h = normalizeTextForMatch(m.homeTeamName);
+      const a = normalizeTextForMatch(m.awayTeamName);
+      return h === normHome && a === normAway && (m.homeScore === null || m.awayScore === null);
+    });
+    if (anyUnfinished) return anyUnfinished;
+  }
 
   return undefined;
 }

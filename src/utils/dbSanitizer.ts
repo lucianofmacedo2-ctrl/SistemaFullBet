@@ -330,7 +330,27 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
   }
 
   // 2. Corrigir referências, deduplicar e garantir IDs únicos nas partidas
+  let maxTeamNum = 0;
+  const teamNumRegex = /^TIME[-_]?(\d+)$/i;
+  for (const t of cleanedTeams) {
+    if (t?.id) {
+      const found = String(t.id).match(teamNumRegex);
+      if (found) {
+        const n = parseInt(found[1], 10);
+        if (!isNaN(n) && n > maxTeamNum) maxTeamNum = n;
+      }
+    }
+  }
+
   const teamById = new Map<string, Team>(cleanedTeams.map(t => [t.id, t]));
+  const teamByNameAndCountry = new Map<string, Team>();
+  const teamByName = new Map<string, Team>();
+  cleanedTeams.forEach(t => {
+    const norm = (t.name || '').trim().toLowerCase();
+    if (t.countryId) teamByNameAndCountry.set(`${t.countryId}_${norm}`, t);
+    if (!teamByName.has(norm)) teamByName.set(norm, t);
+  });
+
   const seenMatchIds = new Set<string>();
   const seenMatchSignatures = new Map<string, Match>();
   const cleanedMatches: Match[] = [];
@@ -364,6 +384,35 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
         match.homeTeamLogoUrl = ht.logoUrl;
         matchModified = true;
       }
+    } else if (match.homeTeamName && match.homeTeamName.trim()) {
+      const normHome = match.homeTeamName.trim().toLowerCase();
+      const found = (match.countryId ? teamByNameAndCountry.get(`${match.countryId}_${normHome}`) : null) || teamByName.get(normHome);
+      if (found) {
+        match.homeTeamId = found.id;
+        match.homeTeamName = found.name;
+        if (found.logoUrl && !match.homeTeamLogoUrl) match.homeTeamLogoUrl = found.logoUrl;
+        matchModified = true;
+      } else {
+        maxTeamNum++;
+        const newTeamId = `TIME-${String(maxTeamNum).padStart(3, '0')}`;
+        const newTeam: Team = {
+          id: newTeamId,
+          name: match.homeTeamName.trim(),
+          countryId: match.countryId || '',
+          countryName: match.countryName || '',
+          leagueId: match.leagueId || undefined,
+          leagueName: match.leagueName || undefined,
+          leagueIds: match.leagueId ? [match.leagueId] : [],
+          logoUrl: match.homeTeamLogoUrl || undefined,
+          createdAt: new Date().toISOString(),
+        };
+        cleanedTeams.push(newTeam);
+        teamById.set(newTeamId, newTeam);
+        if (newTeam.countryId) teamByNameAndCountry.set(`${newTeam.countryId}_${normHome}`, newTeam);
+        teamByName.set(normHome, newTeam);
+        match.homeTeamId = newTeamId;
+        matchModified = true;
+      }
     }
 
     if (match.awayTeamId && teamById.has(match.awayTeamId)) {
@@ -374,6 +423,35 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
       }
       if (at.logoUrl && !match.awayTeamLogoUrl) {
         match.awayTeamLogoUrl = at.logoUrl;
+        matchModified = true;
+      }
+    } else if (match.awayTeamName && match.awayTeamName.trim()) {
+      const normAway = match.awayTeamName.trim().toLowerCase();
+      const found = (match.countryId ? teamByNameAndCountry.get(`${match.countryId}_${normAway}`) : null) || teamByName.get(normAway);
+      if (found) {
+        match.awayTeamId = found.id;
+        match.awayTeamName = found.name;
+        if (found.logoUrl && !match.awayTeamLogoUrl) match.awayTeamLogoUrl = found.logoUrl;
+        matchModified = true;
+      } else {
+        maxTeamNum++;
+        const newTeamId = `TIME-${String(maxTeamNum).padStart(3, '0')}`;
+        const newTeam: Team = {
+          id: newTeamId,
+          name: match.awayTeamName.trim(),
+          countryId: match.countryId || '',
+          countryName: match.countryName || '',
+          leagueId: match.leagueId || undefined,
+          leagueName: match.leagueName || undefined,
+          leagueIds: match.leagueId ? [match.leagueId] : [],
+          logoUrl: match.awayTeamLogoUrl || undefined,
+          createdAt: new Date().toISOString(),
+        };
+        cleanedTeams.push(newTeam);
+        teamById.set(newTeamId, newTeam);
+        if (newTeam.countryId) teamByNameAndCountry.set(`${newTeam.countryId}_${normAway}`, newTeam);
+        teamByName.set(normAway, newTeam);
+        match.awayTeamId = newTeamId;
         matchModified = true;
       }
     }
@@ -392,13 +470,21 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
       }
     }
 
+    // Auto status finalizado se possuir placares
+    if (match.homeScore !== null && match.homeScore !== undefined && match.awayScore !== null && match.awayScore !== undefined) {
+      if (match.status !== 'FINALIZADO') {
+        match.status = 'FINALIZADO';
+        matchModified = true;
+      }
+    }
+
     // Identificar e mesclar jogos idênticos (mesma data e mesmos times)
-    const matchDateYmd = match.matchDate ? match.matchDate.substring(0, 10) : 'NO_DATE';
+    const matchDateYmd = match.matchDate ? match.matchDate.substring(0, 10) : '';
     const normHome = (match.homeTeamName || '').trim().toLowerCase();
     const normAway = (match.awayTeamName || '').trim().toLowerCase();
-    const matchSig = `${matchDateYmd}__${normHome}__vs__${normAway}`;
+    const matchSig = matchDateYmd && normHome && normAway ? `${matchDateYmd}__${normHome}__vs__${normAway}` : '';
 
-    if (normHome && normAway && seenMatchSignatures.has(matchSig)) {
+    if (matchSig && seenMatchSignatures.has(matchSig)) {
       const existingMatch = seenMatchSignatures.get(matchSig)!;
       // Mesclar propriedades caso a cópia duplicada tenha preenchimentos mais recentes
       if (existingMatch.homeScore === null && match.homeScore !== null) existingMatch.homeScore = match.homeScore;
@@ -421,7 +507,7 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
     }
 
     seenMatchIds.add(match.id);
-    if (normHome && normAway) {
+    if (matchSig) {
       seenMatchSignatures.set(matchSig, match);
     }
 

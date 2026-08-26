@@ -396,7 +396,9 @@ export function parseAndSyncCsvLocally(
     const dateKey = m.matchDate ? m.matchDate.substring(0, 10) : '';
     if (m.homeTeamId && m.awayTeamId) {
       matchesMap.set(`${dateKey}_${m.homeTeamId}_${m.awayTeamId}`, m);
-      matchesMap.set(`${m.homeTeamId}_${m.awayTeamId}`, m);
+    }
+    if (m.homeTeamName && m.awayTeamName) {
+      matchesMap.set(`${dateKey}_${normalizeHeaderKey(m.homeTeamName)}_${normalizeHeaderKey(m.awayTeamName)}`, m);
     }
     matchesMap.set(m.id, m);
   });
@@ -716,7 +718,8 @@ export function parseAndSyncCsvLocally(
       asianHandicapAwayOdd: ahAwayOdd,
     };
 
-    let existingMatch = matchesMap.get(mKey) || matchesMap.get(`${homeTeam.id}_${awayTeam.id}`);
+    const mKeyByName = `${dateKey}_${normalizeHeaderKey(homeTeam.name)}_${normalizeHeaderKey(awayTeam.name)}`;
+    let existingMatch = matchesMap.get(mKey) || matchesMap.get(mKeyByName);
     if (existingMatch) {
       existingMatch.matchDate = isoDate;
       existingMatch.status = status;
@@ -753,6 +756,7 @@ export function parseAndSyncCsvLocally(
       };
       matches.push(newMatch);
       matchesMap.set(mKey, newMatch);
+      matchesMap.set(mKeyByName, newMatch);
       matchesMap.set(matchId, newMatch);
       newMatchesCount++;
     }

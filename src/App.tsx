@@ -989,10 +989,12 @@ export default function App() {
       }
 
       // 5. Create Match or Update if already exists
+      const rowDateYmd = row.matchDate ? row.matchDate.slice(0, 10) : '';
       const existingMatchIdx = currentMatches.findIndex(m => {
-        const hMatch = m.homeTeamId === homeTeamRes.team.id || m.homeTeamName.toLowerCase() === row.homeTeamName.toLowerCase();
-        const aMatch = m.awayTeamId === awayTeamRes.team.id || m.awayTeamName.toLowerCase() === row.awayTeamName.toLowerCase();
-        const dMatch = m.matchDate.slice(0, 10) === (row.matchDate ? row.matchDate.slice(0, 10) : '');
+        const hMatch = m.homeTeamId === homeTeamRes.team.id || m.homeTeamName.toLowerCase().trim() === row.homeTeamName.toLowerCase().trim();
+        const aMatch = m.awayTeamId === awayTeamRes.team.id || m.awayTeamName.toLowerCase().trim() === row.awayTeamName.toLowerCase().trim();
+        const mDateYmd = m.matchDate ? m.matchDate.slice(0, 10) : '';
+        const dMatch = rowDateYmd && mDateYmd ? mDateYmd === rowDateYmd : false;
         return hMatch && aMatch && dMatch;
       });
 
