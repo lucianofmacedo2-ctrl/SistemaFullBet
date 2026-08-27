@@ -9,7 +9,9 @@ interface StatsDashboardProps {
 }
 
 export const StatsDashboard: React.FC<StatsDashboardProps> = ({ dbState, onNavigateToAnalysis }) => {
-  const matches = dbState.matches;
+  const matches = Array.isArray(dbState.matches) ? dbState.matches : [];
+  const teams = Array.isArray(dbState.teams) ? dbState.teams : [];
+  const leagues = Array.isArray(dbState.leagues) ? dbState.leagues : [];
 
   const totalMatches = matches.length;
   const finishedMatches = matches.filter(m => m.status === 'FINALIZADO');
@@ -26,7 +28,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ dbState, onNavig
   // Team Goals & Wins calculation
   const teamStatsMap: Record<string, { name: string; goals: string; matches: number; wins: number; logoUrl?: string }> = {};
 
-  dbState.teams.forEach(t => {
+  teams.forEach(t => {
     teamStatsMap[t.id] = { name: t.name, goals: '0', matches: 0, wins: 0, logoUrl: t.logoUrl };
   });
 
@@ -198,13 +200,13 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ dbState, onNavig
             Partidas Cadastradas por Liga
           </h4>
 
-          {dbState.leagues.length === 0 ? (
+          {leagues.length === 0 ? (
             <p className="text-xs text-slate-400 py-4 text-center">
               Nenhuma liga cadastrada.
             </p>
           ) : (
             <div className="space-y-2">
-              {dbState.leagues.map(league => {
+              {leagues.map(league => {
                 const count = matches.filter(m => m.leagueId === league.id).length;
                 return (
                   <div

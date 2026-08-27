@@ -187,7 +187,7 @@ export function scanAllMatchesForValue(dbState: DbState): ValueScannerOpportunit
   const opportunities: ValueScannerOpportunity[] = [];
 
   // Filtrar partidas com odds cadastradas
-  const matchesWithOdds = dbState.matches.filter(m => {
+  const matchesWithOdds = (dbState.matches || []).filter(m => {
     return (
       m.odds &&
       (m.odds.homeFT || m.odds.drawFT || m.odds.awayFT || m.odds.over25FT || m.odds.under25FT)

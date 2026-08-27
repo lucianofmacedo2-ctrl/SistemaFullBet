@@ -234,8 +234,8 @@ export const CountryManager: React.FC<CountryManagerProps> = ({
                               </button>
                               <button
                                 onClick={() => {
-                                  const leagues = dbState.leagues.filter(l => l.countryId === c.id).length;
-                                  const matches = dbState.matches.filter(m => m.countryId === c.id).length;
+                                  const leagues = (dbState.leagues || []).filter(l => l.countryId === c.id).length;
+                                  const matches = (dbState.matches || []).filter(m => m.countryId === c.id).length;
                                   let msg = `Excluir o país "${c.name}" (${c.id})?`;
                                   if (leagues > 0 || matches > 0) {
                                     msg += `\n\nAtenção: Isso também excluirá ${leagues} liga(s) e ${matches} jogo(s) vinculados a este país!`;

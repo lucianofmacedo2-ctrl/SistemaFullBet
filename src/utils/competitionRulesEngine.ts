@@ -472,12 +472,15 @@ export function calculateDynamicStandings(
   leagueMetrics: LeagueOverallMetrics;
   refereeStats: RefereeStat[];
 } {
-  const { leagues, matches, teams } = dbState;
-  const currentLeague = leagues.find(l => l.id === selectedLeagueId);
+  const safeLeagues = Array.isArray(dbState?.leagues) ? dbState.leagues : [];
+  const safeMatches = Array.isArray(dbState?.matches) ? dbState.matches : [];
+  const safeTeams = Array.isArray(dbState?.teams) ? dbState.teams : [];
+
+  const currentLeague = safeLeagues.find(l => l.id === selectedLeagueId);
   const regulation = getCompetitionRegulation(currentLeague);
 
   // Filtrar jogos da liga finalizados
-  const leagueFinishedMatches = matches.filter(m => {
+  const leagueFinishedMatches = safeMatches.filter(m => {
     if (m.status !== 'FINALIZADO') return false;
     if (selectedLeagueId !== 'ALL' && m.leagueId !== selectedLeagueId) return false;
     return true;
@@ -487,7 +490,7 @@ export function calculateDynamicStandings(
   const teamRowsMap: Record<string, DynamicStandingRow> = {};
 
   // Times vinculados à liga selecionada
-  teams.forEach(t => {
+  safeTeams.forEach(t => {
     if (selectedLeagueId === 'ALL' || t.leagueId === selectedLeagueId || (t.leagueIds && t.leagueIds.includes(selectedLeagueId))) {
       teamRowsMap[t.id] = {
         position: 0,

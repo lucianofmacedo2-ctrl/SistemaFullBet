@@ -31,6 +31,7 @@ import { RefereeStatsModule } from './components/RefereeStatsModule';
 import { AnalysisDashboard } from './components/analysis/AnalysisDashboard';
 import { LeagueStandings } from './components/LeagueStandings';
 import { OpportunitiesHubModal } from './components/opportunities/OpportunitiesHubModal';
+import { HtGoalsScannerModal } from './components/HtGoalsScannerModal';
 import { BankrollTrackerModal } from './components/bankroll/BankrollTrackerModal';
 import { BackupModal } from './components/BackupModal';
 import { ResetDatabaseModal } from './components/ResetDatabaseModal';
@@ -136,6 +137,7 @@ export default function App() {
 
   // Opportunities Hub & Bankroll Tracker Modals
   const [isOpportunitiesHubOpen, setIsOpportunitiesHubOpen] = useState(false);
+  const [isHtGoalsScannerOpen, setIsHtGoalsScannerOpen] = useState(false);
   const [isBankrollTrackerOpen, setIsBankrollTrackerOpen] = useState(false);
   const [bankrollPrefillBet, setBankrollPrefillBet] = useState<{
     matchDescription: string;
@@ -1507,6 +1509,7 @@ export default function App() {
         onLogout={handleLogout}
         onOpenOpportunitiesHub={() => setIsOpportunitiesHubOpen(true)}
         onOpenBankrollTracker={() => setIsBankrollTrackerOpen(true)}
+        onOpenHtGoalsScanner={() => setIsHtGoalsScannerOpen(true)}
         onOpenTeamsReportModal={() => setIsTeamsReportModalOpen(true)}
         onOpenCloudModal={() => setIsCloudModalOpen(true)}
         onOpenTechDocs={() => setIsTechDocsOpen(true)}
@@ -1561,6 +1564,7 @@ export default function App() {
                 }}
                 onNavigateToAnalysis={() => setActiveTab('analysis')}
                 onOpenCloudModal={() => setIsCloudModalOpen(true)}
+                onOpenHtGoalsScanner={() => setIsHtGoalsScannerOpen(true)}
                 onNavigateToAllMatches={() => setActiveTab('matches')}
               />
             )}
@@ -1801,6 +1805,18 @@ export default function App() {
           setIsOpportunitiesHubOpen(false);
         }}
         onRegisterBetToBankroll={handleOpenBankrollWithPrefill}
+      />
+
+      {/* Radar de Gols 1º Tempo (Over 1.5 HT) Modal */}
+      <HtGoalsScannerModal
+        isOpen={isHtGoalsScannerOpen}
+        onClose={() => setIsHtGoalsScannerOpen(false)}
+        dbState={dbState}
+        onSelectMatchForAnalysis={(matchId) => {
+          setAnalysisTargetMatchId(matchId);
+          setActiveTab('analysis');
+          setIsHtGoalsScannerOpen(false);
+        }}
       />
 
       {/* Bankroll Management & Tracker Modal */}

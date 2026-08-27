@@ -569,12 +569,13 @@ export async function downloadFinishedMatchesTemplate(
   format: 'xlsx' | 'csv' = 'xlsx',
   mode: 'all' | 'future_only' | 'empty_samples' = 'empty_samples'
 ): Promise<void> {
+  const safeMatches = Array.isArray(matches) ? matches : [];
   let targetMatches: Match[] = [];
 
   if (mode === 'future_only') {
-    targetMatches = matches.filter(m => m.status === 'AGENDADO' || m.homeScore === null || m.awayScore === null);
+    targetMatches = safeMatches.filter(m => m.status === 'AGENDADO' || m.homeScore === null || m.awayScore === null);
   } else if (mode === 'all') {
-    targetMatches = matches;
+    targetMatches = safeMatches;
   }
 
   const sampleRows = [

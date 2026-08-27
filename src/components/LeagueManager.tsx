@@ -127,7 +127,7 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
               </thead>
               <tbody className="divide-y divide-white/5 font-medium">
                 {leagues.map(l => {
-                  const matchesCount = dbState.matches.filter(m => m.leagueId === l.id).length;
+                  const matchesCount = (dbState.matches || []).filter(m => m.leagueId === l.id).length;
                   const isEditing = editingLeagueId === l.id;
 
                   return (
@@ -260,7 +260,7 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
                               </button>
                               <button
                                 onClick={() => {
-                                  const matches = dbState.matches.filter(m => m.leagueId === l.id).length;
+                                  const matches = (dbState.matches || []).filter(m => m.leagueId === l.id).length;
                                   let msg = `Excluir a liga "${l.name}" (${l.id})?`;
                                   if (matches > 0) {
                                     msg += `\n\nAtenção: Isso também excluirá ${matches} jogo(s) vinculados a esta liga!`;

@@ -54,7 +54,7 @@ export const BulkMatchUpdateModal: React.FC<BulkMatchUpdateModalProps> = ({
 
   if (!isOpen) return null;
 
-  const futureMatchesCount = dbState.matches.filter(
+  const futureMatchesCount = (dbState.matches || []).filter(
     m => m.status === 'AGENDADO' || m.homeScore === null || m.awayScore === null
   ).length;
 

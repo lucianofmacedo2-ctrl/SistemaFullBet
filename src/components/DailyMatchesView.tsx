@@ -28,6 +28,7 @@ import {
   Zap,
   LayoutList,
   LayoutGrid,
+  Flame,
   ArrowRight
 } from 'lucide-react';
 import { DbState, Match, MatchStatus } from '../types';
@@ -48,6 +49,7 @@ interface DailyMatchesViewProps {
   onAnalyzeMatch?: (match: Match) => void;
   onNavigateToAnalysis?: () => void;
   onOpenCloudModal?: () => void;
+  onOpenHtGoalsScanner?: () => void;
   onNavigateToAllMatches?: () => void;
 }
 
@@ -139,6 +141,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   onAnalyzeMatch,
   onNavigateToAnalysis,
   onOpenCloudModal,
+  onOpenHtGoalsScanner,
   onNavigateToAllMatches,
 }) => {
   // Base reference date (today)
@@ -255,7 +258,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
 
   // Filter matches matching the target dates
   const dailyMatches = useMemo(() => {
-    return dbState.matches.filter(m => {
+    return (dbState.matches || []).filter(m => {
       const ymd = extractYMD(m.matchDate);
       if (!ymd || !targetDates.includes(ymd)) return false;
 
@@ -435,6 +438,21 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
 
           {/* Quick Date Tabs */}
           <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+            {onOpenHtGoalsScanner && (
+              <button
+                type="button"
+                onClick={onOpenHtGoalsScanner}
+                className="px-3.5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-orange-600 via-rose-600 to-amber-600 hover:from-orange-500 hover:to-rose-500 text-white shadow-md shadow-orange-500/20 flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                title="Filtrar automaticamente jogos com projeção para Over 1.5 Gols HT no 1º Tempo"
+              >
+                <Flame className="w-4 h-4 text-amber-300 fill-amber-300" />
+                <span>Radar Over 1.5 HT</span>
+                <span className="px-1.5 py-0.2 bg-white text-orange-800 rounded text-[10px] font-black uppercase">
+                  1º Tempo
+                </span>
+              </button>
+            )}
+
             {/* Button Hoje */}
             <button
               type="button"

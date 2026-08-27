@@ -289,14 +289,26 @@ export function extractTeamMatches(
     teams?: Team[];
   }
 ): TeamSampleMatch[] {
+  // Defensive check if arguments passed in reversed order
+  let safeTeamId = typeof teamId === 'string' ? teamId : '';
+  let safeMatches = Array.isArray(matches) ? matches : [];
+  if (Array.isArray(teamId) && typeof matches === 'string') {
+    safeMatches = teamId as unknown as Match[];
+    safeTeamId = matches;
+  }
+  if (!Array.isArray(safeMatches) || safeMatches.length === 0) {
+    return [];
+  }
+
   const venue = options?.venueOnly || 'ALL';
   const leagueId = options?.leagueId;
-  const targetTeam = options?.teams?.find(t => t.id === teamId);
+  const targetTeam = options?.teams?.find(t => t.id === safeTeamId);
   const targetTeamName = (targetTeam?.name || '').toLowerCase().trim();
 
   // Filter completed matches sorted chronologically descending (newest first)
-  const finished = matches
+  const finished = safeMatches
     .filter(m => {
+      if (!m) return false;
       // Must have scores or be marked finished
       const hasScores = m.homeScore !== null && m.homeScore !== undefined && m.awayScore !== null && m.awayScore !== undefined;
       const statusUpper = String(m.status || '').toUpperCase();
@@ -309,8 +321,8 @@ export function extractTeamMatches(
       const normHome = (m.homeTeamName || '').toLowerCase().trim();
       const normAway = (m.awayTeamName || '').toLowerCase().trim();
 
-      const isHome = m.homeTeamId === teamId || (targetTeamName !== '' && normHome === targetTeamName);
-      const isAway = m.awayTeamId === teamId || (targetTeamName !== '' && normAway === targetTeamName);
+      const isHome = m.homeTeamId === safeTeamId || (targetTeamName !== '' && normHome === targetTeamName);
+      const isAway = m.awayTeamId === safeTeamId || (targetTeamName !== '' && normAway === targetTeamName);
 
       if (venue === 'HOME') return isHome;
       if (venue === 'AWAY') return isAway;
@@ -322,7 +334,7 @@ export function extractTeamMatches(
 
   return sliced.map(m => {
     const normHome = (m.homeTeamName || '').toLowerCase().trim();
-    const isHome = m.homeTeamId === teamId || (targetTeamName !== '' && normHome === targetTeamName);
+    const isHome = m.homeTeamId === safeTeamId || (targetTeamName !== '' && normHome === targetTeamName);
     const teamGoals = isHome ? (m.homeScore ?? 0) : (m.awayScore ?? 0);
     const oppGoals = isHome ? (m.awayScore ?? 0) : (m.homeScore ?? 0);
 
@@ -637,7 +649,8 @@ export function calculateLeagueBaselines(leagueMatches: Match[]): {
   avgCardsHome: number;
   avgCardsAway: number;
 } {
-  const completed = leagueMatches.filter(m => m.status === 'FINALIZADO' && m.homeScore !== null && m.awayScore !== null);
+  const safeLeagueMatches = Array.isArray(leagueMatches) ? leagueMatches : [];
+  const completed = safeLeagueMatches.filter(m => m && m.status === 'FINALIZADO' && m.homeScore !== null && m.awayScore !== null);
   const count = completed.length;
 
   if (count === 0) {
@@ -793,7 +806,8 @@ export function runFullMatchAnalysis(
   const awayPower = calculateTeamPowerRating(awayTeam, awayActiveSample);
 
   // League Baselines
-  const leagueMatches = league ? dbState.matches.filter(m => m.leagueId === league.id) : dbState.matches;
+  const allDbMatches = Array.isArray(dbState.matches) ? dbState.matches : [];
+  const leagueMatches = league ? allDbMatches.filter(m => m.leagueId === league.id) : allDbMatches;
   const baselines = calculateLeagueBaselines(leagueMatches);
 
   const homeSampleCount = homeActiveSample.length;
@@ -1086,7 +1100,7 @@ export function runFullMatchAnalysis(
   let refereeAnalysis: RefereeCardAnalysis | undefined;
   const refereeName = options?.activeMatch?.referee?.trim();
   if (refereeName) {
-    const refMatches = dbState.matches.filter(
+    const refMatches = (dbState.matches || []).filter(
       m => m.referee?.trim().toLowerCase() === refereeName.toLowerCase() && m.status === 'FINALIZADO'
     );
     if (refMatches.length > 0) {

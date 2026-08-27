@@ -117,10 +117,11 @@ export function computeRefereeStats(
   globalAverages: RefereeGlobalAverages;
   upcomingRefereeAssignments: { match: Match; refereeStats?: RefereeStats }[];
 } {
+  const safeMatches = Array.isArray(matches) ? matches : [];
   const refereeMap = new Map<string, { name: string; matches: Match[] }>();
 
   // Agrupa partidas por árbitro
-  matches.forEach(match => {
+  safeMatches.forEach(match => {
     const rawRef = match.referee;
     const cleanRef = normalizeRefereeName(rawRef);
     if (!cleanRef || cleanRef.toLowerCase() === 'n/a' || cleanRef.toLowerCase() === 'desconhecido') {
@@ -425,7 +426,7 @@ export function computeRefereeStats(
 
   // Mapeia árbitros para partidas agendadas (Upcoming Assignments)
   const refereeLookupMap = new Map(list.map(r => [r.name.toLowerCase(), r]));
-  const upcomingMatches = matches.filter(
+  const upcomingMatches = safeMatches.filter(
     m => m.status === 'AGENDADO' || (m.homeScore === null && m.awayScore === null)
   );
 

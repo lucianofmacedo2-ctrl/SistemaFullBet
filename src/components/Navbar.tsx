@@ -62,6 +62,7 @@ interface NavbarProps {
   onLogout?: () => void;
   onOpenOpportunitiesHub?: () => void;
   onOpenBankrollTracker?: () => void;
+  onOpenHtGoalsScanner?: () => void;
   onOpenTeamsReportModal?: () => void;
   onOpenCloudModal?: () => void;
   onOpenTechDocs?: () => void;
@@ -87,6 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   onOpenOpportunitiesHub,
   onOpenBankrollTracker,
+  onOpenHtGoalsScanner,
   onOpenTeamsReportModal,
   onOpenCloudModal,
   onOpenTechDocs,
@@ -131,17 +133,22 @@ export const Navbar: React.FC<NavbarProps> = ({
   afterTomorrow.setDate(today.getDate() + 2);
   const afterTomorrowYMD = formatDateToYMD(afterTomorrow);
 
-  const nextDaysMatchesCount = dbState.matches.filter(m => {
+  const allMatches = Array.isArray(dbState.matches) ? dbState.matches : [];
+  const allTeams = Array.isArray(dbState.teams) ? dbState.teams : [];
+  const allLeagues = Array.isArray(dbState.leagues) ? dbState.leagues : [];
+  const allCountries = Array.isArray(dbState.countries) ? dbState.countries : [];
+
+  const nextDaysMatchesCount = allMatches.filter(m => {
     const ymd = extractYMD(m.matchDate);
     return ymd === todayYMD || ymd === tomorrowYMD || ymd === afterTomorrowYMD;
   }).length;
 
-  const incompleteMatchesCount = dbState.matches.filter(m => !isMatchComplete(m)).length;
+  const incompleteMatchesCount = allMatches.filter(m => !isMatchComplete(m)).length;
 
   const pendingLogosCount =
-    dbState.teams.filter(t => !isValidImageUrl(t.logoUrl)).length +
-    dbState.leagues.filter(l => !isValidImageUrl(l.logoUrl)).length +
-    dbState.countries.filter(c => !isValidImageUrl(c.flagUrl)).length;
+    allTeams.filter(t => !isValidImageUrl(t.logoUrl)).length +
+    allLeagues.filter(l => !isValidImageUrl(l.logoUrl)).length +
+    allCountries.filter(c => !isValidImageUrl(c.flagUrl)).length;
 
   const activeUsersCount = dbState.users?.filter(
     u => getUserEffectiveStatus(u).status === 'ACTIVE'
@@ -902,6 +909,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span>OPORTUNIDADES (+EV)</span>
                   <span className="px-1.5 py-0.2 rounded-md text-[9px] font-black bg-slate-950 text-amber-300 uppercase">
                     AI
+                  </span>
+                </button>
+              )}
+
+              {onOpenHtGoalsScanner && (
+                <button
+                  type="button"
+                  onClick={onOpenHtGoalsScanner}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all bg-gradient-to-r from-orange-600 via-rose-600 to-amber-600 hover:from-orange-500 hover:to-rose-500 text-white shadow-2xs cursor-pointer hover:scale-[1.02]"
+                  title="Filtrar automaticamente jogos do dia com padrão para Over 1.5 Gols HT (1º Tempo)"
+                >
+                  <Flame className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                  <span>RADAR OVER 1.5 HT</span>
+                  <span className="px-1.5 py-0.2 rounded-md text-[9px] font-black bg-white text-orange-800 uppercase">
+                    1ºT
                   </span>
                 </button>
               )}

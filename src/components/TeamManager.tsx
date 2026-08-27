@@ -324,8 +324,8 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
               </thead>
               <tbody className="divide-y divide-white/5 font-medium">
                 {teams.map(t => {
-                  const homeCount = dbState.matches.filter(m => m.homeTeamId === t.id).length;
-                  const awayCount = dbState.matches.filter(m => m.awayTeamId === t.id).length;
+                  const homeCount = (dbState.matches || []).filter(m => m.homeTeamId === t.id).length;
+                  const awayCount = (dbState.matches || []).filter(m => m.awayTeamId === t.id).length;
                   const totalMatches = homeCount + awayCount;
                   const isEditing = editingTeamId === t.id;
                   const isJustSaved = savedSuccessTeamId === t.id;
@@ -616,8 +616,8 @@ export const TeamManager: React.FC<TeamManagerProps> = ({
                               </button>
                               <button
                                 onClick={() => {
-                                  const homeMatches = dbState.matches.filter(m => m.homeTeamId === t.id).length;
-                                  const awayMatches = dbState.matches.filter(m => m.awayTeamId === t.id).length;
+                                  const homeMatches = (dbState.matches || []).filter(m => m.homeTeamId === t.id).length;
+                                  const awayMatches = (dbState.matches || []).filter(m => m.awayTeamId === t.id).length;
                                   const total = homeMatches + awayMatches;
                                   let msg = `Excluir o time "${t.name}" (${t.id})?`;
                                   if (total > 0) {
