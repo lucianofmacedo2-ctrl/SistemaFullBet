@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Search,
   Filter,
@@ -37,7 +37,7 @@ import {
   Upload,
   ArrowRight
 } from 'lucide-react';
-import { DbState, Match, MatchStatus } from '../types';
+import { DbState, Match, MatchStatus, Country, League, Team } from '../types';
 import { PressureChartViewer } from './PressureChartViewer';
 
 interface MatchListProps {
@@ -220,77 +220,180 @@ export const MatchList: React.FC<MatchListProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const matches = dbState.matches;
+  // Display limits per section to maintain instant 60fps rendering without DOM congestion
+  const [displayLimits, setDisplayLimits] = useState<{ [key: string]: number }>({
+    full100: 24,
+    preMatch: 24,
+    incomplete: 24,
+    other: 24,
+  });
+
+  const handleShowMore = (sectionKey: string, step: number = 24) => {
+    setDisplayLimits(prev => ({
+      ...prev,
+      [sectionKey]: (prev[sectionKey] || 24) + step,
+    }));
+  };
+
+  const handleShowAll = (sectionKey: string, total: number) => {
+    setDisplayLimits(prev => ({
+      ...prev,
+      [sectionKey]: total,
+    }));
+  };
+
+  // Fast O(1) Lookup Maps for instant rendering without linear array scans
+  const countriesMap = useMemo(() => {
+    const map = new Map<string, Country>();
+    for (const c of dbState.countries || []) {
+      map.set(c.id, c);
+      if (c.name) map.set(c.name.toLowerCase(), c);
+    }
+    return map;
+  }, [dbState.countries]);
+
+  const leaguesMap = useMemo(() => {
+    const map = new Map<string, League>();
+    for (const l of dbState.leagues || []) {
+      map.set(l.id, l);
+      if (l.name) map.set(l.name.toLowerCase(), l);
+    }
+    return map;
+  }, [dbState.leagues]);
+
+  const teamsMap = useMemo(() => {
+    const map = new Map<string, Team>();
+    for (const t of dbState.teams || []) {
+      map.set(t.id, t);
+      if (t.name) map.set(t.name.toLowerCase(), t);
+    }
+    return map;
+  }, [dbState.teams]);
+
+  const matches = dbState.matches || [];
+
+  // Memoized Completeness Map for every match (computed only once per match list change)
+  const completenessMap = useMemo(() => {
+    const map = new Map<string, MatchFullCompleteness>();
+    for (const m of matches) {
+      map.set(m.id, checkMatchFullCompleteness(m));
+    }
+    return map;
+  }, [matches]);
 
   // Counts & Completeness calculations
   const totalMatches = matches.length;
-  const matchesFullCompleteness = matches.map(m => ({
-    match: m,
-    completeness: checkMatchFullCompleteness(m),
-  }));
+  const { full100MatchesCount, preMatchOnlyCount, incompleteCount, agendadosCount, finalizadosCount, emAndamentoCount } = useMemo(() => {
+    let full100 = 0;
+    let preOnly = 0;
+    let inc = 0;
+    let agend = 0;
+    let fin = 0;
+    let emAnd = 0;
 
-  const full100MatchesCount = matchesFullCompleteness.filter(x => x.completeness.is100PercentComplete).length;
-  const preMatchOnlyCount = matchesFullCompleteness.filter(
-    x => x.completeness.isPreMatchComplete && !x.completeness.is100PercentComplete
-  ).length;
-  const incompleteCount = matchesFullCompleteness.filter(x => !x.completeness.isPreMatchComplete).length;
-  const agendadosCount = matches.filter(m => m.status === 'AGENDADO').length;
-  const finalizadosCount = matches.filter(m => m.status === 'FINALIZADO').length;
-  const emAndamentoCount = matches.filter(m => m.status === 'EM_ANDAMENTO').length;
+    for (const m of matches) {
+      const comp = completenessMap.get(m.id) || checkMatchFullCompleteness(m);
+      if (comp.is100PercentComplete) full100++;
+      else if (comp.isPreMatchComplete) preOnly++;
+      else inc++;
 
-  // Available leagues filtered by country if selected
-  const availableLeagues = dbState.leagues.filter(l => {
-    if (filterCountryId) return l.countryId === filterCountryId;
-    return true;
-  });
-
-  // Filter logic
-  const filteredMatches = matches.filter(match => {
-    const searchLower = searchTerm.toLowerCase();
-
-    const matchesSearch =
-      match.id.toLowerCase().includes(searchLower) ||
-      match.homeTeamName.toLowerCase().includes(searchLower) ||
-      match.awayTeamName.toLowerCase().includes(searchLower) ||
-      match.leagueName.toLowerCase().includes(searchLower) ||
-      match.countryName.toLowerCase().includes(searchLower) ||
-      match.homeTeamId.toLowerCase().includes(searchLower) ||
-      match.awayTeamId.toLowerCase().includes(searchLower) ||
-      (match.referee && match.referee.toLowerCase().includes(searchLower));
-
-    const matchesCountry = filterCountryId ? match.countryId === filterCountryId : true;
-    
-    // Multi-league logic: if selectedLeagueIds is non-empty, match must be in list
-    const matchesLeague =
-      selectedLeagueIds.length > 0 ? selectedLeagueIds.includes(match.leagueId) : true;
-
-    const matchesStatus = filterStatus ? match.status === filterStatus : true;
-
-    // Completeness filter
-    let matchesCompleteness = true;
-    const comp = checkMatchFullCompleteness(match);
-    if (futureCompletenessFilter === '100_PERCENT') {
-      matchesCompleteness = comp.is100PercentComplete;
-    } else if (futureCompletenessFilter === 'PRE_MATCH_COMPLETE') {
-      matchesCompleteness = comp.isPreMatchComplete && !comp.is100PercentComplete;
-    } else if (futureCompletenessFilter === 'INCOMPLETE') {
-      matchesCompleteness = !comp.isPreMatchComplete;
+      if (m.status === 'AGENDADO') agend++;
+      else if (m.status === 'FINALIZADO') fin++;
+      else if (m.status === 'EM_ANDAMENTO') emAnd++;
     }
 
-    return matchesSearch && matchesCountry && matchesLeague && matchesStatus && matchesCompleteness;
-  });
+    return {
+      full100MatchesCount: full100,
+      preMatchOnlyCount: preOnly,
+      incompleteCount: inc,
+      agendadosCount: agend,
+      finalizadosCount: fin,
+      emAndamentoCount: emAnd,
+    };
+  }, [matches, completenessMap]);
 
-  // Grouped match categories for section separators
-  const full100Group = filteredMatches.filter(m => checkMatchFullCompleteness(m).is100PercentComplete);
-  const preMatchScheduled = filteredMatches.filter(
-    m => m.status === 'AGENDADO' && checkMatchFullCompleteness(m).isPreMatchComplete && !checkMatchFullCompleteness(m).is100PercentComplete
-  );
-  const incompleteScheduled = filteredMatches.filter(
-    m => m.status === 'AGENDADO' && !checkMatchFullCompleteness(m).isPreMatchComplete
-  );
-  const otherMatches = filteredMatches.filter(
-    m => m.status !== 'AGENDADO' && !checkMatchFullCompleteness(m).is100PercentComplete
-  );
+  // Available leagues filtered by country if selected
+  const availableLeagues = useMemo(() => {
+    return (dbState.leagues || []).filter(l => {
+      if (filterCountryId) return l.countryId === filterCountryId;
+      return true;
+    });
+  }, [dbState.leagues, filterCountryId]);
+
+  // Memoized Filter logic
+  const filteredMatches = useMemo(() => {
+    const searchLower = searchTerm.trim().toLowerCase();
+
+    return matches.filter(match => {
+      if (searchLower) {
+        const matchesSearch =
+          match.id.toLowerCase().includes(searchLower) ||
+          match.homeTeamName.toLowerCase().includes(searchLower) ||
+          match.awayTeamName.toLowerCase().includes(searchLower) ||
+          match.leagueName.toLowerCase().includes(searchLower) ||
+          match.countryName.toLowerCase().includes(searchLower) ||
+          match.homeTeamId.toLowerCase().includes(searchLower) ||
+          match.awayTeamId.toLowerCase().includes(searchLower) ||
+          (match.referee && match.referee.toLowerCase().includes(searchLower));
+        if (!matchesSearch) return false;
+      }
+
+      if (filterCountryId && match.countryId !== filterCountryId) {
+        return false;
+      }
+      
+      if (selectedLeagueIds.length > 0 && !selectedLeagueIds.includes(match.leagueId)) {
+        return false;
+      }
+
+      if (filterStatus && match.status !== filterStatus) {
+        return false;
+      }
+
+      if (futureCompletenessFilter !== 'ALL') {
+        const comp = completenessMap.get(match.id) || checkMatchFullCompleteness(match);
+        if (futureCompletenessFilter === '100_PERCENT' && !comp.is100PercentComplete) {
+          return false;
+        }
+        if (futureCompletenessFilter === 'PRE_MATCH_COMPLETE' && (!comp.isPreMatchComplete || comp.is100PercentComplete)) {
+          return false;
+        }
+        if (futureCompletenessFilter === 'INCOMPLETE' && comp.isPreMatchComplete) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [matches, searchTerm, filterCountryId, selectedLeagueIds, filterStatus, futureCompletenessFilter, completenessMap]);
+
+  // Memoized Grouped match categories for section separators
+  const { full100Group, preMatchScheduled, incompleteScheduled, otherMatches } = useMemo(() => {
+    const f100: Match[] = [];
+    const preSch: Match[] = [];
+    const incSch: Match[] = [];
+    const oth: Match[] = [];
+
+    for (const m of filteredMatches) {
+      const comp = completenessMap.get(m.id) || checkMatchFullCompleteness(m);
+      if (comp.is100PercentComplete) {
+        f100.push(m);
+      } else if (m.status === 'AGENDADO' && comp.isPreMatchComplete) {
+        preSch.push(m);
+      } else if (m.status === 'AGENDADO' && !comp.isPreMatchComplete) {
+        incSch.push(m);
+      } else {
+        oth.push(m);
+      }
+    }
+
+    return {
+      full100Group: f100,
+      preMatchScheduled: preSch,
+      incompleteScheduled: incSch,
+      otherMatches: oth,
+    };
+  }, [filteredMatches, completenessMap]);
 
   const toggleLeagueSelection = (leagueId: string) => {
     setSelectedLeagueIds(prev =>
@@ -872,8 +975,28 @@ export const MatchList: React.FC<MatchListProps> = ({
               </div>
 
               {!collapsedSections['full100'] && (
-                <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                  {full100Group.map((match, idx) => renderMatchCard(match, `full_${idx}`))}
+                <div className="space-y-4">
+                  <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+                    {full100Group.slice(0, displayLimits['full100'] || 24).map((match, idx) => renderMatchCard(match, `full_${idx}`))}
+                  </div>
+                  {full100Group.length > (displayLimits['full100'] || 24) && (
+                    <div className="flex items-center justify-center gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => handleShowMore('full100', 24)}
+                        className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-300 transition-all cursor-pointer shadow-xs"
+                      >
+                        + Carregar mais 24 partidas (Exibindo {Math.min(displayLimits['full100'] || 24, full100Group.length)} de {full100Group.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleShowAll('full100', full100Group.length)}
+                        className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition-all cursor-pointer"
+                      >
+                        Mostrar todas ({full100Group.length})
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -913,8 +1036,28 @@ export const MatchList: React.FC<MatchListProps> = ({
               </div>
 
               {!collapsedSections['preMatch'] && (
-                <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                  {preMatchScheduled.map((match, idx) => renderMatchCard(match, `pre_${idx}`))}
+                <div className="space-y-4">
+                  <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+                    {preMatchScheduled.slice(0, displayLimits['preMatch'] || 24).map((match, idx) => renderMatchCard(match, `pre_${idx}`))}
+                  </div>
+                  {preMatchScheduled.length > (displayLimits['preMatch'] || 24) && (
+                    <div className="flex items-center justify-center gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => handleShowMore('preMatch', 24)}
+                        className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold rounded-xl border border-blue-300 transition-all cursor-pointer shadow-xs"
+                      >
+                        + Carregar mais 24 partidas (Exibindo {Math.min(displayLimits['preMatch'] || 24, preMatchScheduled.length)} de {preMatchScheduled.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleShowAll('preMatch', preMatchScheduled.length)}
+                        className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition-all cursor-pointer"
+                      >
+                        Mostrar todas ({preMatchScheduled.length})
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -954,8 +1097,28 @@ export const MatchList: React.FC<MatchListProps> = ({
               </div>
 
               {!collapsedSections['incomplete'] && (
-                <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                  {incompleteScheduled.map((match, idx) => renderMatchCard(match, `inc_${idx}`))}
+                <div className="space-y-4">
+                  <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+                    {incompleteScheduled.slice(0, displayLimits['incomplete'] || 24).map((match, idx) => renderMatchCard(match, `inc_${idx}`))}
+                  </div>
+                  {incompleteScheduled.length > (displayLimits['incomplete'] || 24) && (
+                    <div className="flex items-center justify-center gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => handleShowMore('incomplete', 24)}
+                        className="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-xl border border-amber-300 transition-all cursor-pointer shadow-xs"
+                      >
+                        + Carregar mais 24 partidas (Exibindo {Math.min(displayLimits['incomplete'] || 24, incompleteScheduled.length)} de {incompleteScheduled.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleShowAll('incomplete', incompleteScheduled.length)}
+                        className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition-all cursor-pointer"
+                      >
+                        Mostrar todas ({incompleteScheduled.length})
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -992,8 +1155,28 @@ export const MatchList: React.FC<MatchListProps> = ({
               )}
 
               {!collapsedSections['other'] && (
-                <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-                  {otherMatches.map((match, idx) => renderMatchCard(match, `oth_${idx}`))}
+                <div className="space-y-4">
+                  <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+                    {otherMatches.slice(0, displayLimits['other'] || 24).map((match, idx) => renderMatchCard(match, `oth_${idx}`))}
+                  </div>
+                  {otherMatches.length > (displayLimits['other'] || 24) && (
+                    <div className="flex items-center justify-center gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => handleShowMore('other', 24)}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl border border-slate-300 transition-all cursor-pointer shadow-xs"
+                      >
+                        + Carregar mais 24 partidas (Exibindo {Math.min(displayLimits['other'] || 24, otherMatches.length)} de {otherMatches.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleShowAll('other', otherMatches.length)}
+                        className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition-all cursor-pointer"
+                      >
+                        Mostrar todas ({otherMatches.length})
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1006,27 +1189,19 @@ export const MatchList: React.FC<MatchListProps> = ({
   // Helper function to render individual match card
   function renderMatchCard(match: Match, keySuffix?: string | number) {
     const isExpanded = expandedStatsMatchId === match.id;
-    const fullComp = checkMatchFullCompleteness(match);
+    const fullComp = completenessMap.get(match.id) || checkMatchFullCompleteness(match);
     const hasStats = fullComp.hasStats;
 
-    const country = dbState.countries.find(
-      c => c.id === match.countryId || c.name.toLowerCase() === match.countryName.toLowerCase()
-    );
+    const country = countriesMap.get(match.countryId) || (match.countryName ? countriesMap.get(match.countryName.toLowerCase()) : undefined);
     const flagUrl = match.countryFlagUrl || country?.flagUrl;
 
-    const league = dbState.leagues.find(
-      l => l.id === match.leagueId || l.name.toLowerCase() === match.leagueName.toLowerCase()
-    );
+    const league = leaguesMap.get(match.leagueId) || (match.leagueName ? leaguesMap.get(match.leagueName.toLowerCase()) : undefined);
     const leagueLogoUrl = match.leagueLogoUrl || league?.logoUrl;
 
-    const homeTeam = dbState.teams.find(
-      t => t.id === match.homeTeamId || t.name.toLowerCase() === match.homeTeamName.toLowerCase()
-    );
+    const homeTeam = teamsMap.get(match.homeTeamId) || (match.homeTeamName ? teamsMap.get(match.homeTeamName.toLowerCase()) : undefined);
     const homeLogoUrl = match.homeTeamLogoUrl || homeTeam?.logoUrl;
 
-    const awayTeam = dbState.teams.find(
-      t => t.id === match.awayTeamId || t.name.toLowerCase() === match.awayTeamName.toLowerCase()
-    );
+    const awayTeam = teamsMap.get(match.awayTeamId) || (match.awayTeamName ? teamsMap.get(match.awayTeamName.toLowerCase()) : undefined);
     const awayLogoUrl = match.awayTeamLogoUrl || awayTeam?.logoUrl;
 
     return (

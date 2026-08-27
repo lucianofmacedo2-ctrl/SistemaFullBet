@@ -173,10 +173,47 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   // Expandable odds/stats per card
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
 
+  // Fast O(1) Lookup Maps for instant rendering without linear scans
+  const countriesMap = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const c of dbState.countries || []) {
+      map.set(c.id, c);
+      if (c.name) map.set(c.name.toLowerCase(), c);
+    }
+    return map;
+  }, [dbState.countries]);
+
+  const leaguesMap = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const l of dbState.leagues || []) {
+      map.set(l.id, l);
+      if (l.name) map.set(l.name.toLowerCase(), l);
+    }
+    return map;
+  }, [dbState.leagues]);
+
+  const teamsMap = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const t of dbState.teams || []) {
+      map.set(t.id, t);
+      if (t.name) map.set(t.name.toLowerCase(), t);
+    }
+    return map;
+  }, [dbState.teams]);
+
+  // Memoized Completeness Map
+  const completenessMap = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const m of dbState.matches || []) {
+      map.set(m.id, checkMatchFullCompleteness(m));
+    }
+    return map;
+  }, [dbState.matches]);
+
   // Calculate matches counts per key dates
   const matchesByDateMap = useMemo(() => {
     const map: Record<string, Match[]> = {};
-    dbState.matches.forEach(m => {
+    (dbState.matches || []).forEach(m => {
       const ymd = extractYMD(m.matchDate);
       if (ymd) {
         if (!map[ymd]) map[ymd] = [];
@@ -783,30 +820,22 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
 
           <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
             {dailyMatches.map((match, idx) => {
-              const fullComp = checkMatchFullCompleteness(match);
+              const fullComp = completenessMap.get(match.id) || checkMatchFullCompleteness(match);
               const isExpanded = expandedMatchId === match.id;
               const matchTime = extractTime(match.matchDate);
               const matchYmd = extractYMD(match.matchDate) || '';
               const dateInfo = formatFriendlyDate(matchYmd);
 
-              const country = dbState.countries.find(
-                c => c.id === match.countryId || c.name.toLowerCase() === match.countryName.toLowerCase()
-              );
+              const country = countriesMap.get(match.countryId) || (match.countryName ? countriesMap.get(match.countryName.toLowerCase()) : undefined);
               const flagUrl = match.countryFlagUrl || country?.flagUrl;
 
-              const league = dbState.leagues.find(
-                l => l.id === match.leagueId || l.name.toLowerCase() === match.leagueName.toLowerCase()
-              );
+              const league = leaguesMap.get(match.leagueId) || (match.leagueName ? leaguesMap.get(match.leagueName.toLowerCase()) : undefined);
               const leagueLogoUrl = match.leagueLogoUrl || league?.logoUrl;
 
-              const homeTeam = dbState.teams.find(
-                t => t.id === match.homeTeamId || t.name.toLowerCase() === match.homeTeamName.toLowerCase()
-              );
+              const homeTeam = teamsMap.get(match.homeTeamId) || (match.homeTeamName ? teamsMap.get(match.homeTeamName.toLowerCase()) : undefined);
               const homeLogoUrl = match.homeTeamLogoUrl || homeTeam?.logoUrl;
 
-              const awayTeam = dbState.teams.find(
-                t => t.id === match.awayTeamId || t.name.toLowerCase() === match.awayTeamName.toLowerCase()
-              );
+              const awayTeam = teamsMap.get(match.awayTeamId) || (match.awayTeamName ? teamsMap.get(match.awayTeamName.toLowerCase()) : undefined);
               const awayLogoUrl = match.awayTeamLogoUrl || awayTeam?.logoUrl;
 
               return (

@@ -338,6 +338,8 @@ export function subscribeToFirestoreSync(
 ): () => void {
   let unsubscribeSnapshot: Unsubscribe | null = null;
   let isSubscribed = true;
+  let lastProcessedUpdatedAt: string | null = null;
+  let isFetching = false;
 
   ensureFirebaseAuth().then(() => {
     if (!isSubscribed) return;
@@ -345,7 +347,18 @@ export function subscribeToFirestoreSync(
       const metaDoc = doc(db, COLLECTION_NAME, 'meta');
       unsubscribeSnapshot = onSnapshot(metaDoc, async (snap) => {
         if (snap.exists()) {
+          const metaData = snap.data();
+          const currentUpdatedAt = metaData?.lastUpdated || null;
+
+          // If timestamp hasn't changed or we're already fetching, skip redundant roundtrip
+          if (currentUpdatedAt && currentUpdatedAt === lastProcessedUpdatedAt) {
+            return;
+          }
+          if (isFetching) return;
+
           try {
+            isFetching = true;
+            lastProcessedUpdatedAt = currentUpdatedAt;
             const freshData = await fetchDbFromFirestore();
             if (freshData && isSubscribed) {
               onRemoteChange(freshData);
@@ -354,6 +367,8 @@ export function subscribeToFirestoreSync(
             }
           } catch (e) {
             if (isSubscribed) onRemoteChange();
+          } finally {
+            isFetching = false;
           }
         }
       }, (error) => {
