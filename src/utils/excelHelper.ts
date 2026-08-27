@@ -1930,3 +1930,251 @@ export async function exportRefereesToExcel(
   URL.revokeObjectURL(url);
 }
 
+// ============================================================================
+// EXPORTAÇÃO E IMPORTAÇÃO DE RIVALIDADES & CLÁSSICOS (EXCEL .XLSX)
+// ============================================================================
+
+export async function exportRivalriesToExcel(
+  teams: Team[],
+  leagues: League[] = [],
+  countries: Country[] = [],
+  customFileName?: string
+): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Football Analysis Pro';
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet('Rivalidades e Clássicos', {
+    views: [{ state: 'frozen', ySplit: 1 }],
+  });
+
+  const countryById = new Map(countries.map(c => [c.id, c.name]));
+  const leagueById = new Map(leagues.map(l => [l.id, l.name]));
+  const teamById = new Map(teams.map(t => [t.id, t.name]));
+
+  worksheet.columns = [
+    { header: 'ID_Time', key: 'teamId', width: 16 },
+    { header: 'Nome_Time', key: 'teamName', width: 28 },
+    { header: 'Pais', key: 'country', width: 20 },
+    { header: 'Liga_Principal', key: 'league', width: 26 },
+    { header: 'Rivais_Nomes (separados por vírgula)', key: 'rivalNames', width: 48 },
+    { header: 'Rivais_IDs (opcional)', key: 'rivalIds', width: 36 },
+    { header: 'Total_Rivais', key: 'totalRivals', width: 14 },
+  ];
+
+  const headerRow = worksheet.getRow(1);
+  headerRow.height = 30;
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+  headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+  headerRow.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF92400E' }, // Amber 800
+  };
+
+  const sortedTeams = [...teams].sort((a, b) => {
+    const cA = a.countryName || countryById.get(a.countryId) || '';
+    const cB = b.countryName || countryById.get(b.countryId) || '';
+    const compC = cA.localeCompare(cB, 'pt-BR', { sensitivity: 'base' });
+    if (compC !== 0) return compC;
+
+    const lA = a.leagueName || leagueById.get(a.leagueId || '') || '';
+    const lB = b.leagueName || leagueById.get(b.leagueId || '') || '';
+    const compL = lA.localeCompare(lB, 'pt-BR', { sensitivity: 'base' });
+    if (compL !== 0) return compL;
+
+    return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
+  });
+
+  sortedTeams.forEach((team, index) => {
+    const countryName = team.countryName || countryById.get(team.countryId) || '';
+    const leagueName = team.leagueName || (team.leagueId ? leagueById.get(team.leagueId) : '') || '';
+
+    // Obter nomes dos rivais cadastrados
+    let rivalNamesList: string[] = [];
+    if (team.rivalTeamNames && team.rivalTeamNames.length > 0) {
+      rivalNamesList = [...team.rivalTeamNames];
+    } else if (team.rivalTeamIds && team.rivalTeamIds.length > 0) {
+      rivalNamesList = team.rivalTeamIds.map(id => teamById.get(id) || id);
+    }
+
+    const row = worksheet.addRow({
+      teamId: team.id,
+      teamName: team.name,
+      country: countryName,
+      league: leagueName,
+      rivalNames: rivalNamesList.join(', '),
+      rivalIds: (team.rivalTeamIds || []).join(', '),
+      totalRivals: rivalNamesList.length,
+    });
+
+    if (index % 2 === 1) {
+      row.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFFFFBEB' }, // Amber 50
+      };
+    }
+    row.alignment = { vertical: 'middle' };
+  });
+
+  worksheet.autoFilter = {
+    from: { row: 1, column: 1 },
+    to: { row: 1, column: 7 },
+  };
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const fileName =
+    customFileName || `tabela_rivalidades_equipes_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export async function parseRivalriesWorkbook(
+  buffer: ArrayBuffer | Uint8Array,
+  currentTeams: Team[]
+): Promise<{ updatedTeams: Team[]; importedCount: number; errors: string[] }> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer as any);
+
+  const worksheet = workbook.worksheets[0];
+  if (!worksheet) {
+    throw new Error('Nenhuma planilha encontrada no arquivo Excel.');
+  }
+
+  const teamById = new Map<string, Team>();
+  const teamByName = new Map<string, Team>();
+
+  currentTeams.forEach(t => {
+    teamById.set(t.id.trim().toLowerCase(), t);
+    teamByName.set(t.name.trim().toLowerCase(), t);
+  });
+
+  // Mapa de mutabilidade: teamId -> Team clone
+  const teamsMap = new Map<string, Team>();
+  currentTeams.forEach(t => {
+    teamsMap.set(t.id, {
+      ...t,
+      rivalTeamIds: [...(t.rivalTeamIds || [])],
+      rivalTeamNames: [...(t.rivalTeamNames || [])],
+    });
+  });
+
+  let importedCount = 0;
+  const errors: string[] = [];
+
+  // Mapear cabeçalhos
+  const headerRow = worksheet.getRow(1);
+  let idCol = 1;
+  let nameCol = 2;
+  let rivalNamesCol = 5;
+  let rivalIdsCol = 6;
+
+  headerRow.eachCell((cell, colNumber) => {
+    const val = String(cell.value || '').trim().toLowerCase();
+    if (val.includes('id_time') || val === 'id' || val === 'time_id') idCol = colNumber;
+    else if (val.includes('nome_time') || val === 'time' || val === 'equipe') nameCol = colNumber;
+    else if (val.includes('rivais_nomes') || val.includes('rival_nomes') || val.includes('rivais') || val.includes('classicos')) rivalNamesCol = colNumber;
+    else if (val.includes('rivais_ids') || val.includes('rival_ids')) rivalIdsCol = colNumber;
+  });
+
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return; // Skip header
+
+    const cellId = String(row.getCell(idCol).value || '').trim();
+    const cellName = String(row.getCell(nameCol).value || '').trim();
+    const cellRivalNames = String(row.getCell(rivalNamesCol).value || '').trim();
+    const cellRivalIds = String(row.getCell(rivalIdsCol).value || '').trim();
+
+    if (!cellId && !cellName) return;
+
+    // Localizar time principal
+    let targetTeam: Team | undefined;
+    if (cellId && teamById.has(cellId.toLowerCase())) {
+      targetTeam = teamsMap.get(teamById.get(cellId.toLowerCase())!.id);
+    } else if (cellName && teamByName.has(cellName.toLowerCase())) {
+      targetTeam = teamsMap.get(teamByName.get(cellName.toLowerCase())!.id);
+    }
+
+    if (!targetTeam) {
+      if (cellName || cellId) {
+        errors.push(`Linha ${rowNumber}: Equipe "${cellName || cellId}" não encontrada no banco de dados.`);
+      }
+      return;
+    }
+
+    // Processar rivais informados por nome ou ID
+    const rawRivalTokens: string[] = [];
+    if (cellRivalNames) {
+      cellRivalNames.split(/[,;\n]+/).forEach(s => {
+        const trimmed = s.trim();
+        if (trimmed) rawRivalTokens.push(trimmed);
+      });
+    }
+    if (cellRivalIds) {
+      cellRivalIds.split(/[,;\n]+/).forEach(s => {
+        const trimmed = s.trim();
+        if (trimmed) rawRivalTokens.push(trimmed);
+      });
+    }
+
+    rawRivalTokens.forEach(token => {
+      const tokenLower = token.toLowerCase();
+      // Buscar por ID ou Nome
+      let rivalTeam = teamById.get(tokenLower) || teamByName.get(tokenLower);
+
+      if (!rivalTeam) {
+        // Busca flexível
+        const found = currentTeams.find(t =>
+          t.name.toLowerCase().includes(tokenLower) || tokenLower.includes(t.name.toLowerCase())
+        );
+        if (found) rivalTeam = found;
+      }
+
+      if (rivalTeam && rivalTeam.id !== targetTeam!.id) {
+        const mutableTarget = targetTeam!;
+        const mutableRival = teamsMap.get(rivalTeam.id)!;
+
+        // Adicionar no alvo
+        if (!mutableTarget.rivalTeamIds) mutableTarget.rivalTeamIds = [];
+        if (!mutableTarget.rivalTeamNames) mutableTarget.rivalTeamNames = [];
+
+        if (!mutableTarget.rivalTeamIds.includes(rivalTeam.id)) {
+          mutableTarget.rivalTeamIds.push(rivalTeam.id);
+        }
+        if (!mutableTarget.rivalTeamNames.includes(rivalTeam.name)) {
+          mutableTarget.rivalTeamNames.push(rivalTeam.name);
+        }
+
+        // Adicionar reciprocidade no rival
+        if (!mutableRival.rivalTeamIds) mutableRival.rivalTeamIds = [];
+        if (!mutableRival.rivalTeamNames) mutableRival.rivalTeamNames = [];
+
+        if (!mutableRival.rivalTeamIds.includes(mutableTarget.id)) {
+          mutableRival.rivalTeamIds.push(mutableTarget.id);
+        }
+        if (!mutableRival.rivalTeamNames.includes(mutableTarget.name)) {
+          mutableRival.rivalTeamNames.push(mutableTarget.name);
+        }
+
+        importedCount++;
+      }
+    });
+  });
+
+  return {
+    updatedTeams: Array.from(teamsMap.values()),
+    importedCount,
+    errors,
+  };
+}
+

@@ -1,10 +1,11 @@
-import { Match, League, Team, DbState } from '../types';
+import { Match, League, Team, DbState, TiebreakerCriterion, LeagueZoneRule, LeagueRegulationConfig } from '../types';
 
 export type TiebreakerModel = 
   | 'GOAL_DIFFERENCE' // Premier League, Bundesliga, Championship, Ligue 1, Eredivisie, Escócia
   | 'HEAD_TO_HEAD'    // La Liga, Serie A, Liga Portugal, Süper Lig, Grécia
   | 'WINS_FIRST'      // Jupiler Pro League Bélgica, Brasileirão
-  | 'STANDARD';
+  | 'STANDARD'
+  | 'CUSTOM';
 
 export type ZoneType = 'CHAMPIONS_DIRECT' | 'CHAMPIONS_QUAL' | 'EUROPA_LEAGUE' | 'CONFERENCE_LEAGUE' | 'PROMOTION_DIRECT' | 'PROMOTION_PLAYOFF' | 'RELEGATION_PLAYOUT' | 'RELEGATION_DIRECT' | 'NEUTRAL';
 
@@ -28,9 +29,85 @@ export interface CompetitionRegulation {
   tiebreakerModel: TiebreakerModel;
   tiebreakerDescription: string;
   rulesSequence: string[];
+  rawCriteriaSequence?: TiebreakerCriterion[];
   zones: CompetitionZoneRule[];
+  pointsPerWin?: number;
+  pointsPerDraw?: number;
+  pointsPerLoss?: number;
   specialNotes?: string;
   expectedTeamsCount?: number;
+}
+
+export const CRITERION_LABELS: Record<TiebreakerCriterion, string> = {
+  POINTS: 'Pontos Ganhos',
+  WINS: 'Número de Vitórias',
+  GOAL_DIFFERENCE: 'Saldo de Gols Geral',
+  GOALS_FOR: 'Gols Marcados Geral (Gols Pró)',
+  HEAD_TO_HEAD: 'Confronto Direto (Pontos ➔ Saldo ➔ Gols Fora)',
+  AWAY_GOALS: 'Gols Marcados Fora de Casa Geral',
+  LEAST_RED_CARDS: 'Menos Cartões Vermelhos (Fair Play)',
+  LEAST_YELLOW_CARDS: 'Menos Cartões Amarelos (Fair Play)',
+  DRAW_LOTS: 'Sorteio / Ordem Alfabética',
+};
+
+export const TIEBREAKER_PRESETS: Record<
+  'GOAL_DIFFERENCE' | 'HEAD_TO_HEAD' | 'WINS_FIRST',
+  { label: string; description: string; sequence: TiebreakerCriterion[] }
+> = {
+  GOAL_DIFFERENCE: {
+    label: 'Padrão Saldo de Gols (Premier League / Bundesliga / Ligue 1)',
+    description: '1º Saldo de Gols ➔ 2º Gols Marcados ➔ 3º Confronto Direto ➔ 4º Vitórias',
+    sequence: ['POINTS', 'GOAL_DIFFERENCE', 'GOALS_FOR', 'HEAD_TO_HEAD', 'WINS', 'DRAW_LOTS'],
+  },
+  HEAD_TO_HEAD: {
+    label: 'Padrão Confronto Direto (La Liga / Serie A / Liga Portugal)',
+    description: '1º Confronto Direto [Pts ➔ Saldo] ➔ 2º Saldo Geral ➔ 3º Gols Marcados ➔ 4º Vitórias',
+    sequence: ['POINTS', 'HEAD_TO_HEAD', 'GOAL_DIFFERENCE', 'GOALS_FOR', 'WINS', 'LEAST_RED_CARDS', 'DRAW_LOTS'],
+  },
+  WINS_FIRST: {
+    label: 'Padrão Número de Vitórias (Brasileirão / Jupiler Pro)',
+    description: '1º Número de Vitórias ➔ 2º Saldo de Gols ➔ 3º Gols Marcados ➔ 4º Confronto Direto ➔ 5º Cartões',
+    sequence: ['POINTS', 'WINS', 'GOAL_DIFFERENCE', 'GOALS_FOR', 'HEAD_TO_HEAD', 'LEAST_RED_CARDS', 'LEAST_YELLOW_CARDS', 'DRAW_LOTS'],
+  },
+};
+
+export function convertLeagueRegulationConfigToRegulation(
+  config: LeagueRegulationConfig,
+  league: League
+): CompetitionRegulation {
+  const sequence = config.rulesSequence && config.rulesSequence.length > 0
+    ? config.rulesSequence
+    : (TIEBREAKER_PRESETS[config.model as 'GOAL_DIFFERENCE' | 'HEAD_TO_HEAD' | 'WINS_FIRST']?.sequence || ['POINTS', 'GOAL_DIFFERENCE', 'GOALS_FOR', 'WINS', 'DRAW_LOTS']);
+
+  const rulesSeqNames = sequence.map(c => CRITERION_LABELS[c] || c);
+
+  const zones: CompetitionZoneRule[] = (config.zones && config.zones.length > 0)
+    ? config.zones.map(z => ({
+        type: (z.type as ZoneType) || 'NEUTRAL',
+        label: z.name,
+        shortLabel: z.name.substring(0, 20),
+        minPos: z.fromPos,
+        maxPos: z.toPos,
+        indicatorColor: z.colorClass?.includes('blue') ? '#1e3a8a' : z.colorClass?.includes('emerald') ? '#059669' : z.colorClass?.includes('sky') ? '#0284c7' : z.colorClass?.includes('amber') ? '#d97706' : z.colorClass?.includes('red') ? '#dc2626' : '#6366f1',
+        badgeBg: z.colorClass?.includes('blue') ? 'bg-blue-900' : z.colorClass?.includes('emerald') ? 'bg-emerald-900' : z.colorClass?.includes('sky') ? 'bg-sky-900' : z.colorClass?.includes('amber') ? 'bg-amber-900' : z.colorClass?.includes('red') ? 'bg-red-900' : 'bg-slate-900',
+        badgeText: 'text-white',
+        rowHighlight: `border-l-4 ${z.colorClass?.includes('red') ? 'border-l-red-500 bg-red-950/15' : z.colorClass?.includes('blue') ? 'border-l-blue-500 bg-blue-950/15' : z.colorClass?.includes('emerald') ? 'border-l-emerald-500 bg-emerald-950/15' : 'border-l-indigo-500 bg-indigo-950/15'}`,
+        description: z.name,
+      }))
+    : DEFAULT_REGULATION.zones;
+
+  return {
+    leagueId: league.id,
+    tiebreakerModel: (config.model as TiebreakerModel) || 'CUSTOM',
+    tiebreakerDescription: rulesSeqNames.slice(1, 4).join(' ➔ '),
+    rulesSequence: rulesSeqNames,
+    rawCriteriaSequence: sequence,
+    zones,
+    pointsPerWin: config.pointsPerWin ?? 3,
+    pointsPerDraw: config.pointsPerDraw ?? 1,
+    pointsPerLoss: config.pointsPerLoss ?? 0,
+    specialNotes: config.notes,
+  };
 }
 
 // Catálogo de Regulamentos Oficiais mapeados
@@ -265,6 +342,30 @@ export const DEFAULT_REGULATION: CompetitionRegulation = {
 export function getCompetitionRegulation(league?: League | null, countryName?: string): CompetitionRegulation {
   if (!league) return DEFAULT_REGULATION;
 
+  // 1. Se a liga possuir uma configuração manual personalizada no banco
+  if (league.regulationConfig) {
+    return convertLeagueRegulationConfigToRegulation(league.regulationConfig, league);
+  }
+
+  // 2. Se a liga tiver tiebreakerModel ou tiebreakerSequence configurados diretamente
+  if (league.tiebreakerModel || (league.tiebreakerSequence && league.tiebreakerSequence.length > 0)) {
+    const model = league.tiebreakerModel || 'CUSTOM';
+    const seq = league.tiebreakerSequence && league.tiebreakerSequence.length > 0
+      ? league.tiebreakerSequence
+      : (TIEBREAKER_PRESETS[model as 'GOAL_DIFFERENCE' | 'HEAD_TO_HEAD' | 'WINS_FIRST']?.sequence || ['POINTS', 'GOAL_DIFFERENCE', 'GOALS_FOR', 'WINS', 'DRAW_LOTS']);
+    const rulesSeqNames = seq.map(c => CRITERION_LABELS[c] || c);
+
+    return {
+      leagueId: league.id,
+      tiebreakerModel: model as TiebreakerModel,
+      tiebreakerDescription: rulesSeqNames.slice(1, 4).join(' ➔ '),
+      rulesSequence: rulesSeqNames,
+      rawCriteriaSequence: seq,
+      zones: DEFAULT_REGULATION.zones,
+    };
+  }
+
+  // 3. Procurar no catálogo de regulamentos padrão por regex
   const lName = (league.name || '').toLowerCase();
   const cName = (countryName || league.countryName || '').toLowerCase();
 
@@ -287,7 +388,11 @@ export function getCompetitionRegulation(league?: League | null, countryName?: s
     }
   }
 
-  return DEFAULT_REGULATION;
+  // 4. Se não encontrar, retornar regulamento inteligente com base no país/tipo
+  return {
+    ...DEFAULT_REGULATION,
+    leagueId: league.id,
+  };
 }
 
 // Representação rica de cada linha da tabela de classificação
@@ -307,6 +412,9 @@ export interface DynamicStandingRow {
   goalDifference: number;
   points: number;
   pointsPercentage: number;
+  yellowCardsTotal: number;
+  redCardsTotal: number;
+  awayGoalsFor: number;
   recentForm: Array<{
     outcome: 'V' | 'E' | 'D';
     score: string;
@@ -479,56 +587,108 @@ export function calculateDynamicStandings(
   const currentLeague = safeLeagues.find(l => l.id === selectedLeagueId);
   const regulation = getCompetitionRegulation(currentLeague);
 
-  // Filtrar jogos da liga finalizados
+  // Pontos regulamentares por vitória / empate
+  const ptsWin = regulation.pointsPerWin ?? 3;
+  const ptsDraw = regulation.pointsPerDraw ?? 1;
+  const ptsLoss = regulation.pointsPerLoss ?? 0;
+
+  // Filtrar jogos da liga finalizados com correspondência flexível (ID ou nome da liga)
   const leagueFinishedMatches = safeMatches.filter(m => {
-    if (m.status !== 'FINALIZADO') return false;
-    if (selectedLeagueId !== 'ALL' && m.leagueId !== selectedLeagueId) return false;
+    const isFinished = m.status === 'FINALIZADO' || (m.homeScore !== null && m.awayScore !== null && m.status !== 'AGENDADO' && m.status !== 'ADIADO');
+    if (!isFinished) return false;
+    if (selectedLeagueId !== 'ALL') {
+      const matchLeagueId = m.leagueId;
+      const matchLeagueName = m.leagueName?.trim().toLowerCase();
+      const currentLeagueName = currentLeague?.name?.trim().toLowerCase();
+      if (matchLeagueId !== selectedLeagueId && (!currentLeagueName || matchLeagueName !== currentLeagueName)) {
+        return false;
+      }
+    }
     return true;
   });
 
   // Mapeamento de Times
   const teamRowsMap: Record<string, DynamicStandingRow> = {};
 
-  // Times vinculados à liga selecionada
+  const createInitialTeamRow = (
+    id: string,
+    name: string,
+    logoUrl?: string,
+    countryName?: string,
+    leagueId?: string
+  ): DynamicStandingRow => ({
+    position: 0,
+    teamId: id,
+    teamName: name,
+    logoUrl,
+    countryName: countryName || currentLeague?.countryName || '',
+    leagueId: leagueId || selectedLeagueId,
+    played: 0,
+    wins: 0,
+    draws: 0,
+    losses: 0,
+    goalsFor: 0,
+    goalsAgainst: 0,
+    goalDifference: 0,
+    points: 0,
+    pointsPercentage: 0,
+    yellowCardsTotal: 0,
+    redCardsTotal: 0,
+    awayGoalsFor: 0,
+    recentForm: [],
+    homeRecord: { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, gd: 0, pts: 0, pct: 0 },
+    awayRecord: { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, gd: 0, pts: 0, pct: 0 },
+    xGoalsFor: 0,
+    xGoalsAgainst: 0,
+    xGoalDifference: 0,
+    xPoints: 0,
+    xPointsRank: 0,
+    xPointsDiff: 0,
+    over15Pct: 0,
+    over25Pct: 0,
+    over35Pct: 0,
+    over05HTPct: 0,
+    over15HTPct: 0,
+    bttsPct: 0,
+    cleanSheets: 0,
+    cleanSheetPct: 0,
+    failedToScore: 0,
+    failedToScorePct: 0,
+    homeDominanceFactor: 0,
+  });
+
+  // 1. Times explicitamente vinculados à liga selecionada
   safeTeams.forEach(t => {
-    if (selectedLeagueId === 'ALL' || t.leagueId === selectedLeagueId || (t.leagueIds && t.leagueIds.includes(selectedLeagueId))) {
-      teamRowsMap[t.id] = {
-        position: 0,
-        teamId: t.id,
-        teamName: t.name,
-        logoUrl: t.logoUrl,
-        countryName: t.countryName,
-        leagueId: t.leagueId || selectedLeagueId,
-        played: 0,
-        wins: 0,
-        draws: 0,
-        losses: 0,
-        goalsFor: 0,
-        goalsAgainst: 0,
-        goalDifference: 0,
-        points: 0,
-        pointsPercentage: 0,
-        recentForm: [],
-        homeRecord: { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, gd: 0, pts: 0, pct: 0 },
-        awayRecord: { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, gd: 0, pts: 0, pct: 0 },
-        xGoalsFor: 0,
-        xGoalsAgainst: 0,
-        xGoalDifference: 0,
-        xPoints: 0,
-        xPointsRank: 0,
-        xPointsDiff: 0,
-        over15Pct: 0,
-        over25Pct: 0,
-        over35Pct: 0,
-        over05HTPct: 0,
-        over15HTPct: 0,
-        bttsPct: 0,
-        cleanSheets: 0,
-        cleanSheetPct: 0,
-        failedToScore: 0,
-        failedToScorePct: 0,
-        homeDominanceFactor: 0,
-      };
+    const belongsToLeague =
+      selectedLeagueId === 'ALL' ||
+      t.leagueId === selectedLeagueId ||
+      (t.leagueIds && t.leagueIds.includes(selectedLeagueId)) ||
+      (currentLeague && t.leagueName?.trim().toLowerCase() === currentLeague.name?.trim().toLowerCase());
+
+    if (belongsToLeague) {
+      teamRowsMap[t.id] = createInitialTeamRow(t.id, t.name, t.logoUrl, t.countryName, t.leagueId || selectedLeagueId);
+    }
+  });
+
+  // 2. Garantir que todo time presente nos jogos da liga também seja incluído na tabela
+  leagueFinishedMatches.forEach(m => {
+    if (m.homeTeamId && !teamRowsMap[m.homeTeamId]) {
+      teamRowsMap[m.homeTeamId] = createInitialTeamRow(
+        m.homeTeamId,
+        m.homeTeamName,
+        m.homeTeamLogoUrl,
+        m.countryName,
+        m.leagueId || selectedLeagueId
+      );
+    }
+    if (m.awayTeamId && !teamRowsMap[m.awayTeamId]) {
+      teamRowsMap[m.awayTeamId] = createInitialTeamRow(
+        m.awayTeamId,
+        m.awayTeamName,
+        m.awayTeamLogoUrl,
+        m.countryName,
+        m.leagueId || selectedLeagueId
+      );
     }
   });
 
@@ -543,89 +703,6 @@ export function calculateDynamicStandings(
   sortedMatches.forEach(m => {
     const hScore = m.homeScore ?? 0;
     const aScore = m.awayScore ?? 0;
-    const htHome = m.stats?.halftimeHomeScore ?? 0;
-    const htAway = m.stats?.halftimeAwayScore ?? 0;
-
-    // Criar se não existir
-    if (!teamRowsMap[m.homeTeamId]) {
-      teamRowsMap[m.homeTeamId] = {
-        position: 0,
-        teamId: m.homeTeamId,
-        teamName: m.homeTeamName,
-        logoUrl: m.homeTeamLogoUrl,
-        countryName: m.countryName,
-        leagueId: m.leagueId,
-        played: 0,
-        wins: 0,
-        draws: 0,
-        losses: 0,
-        goalsFor: 0,
-        goalsAgainst: 0,
-        goalDifference: 0,
-        points: 0,
-        pointsPercentage: 0,
-        recentForm: [],
-        homeRecord: { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, gd: 0, pts: 0, pct: 0 },
-        awayRecord: { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, gd: 0, pts: 0, pct: 0 },
-        xGoalsFor: 0,
-        xGoalsAgainst: 0,
-        xGoalDifference: 0,
-        xPoints: 0,
-        xPointsRank: 0,
-        xPointsDiff: 0,
-        over15Pct: 0,
-        over25Pct: 0,
-        over35Pct: 0,
-        over05HTPct: 0,
-        over15HTPct: 0,
-        bttsPct: 0,
-        cleanSheets: 0,
-        cleanSheetPct: 0,
-        failedToScore: 0,
-        failedToScorePct: 0,
-        homeDominanceFactor: 0,
-      };
-    }
-
-    if (!teamRowsMap[m.awayTeamId]) {
-      teamRowsMap[m.awayTeamId] = {
-        position: 0,
-        teamId: m.awayTeamId,
-        teamName: m.awayTeamName,
-        logoUrl: m.awayTeamLogoUrl,
-        countryName: m.countryName,
-        leagueId: m.leagueId,
-        played: 0,
-        wins: 0,
-        draws: 0,
-        losses: 0,
-        goalsFor: 0,
-        goalsAgainst: 0,
-        goalDifference: 0,
-        points: 0,
-        pointsPercentage: 0,
-        recentForm: [],
-        homeRecord: { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, gd: 0, pts: 0, pct: 0 },
-        awayRecord: { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, gd: 0, pts: 0, pct: 0 },
-        xGoalsFor: 0,
-        xGoalsAgainst: 0,
-        xGoalDifference: 0,
-        xPoints: 0,
-        xPointsRank: 0,
-        xPointsDiff: 0,
-        over15Pct: 0,
-        over25Pct: 0,
-        over35Pct: 0,
-        over05HTPct: 0,
-        over15HTPct: 0,
-        bttsPct: 0,
-        cleanSheets: 0,
-        cleanSheetPct: 0,
-        failedToScore: 0,
-        failedToScorePct: 0,
-        homeDominanceFactor: 0,
-      };
-    }
 
     if (!teamFormHistory[m.homeTeamId]) teamFormHistory[m.homeTeamId] = [];
     if (!teamFormHistory[m.awayTeamId]) teamFormHistory[m.awayTeamId] = [];
@@ -638,18 +715,29 @@ export function calculateDynamicStandings(
     const hRow = teamRowsMap[m.homeTeamId];
     const aRow = teamRowsMap[m.awayTeamId];
 
+    if (!hRow || !aRow) return;
+
+    // Cartões e gols fora
+    hRow.yellowCardsTotal += (m.stats?.yellowCardsHomeFT ?? 0);
+    hRow.redCardsTotal += (m.stats?.redCardsHomeFT ?? 0);
+
+    aRow.yellowCardsTotal += (m.stats?.yellowCardsAwayFT ?? 0);
+    aRow.redCardsTotal += (m.stats?.redCardsAwayFT ?? 0);
+    aRow.awayGoalsFor += aScore;
+
     // Atualização Geral do Registro em Casa
     hRow.homeRecord.played += 1;
     hRow.homeRecord.gf += hScore;
     hRow.homeRecord.ga += aScore;
     if (hScore > aScore) {
       hRow.homeRecord.wins += 1;
-      hRow.homeRecord.pts += 3;
+      hRow.homeRecord.pts += ptsWin;
     } else if (hScore === aScore) {
       hRow.homeRecord.draws += 1;
-      hRow.homeRecord.pts += 1;
+      hRow.homeRecord.pts += ptsDraw;
     } else {
       hRow.homeRecord.losses += 1;
+      hRow.homeRecord.pts += ptsLoss;
     }
 
     // Atualização Geral do Registro Fora
@@ -658,15 +746,16 @@ export function calculateDynamicStandings(
     aRow.awayRecord.ga += hScore;
     if (aScore > hScore) {
       aRow.awayRecord.wins += 1;
-      aRow.awayRecord.pts += 3;
+      aRow.awayRecord.pts += ptsWin;
     } else if (aScore === hScore) {
       aRow.awayRecord.draws += 1;
-      aRow.awayRecord.pts += 1;
+      aRow.awayRecord.pts += ptsDraw;
     } else {
       aRow.awayRecord.losses += 1;
+      aRow.awayRecord.pts += ptsLoss;
     }
 
-    // xG tracking se disponível ou estimativa inteligente baseada em chutes a gol
+    // xG tracking
     const hXg = m.stats?.xgHomeFT ?? (m.stats?.shotsOnTargetHomeFT ? m.stats.shotsOnTargetHomeFT * 0.32 : hScore * 0.9 + 0.1);
     const aXg = m.stats?.xgAwayFT ?? (m.stats?.shotsOnTargetAwayFT ? m.stats.shotsOnTargetAwayFT * 0.32 : aScore * 0.9 + 0.1);
 
@@ -675,91 +764,79 @@ export function calculateDynamicStandings(
     aRow.xGoalsFor += aXg;
     aRow.xGoalsAgainst += hXg;
 
-    // xPoints calculation: Poisson prob approximation
-    const diff = hXg - aXg;
-    let probHW = 1 / (1 + Math.exp(-1.4 * diff));
-    let probAW = 1 / (1 + Math.exp(1.4 * diff));
-    let probD = Math.max(0.18, 1 - (probHW + probAW) * 0.6);
-    const totalProb = probHW + probD + probAW;
-    probHW /= totalProb;
-    probD /= totalProb;
-    probAW /= totalProb;
-
-    const xPtHome = probHW * 3 + probD * 1;
-    const xPtAway = probAW * 3 + probD * 1;
-
-    hRow.xPoints += xPtHome;
-    aRow.xPoints += xPtAway;
-
-    // Forma e Vistas de Tabela
-    const homeOutcome: 'V' | 'E' | 'D' = hScore > aScore ? 'V' : hScore === aScore ? 'E' : 'D';
-    const awayOutcome: 'V' | 'E' | 'D' = aScore > hScore ? 'V' : aScore === hScore ? 'E' : 'D';
-
-    teamFormHistory[m.homeTeamId].push({
-      outcome: homeOutcome,
-      score: `${hScore} - ${aScore}`,
-      opponent: m.awayTeamName,
-      isHome: true,
-      date: m.matchDate,
-    });
-
-    teamFormHistory[m.awayTeamId].push({
-      outcome: awayOutcome,
-      score: `${aScore} - ${hScore}`,
-      opponent: m.homeTeamName,
-      isHome: false,
-      date: m.matchDate,
-    });
-
-    // Se venueMode for ALL ou HOME -> soma no mandante
-    if (venueMode === 'ALL' || venueMode === 'HOME') {
-      hRow.played += 1;
-      hRow.goalsFor += hScore;
-      hRow.goalsAgainst += aScore;
-      if (homeOutcome === 'V') {
-        hRow.wins += 1;
-        hRow.points += 3;
-      } else if (homeOutcome === 'E') {
-        hRow.draws += 1;
-        hRow.points += 1;
-      } else {
-        hRow.losses += 1;
-      }
+    // Estimativa de Expected Points (xP) via modelo de probabilidade Poisson simplificado dos xGs
+    const xgDiff = hXg - aXg;
+    let homeXp = 1.0;
+    let awayXp = 1.0;
+    if (xgDiff > 0.75) {
+      homeXp = 2.4;
+      awayXp = 0.4;
+    } else if (xgDiff > 0.25) {
+      homeXp = 1.8;
+      awayXp = 0.9;
+    } else if (xgDiff < -0.75) {
+      homeXp = 0.4;
+      awayXp = 2.4;
+    } else if (xgDiff < -0.25) {
+      homeXp = 0.9;
+      awayXp = 1.8;
     }
+    hRow.xPoints += homeXp;
+    aRow.xPoints += awayXp;
 
-    // Se venueMode for ALL ou AWAY -> soma no visitante
-    if (venueMode === 'ALL' || venueMode === 'AWAY') {
-      aRow.played += 1;
-      aRow.goalsFor += aScore;
-      aRow.goalsAgainst += hScore;
-      if (awayOutcome === 'V') {
-        aRow.wins += 1;
-        aRow.points += 3;
-      } else if (awayOutcome === 'E') {
-        aRow.draws += 1;
-        aRow.points += 1;
-      } else {
-        aRow.losses += 1;
-      }
+    // Histórico de Forma
+    if (hScore > aScore) {
+      teamFormHistory[m.homeTeamId].push({ outcome: 'V', score: `${hScore}-${aScore}`, opponent: m.awayTeamName, isHome: true, date: m.matchDate });
+      teamFormHistory[m.awayTeamId].push({ outcome: 'D', score: `${aScore}-${hScore}`, opponent: m.homeTeamName, isHome: false, date: m.matchDate });
+    } else if (hScore === aScore) {
+      teamFormHistory[m.homeTeamId].push({ outcome: 'E', score: `${hScore}-${aScore}`, opponent: m.awayTeamName, isHome: true, date: m.matchDate });
+      teamFormHistory[m.awayTeamId].push({ outcome: 'E', score: `${aScore}-${hScore}`, opponent: m.homeTeamName, isHome: false, date: m.matchDate });
+    } else {
+      teamFormHistory[m.homeTeamId].push({ outcome: 'D', score: `${hScore}-${aScore}`, opponent: m.awayTeamName, isHome: true, date: m.matchDate });
+      teamFormHistory[m.awayTeamId].push({ outcome: 'V', score: `${aScore}-${hScore}`, opponent: m.homeTeamName, isHome: false, date: m.matchDate });
     }
   });
 
-  // Finalizar cálculos adicionais por time
+  // Consolidar Totais de acordo com o Venue Mode (ALL, HOME, AWAY)
   const rowsList: DynamicStandingRow[] = [];
 
   Object.values(teamRowsMap).forEach(row => {
-    if (row.played === 0 && selectedLeagueId === 'ALL') return;
+    if (venueMode === 'HOME') {
+      row.played = row.homeRecord.played;
+      row.wins = row.homeRecord.wins;
+      row.draws = row.homeRecord.draws;
+      row.losses = row.homeRecord.losses;
+      row.goalsFor = row.homeRecord.gf;
+      row.goalsAgainst = row.homeRecord.ga;
+      row.points = row.homeRecord.pts;
+    } else if (venueMode === 'AWAY') {
+      row.played = row.awayRecord.played;
+      row.wins = row.awayRecord.wins;
+      row.draws = row.awayRecord.draws;
+      row.losses = row.awayRecord.losses;
+      row.goalsFor = row.awayRecord.gf;
+      row.goalsAgainst = row.awayRecord.ga;
+      row.points = row.awayRecord.pts;
+    } else {
+      row.played = row.homeRecord.played + row.awayRecord.played;
+      row.wins = row.homeRecord.wins + row.awayRecord.wins;
+      row.draws = row.homeRecord.draws + row.awayRecord.draws;
+      row.losses = row.homeRecord.losses + row.awayRecord.losses;
+      row.goalsFor = row.homeRecord.gf + row.awayRecord.gf;
+      row.goalsAgainst = row.homeRecord.ga + row.awayRecord.ga;
+      row.points = row.homeRecord.pts + row.awayRecord.pts;
+    }
 
     row.goalDifference = row.goalsFor - row.goalsAgainst;
-    const maxPossible = row.played * 3;
+    const maxPossible = row.played * ptsWin;
     row.pointsPercentage = maxPossible > 0 ? (row.points / maxPossible) * 100 : 0;
     
     // Aproveitamento em casa e fora
     row.homeRecord.gd = row.homeRecord.gf - row.homeRecord.ga;
-    row.homeRecord.pct = row.homeRecord.played > 0 ? (row.homeRecord.pts / (row.homeRecord.played * 3)) * 100 : 0;
+    row.homeRecord.pct = row.homeRecord.played > 0 ? (row.homeRecord.pts / (row.homeRecord.played * ptsWin)) * 100 : 0;
     
     row.awayRecord.gd = row.awayRecord.gf - row.awayRecord.ga;
-    row.awayRecord.pct = row.awayRecord.played > 0 ? (row.awayRecord.pts / (row.awayRecord.played * 3)) * 100 : 0;
+    row.awayRecord.pct = row.awayRecord.played > 0 ? (row.awayRecord.pts / (row.awayRecord.played * ptsWin)) * 100 : 0;
 
     row.homeDominanceFactor = row.homeRecord.pct - row.awayRecord.pct;
 
@@ -829,7 +906,7 @@ export function calculateDynamicStandings(
     rowsList.push(row);
   });
 
-  // Identificar grupos empatados em pontos para calcular confronto direto se o regulamento exigir
+  // Identificar grupos empatados em pontos para calcular confronto direto
   const pointsGroups: Record<number, string[]> = {};
   rowsList.forEach(r => {
     if (!pointsGroups[r.points]) pointsGroups[r.points] = [];
@@ -843,84 +920,48 @@ export function calculateDynamicStandings(
     }
   });
 
-  // ORDENAÇÃO SEGUNDO O MOTOR REGULAMENTAR (AUTOMATION ENGINE)
+  // Determinar a sequência de critérios de desempate
+  const activeCriteriaSequence: TiebreakerCriterion[] = regulation.rawCriteriaSequence || (
+    regulation.tiebreakerModel === 'HEAD_TO_HEAD'
+      ? ['POINTS', 'HEAD_TO_HEAD', 'GOAL_DIFFERENCE', 'GOALS_FOR', 'WINS', 'LEAST_RED_CARDS', 'DRAW_LOTS']
+      : regulation.tiebreakerModel === 'WINS_FIRST'
+      ? ['POINTS', 'WINS', 'GOAL_DIFFERENCE', 'GOALS_FOR', 'HEAD_TO_HEAD', 'LEAST_RED_CARDS', 'LEAST_YELLOW_CARDS', 'DRAW_LOTS']
+      : ['POINTS', 'GOAL_DIFFERENCE', 'GOALS_FOR', 'HEAD_TO_HEAD', 'WINS', 'DRAW_LOTS']
+  );
+
+  // ORDENAÇÃO DINÂMICA BASEADA NA SEQUÊNCIA DE REGRAS CONFIGURADA
   rowsList.sort((a, b) => {
-    // 1º PONTOS GANHOS (Sempre 1º critério em qualquer liga de pontos corridos)
-    if (b.points !== a.points) {
-      return b.points - a.points;
-    }
-
-    const tiedPts = a.points;
-    const h2h = h2hMatrices[tiedPts];
-    const h2hA = h2h ? h2h[a.teamId] : null;
-    const h2hB = h2h ? h2h[b.teamId] : null;
-
-    // RAMIFICAÇÃO PELO MODELO REGULAMENTAR:
-    
-    // MODELO B: Ligas por Confronto Direto (La Liga, Serie A, Liga Portugal, Süper Lig)
-    if (regulation.tiebreakerModel === 'HEAD_TO_HEAD' && h2hA && h2hB) {
-      // 2º Pontos no Confronto Direto entre os empatados
-      if (h2hB.points !== h2hA.points) {
-        return h2hB.points - h2hA.points;
-      }
-      // 3º Saldo de Gols no Confronto Direto
-      if (h2hB.goalDiff !== h2hA.goalDiff) {
-        return h2hB.goalDiff - h2hA.goalDiff;
-      }
-      // 4º Saldo de Gols Geral
-      if (b.goalDifference !== a.goalDifference) {
-        return b.goalDifference - a.goalDifference;
-      }
-      // 5º Gols Marcados Geral
-      if (b.goalsFor !== a.goalsFor) {
-        return b.goalsFor - a.goalsFor;
-      }
-      // 6º Número de Vitórias
-      if (b.wins !== a.wins) {
-        return b.wins - a.wins;
+    for (const criterion of activeCriteriaSequence) {
+      if (criterion === 'POINTS') {
+        if (b.points !== a.points) return b.points - a.points;
+      } else if (criterion === 'WINS') {
+        if (b.wins !== a.wins) return b.wins - a.wins;
+      } else if (criterion === 'GOAL_DIFFERENCE') {
+        if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+      } else if (criterion === 'GOALS_FOR') {
+        if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+      } else if (criterion === 'HEAD_TO_HEAD') {
+        const h2h = h2hMatrices[a.points];
+        const h2hA = h2h ? h2h[a.teamId] : null;
+        const h2hB = h2h ? h2h[b.teamId] : null;
+        if (h2hA && h2hB) {
+          if (h2hB.points !== h2hA.points) return h2hB.points - h2hA.points;
+          if (h2hB.goalDiff !== h2hA.goalDiff) return h2hB.goalDiff - h2hA.goalDiff;
+          if (h2hB.awayGoalsFor !== h2hA.awayGoalsFor) return h2hB.awayGoalsFor - h2hA.awayGoalsFor;
+        }
+      } else if (criterion === 'AWAY_GOALS') {
+        const awayA = a.awayGoalsFor || a.awayRecord.gf;
+        const awayB = b.awayGoalsFor || b.awayRecord.gf;
+        if (awayB !== awayA) return awayB - awayA;
+      } else if (criterion === 'LEAST_RED_CARDS') {
+        if (a.redCardsTotal !== b.redCardsTotal) return a.redCardsTotal - b.redCardsTotal;
+      } else if (criterion === 'LEAST_YELLOW_CARDS') {
+        if (a.yellowCardsTotal !== b.yellowCardsTotal) return a.yellowCardsTotal - b.yellowCardsTotal;
+      } else if (criterion === 'DRAW_LOTS') {
+        return a.teamName.localeCompare(b.teamName, 'pt-BR', { sensitivity: 'base' });
       }
     }
 
-    // MODELO C: Ligas por Número de Vitórias (Jupiler Pro League BEL, Brasileirão)
-    if (regulation.tiebreakerModel === 'WINS_FIRST') {
-      // 2º Número de Vitórias
-      if (b.wins !== a.wins) {
-        return b.wins - a.wins;
-      }
-      // 3º Saldo de Gols Geral
-      if (b.goalDifference !== a.goalDifference) {
-        return b.goalDifference - a.goalDifference;
-      }
-      // 4º Gols Marcados Geral
-      if (b.goalsFor !== a.goalsFor) {
-        return b.goalsFor - a.goalsFor;
-      }
-      // 5º Confronto Direto
-      if (h2hA && h2hB && h2hB.points !== h2hA.points) {
-        return h2hB.points - h2hA.points;
-      }
-    }
-
-    // MODELO A: Ligas por Saldo de Gols Geral (Premier League, Bundesliga, Championship, Ligue 1, Eredivisie, Escócia)
-    // 2º Saldo de Gols Geral
-    if (b.goalDifference !== a.goalDifference) {
-      return b.goalDifference - a.goalDifference;
-    }
-    // 3º Gols Marcados Geral (Gols Pró)
-    if (b.goalsFor !== a.goalsFor) {
-      return b.goalsFor - a.goalsFor;
-    }
-    // 4º Confronto Direto (Pontos -> Saldo -> Gols Fora)
-    if (h2hA && h2hB) {
-      if (h2hB.points !== h2hA.points) return h2hB.points - h2hA.points;
-      if (h2hB.goalDiff !== h2hA.goalDiff) return h2hB.goalDiff - h2hA.goalDiff;
-      if (h2hB.awayGoalsFor !== h2hA.awayGoalsFor) return h2hB.awayGoalsFor - h2hA.awayGoalsFor;
-    }
-    // 5º Número de Vitórias
-    if (b.wins !== a.wins) {
-      return b.wins - a.wins;
-    }
-    // 6º Ordem Alfabética
     return a.teamName.localeCompare(b.teamName, 'pt-BR', { sensitivity: 'base' });
   });
 

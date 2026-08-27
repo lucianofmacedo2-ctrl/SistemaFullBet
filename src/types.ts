@@ -39,6 +39,38 @@ export interface Country {
   createdAt: string;
 }
 
+export type TiebreakerCriterion =
+  | 'POINTS' // Pontos Ganhos (Sempre 1º critério em ligas por pontos corridos)
+  | 'WINS' // Número de Vitórias
+  | 'GOAL_DIFFERENCE' // Saldo de Gols Geral
+  | 'GOALS_FOR' // Gols Pró / Marcados Geral
+  | 'HEAD_TO_HEAD' // Confronto Direto (Pontos -> Saldo -> Gols Fora no H2H)
+  | 'AWAY_GOALS' // Gols Marcados Fora de Casa Geral
+  | 'LEAST_RED_CARDS' // Menos Cartões Vermelhos (Fair Play)
+  | 'LEAST_YELLOW_CARDS' // Menos Cartões Amarelos (Fair Play)
+  | 'DRAW_LOTS'; // Sorteio / Ordem Alfabética
+
+export interface LeagueZoneRule {
+  id: string;
+  name: string; // Ex: "Fase de Grupos Libertadores", "Sul-Americana", "Champions League", "Rebaixamento"
+  fromPos: number; // Ex: 1
+  toPos: number; // Ex: 4
+  colorClass: string; // Tailwind color classes
+  type: 'CHAMPION' | 'PROMOTION' | 'CONTINENTAL_1' | 'CONTINENTAL_2' | 'CONTINENTAL_3' | 'PLAYOFF' | 'RELEGATION' | 'RELEGATION_PLAYOFF' | 'CUSTOM';
+}
+
+export interface LeagueRegulationConfig {
+  leagueId: string;
+  leagueName?: string;
+  model: 'GOAL_DIFFERENCE' | 'HEAD_TO_HEAD' | 'WINS_FIRST' | 'CUSTOM';
+  rulesSequence: TiebreakerCriterion[];
+  pointsPerWin?: number; // default 3
+  pointsPerDraw?: number; // default 1
+  pointsPerLoss?: number; // default 0
+  zones?: LeagueZoneRule[];
+  notes?: string;
+}
+
 export interface League {
   id: string; // e.g. "LIGA-001"
   name: string;
@@ -46,6 +78,10 @@ export interface League {
   countryName: string;
   type?: string; // e.g., "Pontos Corridos", "Mata-Mata", "Copa"
   logoUrl?: string;
+  regulationConfig?: LeagueRegulationConfig;
+  tiebreakerModel?: 'GOAL_DIFFERENCE' | 'HEAD_TO_HEAD' | 'WINS_FIRST' | 'CUSTOM';
+  tiebreakerSequence?: TiebreakerCriterion[];
+  zones?: LeagueZoneRule[];
   createdAt: string;
 }
 
@@ -58,6 +94,10 @@ export interface Team {
   leagueName?: string;
   leagueIds?: string[];
   logoUrl?: string;
+  rivalTeamIds?: string[];
+  rivalTeamNames?: string[];
+  stadium?: string;
+  stadiumCapacity?: number | null;
   createdAt: string;
 }
 
