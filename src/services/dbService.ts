@@ -133,13 +133,63 @@ export async function deleteUserPermanently(userId: string): Promise<boolean> {
   }
 }
 
+/**
+ * Instantly retrieves the cached database state from LocalStorage or SEED_DATABASE (0ms latency).
+ * Allows the entire user interface to render immediately without waiting for network roundtrips.
+ */
+export function getInstantCachedDatabaseState(): DbState {
+  let dbData: DbState | null = null;
+  if (typeof localStorage !== 'undefined') {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && (parsed.matches?.length > 0 || parsed.countries?.length > 0)) {
+          dbData = parsed;
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  if (!dbData || (!dbData.matches?.length && !dbData.countries?.length)) {
+    dbData = {
+      countries: SEED_DATABASE.countries || [],
+      leagues: SEED_DATABASE.leagues || [],
+      teams: SEED_DATABASE.teams || [],
+      matches: SEED_DATABASE.matches || [],
+      users: SEED_DATABASE.users || [],
+    };
+  }
+
+  let localSavedUsers: AppUser[] = [];
+  if (typeof localStorage !== 'undefined') {
+    const localSavedUsersRaw = localStorage.getItem(USERS_STORAGE_KEY) || localStorage.getItem(USERS_BACKUP_STORAGE_KEY);
+    if (localSavedUsersRaw) {
+      try {
+        localSavedUsers = JSON.parse(localSavedUsersRaw);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  const mergedUsers = mergeUsersLists(dbData.users, localSavedUsers, SEED_DATABASE.users);
+  dbData.users = mergedUsers;
+  return dbData;
+}
+
 export async function fetchDatabaseState(): Promise<DbState> {
   let dbData: DbState | null = null;
   let firestoreUsers: AppUser[] = [];
 
-  // 1. Try fetching from Firebase Firestore first (Primary Multi-Device Cloud)
+  // 1. Try fetching from Firebase Firestore first (Primary Multi-Device Cloud with timeout)
   try {
-    const firestoreData = await fetchDbFromFirestore();
+    const firestorePromise = fetchDbFromFirestore();
+    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
+    const firestoreData = await Promise.race([firestorePromise, timeoutPromise]);
+
     if (firestoreData) {
       if (firestoreData.matches?.length > 0 || firestoreData.countries?.length > 0) {
         dbData = firestoreData;

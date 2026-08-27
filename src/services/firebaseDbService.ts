@@ -73,8 +73,8 @@ function sanitizeForFirestore<T>(data: T): T {
 }
 
 // Chunking helpers to strictly respect Firestore document size limit (1MB max per doc)
-const MATCH_CHUNK_SIZE = 50; // max 50 matches per doc (~150-200 KB, well under 1MB)
-const TEAM_CHUNK_SIZE = 150; // max 150 teams per doc (~50 KB, well under 1MB)
+const MATCH_CHUNK_SIZE = 100; // max 100 matches per doc (~20-40 KB, well under 1MB limit)
+const TEAM_CHUNK_SIZE = 200; // max 200 teams per doc (~50-80 KB, well under 1MB limit)
 const COLLECTION_NAME = 'app_data';
 
 export interface CloudSyncStats {
@@ -97,27 +97,33 @@ export interface SyncResult {
 }
 
 /**
- * Saves the entire DbState to Firestore partitioned across sub-documents.
+ * Saves the entire DbState to Firestore partitioned across sub-documents in parallel.
  */
 export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
   try {
     await ensureFirebaseAuth();
 
+    const writeTasks: Promise<any>[] = [];
+
     // 1. Countries
     const cleanCountries = sanitizeForFirestore(state.countries || []);
-    await setDoc(doc(db, COLLECTION_NAME, 'countries'), {
-      list: cleanCountries,
-      updatedAt: new Date().toISOString(),
-    });
+    writeTasks.push(
+      setDoc(doc(db, COLLECTION_NAME, 'countries'), {
+        list: cleanCountries,
+        updatedAt: new Date().toISOString(),
+      })
+    );
 
     // 2. Leagues
     const cleanLeagues = sanitizeForFirestore(state.leagues || []);
-    await setDoc(doc(db, COLLECTION_NAME, 'leagues'), {
-      list: cleanLeagues,
-      updatedAt: new Date().toISOString(),
-    });
+    writeTasks.push(
+      setDoc(doc(db, COLLECTION_NAME, 'leagues'), {
+        list: cleanLeagues,
+        updatedAt: new Date().toISOString(),
+      })
+    );
 
-    // 3. Users (Merged with existing Firestore users to prevent any accidental wipe)
+    // 3. Users
     let finalUsers = state.users || [];
     try {
       const existingUsersSnap = await getDoc(doc(db, COLLECTION_NAME, 'users'));
@@ -140,62 +146,75 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
     }
 
     const cleanUsers = sanitizeForFirestore(finalUsers);
-    await setDoc(doc(db, COLLECTION_NAME, 'users'), {
-      list: cleanUsers,
-      updatedAt: new Date().toISOString(),
-    });
+    writeTasks.push(
+      setDoc(doc(db, COLLECTION_NAME, 'users'), {
+        list: cleanUsers,
+        updatedAt: new Date().toISOString(),
+      })
+    );
 
-    // 4. Teams (Chunked if needed)
+    // 4. Teams (Chunked in parallel)
     const teams = state.teams || [];
     const teamChunks = Math.ceil(teams.length / TEAM_CHUNK_SIZE) || 1;
-    await setDoc(doc(db, COLLECTION_NAME, 'teams_meta'), {
-      total: teams.length,
-      chunks: teamChunks,
-      updatedAt: new Date().toISOString(),
-    });
+    writeTasks.push(
+      setDoc(doc(db, COLLECTION_NAME, 'teams_meta'), {
+        total: teams.length,
+        chunks: teamChunks,
+        updatedAt: new Date().toISOString(),
+      })
+    );
 
     for (let i = 0; i < teamChunks; i++) {
       const chunkTeams = teams.slice(i * TEAM_CHUNK_SIZE, (i + 1) * TEAM_CHUNK_SIZE);
       const cleanChunk = sanitizeForFirestore(chunkTeams);
-      await setDoc(doc(db, COLLECTION_NAME, `teams_${i}`), { list: cleanChunk });
+      writeTasks.push(setDoc(doc(db, COLLECTION_NAME, `teams_${i}`), { list: cleanChunk }));
     }
 
-    // 5. Matches (Chunked if needed)
+    // 5. Matches (Chunked in parallel)
     const matches = state.matches || [];
     const matchChunks = Math.ceil(matches.length / MATCH_CHUNK_SIZE) || 1;
-    await setDoc(doc(db, COLLECTION_NAME, 'matches_meta'), {
-      total: matches.length,
-      chunks: matchChunks,
-      updatedAt: new Date().toISOString(),
-    });
+    writeTasks.push(
+      setDoc(doc(db, COLLECTION_NAME, 'matches_meta'), {
+        total: matches.length,
+        chunks: matchChunks,
+        updatedAt: new Date().toISOString(),
+      })
+    );
 
     for (let i = 0; i < matchChunks; i++) {
       const chunkMatches = matches.slice(i * MATCH_CHUNK_SIZE, (i + 1) * MATCH_CHUNK_SIZE);
       const cleanChunk = sanitizeForFirestore(chunkMatches);
-      await setDoc(doc(db, COLLECTION_NAME, `matches_${i}`), { list: cleanChunk });
+      writeTasks.push(setDoc(doc(db, COLLECTION_NAME, `matches_${i}`), { list: cleanChunk }));
     }
 
     // 6. Referees (if available)
     if (state.referees && state.referees.length > 0) {
       const cleanReferees = sanitizeForFirestore(state.referees);
-      await setDoc(doc(db, COLLECTION_NAME, 'referees'), {
-        list: cleanReferees,
-        updatedAt: new Date().toISOString(),
-      });
+      writeTasks.push(
+        setDoc(doc(db, COLLECTION_NAME, 'referees'), {
+          list: cleanReferees,
+          updatedAt: new Date().toISOString(),
+        })
+      );
     }
 
     // 7. Meta info
-    await setDoc(doc(db, COLLECTION_NAME, 'meta'), {
-      lastUpdated: new Date().toISOString(),
-      counts: {
-        countries: state.countries?.length || 0,
-        leagues: state.leagues?.length || 0,
-        teams: state.teams?.length || 0,
-        matches: state.matches?.length || 0,
-        users: state.users?.length || 0,
-        referees: state.referees?.length || 0,
-      },
-    });
+    writeTasks.push(
+      setDoc(doc(db, COLLECTION_NAME, 'meta'), {
+        lastUpdated: new Date().toISOString(),
+        counts: {
+          countries: state.countries?.length || 0,
+          leagues: state.leagues?.length || 0,
+          teams: state.teams?.length || 0,
+          matches: state.matches?.length || 0,
+          users: state.users?.length || 0,
+          referees: state.referees?.length || 0,
+        },
+      })
+    );
+
+    // Execute all write operations concurrently in parallel
+    await Promise.all(writeTasks);
 
     return { success: true, count: matches.length };
   } catch (error: any) {
@@ -216,61 +235,71 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
 }
 
 /**
- * Fetches the complete DbState from Firestore.
+ * Fetches the complete DbState from Firestore with ultra-fast parallel document retrieval.
  */
 export async function fetchDbFromFirestore(): Promise<DbState | null> {
   try {
     await ensureFirebaseAuth();
 
-    // 1. Countries
-    const countriesSnap = await getDoc(doc(db, COLLECTION_NAME, 'countries'));
+    // 1. Fetch metadata and primary core docs in parallel
+    const [
+      countriesSnap,
+      leaguesSnap,
+      usersSnap,
+      teamsMetaSnap,
+      matchesMetaSnap,
+      refereesSnap,
+    ] = await Promise.all([
+      getDoc(doc(db, COLLECTION_NAME, 'countries')),
+      getDoc(doc(db, COLLECTION_NAME, 'leagues')),
+      getDoc(doc(db, COLLECTION_NAME, 'users')),
+      getDoc(doc(db, COLLECTION_NAME, 'teams_meta')),
+      getDoc(doc(db, COLLECTION_NAME, 'matches_meta')),
+      getDoc(doc(db, COLLECTION_NAME, 'referees')).catch(() => null),
+    ]);
+
     const countries: Country[] = countriesSnap.exists() ? (countriesSnap.data().list || []) : [];
-
-    // 2. Leagues
-    const leaguesSnap = await getDoc(doc(db, COLLECTION_NAME, 'leagues'));
     const leagues: League[] = leaguesSnap.exists() ? (leaguesSnap.data().list || []) : [];
-
-    // 3. Users
-    const usersSnap = await getDoc(doc(db, COLLECTION_NAME, 'users'));
     const users: AppUser[] = usersSnap.exists() ? (usersSnap.data().list || []) : [];
+    const referees: Referee[] = (refereesSnap && refereesSnap.exists()) ? (refereesSnap.data().list || []) : [];
 
-    // 4. Teams
-    const teamsMetaSnap = await getDoc(doc(db, COLLECTION_NAME, 'teams_meta'));
-    let teams: Team[] = [];
+    // 2. Prepare chunk tasks for teams and matches
+    const teamChunkPromises: Promise<any>[] = [];
     if (teamsMetaSnap.exists()) {
       const meta = teamsMetaSnap.data();
       const chunks = meta.chunks || 1;
       for (let i = 0; i < chunks; i++) {
-        const cSnap = await getDoc(doc(db, COLLECTION_NAME, `teams_${i}`));
-        if (cSnap.exists()) {
-          teams = teams.concat(cSnap.data().list || []);
-        }
+        teamChunkPromises.push(getDoc(doc(db, COLLECTION_NAME, `teams_${i}`)));
       }
     }
 
-    // 5. Matches
-    const matchesMetaSnap = await getDoc(doc(db, COLLECTION_NAME, 'matches_meta'));
-    let matches: Match[] = [];
+    const matchChunkPromises: Promise<any>[] = [];
     if (matchesMetaSnap.exists()) {
       const meta = matchesMetaSnap.data();
       const chunks = meta.chunks || 1;
       for (let i = 0; i < chunks; i++) {
-        const cSnap = await getDoc(doc(db, COLLECTION_NAME, `matches_${i}`));
-        if (cSnap.exists()) {
-          matches = matches.concat(cSnap.data().list || []);
-        }
+        matchChunkPromises.push(getDoc(doc(db, COLLECTION_NAME, `matches_${i}`)));
       }
     }
 
-    // 6. Referees
-    let referees: Referee[] = [];
-    try {
-      const refereesSnap = await getDoc(doc(db, COLLECTION_NAME, 'referees'));
-      if (refereesSnap.exists()) {
-        referees = refereesSnap.data().list || [];
+    // 3. Fetch ALL chunks in parallel
+    const [teamSnaps, matchSnaps] = await Promise.all([
+      Promise.all(teamChunkPromises),
+      Promise.all(matchChunkPromises),
+    ]);
+
+    let teams: Team[] = [];
+    for (const cSnap of teamSnaps) {
+      if (cSnap && cSnap.exists()) {
+        teams = teams.concat(cSnap.data().list || []);
       }
-    } catch {
-      // non-fatal
+    }
+
+    let matches: Match[] = [];
+    for (const cSnap of matchSnaps) {
+      if (cSnap && cSnap.exists()) {
+        matches = matches.concat(cSnap.data().list || []);
+      }
     }
 
     if (countries.length === 0 && leagues.length === 0 && teams.length === 0 && matches.length === 0) {

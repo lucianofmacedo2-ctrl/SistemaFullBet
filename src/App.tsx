@@ -5,7 +5,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { DbState, Match, NewEntityCreatedNotification, Country, League, Team, AppUser, Referee } from './types';
-import { fetchDatabaseState, saveDatabaseState, clearDatabase, saveUsersList } from './services/dbService';
+import {
+  fetchDatabaseState,
+  saveDatabaseState,
+  clearDatabase,
+  saveUsersList,
+  getInstantCachedDatabaseState,
+} from './services/dbService';
 
 import { Navbar } from './components/Navbar';
 import { MatchList } from './components/MatchList';
@@ -72,21 +78,19 @@ import defaultDatabaseData from './data/defaultDatabase.json';
 
 export default function App() {
   const [dbState, setDbState] = useState<DbState>(() => {
-    const raw = defaultDatabaseData as unknown as DbState;
-    return {
-      countries: raw.countries || [],
-      leagues: raw.leagues || [],
-      teams: raw.teams || [],
-      matches: raw.matches || [],
-      users: ensureDefaultUsers(raw.users),
-    };
+    return getInstantCachedDatabaseState();
   });
 
   const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
-    return getCurrentAuthUser() || DEFAULT_MASTER_USER;
+    const saved = getCurrentAuthUser();
+    if (saved) return saved;
+    const initialUsers = getInstantCachedDatabaseState().users;
+    const master = initialUsers.find(u => u.role === 'MASTER') || DEFAULT_MASTER_USER;
+    return master;
   });
 
-  const [isLoading, setIsLoading] = useState(true);
+  // Zero-blocking startup: The app has cached data immediately, so isLoading is false
+  const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'matches' | 'schedule' | 'standings' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos' | 'referees'>('matches');
   const [analysisTargetMatchId, setAnalysisTargetMatchId] = useState<string | null>(null);
   const [refereeTargetName, setRefereeTargetName] = useState<string | undefined>(undefined);
@@ -187,114 +191,129 @@ export default function App() {
     ]);
   };
 
-  // Load database on mount
+  // Load database on mount (Instant Local Load + Background Cloud Sync)
   useEffect(() => {
-    async function initDb() {
-      setIsLoading(true);
-      const data = await fetchDatabaseState();
-      const cleanData = sanitizeDbImages(data);
-      const guaranteedUsers = ensureDefaultUsers(cleanData.users);
-      const finalState = { ...cleanData, users: guaranteedUsers };
-      setDbState(finalState);
+    // 1. Instant check for URL params and active session on mount (0ms)
+    const initialDb = getInstantCachedDatabaseState();
+    const guaranteedUsers = ensureDefaultUsers(initialDb.users);
+    const savedUser = getCurrentAuthUser();
+    let targetUser = savedUser;
+    let shouldOpenLogin = false;
 
-      // Verify active user validity against latest users
-      const savedUser = getCurrentAuthUser();
-      let targetUser = savedUser;
-      let shouldOpenLogin = false;
+    if (typeof window !== 'undefined') {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const modeParam = urlParams.get('mode') || urlParams.get('portal');
+        const userParam = urlParams.get('user') || urlParams.get('u');
+        const accParam = urlParams.get('acc');
 
-      if (typeof window !== 'undefined') {
-        try {
-          const urlParams = new URLSearchParams(window.location.search);
-          const modeParam = urlParams.get('mode') || urlParams.get('portal');
-          const userParam = urlParams.get('user') || urlParams.get('u');
-          const accParam = urlParams.get('acc');
-
-          // If a direct account token was provided in the URL, import/update it seamlessly
-          if (accParam) {
-            const importedUser = decodeUserFromToken(accParam);
-            if (importedUser) {
-              const existingIdx = guaranteedUsers.findIndex(
-                u => u.username.toLowerCase() === importedUser.username.toLowerCase() || u.id === importedUser.id
-              );
-              if (existingIdx >= 0) {
-                guaranteedUsers[existingIdx] = importedUser;
-              } else {
-                guaranteedUsers.push(importedUser);
-              }
-              finalState.users = guaranteedUsers;
-              saveDatabaseState(finalState);
-              saveUsersList(guaranteedUsers);
-              
-              // Automatically authenticate as the imported user
-              targetUser = importedUser;
-              setCurrentUser(importedUser);
-              setCurrentAuthUser(importedUser);
-              shouldOpenLogin = false;
-            }
-          }
-
-          if (modeParam === 'consulta' || modeParam === 'viewer') {
-            setIsConsultaPortalMode(true);
-            // Only open login if there is NO active authenticated user on this device
-            if (!savedUser) {
-              shouldOpenLogin = true;
-            }
-          }
-
-          if (userParam) {
-            const cleanUserParam = userParam.trim().toLowerCase();
-            const foundByUserParam = guaranteedUsers.find(
-              u => u.username.toLowerCase() === cleanUserParam || u.id.toLowerCase() === cleanUserParam
+        // If a direct account token was provided in the URL, import/update it seamlessly
+        if (accParam) {
+          const importedUser = decodeUserFromToken(accParam);
+          if (importedUser) {
+            const existingIdx = guaranteedUsers.findIndex(
+              u => u.username.toLowerCase() === importedUser.username.toLowerCase() || u.id === importedUser.id
             );
-            if (foundByUserParam) {
-              setLoginInitialUsername(foundByUserParam.username);
-              // Only open login if there is no active session matching this user
-              if (!savedUser || savedUser.id !== foundByUserParam.id) {
-                shouldOpenLogin = true;
-              }
-            } else if (!savedUser) {
-              setLoginInitialUsername(userParam.trim());
+            if (existingIdx >= 0) {
+              guaranteedUsers[existingIdx] = importedUser;
+            } else {
+              guaranteedUsers.push(importedUser);
+            }
+            initialDb.users = guaranteedUsers;
+            saveDatabaseState(initialDb);
+            saveUsersList(guaranteedUsers);
+            
+            // Automatically authenticate as the imported user
+            targetUser = importedUser;
+            setCurrentUser(importedUser);
+            setCurrentAuthUser(importedUser);
+            shouldOpenLogin = false;
+          }
+        }
+
+        if (modeParam === 'consulta' || modeParam === 'viewer') {
+          setIsConsultaPortalMode(true);
+          if (!savedUser) {
+            shouldOpenLogin = true;
+          }
+        }
+
+        if (userParam) {
+          const cleanUserParam = userParam.trim().toLowerCase();
+          const foundByUserParam = guaranteedUsers.find(
+            u => u.username.toLowerCase() === cleanUserParam || u.id.toLowerCase() === cleanUserParam
+          );
+          if (foundByUserParam) {
+            setLoginInitialUsername(foundByUserParam.username);
+            if (!savedUser || savedUser.id !== foundByUserParam.id) {
               shouldOpenLogin = true;
             }
+          } else if (!savedUser) {
+            setLoginInitialUsername(userParam.trim());
+            shouldOpenLogin = true;
           }
-
-          // Clean URL query params to prevent re-triggering on subsequent page refreshes (F5)
-          if (accParam || userParam || modeParam) {
-            const cleanPath = window.location.pathname;
-            window.history.replaceState({}, document.title, cleanPath);
-          }
-        } catch {
-          // Ignore URL parsing errors
         }
-      }
 
-      if (shouldOpenLogin) {
-        setIsLoginModalOpen(true);
-      }
-
-      // Verify active user validity against latest users
-      if (targetUser) {
-        const found = guaranteedUsers.find(
-          u => u.id === targetUser.id || u.username.toLowerCase() === targetUser.username.toLowerCase()
-        );
-        if (found) {
-          setCurrentUser(found);
-          setCurrentAuthUser(found);
-        } else {
-          // If saved user is no longer present, fallback to default master
-          const master = guaranteedUsers.find(u => u.role === 'MASTER') || DEFAULT_MASTER_USER;
-          setCurrentUser(master);
-          setCurrentAuthUser(master);
+        // Clean URL query params to prevent re-triggering on subsequent page refreshes (F5)
+        if (accParam || userParam || modeParam) {
+          const cleanPath = window.location.pathname;
+          window.history.replaceState({}, document.title, cleanPath);
         }
+      } catch {
+        // Ignore URL parsing errors
+      }
+    }
+
+    if (shouldOpenLogin) {
+      setIsLoginModalOpen(true);
+    }
+
+    if (targetUser) {
+      const found = guaranteedUsers.find(
+        u => u.id === targetUser.id || u.username.toLowerCase() === targetUser.username.toLowerCase()
+      );
+      if (found) {
+        setCurrentUser(found);
+        setCurrentAuthUser(found);
       } else {
         const master = guaranteedUsers.find(u => u.role === 'MASTER') || DEFAULT_MASTER_USER;
         setCurrentUser(master);
         setCurrentAuthUser(master);
       }
-
-      setIsLoading(false);
+    } else {
+      const master = guaranteedUsers.find(u => u.role === 'MASTER') || DEFAULT_MASTER_USER;
+      setCurrentUser(master);
+      setCurrentAuthUser(master);
     }
-    initDb();
+
+    // 2. Background Cloud Sync (Non-blocking: pulls latest cloud changes asynchronously)
+    async function syncCloudInBackground() {
+      try {
+        const data = await fetchDatabaseState();
+        if (data && (data.matches?.length > 0 || data.countries?.length > 0)) {
+          const cleanData = sanitizeDbImages(data);
+          const freshUsers = ensureDefaultUsers(cleanData.users);
+          const finalState = { ...cleanData, users: freshUsers };
+          setDbState(finalState);
+
+          // Update current user if permissions or expiry changed in cloud
+          const currentAuth = getCurrentAuthUser();
+          if (currentAuth) {
+            const updatedProfile = freshUsers.find(
+              u => u.id === currentAuth.id || u.username.toLowerCase() === currentAuth.username.toLowerCase()
+            );
+            if (updatedProfile) {
+              setCurrentUser(updatedProfile);
+              setCurrentAuthUser(updatedProfile);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Background sync note (local cached state is active):', err);
+      }
+    }
+
+    syncCloudInBackground();
 
     // 1. Subscribe to real-time bi-directional Firestore cloud synchronization
     const unsubscribe = subscribeToFirestoreSync(
