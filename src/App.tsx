@@ -92,7 +92,7 @@ export default function App() {
 
   // Zero-blocking startup: The app has cached data immediately, so isLoading is false
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'matches' | 'schedule' | 'standings' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos' | 'referees'>('matches');
+  const [activeTab, setActiveTab] = useState<'matches' | 'schedule' | 'standings' | 'countries' | 'leagues' | 'teams' | 'stats' | 'analysis' | 'pending_logos' | 'referees'>('schedule');
   const [analysisTargetMatchId, setAnalysisTargetMatchId] = useState<string | null>(null);
   const [refereeTargetName, setRefereeTargetName] = useState<string | undefined>(undefined);
 

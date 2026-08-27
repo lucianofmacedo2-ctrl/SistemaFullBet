@@ -833,23 +833,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Bloco 1: Jogos & Tabela */}
             <div className="flex items-center bg-white p-0.5 rounded-lg border border-slate-200 shadow-2xs">
               <button
-                onClick={() => setActiveTab('matches')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === 'matches'
-                    ? 'bg-blue-600 text-white shadow-2xs'
-                    : 'text-slate-600 hover:text-blue-700 hover:bg-slate-100'
-                }`}
-              >
-                <ListOrdered className="w-3.5 h-3.5" />
-                <span>Todas Partidas</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  activeTab === 'matches' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
-                }`}>
-                  {dbState.matches.length}
-                </span>
-              </button>
-
-              <button
                 onClick={() => setActiveTab('schedule')}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
                   activeTab === 'schedule'
@@ -858,7 +841,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }`}
               >
                 <CalendarDays className="w-3.5 h-3.5" />
-                <span>Hoje/Amanhã</span>
+                <span>Jogos do Dia</span>
                 <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                   activeTab === 'schedule' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-700'
                 }`}>
@@ -876,6 +859,24 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <Trophy className="w-3.5 h-3.5 text-amber-500" />
                 <span>Classificação</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('matches')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'matches'
+                    ? 'bg-blue-600 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-blue-700 hover:bg-slate-100'
+                }`}
+                title="Banco de dados geral com todas as partidas cadastradas"
+              >
+                <ListOrdered className="w-3.5 h-3.5" />
+                <span>Todas Partidas</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  activeTab === 'matches' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                }`}>
+                  {dbState.matches.length}
+                </span>
               </button>
             </div>
 

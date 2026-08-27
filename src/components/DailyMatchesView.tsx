@@ -29,7 +29,9 @@ import {
   LayoutList,
   LayoutGrid,
   Flame,
-  ArrowRight
+  ArrowRight,
+  History,
+  RotateCcw
 } from 'lucide-react';
 import { DbState, Match, MatchStatus } from '../types';
 import { checkMatchCompleteness, checkMatchFullCompleteness } from './MatchList';
@@ -53,7 +55,7 @@ interface DailyMatchesViewProps {
   onNavigateToAllMatches?: () => void;
 }
 
-export type DaySelectionMode = 'TODAY' | 'TOMORROW' | 'AFTER_TOMORROW' | 'THREE_DAYS' | 'CUSTOM';
+export type DaySelectionMode = 'TODAY' | 'YESTERDAY' | 'TOMORROW' | 'AFTER_TOMORROW' | 'THREE_DAYS' | 'CUSTOM';
 
 // Helper to format Date object into YYYY-MM-DD in local time
 export function formatDateToYMD(date: Date): string {
@@ -149,6 +151,12 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   
   const todayYMD = useMemo(() => formatDateToYMD(today), [today]);
   
+  const yesterdayYMD = useMemo(() => {
+    const y = new Date(today);
+    y.setDate(today.getDate() - 1);
+    return formatDateToYMD(y);
+  }, [today]);
+
   const tomorrowYMD = useMemo(() => {
     const t = new Date(today);
     t.setDate(today.getDate() + 1);
@@ -226,6 +234,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
     return map;
   }, [dbState.matches]);
 
+  const yesterdayCount = (matchesByDateMap[yesterdayYMD] || []).length;
   const todayCount = (matchesByDateMap[todayYMD] || []).length;
   const tomorrowCount = (matchesByDateMap[tomorrowYMD] || []).length;
   const afterTomorrowCount = (matchesByDateMap[afterTomorrowYMD] || []).length;
@@ -241,6 +250,8 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   // Active dates to filter
   const targetDates = useMemo<string[]>(() => {
     switch (dayMode) {
+      case 'YESTERDAY':
+        return [yesterdayYMD];
       case 'TODAY':
         return [todayYMD];
       case 'TOMORROW':
@@ -254,7 +265,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
       default:
         return [todayYMD];
     }
-  }, [dayMode, todayYMD, tomorrowYMD, afterTomorrowYMD, customDateYMD]);
+  }, [dayMode, yesterdayYMD, todayYMD, tomorrowYMD, afterTomorrowYMD, customDateYMD]);
 
   // Filter matches matching the target dates
   const dailyMatches = useMemo(() => {
@@ -354,6 +365,11 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
 
   const getActiveTabTitle = () => {
     switch (dayMode) {
+      case 'YESTERDAY':
+        return {
+          label: 'Jogos de Ontem',
+          detail: `${formatFriendlyDate(yesterdayYMD).title}, ${formatFriendlyDate(yesterdayYMD).fullDate}`,
+        };
       case 'TODAY':
         return {
           label: 'Jogos de Hoje',
@@ -453,6 +469,31 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
               </button>
             )}
 
+            {/* Button Ontem */}
+            <button
+              type="button"
+              onClick={() => setDayMode('YESTERDAY')}
+              className={`flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                dayMode === 'YESTERDAY'
+                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20 border border-blue-600 scale-[1.02]'
+                  : 'bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-700 border border-slate-200'
+              }`}
+              title="Resultados e jogos de ontem"
+            >
+              <History className="w-3.5 h-3.5" />
+              <div className="text-left">
+                <span className="block leading-none">Ontem</span>
+                <span className={`text-[10px] font-mono block mt-0.5 ${dayMode === 'YESTERDAY' ? 'text-blue-100' : 'text-slate-500'}`}>
+                  {formatFriendlyDate(yesterdayYMD).subtitle}
+                </span>
+              </div>
+              <span className={`ml-1 text-[11px] font-mono px-2 py-0.5 rounded-full font-black ${
+                dayMode === 'YESTERDAY' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-800'
+              }`}>
+                {yesterdayCount}
+              </span>
+            </button>
+
             {/* Button Hoje */}
             <button
               type="button"
@@ -549,40 +590,97 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
 
         {/* Date Navigation Strip & Custom Date Picker */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-          {/* Custom Date Navigator */}
-          <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
-            <button
-              type="button"
-              onClick={handlePrevDay}
-              className="p-1.5 hover:bg-white hover:text-blue-600 rounded-lg text-slate-600 transition-colors cursor-pointer"
-              title="Dia Anterior"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
+          {/* Custom Date Navigator with Native Calendar & Quick Jump Dropdown */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200 shadow-2xs">
+              <button
+                type="button"
+                onClick={handlePrevDay}
+                className="p-1.5 hover:bg-white hover:text-blue-600 rounded-lg text-slate-600 transition-colors cursor-pointer"
+                title="Dia Anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
 
-            <input
-              type="date"
-              value={customDateYMD}
-              onChange={(e) => {
-                setCustomDateYMD(e.target.value);
-                setDayMode('CUSTOM');
-              }}
-              className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer"
-            />
+              <div className="flex items-center gap-1.5 px-1.5">
+                <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <input
+                  type="date"
+                  value={customDateYMD}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setCustomDateYMD(e.target.value);
+                      setDayMode('CUSTOM');
+                    }
+                  }}
+                  className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-600 cursor-pointer shadow-2xs"
+                  title="Selecione qualquer data no calendário (passada ou futura)"
+                />
+              </div>
 
-            <button
-              type="button"
-              onClick={handleNextDay}
-              className="p-1.5 hover:bg-white hover:text-blue-600 rounded-lg text-slate-600 transition-colors cursor-pointer"
-              title="Próximo Dia"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+              <button
+                type="button"
+                onClick={handleNextDay}
+                className="p-1.5 hover:bg-white hover:text-blue-600 rounded-lg text-slate-600 transition-colors cursor-pointer"
+                title="Próximo Dia"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
 
-            {dayMode === 'CUSTOM' && (
-              <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 ml-1">
-                Data Customizada
-              </span>
+            {/* Quick Dropdown with all dates in the database */}
+            {availableDatesWithMatches.length > 0 && (
+              <select
+                value={dayMode === 'CUSTOM' ? customDateYMD : (dayMode === 'TODAY' ? todayYMD : (dayMode === 'YESTERDAY' ? yesterdayYMD : (dayMode === 'TOMORROW' ? tomorrowYMD : (dayMode === 'AFTER_TOMORROW' ? afterTomorrowYMD : ''))))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === todayYMD) {
+                    setDayMode('TODAY');
+                  } else if (val === yesterdayYMD) {
+                    setDayMode('YESTERDAY');
+                  } else if (val === tomorrowYMD) {
+                    setDayMode('TOMORROW');
+                  } else if (val === afterTomorrowYMD) {
+                    setDayMode('AFTER_TOMORROW');
+                  } else if (val) {
+                    setCustomDateYMD(val);
+                    setDayMode('CUSTOM');
+                  }
+                }}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 font-semibold focus:outline-none focus:border-blue-600 cursor-pointer shadow-2xs"
+                title="Pular diretamente para datas com partidas cadastradas no sistema"
+              >
+                <option value="" disabled>Pular para data com jogos...</option>
+                {availableDatesWithMatches.map((dateKey) => {
+                  const info = formatFriendlyDate(dateKey);
+                  const count = (matchesByDateMap[dateKey] || []).length;
+                  const isToday = dateKey === todayYMD;
+                  const isYesterday = dateKey === yesterdayYMD;
+                  const isTomorrow = dateKey === tomorrowYMD;
+                  const prefix = isToday ? '⭐ Hoje' : isYesterday ? '⏪ Ontem' : isTomorrow ? '⏩ Amanhã' : '📅';
+                  return (
+                    <option key={dateKey} value={dateKey}>
+                      {prefix} - {info.subtitle} ({count} {count === 1 ? 'jogo' : 'jogos'})
+                    </option>
+                  );
+                })}
+              </select>
+            )}
+
+            {/* "Ir para Hoje" quick reset button when not in TODAY mode */}
+            {dayMode !== 'TODAY' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDayMode('TODAY');
+                  setCustomDateYMD(todayYMD);
+                }}
+                className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                title="Voltar para a data de hoje"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Voltar para Hoje</span>
+              </button>
             )}
           </div>
 
