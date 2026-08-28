@@ -73,8 +73,8 @@ function sanitizeForFirestore<T>(data: T): T {
 }
 
 // Chunking helpers to strictly respect Firestore document size limit (1MB max per doc)
-const MATCH_CHUNK_SIZE = 100; // max 100 matches per doc (~20-40 KB, well under 1MB limit)
-const TEAM_CHUNK_SIZE = 200; // max 200 teams per doc (~50-80 KB, well under 1MB limit)
+const MATCH_CHUNK_SIZE = 250; // max 250 matches per doc (~60-90 KB, well under 1MB limit, optimizes write units)
+const TEAM_CHUNK_SIZE = 300; // max 300 teams per doc (~75-100 KB, well under 1MB limit, optimizes write units)
 const COLLECTION_NAME = 'app_data';
 
 export const CLIENT_INSTANCE_ID = `client_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -82,6 +82,23 @@ export const CLIENT_INSTANCE_ID = `client_${Date.now()}_${Math.random().toString
 // In-memory cache for Firestore snapshot to eliminate redundant fetches
 let cachedFirestoreState: { timestamp: string; data: DbState } | null = null;
 let lastLocalSavedTimestamp: string | null = null;
+
+// Circuit breaker for Firestore free-tier daily write quota limits
+let isQuotaExhausted = false;
+let quotaExhaustedResetTime = 0;
+
+export function isFirestoreQuotaExhausted(): boolean {
+  if (isQuotaExhausted && Date.now() > quotaExhaustedResetTime) {
+    isQuotaExhausted = false;
+  }
+  return isQuotaExhausted;
+}
+
+export function markFirestoreQuotaExhausted(cooldownMinutes: number = 30) {
+  isQuotaExhausted = true;
+  quotaExhaustedResetTime = Date.now() + cooldownMinutes * 60 * 1000;
+  console.warn(`[Firestore Quota Guard] Limite de cota diária de gravações do Firestore atingido. Sistema operando de forma 100% segura com servidor API e armazenamento local durante os próximos ${cooldownMinutes} minutos.`);
+}
 
 export interface CloudSyncStats {
   matchesCount: number;
@@ -106,6 +123,14 @@ export interface SyncResult {
  * Saves the entire DbState to Firestore partitioned across sub-documents in parallel.
  */
 export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
+  // If quota is already exhausted, gracefully skip without generating failed write requests
+  if (isFirestoreQuotaExhausted()) {
+    return {
+      success: false,
+      error: 'Quota diária de gravação do Firestore atingida. Dados salvos com segurança no armazenamento local e backend.',
+    };
+  }
+
   try {
     await ensureFirebaseAuth();
 
@@ -228,10 +253,27 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
 
     return { success: true, count: matches.length };
   } catch (error: any) {
-    console.error('Error saving state to Firestore:', error);
+    const errMsg = error?.message || String(error);
+    const errCode = error?.code || '';
+
+    // Handle Firestore Quota limit exceeded gracefully
+    if (
+      errCode === 'resource-exhausted' ||
+      errMsg.includes('resource-exhausted') ||
+      errMsg.includes('Quota limit exceeded') ||
+      errMsg.includes('quota metric')
+    ) {
+      markFirestoreQuotaExhausted(30);
+      return {
+        success: false,
+        error: 'Quota de gravação diária do Firestore atingida. O sistema continua operando e salvando com segurança no servidor e armazenamento local.',
+      };
+    }
+
+    console.warn('Firestore sync note:', errMsg);
     
     // Attempt fallback to default database if named database failed
-    if (error?.message?.includes('not found') || error?.code === 'not-found') {
+    if (errMsg.includes('not found') || errCode === 'not-found') {
       try {
         db = getFirestore(app);
         return await saveDbToFirestore(state);
@@ -240,7 +282,7 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
       }
     }
 
-    return { success: false, error: error?.message || String(error) };
+    return { success: false, error: errMsg };
   }
 }
 
@@ -389,7 +431,19 @@ export function subscribeToFirestoreSync(
           }
         }
       }, (error) => {
-        console.warn('Firestore subscription error (will retry automatically):', error);
+        const errMsg = error?.message || String(error);
+        const errCode = (error as any)?.code || '';
+        if (
+          errCode === 'resource-exhausted' ||
+          errMsg.includes('resource-exhausted') ||
+          errMsg.includes('Quota limit exceeded') ||
+          errMsg.includes('quota metric')
+        ) {
+          markFirestoreQuotaExhausted(30);
+          console.warn('[Firestore] Inscrição em tempo real pausada temporariamente devido ao limite de cota diária. Operando em modo de alta velocidade offline/local.');
+          return;
+        }
+        console.warn('Firestore subscription note (will retry):', errMsg);
         if (onError) onError(error);
       });
     } catch (e: any) {

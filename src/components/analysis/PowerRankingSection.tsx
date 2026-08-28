@@ -302,6 +302,8 @@ export const PowerRankingSection: React.FC<PowerRankingSectionProps> = ({ analys
           awaySectoral={awaySectoralPower}
           homeIndices={homeAdvancedIndices}
           awayIndices={awayAdvancedIndices}
+          homePower={homePower}
+          awayPower={awayPower}
         />
       )}
 

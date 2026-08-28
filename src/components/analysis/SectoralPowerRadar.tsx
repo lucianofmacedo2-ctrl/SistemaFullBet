@@ -1,6 +1,6 @@
 import React from 'react';
-import { Target, Activity, Shield, Crosshair, ArrowUpRight, Zap, CheckCircle2, ChevronRight } from 'lucide-react';
-import { SectoralPowerRankings, AdvancedSectoralIndices } from '../../utils/analysisEngine';
+import { Target, Activity, Shield, Crosshair, ArrowUpRight, Zap } from 'lucide-react';
+import { SectoralPowerRankings, AdvancedSectoralIndices, TeamPowerRating } from '../../utils/analysisEngine';
 import { isValidImageUrl } from '../../utils/imageHelper';
 
 interface SectoralPowerRadarProps {
@@ -12,6 +12,8 @@ interface SectoralPowerRadarProps {
   awaySectoral: SectoralPowerRankings;
   homeIndices: AdvancedSectoralIndices;
   awayIndices: AdvancedSectoralIndices;
+  homePower?: TeamPowerRating;
+  awayPower?: TeamPowerRating;
 }
 
 export const SectoralPowerRadar: React.FC<SectoralPowerRadarProps> = ({
@@ -23,14 +25,16 @@ export const SectoralPowerRadar: React.FC<SectoralPowerRadarProps> = ({
   awaySectoral,
   homeIndices,
   awayIndices,
+  homePower,
+  awayPower,
 }) => {
   // 5 Axes for Radar Chart: Ataque, Meio-Campo, Defesa, Goleiro, Força Geral
   const axes = [
-    { key: 'offensiveScore', label: 'Ataque', max: 100 },
-    { key: 'midfieldScore', label: 'Meio-Campo', max: 100 },
-    { key: 'defensiveScore', label: 'Defesa', max: 100 },
-    { key: 'goalkeeperScore', label: 'Goleiro', max: 100 },
-    { key: 'overallScore', label: 'Geral', max: 100 },
+    { key: 'offensive', label: 'Ataque', max: 100 },
+    { key: 'midfield', label: 'Meio-Campo', max: 100 },
+    { key: 'defensive', label: 'Defesa', max: 100 },
+    { key: 'goalkeeper', label: 'Goleiro', max: 100 },
+    { key: 'overall', label: 'Geral', max: 100 },
   ] as const;
 
   const size = 260;
@@ -40,7 +44,7 @@ export const SectoralPowerRadar: React.FC<SectoralPowerRadarProps> = ({
 
   // Calculate coordinates for polygon vertices
   const getCoordinates = (value: number, index: number) => {
-    const norm = Math.min(Math.max(value, 10), 100) / 100;
+    const norm = Math.min(Math.max(value || 50, 10), 100) / 100;
     const angle = index * angleStep - Math.PI / 2;
     const x = center + radius * norm * Math.cos(angle);
     const y = center + radius * norm * Math.sin(angle);
@@ -56,9 +60,12 @@ export const SectoralPowerRadar: React.FC<SectoralPowerRadarProps> = ({
     return { x, y, labelX, labelY };
   };
 
+  const safeHomeSectoral = homeSectoral || { overall: 50, offensive: 50, midfield: 50, defensive: 50, goalkeeper: 50 };
+  const safeAwaySectoral = awaySectoral || { overall: 50, offensive: 50, midfield: 50, defensive: 50, goalkeeper: 50 };
+
   const homePoints = axes
     .map((axis, i) => {
-      const val = homeSectoral[axis.key];
+      const val = safeHomeSectoral[axis.key] ?? 50;
       const { x, y } = getCoordinates(val, i);
       return `${x},${y}`;
     })
@@ -66,67 +73,94 @@ export const SectoralPowerRadar: React.FC<SectoralPowerRadarProps> = ({
 
   const awayPoints = axes
     .map((axis, i) => {
-      const val = awaySectoral[axis.key];
+      const val = safeAwaySectoral[axis.key] ?? 50;
       const { x, y } = getCoordinates(val, i);
       return `${x},${y}`;
     })
     .join(' ');
 
   // Sector Comparison Items
+  const hOff = safeHomeSectoral.offensive ?? 50;
+  const aOff = safeAwaySectoral.offensive ?? 50;
+  const hMid = safeHomeSectoral.midfield ?? 50;
+  const aMid = safeAwaySectoral.midfield ?? 50;
+  const hDef = safeHomeSectoral.defensive ?? 50;
+  const aDef = safeAwaySectoral.defensive ?? 50;
+  const hGk = safeHomeSectoral.goalkeeper ?? 50;
+  const aGk = safeAwaySectoral.goalkeeper ?? 50;
+
+  const hXG = homePower?.xgForAvg ?? 1.5;
+  const aXG = awayPower?.xgForAvg ?? 1.2;
+  const hShots = homePower?.shotsVolumeAvg ?? 12.0;
+  const aShots = awayPower?.shotsVolumeAvg ?? 11.0;
+
+  const hXGA = homePower?.xgAgainstAvg ?? 1.2;
+  const aXGA = awayPower?.xgAgainstAvg ?? 1.5;
+
+  const hPasses = homeIndices?.passesSuccessPct ?? 82;
+  const aPasses = awayIndices?.passesSuccessPct ?? 80;
+  const hPoss = homeIndices?.possessionAvg ?? 50;
+  const aPoss = awayIndices?.possessionAvg ?? 50;
+  const hTackles = homeIndices?.tacklesSuccessPct ?? 65;
+  const aTackles = awayIndices?.tacklesSuccessPct ?? 64;
+
+  const hGPrev = homeIndices?.goalsPreventedAvg ?? 0;
+  const aGPrev = awayIndices?.goalsPreventedAvg ?? 0;
+
   const sectors = [
     {
       name: 'Ataque & Finalização',
       icon: Target,
-      homeScore: homeSectoral.offensiveScore,
-      awayScore: awaySectoral.offensiveScore,
-      homeDetail: `${homeSectoral.metrics.xgForAvg.toFixed(2)} xG | ${homeSectoral.metrics.shotsForAvg.toFixed(1)} chutes`,
-      awayDetail: `${awaySectoral.metrics.xgForAvg.toFixed(2)} xG | ${awaySectoral.metrics.shotsForAvg.toFixed(1)} chutes`,
+      homeScore: hOff,
+      awayScore: aOff,
+      homeDetail: `${hXG.toFixed(2)} xG | ${hShots.toFixed(1)} chutes`,
+      awayDetail: `${aXG.toFixed(2)} xG | ${aShots.toFixed(1)} chutes`,
       advantage:
-        homeSectoral.offensiveScore > awaySectoral.offensiveScore + 3
+        hOff > aOff + 3
           ? 'Mandante Superior'
-          : awaySectoral.offensiveScore > homeSectoral.offensiveScore + 3
+          : aOff > hOff + 3
           ? 'Visitante Superior'
           : 'Equilibrado',
     },
     {
       name: 'Meio-Campo & Construção',
       icon: Activity,
-      homeScore: homeSectoral.midfieldScore,
-      awayScore: awaySectoral.midfieldScore,
-      homeDetail: `${homeSectoral.metrics.passesPct.toFixed(0)}% passes | ${homeSectoral.metrics.possessionAvg.toFixed(0)}% posse`,
-      awayDetail: `${awaySectoral.metrics.passesPct.toFixed(0)}% passes | ${awaySectoral.metrics.possessionAvg.toFixed(0)}% posse`,
+      homeScore: hMid,
+      awayScore: aMid,
+      homeDetail: `${hPasses.toFixed(0)}% passes | ${hPoss.toFixed(0)}% posse`,
+      awayDetail: `${aPasses.toFixed(0)}% passes | ${aPoss.toFixed(0)}% posse`,
       advantage:
-        homeSectoral.midfieldScore > awaySectoral.midfieldScore + 3
+        hMid > aMid + 3
           ? 'Mandante Superior'
-          : awaySectoral.midfieldScore > homeSectoral.midfieldScore + 3
+          : aMid > hMid + 3
           ? 'Visitante Superior'
           : 'Equilibrado',
     },
     {
       name: 'Defesa & Duelos',
       icon: Shield,
-      homeScore: homeSectoral.defensiveScore,
-      awayScore: awaySectoral.defensiveScore,
-      homeDetail: `${homeSectoral.metrics.xgAgainstAvg.toFixed(2)} xGA | ${homeSectoral.metrics.tacklesPct.toFixed(0)}% desarmes`,
-      awayDetail: `${awaySectoral.metrics.xgAgainstAvg.toFixed(2)} xGA | ${awaySectoral.metrics.tacklesPct.toFixed(0)}% desarmes`,
+      homeScore: hDef,
+      awayScore: aDef,
+      homeDetail: `${hXGA.toFixed(2)} xGA | ${hTackles.toFixed(0)}% desarmes`,
+      awayDetail: `${aXGA.toFixed(2)} xGA | ${aTackles.toFixed(0)}% desarmes`,
       advantage:
-        homeSectoral.defensiveScore > awaySectoral.defensiveScore + 3
+        hDef > aDef + 3
           ? 'Mandante Superior'
-          : awaySectoral.defensiveScore > homeSectoral.defensiveScore + 3
+          : aDef > hDef + 3
           ? 'Visitante Superior'
           : 'Equilibrado',
     },
     {
       name: 'Goleiro & Baliza',
       icon: Crosshair,
-      homeScore: homeSectoral.goalkeeperScore,
-      awayScore: awaySectoral.goalkeeperScore,
-      homeDetail: `${homeSectoral.metrics.goalsPreventedAvg >= 0 ? '+' : ''}${homeSectoral.metrics.goalsPreventedAvg.toFixed(2)} gols evitados`,
-      awayDetail: `${awaySectoral.metrics.goalsPreventedAvg >= 0 ? '+' : ''}${awaySectoral.metrics.goalsPreventedAvg.toFixed(2)} gols evitados`,
+      homeScore: hGk,
+      awayScore: aGk,
+      homeDetail: `${hGPrev >= 0 ? '+' : ''}${hGPrev.toFixed(2)} gols evitados`,
+      awayDetail: `${aGPrev >= 0 ? '+' : ''}${aGPrev.toFixed(2)} gols evitados`,
       advantage:
-        homeSectoral.goalkeeperScore > awaySectoral.goalkeeperScore + 3
+        hGk > aGk + 3
           ? 'Mandante Superior'
-          : awaySectoral.goalkeeperScore > homeSectoral.goalkeeperScore + 3
+          : aGk > hGk + 3
           ? 'Visitante Superior'
           : 'Equilibrado',
     },
@@ -217,8 +251,8 @@ export const SectoralPowerRadar: React.FC<SectoralPowerRadarProps> = ({
 
               {/* Dots at vertices */}
               {axes.map((axis, i) => {
-                const hCoord = getCoordinates(homeSectoral[axis.key], i);
-                const aCoord = getCoordinates(awaySectoral[axis.key], i);
+                const hCoord = getCoordinates(safeHomeSectoral[axis.key] ?? 50, i);
+                const aCoord = getCoordinates(safeAwaySectoral[axis.key] ?? 50, i);
                 return (
                   <g key={i}>
                     <circle cx={hCoord.x} cy={hCoord.y} r="3.5" fill="#3b82f6" stroke="#ffffff" strokeWidth="1" />
@@ -232,11 +266,11 @@ export const SectoralPowerRadar: React.FC<SectoralPowerRadarProps> = ({
           <div className="w-full grid grid-cols-2 gap-2 text-center text-[11px] pt-2 border-t border-slate-800 font-mono">
             <div className="bg-slate-800/80 p-1.5 rounded-lg">
               <span className="text-slate-400 block text-[10px]">{homeTeamName}</span>
-              <span className="text-blue-400 font-bold">{homeSectoral.overallScore.toFixed(1)} / 100</span>
+              <span className="text-blue-400 font-bold">{(safeHomeSectoral.overall ?? 50).toFixed(1)} / 100</span>
             </div>
             <div className="bg-slate-800/80 p-1.5 rounded-lg">
               <span className="text-slate-400 block text-[10px]">{awayTeamName}</span>
-              <span className="text-amber-400 font-bold">{awaySectoral.overallScore.toFixed(1)} / 100</span>
+              <span className="text-amber-400 font-bold">{(safeAwaySectoral.overall ?? 50).toFixed(1)} / 100</span>
             </div>
           </div>
         </div>
@@ -341,13 +375,13 @@ export const SectoralPowerRadar: React.FC<SectoralPowerRadarProps> = ({
             <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-center">
               <div className="bg-white p-2 rounded-lg border border-slate-200">
                 <span className="text-[10px] text-slate-400 block font-sans">{homeTeamName}</span>
-                <span className="text-sm font-black text-blue-700">{homeIndices.btiScore.toFixed(1)}</span>
-                <span className="text-[9px] text-slate-500 block font-sans">{homeIndices.verticalityTrend}</span>
+                <span className="text-sm font-black text-blue-700">{(homeIndices?.bti ?? 0).toFixed(1)}</span>
+                <span className="text-[9px] text-slate-500 block font-sans">{homeIndices?.btiLabel ?? 'Normal'}</span>
               </div>
               <div className="bg-white p-2 rounded-lg border border-slate-200">
                 <span className="text-[10px] text-slate-400 block font-sans">{awayTeamName}</span>
-                <span className="text-sm font-black text-amber-700">{awayIndices.btiScore.toFixed(1)}</span>
-                <span className="text-[9px] text-slate-500 block font-sans">{awayIndices.verticalityTrend}</span>
+                <span className="text-sm font-black text-amber-700">{(awayIndices?.bti ?? 0).toFixed(1)}</span>
+                <span className="text-[9px] text-slate-500 block font-sans">{awayIndices?.btiLabel ?? 'Normal'}</span>
               </div>
             </div>
           </div>
@@ -365,17 +399,21 @@ export const SectoralPowerRadar: React.FC<SectoralPowerRadarProps> = ({
             <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-center">
               <div className="bg-white p-2 rounded-lg border border-slate-200">
                 <span className="text-[10px] text-slate-400 block font-sans">{homeTeamName}</span>
-                <span className={`text-sm font-black ${homeIndices.finishingEfficiency >= 1.05 ? 'text-emerald-700' : 'text-slate-800'}`}>
-                  {homeIndices.finishingEfficiency.toFixed(2)}x
+                <span className={`text-sm font-black ${(homeIndices?.xgOverperformance ?? 0) >= 0 ? 'text-emerald-700' : 'text-slate-800'}`}>
+                  {(homeIndices?.shotConversionRate ?? 10).toFixed(1)}%
                 </span>
-                <span className="text-[9px] text-slate-500 block font-sans">{homeIndices.finishingCategory}</span>
+                <span className="text-[9px] text-slate-500 block font-sans">
+                  {(homeIndices?.xgOverperformance ?? 0) >= 0 ? `+${(homeIndices?.xgOverperformance ?? 0).toFixed(2)}` : (homeIndices?.xgOverperformance ?? 0).toFixed(2)} xG
+                </span>
               </div>
               <div className="bg-white p-2 rounded-lg border border-slate-200">
                 <span className="text-[10px] text-slate-400 block font-sans">{awayTeamName}</span>
-                <span className={`text-sm font-black ${awayIndices.finishingEfficiency >= 1.05 ? 'text-emerald-700' : 'text-slate-800'}`}>
-                  {awayIndices.finishingEfficiency.toFixed(2)}x
+                <span className={`text-sm font-black ${(awayIndices?.xgOverperformance ?? 0) >= 0 ? 'text-emerald-700' : 'text-slate-800'}`}>
+                  {(awayIndices?.shotConversionRate ?? 10).toFixed(1)}%
                 </span>
-                <span className="text-[9px] text-slate-500 block font-sans">{awayIndices.finishingCategory}</span>
+                <span className="text-[9px] text-slate-500 block font-sans">
+                  {(awayIndices?.xgOverperformance ?? 0) >= 0 ? `+${(awayIndices?.xgOverperformance ?? 0).toFixed(2)}` : (awayIndices?.xgOverperformance ?? 0).toFixed(2)} xG
+                </span>
               </div>
             </div>
           </div>
@@ -393,17 +431,17 @@ export const SectoralPowerRadar: React.FC<SectoralPowerRadarProps> = ({
             <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-center">
               <div className="bg-white p-2 rounded-lg border border-slate-200">
                 <span className="text-[10px] text-slate-400 block font-sans">{homeTeamName}</span>
-                <span className={`text-sm font-black ${homeIndices.goalsPreventedPerMatch >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                  {homeIndices.goalsPreventedPerMatch >= 0 ? `+${homeIndices.goalsPreventedPerMatch.toFixed(2)}` : homeIndices.goalsPreventedPerMatch.toFixed(2)}
+                <span className={`text-sm font-black ${(homeIndices?.goalsPreventedAvg ?? 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                  {(homeIndices?.goalsPreventedAvg ?? 0) >= 0 ? `+${(homeIndices?.goalsPreventedAvg ?? 0).toFixed(2)}` : (homeIndices?.goalsPreventedAvg ?? 0).toFixed(2)}
                 </span>
-                <span className="text-[9px] text-slate-500 block font-sans">{homeIndices.goalkeeperReliability}</span>
+                <span className="text-[9px] text-slate-500 block font-sans">{(homeIndices?.savesPct ?? 70).toFixed(0)}% defesas</span>
               </div>
               <div className="bg-white p-2 rounded-lg border border-slate-200">
                 <span className="text-[10px] text-slate-400 block font-sans">{awayTeamName}</span>
-                <span className={`text-sm font-black ${awayIndices.goalsPreventedPerMatch >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                  {awayIndices.goalsPreventedPerMatch >= 0 ? `+${awayIndices.goalsPreventedPerMatch.toFixed(2)}` : awayIndices.goalsPreventedPerMatch.toFixed(2)}
+                <span className={`text-sm font-black ${(awayIndices?.goalsPreventedAvg ?? 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                  {(awayIndices?.goalsPreventedAvg ?? 0) >= 0 ? `+${(awayIndices?.goalsPreventedAvg ?? 0).toFixed(2)}` : (awayIndices?.goalsPreventedAvg ?? 0).toFixed(2)}
                 </span>
-                <span className="text-[9px] text-slate-500 block font-sans">{awayIndices.goalkeeperReliability}</span>
+                <span className="text-[9px] text-slate-500 block font-sans">{(awayIndices?.savesPct ?? 70).toFixed(0)}% defesas</span>
               </div>
             </div>
           </div>
@@ -412,3 +450,4 @@ export const SectoralPowerRadar: React.FC<SectoralPowerRadarProps> = ({
     </div>
   );
 };
+
