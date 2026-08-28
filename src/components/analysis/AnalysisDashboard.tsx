@@ -21,6 +21,7 @@ import {
 import { DbState, Match, Team } from '../../types';
 import { runFullMatchAnalysis, MatchAnalysisResult } from '../../utils/analysisEngine';
 import { isValidImageUrl } from '../../utils/imageHelper';
+import { getLeaguesForCountry, getTeamsForLeagueOrCountry } from '../../utils/countryLeagueHelper';
 import { FormTrackerSection } from './FormTrackerSection';
 import { PowerRankingSection } from './PowerRankingSection';
 import { DescriptiveStatsSection } from './DescriptiveStatsSection';
@@ -81,17 +82,18 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
       const firstCountry = dbState.countries[0];
       setSelectedCountryId(firstCountry.id);
 
-      const countryLeagues = dbState.leagues.filter(l => l.countryId === firstCountry.id);
+      const countryLeagues = getLeaguesForCountry(dbState, firstCountry.id);
       if (countryLeagues.length > 0) {
         const firstLeague = countryLeagues[0];
         setSelectedLeagueId(firstLeague.id);
 
-        const leagueTeams = dbState.teams.filter(
-          t => t.leagueId === firstLeague.id || t.leagueIds?.includes(firstLeague.id)
-        );
+        const leagueTeams = getTeamsForLeagueOrCountry(dbState, firstLeague.id, firstCountry.id);
         if (leagueTeams.length >= 2) {
           setSelectedHomeTeamId(leagueTeams[0].id);
           setSelectedAwayTeamId(leagueTeams[1].id);
+        } else if (leagueTeams.length === 1) {
+          setSelectedHomeTeamId(leagueTeams[0].id);
+          setSelectedAwayTeamId('');
         } else if (dbState.teams.length >= 2) {
           setSelectedHomeTeamId(dbState.teams[0].id);
           setSelectedAwayTeamId(dbState.teams[1].id);
@@ -100,38 +102,32 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     }
   }, [dbState, initialMatchId]);
 
-  // 1. Available Leagues filtered by Country
+  // 1. Available Leagues filtered by Country (resilient matching)
   const availableLeagues = useMemo(() => {
-    if (!selectedCountryId) return dbState.leagues;
-    return dbState.leagues.filter(l => l.countryId === selectedCountryId);
-  }, [dbState.leagues, selectedCountryId]);
+    return getLeaguesForCountry(dbState, selectedCountryId);
+  }, [dbState, selectedCountryId]);
 
-  // 2. Available Teams filtered by League
+  // 2. Available Teams filtered by League and/or Country
   const availableTeams = useMemo(() => {
-    if (!selectedLeagueId) {
-      if (!selectedCountryId) return dbState.teams;
-      return dbState.teams.filter(t => t.countryId === selectedCountryId);
-    }
-    return dbState.teams.filter(
-      t => t.leagueId === selectedLeagueId || t.leagueIds?.includes(selectedLeagueId)
-    );
-  }, [dbState.teams, selectedLeagueId, selectedCountryId]);
+    return getTeamsForLeagueOrCountry(dbState, selectedLeagueId, selectedCountryId);
+  }, [dbState, selectedLeagueId, selectedCountryId]);
 
   // Handle Country change
   const handleCountryChange = (countryId: string) => {
     setSelectedCountryId(countryId);
-    const filteredLeagues = dbState.leagues.filter(l => l.countryId === countryId);
+    const filteredLeagues = getLeaguesForCountry(dbState, countryId);
     if (filteredLeagues.length > 0) {
       const newLeague = filteredLeagues[0];
       setSelectedLeagueId(newLeague.id);
-      const filteredTeams = dbState.teams.filter(
-        t => t.leagueId === newLeague.id || t.leagueIds?.includes(newLeague.id)
-      );
+      const filteredTeams = getTeamsForLeagueOrCountry(dbState, newLeague.id, countryId);
       if (filteredTeams.length >= 2) {
         setSelectedHomeTeamId(filteredTeams[0].id);
         setSelectedAwayTeamId(filteredTeams[1].id);
+      } else if (filteredTeams.length === 1) {
+        setSelectedHomeTeamId(filteredTeams[0].id);
+        setSelectedAwayTeamId('');
       } else {
-        setSelectedHomeTeamId(filteredTeams[0]?.id || '');
+        setSelectedHomeTeamId('');
         setSelectedAwayTeamId('');
       }
     } else {
@@ -144,14 +140,15 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
   // Handle League change
   const handleLeagueChange = (leagueId: string) => {
     setSelectedLeagueId(leagueId);
-    const filteredTeams = dbState.teams.filter(
-      t => t.leagueId === leagueId || t.leagueIds?.includes(leagueId)
-    );
+    const filteredTeams = getTeamsForLeagueOrCountry(dbState, leagueId, selectedCountryId);
     if (filteredTeams.length >= 2) {
       setSelectedHomeTeamId(filteredTeams[0].id);
       setSelectedAwayTeamId(filteredTeams[1].id);
     } else if (filteredTeams.length === 1) {
       setSelectedHomeTeamId(filteredTeams[0].id);
+      setSelectedAwayTeamId('');
+    } else {
+      setSelectedHomeTeamId('');
       setSelectedAwayTeamId('');
     }
   };

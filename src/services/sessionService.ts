@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
-import { db, ensureFirebaseAuth } from './firebaseDbService';
+import { db, ensureFirebaseAuth, isFirestoreQuotaExhausted, markFirestoreQuotaExhausted } from './firebaseDbService';
 import { AppUser } from '../types';
 
 const SESSION_STORAGE_KEY = 'football_active_session_token_v1';
@@ -100,21 +100,28 @@ export async function registerActiveSession(user: AppUser, preferredSessionId?: 
     clientInfo: getClientSummary(),
   };
 
-  // 1. Write to Firestore in real-time
-  try {
-    await ensureFirebaseAuth();
-    const sessionDocRef = doc(db, COLLECTION_NAME, SESSIONS_DOC_PATH);
-    const snap = await getDoc(sessionDocRef);
-    const existing = snap.exists() ? snap.data() : {};
-    
-    await setDoc(sessionDocRef, {
-      ...existing,
-      [user.id]: sessionRecord,
-      [`user_${user.username.toLowerCase().replace(/[^a-z0-9]/g, '_')}`]: sessionRecord,
-      lastGlobalUpdate: new Date().toISOString(),
-    }, { merge: true });
-  } catch (err) {
-    console.warn('Firestore session register warning:', err);
+  // 1. Write to Firestore in real-time if quota available
+  if (!isFirestoreQuotaExhausted()) {
+    try {
+      await ensureFirebaseAuth();
+      const sessionDocRef = doc(db, COLLECTION_NAME, SESSIONS_DOC_PATH);
+      const snap = await getDoc(sessionDocRef);
+      const existing = snap.exists() ? snap.data() : {};
+      
+      await setDoc(sessionDocRef, {
+        ...existing,
+        [user.id]: sessionRecord,
+        [`user_${user.username.toLowerCase().replace(/[^a-z0-9]/g, '_')}`]: sessionRecord,
+        lastGlobalUpdate: new Date().toISOString(),
+      }, { merge: true });
+    } catch (err: any) {
+      const errMsg = err?.message || String(err);
+      if (err?.code === 'resource-exhausted' || errMsg.includes('Quota limit exceeded') || errMsg.includes('resource-exhausted')) {
+        markFirestoreQuotaExhausted(1440);
+      } else {
+        console.warn('Firestore session register note:', errMsg);
+      }
+    }
   }
 
   // 2. Write to backend API as redundant backup
@@ -158,22 +165,27 @@ export async function checkSessionValidity(
 ): Promise<{ isValid: boolean; remoteInfo?: ActiveSessionRecord }> {
   if (!user || !localSessionId) return { isValid: true };
 
-  // 1. Check Firestore
-  try {
-    await ensureFirebaseAuth();
-    const snap = await getDoc(doc(db, COLLECTION_NAME, SESSIONS_DOC_PATH));
-    if (snap.exists()) {
-      const data = snap.data();
-      const userKey = user.id;
-      const aliasKey = `user_${user.username.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-      const record = (data[userKey] || data[aliasKey]) as ActiveSessionRecord | undefined;
+  // 1. Check Firestore (if quota available)
+  if (!isFirestoreQuotaExhausted()) {
+    try {
+      await ensureFirebaseAuth();
+      const snap = await getDoc(doc(db, COLLECTION_NAME, SESSIONS_DOC_PATH));
+      if (snap.exists()) {
+        const data = snap.data();
+        const userKey = user.id;
+        const aliasKey = `user_${user.username.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+        const record = (data[userKey] || data[aliasKey]) as ActiveSessionRecord | undefined;
 
-      if (record && record.sessionId && record.sessionId !== localSessionId) {
-        return { isValid: false, remoteInfo: record };
+        if (record && record.sessionId && record.sessionId !== localSessionId) {
+          return { isValid: false, remoteInfo: record };
+        }
+      }
+    } catch (err: any) {
+      const errMsg = err?.message || String(err);
+      if (err?.code === 'resource-exhausted' || errMsg.includes('Quota limit exceeded') || errMsg.includes('resource-exhausted')) {
+        markFirestoreQuotaExhausted(1440);
       }
     }
-  } catch (err) {
-    console.warn('Firestore session check fallback:', err);
   }
 
   // 2. Check Server API fallback
@@ -210,29 +222,38 @@ export function subscribeToUserSession(
   let isSubscribed = true;
   let unsubscribeFirestore: Unsubscribe | null = null;
 
-  // 1. Realtime Firestore listener
-  ensureFirebaseAuth().then(() => {
-    if (!isSubscribed) return;
-    try {
-      const sessionDocRef = doc(db, COLLECTION_NAME, SESSIONS_DOC_PATH);
-      unsubscribeFirestore = onSnapshot(sessionDocRef, (snap) => {
-        if (!isSubscribed || !snap.exists()) return;
-        const data = snap.data();
-        const userKey = user.id;
-        const aliasKey = `user_${user.username.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-        const record = (data[userKey] || data[aliasKey]) as ActiveSessionRecord | undefined;
+  // 1. Realtime Firestore listener (if quota available)
+  if (!isFirestoreQuotaExhausted()) {
+    ensureFirebaseAuth().then(() => {
+      if (!isSubscribed || isFirestoreQuotaExhausted()) return;
+      try {
+        const sessionDocRef = doc(db, COLLECTION_NAME, SESSIONS_DOC_PATH);
+        unsubscribeFirestore = onSnapshot(sessionDocRef, (snap) => {
+          if (!isSubscribed || !snap.exists()) return;
+          const data = snap.data();
+          const userKey = user.id;
+          const aliasKey = `user_${user.username.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+          const record = (data[userKey] || data[aliasKey]) as ActiveSessionRecord | undefined;
 
-        if (record && record.sessionId && record.sessionId !== localSessionId) {
-          console.warn(`[Anti-Concurrent] Session revoked for ${user.username}. Superseded by new session: ${record.sessionId}`);
-          onRevoked(record);
-        }
-      }, (error) => {
-        console.warn('Firestore session listener note:', error);
-      });
-    } catch (e) {
-      console.warn('Could not establish Firestore session listener', e);
-    }
-  });
+          if (record && record.sessionId && record.sessionId !== localSessionId) {
+            console.warn(`[Anti-Concurrent] Session revoked for ${user.username}. Superseded by new session: ${record.sessionId}`);
+            onRevoked(record);
+          }
+        }, (error) => {
+          const errMsg = error?.message || String(error);
+          if ((error as any)?.code === 'resource-exhausted' || errMsg.includes('Quota limit exceeded') || errMsg.includes('resource-exhausted')) {
+            markFirestoreQuotaExhausted(1440);
+            if (unsubscribeFirestore) {
+              try { unsubscribeFirestore(); } catch {}
+              unsubscribeFirestore = null;
+            }
+          }
+        });
+      } catch {
+        // non-fatal
+      }
+    }).catch(() => {});
+  }
 
   // 2. Periodic Heartbeat & Fallback Poll every 60 seconds
   const intervalId = setInterval(async () => {
@@ -253,7 +274,10 @@ export function subscribeToUserSession(
     isSubscribed = false;
     clearInterval(intervalId);
     if (unsubscribeFirestore) {
-      unsubscribeFirestore();
+      try {
+        unsubscribeFirestore();
+      } catch {}
+      unsubscribeFirestore = null;
     }
   };
 }
@@ -265,18 +289,20 @@ export async function clearUserSession(user: AppUser): Promise<void> {
   clearLocalSessionId();
   if (!user) return;
 
-  try {
-    await ensureFirebaseAuth();
-    const sessionDocRef = doc(db, COLLECTION_NAME, SESSIONS_DOC_PATH);
-    const snap = await getDoc(sessionDocRef);
-    if (snap.exists()) {
-      const data = snap.data();
-      delete data[user.id];
-      delete data[`user_${user.username.toLowerCase().replace(/[^a-z0-9]/g, '_')}`];
-      await setDoc(sessionDocRef, data);
+  if (!isFirestoreQuotaExhausted()) {
+    try {
+      await ensureFirebaseAuth();
+      const sessionDocRef = doc(db, COLLECTION_NAME, SESSIONS_DOC_PATH);
+      const snap = await getDoc(sessionDocRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        delete data[user.id];
+        delete data[`user_${user.username.toLowerCase().replace(/[^a-z0-9]/g, '_')}`];
+        await setDoc(sessionDocRef, data);
+      }
+    } catch {
+      // ignore
     }
-  } catch {
-    // ignore
   }
 
   try {

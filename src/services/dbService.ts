@@ -1,6 +1,7 @@
 import { DbState, Country, League, Team, Match, AppUser } from '../types';
 import defaultDatabaseData from '../data/defaultDatabase.json';
 import { sanitizeAndCleanDb } from '../utils/dbSanitizer';
+import { ensureCanonicalCountriesAndLeagues } from '../utils/countryLeagueHelper';
 import {
   saveDbToFirestore,
   fetchDbFromFirestore,
@@ -286,8 +287,11 @@ export async function fetchDatabaseState(): Promise<DbState> {
     users: mergedUsers,
   };
 
+  // Garante que países canônicos (Islândia, Noruega, etc.), suas ligas e times padrão existam e estejam linkados
+  const enrichedDb = ensureCanonicalCountriesAndLeagues(rawResult);
+
   // Sanitiza e corrige o banco de dados contra anomalias/duplicidades/ligas cruzadas
-  const { cleanedDb, stats } = sanitizeAndCleanDb(rawResult);
+  const { cleanedDb, stats } = sanitizeAndCleanDb(enrichedDb);
   cleanedDb.users = mergedUsers;
 
   // Save to LocalStorage so future access is instantaneous

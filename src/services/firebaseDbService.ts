@@ -84,20 +84,47 @@ let cachedFirestoreState: { timestamp: string; data: DbState } | null = null;
 let lastLocalSavedTimestamp: string | null = null;
 
 // Circuit breaker for Firestore free-tier daily write quota limits
+const QUOTA_STORAGE_KEY = 'firestore_quota_exhausted_until';
 let isQuotaExhausted = false;
 let quotaExhaustedResetTime = 0;
 
 export function isFirestoreQuotaExhausted(): boolean {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(QUOTA_STORAGE_KEY) || sessionStorage.getItem(QUOTA_STORAGE_KEY);
+      if (stored) {
+        const until = parseInt(stored, 10);
+        if (!isNaN(until) && Date.now() < until) {
+          isQuotaExhausted = true;
+          quotaExhaustedResetTime = until;
+          return true;
+        } else {
+          localStorage.removeItem(QUOTA_STORAGE_KEY);
+          sessionStorage.removeItem(QUOTA_STORAGE_KEY);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
   if (isQuotaExhausted && Date.now() > quotaExhaustedResetTime) {
     isQuotaExhausted = false;
   }
   return isQuotaExhausted;
 }
 
-export function markFirestoreQuotaExhausted(cooldownMinutes: number = 30) {
+export function markFirestoreQuotaExhausted(cooldownMinutes: number = 1440) {
   isQuotaExhausted = true;
   quotaExhaustedResetTime = Date.now() + cooldownMinutes * 60 * 1000;
-  console.warn(`[Firestore Quota Guard] Limite de cota diária de gravações do Firestore atingido. Sistema operando de forma 100% segura com servidor API e armazenamento local durante os próximos ${cooldownMinutes} minutos.`);
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(QUOTA_STORAGE_KEY, String(quotaExhaustedResetTime));
+      sessionStorage.setItem(QUOTA_STORAGE_KEY, String(quotaExhaustedResetTime));
+    } catch {
+      // ignore
+    }
+  }
+  console.warn(`[Firestore Quota Guard] Limite de cota diária do Firestore atingido. Sistema operando com total persistência e integridade no servidor API e LocalStorage pelos próximos ${cooldownMinutes} minutos.`);
 }
 
 export interface CloudSyncStats {
@@ -263,7 +290,7 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
       errMsg.includes('Quota limit exceeded') ||
       errMsg.includes('quota metric')
     ) {
-      markFirestoreQuotaExhausted(30);
+      markFirestoreQuotaExhausted(1440);
       return {
         success: false,
         error: 'Quota de gravação diária do Firestore atingida. O sistema continua operando e salvando com segurança no servidor e armazenamento local.',
@@ -290,6 +317,10 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
  * Fetches the complete DbState from Firestore with ultra-fast parallel document retrieval.
  */
 export async function fetchDbFromFirestore(): Promise<DbState | null> {
+  if (isFirestoreQuotaExhausted()) {
+    return null;
+  }
+
   try {
     await ensureFirebaseAuth();
 
@@ -367,13 +398,26 @@ export async function fetchDbFromFirestore(): Promise<DbState | null> {
       referees,
     };
   } catch (error: any) {
-    console.error('Error fetching state from Firestore:', error);
-    if (error?.message?.includes('not found') || error?.code === 'not-found') {
+    const errMsg = error?.message || String(error);
+    const errCode = error?.code || '';
+
+    if (
+      errCode === 'resource-exhausted' ||
+      errMsg.includes('resource-exhausted') ||
+      errMsg.includes('Quota limit exceeded') ||
+      errMsg.includes('quota metric')
+    ) {
+      markFirestoreQuotaExhausted(1440);
+      return null;
+    }
+
+    console.warn('Firestore fetch note:', errMsg);
+    if (errMsg.includes('not found') || errCode === 'not-found') {
       try {
         db = getFirestore(app);
         return await fetchDbFromFirestore();
-      } catch (fallbackErr) {
-        console.error('Fallback fetch also failed:', fallbackErr);
+      } catch {
+        // ignore
       }
     }
     return null;
@@ -393,8 +437,12 @@ export function subscribeToFirestoreSync(
   let lastProcessedUpdatedAt: string | null = null;
   let isFetching = false;
 
+  if (isFirestoreQuotaExhausted()) {
+    return () => {};
+  }
+
   ensureFirebaseAuth().then(() => {
-    if (!isSubscribed) return;
+    if (!isSubscribed || isFirestoreQuotaExhausted()) return;
     try {
       const metaDoc = doc(db, COLLECTION_NAME, 'meta');
       unsubscribeSnapshot = onSnapshot(metaDoc, async (snap) => {
@@ -424,7 +472,7 @@ export function subscribeToFirestoreSync(
             } else if (isSubscribed) {
               onRemoteChange();
             }
-          } catch (e) {
+          } catch {
             if (isSubscribed) onRemoteChange();
           } finally {
             isFetching = false;
@@ -439,7 +487,13 @@ export function subscribeToFirestoreSync(
           errMsg.includes('Quota limit exceeded') ||
           errMsg.includes('quota metric')
         ) {
-          markFirestoreQuotaExhausted(30);
+          markFirestoreQuotaExhausted(1440);
+          if (unsubscribeSnapshot) {
+            try {
+              unsubscribeSnapshot();
+            } catch {}
+            unsubscribeSnapshot = null;
+          }
           console.warn('[Firestore] Inscrição em tempo real pausada temporariamente devido ao limite de cota diária. Operando em modo de alta velocidade offline/local.');
           return;
         }
@@ -455,7 +509,10 @@ export function subscribeToFirestoreSync(
   return () => {
     isSubscribed = false;
     if (unsubscribeSnapshot) {
-      unsubscribeSnapshot();
+      try {
+        unsubscribeSnapshot();
+      } catch {}
+      unsubscribeSnapshot = null;
     }
   };
 }
@@ -493,6 +550,7 @@ export function computeCloudStats(dbState: DbState): CloudSyncStats {
  * Explicitly removes a user from Firestore (used only when Admin deletes user).
  */
 export async function deleteUserFromFirestore(userId: string): Promise<void> {
+  if (isFirestoreQuotaExhausted()) return;
   try {
     await ensureFirebaseAuth();
     const snap = await getDoc(doc(db, COLLECTION_NAME, 'users'));
@@ -504,8 +562,13 @@ export async function deleteUserFromFirestore(userId: string): Promise<void> {
         updatedAt: new Date().toISOString(),
       });
     }
-  } catch (err) {
-    console.warn('Could not delete user from Firestore:', err);
+  } catch (err: any) {
+    const errMsg = err?.message || String(err);
+    if (err?.code === 'resource-exhausted' || errMsg.includes('Quota limit exceeded') || errMsg.includes('resource-exhausted')) {
+      markFirestoreQuotaExhausted(1440);
+    } else {
+      console.warn('Could not delete user from Firestore:', err);
+    }
   }
 }
 
