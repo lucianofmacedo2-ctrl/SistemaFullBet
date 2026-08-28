@@ -137,29 +137,7 @@ export async function registerActiveSession(user: AppUser, preferredSessionId?: 
 export async function sendSessionHeartbeat(user: AppUser, sessionId: string): Promise<void> {
   if (!sessionId || !user) return;
 
-  try {
-    await ensureFirebaseAuth();
-    const sessionDocRef = doc(db, COLLECTION_NAME, SESSIONS_DOC_PATH);
-    const snap = await getDoc(sessionDocRef);
-    if (snap.exists()) {
-      const data = snap.data();
-      const currentRemote = data[user.id] as ActiveSessionRecord | undefined;
-      // Only update heartbeat if this session is STILL the active one on the server
-      if (currentRemote && currentRemote.sessionId === sessionId) {
-        await setDoc(sessionDocRef, {
-          [user.id]: {
-            ...currentRemote,
-            lastHeartbeat: Date.now(),
-            updatedAt: new Date().toISOString(),
-          },
-        }, { merge: true });
-      }
-    }
-  } catch (err) {
-    // non-fatal
-  }
-
-  // Also notify server API
+  // Lightweight server heartbeat notification without triggering Firestore document writes
   try {
     await fetch('/api/sessions/heartbeat', {
       method: 'POST',
@@ -256,7 +234,7 @@ export function subscribeToUserSession(
     }
   });
 
-  // 2. Periodic Heartbeat & Fallback Poll every 15 seconds
+  // 2. Periodic Heartbeat & Fallback Poll every 60 seconds
   const intervalId = setInterval(async () => {
     if (!isSubscribed) return;
 
@@ -269,7 +247,7 @@ export function subscribeToUserSession(
       console.warn(`[Anti-Concurrent] Polling detected session invalidation for ${user.username}`);
       onRevoked(remoteInfo);
     }
-  }, 15000);
+  }, 60000);
 
   return () => {
     isSubscribed = false;

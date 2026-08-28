@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BarChart3, Trophy, Shield, Activity, Target, Zap, ArrowRight } from 'lucide-react';
-import { DbState } from '../types';
+import { DbState, Match } from '../types';
 import { LeagueStandings } from './LeagueStandings';
 
 interface StatsDashboardProps {
@@ -9,50 +9,69 @@ interface StatsDashboardProps {
 }
 
 export const StatsDashboard: React.FC<StatsDashboardProps> = ({ dbState, onNavigateToAnalysis }) => {
-  const matches = Array.isArray(dbState.matches) ? dbState.matches : [];
-  const teams = Array.isArray(dbState.teams) ? dbState.teams : [];
-  const leagues = Array.isArray(dbState.leagues) ? dbState.leagues : [];
+  const matches = useMemo(() => (Array.isArray(dbState.matches) ? dbState.matches : []), [dbState.matches]);
+  const teams = useMemo(() => (Array.isArray(dbState.teams) ? dbState.teams : []), [dbState.teams]);
+  const leagues = useMemo(() => (Array.isArray(dbState.leagues) ? dbState.leagues : []), [dbState.leagues]);
 
-  const totalMatches = matches.length;
-  const finishedMatches = matches.filter(m => m.status === 'FINALIZADO');
-  const scheduledMatches = matches.filter(m => m.status === 'AGENDADO');
-  const liveMatches = matches.filter(m => m.status === 'EM_ANDAMENTO');
+  const { totalMatches, finishedMatches, scheduledMatches, liveMatches, totalGoals, avgGoals, sortedTeams } = useMemo(() => {
+    const total = matches.length;
+    const fin: Match[] = [];
+    const sched: Match[] = [];
+    const live: Match[] = [];
+    let goals = 0;
 
-  let totalGoals = 0;
-  finishedMatches.forEach(m => {
-    totalGoals += (m.homeScore || 0) + (m.awayScore || 0);
-  });
-
-  const avgGoals = finishedMatches.length > 0 ? (totalGoals / finishedMatches.length).toFixed(2) : '0.00';
-
-  // Team Goals & Wins calculation
-  const teamStatsMap: Record<string, { name: string; goals: string; matches: number; wins: number; logoUrl?: string }> = {};
-
-  teams.forEach(t => {
-    teamStatsMap[t.id] = { name: t.name, goals: '0', matches: 0, wins: 0, logoUrl: t.logoUrl };
-  });
-
-  finishedMatches.forEach(m => {
-    const hScore = m.homeScore || 0;
-    const aScore = m.awayScore || 0;
-
-    if (teamStatsMap[m.homeTeamId]) {
-      teamStatsMap[m.homeTeamId].matches += 1;
-      teamStatsMap[m.homeTeamId].goals = String(parseInt(teamStatsMap[m.homeTeamId].goals, 10) + hScore);
-      if (hScore > aScore) teamStatsMap[m.homeTeamId].wins += 1;
+    for (const m of matches) {
+      if (m.status === 'FINALIZADO') {
+        fin.push(m);
+        goals += (m.homeScore || 0) + (m.awayScore || 0);
+      } else if (m.status === 'AGENDADO') {
+        sched.push(m);
+      } else if (m.status === 'EM_ANDAMENTO') {
+        live.push(m);
+      }
     }
 
-    if (teamStatsMap[m.awayTeamId]) {
-      teamStatsMap[m.awayTeamId].matches += 1;
-      teamStatsMap[m.awayTeamId].goals = String(parseInt(teamStatsMap[m.awayTeamId].goals, 10) + aScore);
-      if (aScore > hScore) teamStatsMap[m.awayTeamId].wins += 1;
-    }
-  });
+    const calculatedAvgGoals = fin.length > 0 ? (goals / fin.length).toFixed(2) : '0.00';
 
-  const sortedTeams = Object.values(teamStatsMap)
-    .filter(t => t.matches > 0)
-    .sort((a, b) => parseInt(b.goals, 10) - parseInt(a.goals, 10))
-    .slice(0, 5);
+    // Team Goals & Wins calculation
+    const teamStatsMap: Record<string, { name: string; goals: string; matches: number; wins: number; logoUrl?: string }> = {};
+
+    teams.forEach(t => {
+      teamStatsMap[t.id] = { name: t.name, goals: '0', matches: 0, wins: 0, logoUrl: t.logoUrl };
+    });
+
+    fin.forEach(m => {
+      const hScore = m.homeScore || 0;
+      const aScore = m.awayScore || 0;
+
+      if (teamStatsMap[m.homeTeamId]) {
+        teamStatsMap[m.homeTeamId].matches += 1;
+        teamStatsMap[m.homeTeamId].goals = String(parseInt(teamStatsMap[m.homeTeamId].goals, 10) + hScore);
+        if (hScore > aScore) teamStatsMap[m.homeTeamId].wins += 1;
+      }
+
+      if (teamStatsMap[m.awayTeamId]) {
+        teamStatsMap[m.awayTeamId].matches += 1;
+        teamStatsMap[m.awayTeamId].goals = String(parseInt(teamStatsMap[m.awayTeamId].goals, 10) + aScore);
+        if (aScore > hScore) teamStatsMap[m.awayTeamId].wins += 1;
+      }
+    });
+
+    const topTeams = Object.values(teamStatsMap)
+      .filter(t => t.matches > 0)
+      .sort((a, b) => parseInt(b.goals, 10) - parseInt(a.goals, 10))
+      .slice(0, 5);
+
+    return {
+      totalMatches: total,
+      finishedMatches: fin,
+      scheduledMatches: sched,
+      liveMatches: live,
+      totalGoals: goals,
+      avgGoals: calculatedAvgGoals,
+      sortedTeams: topTeams,
+    };
+  }, [matches, teams]);
 
   return (
     <div className="space-y-6">

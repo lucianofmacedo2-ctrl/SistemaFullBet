@@ -1828,209 +1828,251 @@ export default function App() {
         )}
       </main>
 
-      {/* Modals */}
-      <MatchStatsModal
-        isOpen={isStatsModalOpen}
-        onClose={() => setIsStatsModalOpen(false)}
-        match={statsMatch}
-        isMaster={isMaster}
-        onSaveStats={handleSaveStats}
-        onOpenPressureChartModal={handleOpenPressureChartModal}
-      />
+      {/* Modals - Rendered on-demand to guarantee instantaneous 60fps performance */}
+      {isStatsModalOpen && (
+        <MatchStatsModal
+          isOpen={isStatsModalOpen}
+          onClose={() => setIsStatsModalOpen(false)}
+          match={statsMatch}
+          isMaster={isMaster}
+          onSaveStats={handleSaveStats}
+          onOpenPressureChartModal={handleOpenPressureChartModal}
+        />
+      )}
 
-      <PressureChartImportModal
-        isOpen={isPressureModalOpen}
-        onClose={() => {
-          setIsPressureModalOpen(false);
-          setPressureSelectedMatchId(null);
-        }}
-        matches={dbState.matches}
-        selectedMatchId={pressureSelectedMatchId}
-        isMaster={isMaster}
-        onSavePressureData={handleSavePressureData}
-      />
+      {isPressureModalOpen && (
+        <PressureChartImportModal
+          isOpen={isPressureModalOpen}
+          onClose={() => {
+            setIsPressureModalOpen(false);
+            setPressureSelectedMatchId(null);
+          }}
+          matches={dbState.matches}
+          selectedMatchId={pressureSelectedMatchId}
+          isMaster={isMaster}
+          onSavePressureData={handleSavePressureData}
+        />
+      )}
 
-      <QuickScoreModal
-        isOpen={isQuickScoreModalOpen}
-        onClose={() => {
-          setIsQuickScoreModalOpen(false);
-          setQuickScoreMatch(null);
-        }}
-        match={quickScoreMatch}
-        allMatches={dbState.matches}
-        onSave={handleSaveQuickScore}
-        onSelectMatch={match => setQuickScoreMatch(match)}
-      />
+      {isQuickScoreModalOpen && (
+        <QuickScoreModal
+          isOpen={isQuickScoreModalOpen}
+          onClose={() => {
+            setIsQuickScoreModalOpen(false);
+            setQuickScoreMatch(null);
+          }}
+          match={quickScoreMatch}
+          allMatches={dbState.matches}
+          onSave={handleSaveQuickScore}
+          onSelectMatch={match => setQuickScoreMatch(match)}
+        />
+      )}
 
-      <MatchFormModal
-        isOpen={isMatchModalOpen}
-        onClose={() => setIsMatchModalOpen(false)}
-        dbState={dbState}
-        onSaveMatch={handleSaveMatch}
-        editingMatch={editingMatch}
-      />
+      {isMatchModalOpen && (
+        <MatchFormModal
+          isOpen={isMatchModalOpen}
+          onClose={() => setIsMatchModalOpen(false)}
+          dbState={dbState}
+          onSaveMatch={handleSaveMatch}
+          editingMatch={editingMatch}
+        />
+      )}
 
-      <EntityFormModal
-        isOpen={isEntityModalOpen}
-        onClose={() => setIsEntityModalOpen(false)}
-        dbState={dbState}
-        onSave={handleSaveEntity}
-        initialType={entityModalType}
-      />
+      {isEntityModalOpen && (
+        <EntityFormModal
+          isOpen={isEntityModalOpen}
+          onClose={() => setIsEntityModalOpen(false)}
+          dbState={dbState}
+          onSave={handleSaveEntity}
+          initialType={entityModalType}
+        />
+      )}
 
-      <EditEntityModal
-        isOpen={isEditEntityModalOpen}
-        onClose={() => setIsEditEntityModalOpen(false)}
-        entityType={editEntityType}
-        entityData={editEntityData}
-        dbState={dbState}
-        onSaveCountry={handleSaveEditCountry}
-        onSaveLeague={handleSaveEditLeague}
-        onSaveTeam={handleSaveEditTeam}
-      />
+      {isEditEntityModalOpen && (
+        <EditEntityModal
+          isOpen={isEditEntityModalOpen}
+          onClose={() => setIsEditEntityModalOpen(false)}
+          entityType={editEntityType}
+          entityData={editEntityData}
+          dbState={dbState}
+          onSaveCountry={handleSaveEditCountry}
+          onSaveLeague={handleSaveEditLeague}
+          onSaveTeam={handleSaveEditTeam}
+        />
+      )}
 
-      <BackupModal
-        isOpen={isBackupModalOpen}
-        onClose={() => setIsBackupModalOpen(false)}
-        dbState={dbState}
-        onImportDb={handleImportDb}
-        onClearDb={handleClearDb}
-        onOpenResetModal={() => setIsResetModalOpen(true)}
-      />
+      {isBackupModalOpen && (
+        <BackupModal
+          isOpen={isBackupModalOpen}
+          onClose={() => setIsBackupModalOpen(false)}
+          dbState={dbState}
+          onImportDb={handleImportDb}
+          onClearDb={handleClearDb}
+          onOpenResetModal={() => setIsResetModalOpen(true)}
+        />
+      )}
 
-      <ResetDatabaseModal
-        isOpen={isResetModalOpen}
-        onClose={() => setIsResetModalOpen(false)}
-        dbState={dbState}
-        onConfirmReset={handleConfirmResetDatabase}
-      />
+      {isResetModalOpen && (
+        <ResetDatabaseModal
+          isOpen={isResetModalOpen}
+          onClose={() => setIsResetModalOpen(false)}
+          dbState={dbState}
+          onConfirmReset={handleConfirmResetDatabase}
+        />
+      )}
 
-      <BulkTeamImportModal
-        isOpen={isBulkTeamModalOpen}
-        onClose={() => setIsBulkTeamModalOpen(false)}
-        dbState={dbState}
-        onBulkImportTeams={handleBulkImportTeams}
-        onOpenEntityModal={handleOpenEntityModal}
-      />
+      {isBulkTeamModalOpen && (
+        <BulkTeamImportModal
+          isOpen={isBulkTeamModalOpen}
+          onClose={() => setIsBulkTeamModalOpen(false)}
+          dbState={dbState}
+          onBulkImportTeams={handleBulkImportTeams}
+          onOpenEntityModal={handleOpenEntityModal}
+        />
+      )}
 
-      <BulkMatchImportModal
-        isOpen={isBulkMatchModalOpen}
-        onClose={() => setIsBulkMatchModalOpen(false)}
-        dbState={dbState}
-        onBulkImportMatches={handleBulkImportMatches}
-      />
+      {isBulkMatchModalOpen && (
+        <BulkMatchImportModal
+          isOpen={isBulkMatchModalOpen}
+          onClose={() => setIsBulkMatchModalOpen(false)}
+          dbState={dbState}
+          onBulkImportMatches={handleBulkImportMatches}
+        />
+      )}
 
-      <BulkMatchUpdateModal
-        isOpen={isBulkMatchUpdateModalOpen}
-        onClose={() => setIsBulkMatchUpdateModalOpen(false)}
-        dbState={dbState}
-        onBulkUpdateMatches={handleBulkUpdateMatches}
-      />
+      {isBulkMatchUpdateModalOpen && (
+        <BulkMatchUpdateModal
+          isOpen={isBulkMatchUpdateModalOpen}
+          onClose={() => setIsBulkMatchUpdateModalOpen(false)}
+          dbState={dbState}
+          onBulkUpdateMatches={handleBulkUpdateMatches}
+        />
+      )}
 
-      <CsvImportSyncModal
-        isOpen={isCsvImportModalOpen}
-        onClose={() => setIsCsvImportModalOpen(false)}
-        dbState={dbState}
-        onImportSuccess={handleCsvSyncComplete}
-      />
+      {isCsvImportModalOpen && (
+        <CsvImportSyncModal
+          isOpen={isCsvImportModalOpen}
+          onClose={() => setIsCsvImportModalOpen(false)}
+          dbState={dbState}
+          onImportSuccess={handleCsvSyncComplete}
+        />
+      )}
 
-      <SyncModal
-        isOpen={isSyncModalOpen}
-        onClose={() => setIsSyncModalOpen(false)}
-        dbState={dbState}
-        onSyncComplete={handleCsvSyncComplete}
-      />
+      {isSyncModalOpen && (
+        <SyncModal
+          isOpen={isSyncModalOpen}
+          onClose={() => setIsSyncModalOpen(false)}
+          dbState={dbState}
+          onSyncComplete={handleCsvSyncComplete}
+        />
+      )}
 
       {/* User Management Modal (Master Only) */}
-      <UserManagerModal
-        isOpen={isUserManagerModalOpen}
-        onClose={() => setIsUserManagerModalOpen(false)}
-        users={ensureDefaultUsers(dbState.users)}
-        currentAuthUser={currentUser}
-        onSaveUsers={handleSaveUsers}
-        onSwitchUser={handleSwitchUser}
-      />
+      {isUserManagerModalOpen && (
+        <UserManagerModal
+          isOpen={isUserManagerModalOpen}
+          onClose={() => setIsUserManagerModalOpen(false)}
+          users={ensureDefaultUsers(dbState.users)}
+          currentAuthUser={currentUser}
+          onSaveUsers={handleSaveUsers}
+          onSwitchUser={handleSwitchUser}
+        />
+      )}
 
       {/* Login Modal */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        users={ensureDefaultUsers(dbState.users)}
-        onLoginSuccess={handleLoginSuccess}
-        allowClose={!!currentUser && !!effectiveUserStatus?.canAccess}
-        initialUsername={loginInitialUsername}
-        isConsultaPortal={isConsultaPortalMode || currentUser?.role === 'CONSULTOR'}
-      />
+      {isLoginModalOpen && (
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          users={ensureDefaultUsers(dbState.users)}
+          onLoginSuccess={handleLoginSuccess}
+          allowClose={!!currentUser && !!effectiveUserStatus?.canAccess}
+          initialUsername={loginInitialUsername}
+          isConsultaPortal={isConsultaPortalMode || currentUser?.role === 'CONSULTOR'}
+        />
+      )}
 
       {/* Opportunities Hub & Value Scanner Modal */}
-      <OpportunitiesHubModal
-        isOpen={isOpportunitiesHubOpen}
-        onClose={() => setIsOpportunitiesHubOpen(false)}
-        dbState={dbState}
-        onSelectMatchAnalysis={(matchId) => {
-          setAnalysisTargetMatchId(matchId);
-          setActiveTab('analysis');
-          setIsOpportunitiesHubOpen(false);
-        }}
-        onRegisterBetToBankroll={handleOpenBankrollWithPrefill}
-      />
+      {isOpportunitiesHubOpen && (
+        <OpportunitiesHubModal
+          isOpen={isOpportunitiesHubOpen}
+          onClose={() => setIsOpportunitiesHubOpen(false)}
+          dbState={dbState}
+          onSelectMatchAnalysis={(matchId) => {
+            setAnalysisTargetMatchId(matchId);
+            setActiveTab('analysis');
+            setIsOpportunitiesHubOpen(false);
+          }}
+          onRegisterBetToBankroll={handleOpenBankrollWithPrefill}
+        />
+      )}
 
       {/* Radar de Gols 1º Tempo (Over 1.5 HT) Modal */}
-      <HtGoalsScannerModal
-        isOpen={isHtGoalsScannerOpen}
-        onClose={() => setIsHtGoalsScannerOpen(false)}
-        dbState={dbState}
-        onSelectMatchForAnalysis={(matchId) => {
-          setAnalysisTargetMatchId(matchId);
-          setActiveTab('analysis');
-          setIsHtGoalsScannerOpen(false);
-        }}
-      />
+      {isHtGoalsScannerOpen && (
+        <HtGoalsScannerModal
+          isOpen={isHtGoalsScannerOpen}
+          onClose={() => setIsHtGoalsScannerOpen(false)}
+          dbState={dbState}
+          onSelectMatchForAnalysis={(matchId) => {
+            setAnalysisTargetMatchId(matchId);
+            setActiveTab('analysis');
+            setIsHtGoalsScannerOpen(false);
+          }}
+        />
+      )}
 
       {/* Bankroll Management & Tracker Modal */}
-      <BankrollTrackerModal
-        isOpen={isBankrollTrackerOpen}
-        onClose={() => {
-          setIsBankrollTrackerOpen(false);
-          setBankrollPrefillBet(null);
-        }}
-        prefillBet={bankrollPrefillBet}
-      />
+      {isBankrollTrackerOpen && (
+        <BankrollTrackerModal
+          isOpen={isBankrollTrackerOpen}
+          onClose={() => {
+            setIsBankrollTrackerOpen(false);
+            setBankrollPrefillBet(null);
+          }}
+          prefillBet={bankrollPrefillBet}
+        />
+      )}
 
       {/* Relatório de Times Cadastrados Modal */}
-      <TeamsReportModal
-        isOpen={isTeamsReportModalOpen}
-        onClose={() => setIsTeamsReportModalOpen(false)}
-        dbState={dbState}
-      />
+      {isTeamsReportModalOpen && (
+        <TeamsReportModal
+          isOpen={isTeamsReportModalOpen}
+          onClose={() => setIsTeamsReportModalOpen(false)}
+          dbState={dbState}
+        />
+      )}
 
       {/* Diagnóstico & Correção Automática de Times e Ligas */}
-      <DbSanitizerModal
-        isOpen={isSanitizerModalOpen}
-        onClose={() => setIsSanitizerModalOpen(false)}
-        dbState={dbState}
-        onApplyCleanedDb={handleApplyCleanedDb}
-      />
+      {isSanitizerModalOpen && (
+        <DbSanitizerModal
+          isOpen={isSanitizerModalOpen}
+          onClose={() => setIsSanitizerModalOpen(false)}
+          dbState={dbState}
+          onApplyCleanedDb={handleApplyCleanedDb}
+        />
+      )}
 
       {/* Central de Controle da Nuvem Firestore (Ao Vivo) */}
-      <CloudSyncModal
-        isOpen={isCloudModalOpen}
-        onClose={() => setIsCloudModalOpen(false)}
-        dbState={dbState}
-        onApplyCloudDb={async (cloudDb) => {
-          setDbState(cloudDb);
-          setNotifications(prev => [
-            ...prev,
-            {
-              id: `cloud-sync-${Date.now()}`,
-              type: 'team',
-              entityId: 'FIRESTORE',
-              name: 'Banco de Dados Sincronizado com a Nuvem Firestore!',
-              timestamp: Date.now(),
-            },
-          ]);
-        }}
-      />
+      {isCloudModalOpen && (
+        <CloudSyncModal
+          isOpen={isCloudModalOpen}
+          onClose={() => setIsCloudModalOpen(false)}
+          dbState={dbState}
+          onApplyCloudDb={async (cloudDb) => {
+            setDbState(cloudDb);
+            setNotifications(prev => [
+              ...prev,
+              {
+                id: `cloud-sync-${Date.now()}`,
+                type: 'team',
+                entityId: 'FIRESTORE',
+                name: 'Banco de Dados Sincronizado com a Nuvem Firestore!',
+                timestamp: Date.now(),
+              },
+            ]);
+          }}
+        />
+      )}
 
       {/* Unique ID Toast Notifications */}
       <ToastNotification
@@ -2039,19 +2081,23 @@ export default function App() {
       />
 
       {/* Documentação Técnica Oficial (Salvar em PDF) */}
-      <TechDocsModal
-        isOpen={isTechDocsOpen}
-        onClose={() => setIsTechDocsOpen(false)}
-      />
+      {isTechDocsOpen && (
+        <TechDocsModal
+          isOpen={isTechDocsOpen}
+          onClose={() => setIsTechDocsOpen(false)}
+        />
+      )}
 
       {/* Concurrent / Simultaneous Session Restriction Overlay */}
-      <ConcurrentSessionOverlay
-        isOpen={isConcurrentLocked}
-        user={currentUser}
-        remoteInfo={concurrentRemoteInfo}
-        onReconnectHere={handleReconnectSessionHere}
-        onSwitchAccount={handleSwitchAccountFromLock}
-      />
+      {isConcurrentLocked && (
+        <ConcurrentSessionOverlay
+          isOpen={isConcurrentLocked}
+          user={currentUser}
+          remoteInfo={concurrentRemoteInfo}
+          onReconnectHere={handleReconnectSessionHere}
+          onSwitchAccount={handleSwitchAccountFromLock}
+        />
+      )}
     </div>
   );
 }

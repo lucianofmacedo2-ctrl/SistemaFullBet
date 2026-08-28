@@ -313,13 +313,28 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
     });
   }, [dbState.matches, targetDates, searchTerm, selectedLeagueId, selectedStatus]);
 
-  // Metrics for filtered daily matches
+  // Metrics for filtered daily matches (computed in a single O(N) pass using memoized completeness)
   const totalInView = dailyMatches.length;
-  const scheduledCount = dailyMatches.filter(m => m.status === 'AGENDADO').length;
-  const liveCount = dailyMatches.filter(m => m.status === 'EM_ANDAMENTO').length;
-  const finishedCount = dailyMatches.filter(m => m.status === 'FINALIZADO').length;
-  const completeCount = dailyMatches.filter(m => m.status === 'AGENDADO' && checkMatchCompleteness(m).isComplete).length;
-  const incompleteCount = dailyMatches.filter(m => m.status === 'AGENDADO' && !checkMatchCompleteness(m).isComplete).length;
+  const { scheduledCount, liveCount, finishedCount, completeCount, incompleteCount } = useMemo(() => {
+    let sched = 0;
+    let live = 0;
+    let fin = 0;
+    let comp = 0;
+    let incomp = 0;
+    for (const m of dailyMatches) {
+      if (m.status === 'AGENDADO') {
+        sched++;
+        const isComp = completenessMap.get(m.id)?.isPreMatchComplete ?? checkMatchCompleteness(m).isComplete;
+        if (isComp) comp++;
+        else incomp++;
+      } else if (m.status === 'EM_ANDAMENTO') {
+        live++;
+      } else if (m.status === 'FINALIZADO') {
+        fin++;
+      }
+    }
+    return { scheduledCount: sched, liveCount: live, finishedCount: fin, completeCount: comp, incompleteCount: incomp };
+  }, [dailyMatches, completenessMap]);
 
   // Navigation handlers for custom date
   const handlePrevDay = () => {
