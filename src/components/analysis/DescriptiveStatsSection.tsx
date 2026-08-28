@@ -9,17 +9,14 @@ interface DescriptiveStatsSectionProps {
 
 export const DescriptiveStatsSection: React.FC<DescriptiveStatsSectionProps> = ({ analysis }) => {
   const { homeTeam, awayTeam, descriptiveMetrics, venueMode, sampleSize } = analysis;
-  const [filterCategory, setFilterCategory] = useState<'ALL' | 'GOALS' | 'CORNERS' | 'SHOTS' | 'CARDS' | 'ODDS'>('ALL');
+  const [filterCategory, setFilterCategory] = useState<
+    'ALL' | 'Geral' | 'Finalizações & xG' | 'Ataque & Criação' | 'Construção & Passes' | 'Defesa & Duelos' | 'Goleiro & Baliza'
+  >('ALL');
   const [showExplanation, setShowExplanation] = useState(false);
 
   const filteredMetrics = descriptiveMetrics.filter(m => {
     if (filterCategory === 'ALL') return true;
-    if (filterCategory === 'GOALS') return m.name.toLowerCase().includes('gols');
-    if (filterCategory === 'CORNERS') return m.name.toLowerCase().includes('escanteios');
-    if (filterCategory === 'SHOTS') return m.name.toLowerCase().includes('finalizações') || m.name.toLowerCase().includes('chutes');
-    if (filterCategory === 'CARDS') return m.name.toLowerCase().includes('cartões');
-    if (filterCategory === 'ODDS') return m.name.toLowerCase().includes('odds');
-    return true;
+    return m.category === filterCategory;
   });
 
   const getConsistencyBadge = (consistency: 'Alta Regularidade' | 'Moderada' | 'Volátil / Disperso', cv: number) => {
@@ -104,74 +101,30 @@ export const DescriptiveStatsSection: React.FC<DescriptiveStatsSectionProps> = (
         </div>
       )}
 
-      {/* Filter Tabs */}
+      {/* Filter Tabs by Sector */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-bold">
-        <button
-          type="button"
-          onClick={() => setFilterCategory('ALL')}
-          className={`px-3 py-1.5 rounded-lg transition-all ${
-            filterCategory === 'ALL'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
-        >
-          Todas ({descriptiveMetrics.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilterCategory('GOALS')}
-          className={`px-3 py-1.5 rounded-lg transition-all ${
-            filterCategory === 'GOALS'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
-        >
-          Gols
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilterCategory('CORNERS')}
-          className={`px-3 py-1.5 rounded-lg transition-all ${
-            filterCategory === 'CORNERS'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
-        >
-          Escanteios
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilterCategory('SHOTS')}
-          className={`px-3 py-1.5 rounded-lg transition-all ${
-            filterCategory === 'SHOTS'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
-        >
-          Finalizações
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilterCategory('CARDS')}
-          className={`px-3 py-1.5 rounded-lg transition-all ${
-            filterCategory === 'CARDS'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
-        >
-          Cartões
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilterCategory('ODDS')}
-          className={`px-3 py-1.5 rounded-lg transition-all ${
-            filterCategory === 'ODDS'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
-        >
-          Odds
-        </button>
+        {[
+          { id: 'ALL', label: 'Todas as Métricas', count: descriptiveMetrics.length },
+          { id: 'Geral', label: 'Geral & Gols', count: descriptiveMetrics.filter(m => m.category === 'Geral').length },
+          { id: 'Finalizações & xG', label: 'Finalizações & xG', count: descriptiveMetrics.filter(m => m.category === 'Finalizações & xG').length },
+          { id: 'Ataque & Criação', label: 'Ataque & Criação', count: descriptiveMetrics.filter(m => m.category === 'Ataque & Criação').length },
+          { id: 'Construção & Passes', label: 'Construção & Passes', count: descriptiveMetrics.filter(m => m.category === 'Construção & Passes').length },
+          { id: 'Defesa & Duelos', label: 'Defesa & Duelos', count: descriptiveMetrics.filter(m => m.category === 'Defesa & Duelos').length },
+          { id: 'Goleiro & Baliza', label: 'Goleiro & Baliza', count: descriptiveMetrics.filter(m => m.category === 'Goleiro & Baliza').length },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setFilterCategory(tab.id as any)}
+            className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-all cursor-pointer ${
+              filterCategory === tab.id
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            {tab.label} ({tab.count})
+          </button>
+        ))}
       </div>
 
       {/* Table Container */}
@@ -216,10 +169,17 @@ export const DescriptiveStatsSection: React.FC<DescriptiveStatsSectionProps> = (
           <tbody className="divide-y divide-slate-200 font-medium">
             {filteredMetrics.map((metric, idx) => (
               <tr key={idx} className={idx % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}>
-                {/* Metric Name */}
-                <td className="p-3 font-bold text-slate-900 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-                  {metric.name}
+                {/* Metric Name & Category Pill */}
+                <td className="p-3 font-bold text-slate-900">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                    <span>{metric.name}</span>
+                  </div>
+                  {metric.category && metric.category !== 'Geral' && (
+                    <span className="inline-block mt-0.5 text-[9px] px-1.5 py-0.2 text-slate-500 bg-slate-100 rounded font-normal">
+                      {metric.category}
+                    </span>
+                  )}
                 </td>
 
                 {/* Home Stats */}

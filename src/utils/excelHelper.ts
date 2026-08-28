@@ -57,21 +57,118 @@ export interface ParsedMatchUpdateRow {
   halftimeHomeScore?: number | null;
   halftimeAwayScore?: number | null;
 
-  // Métricas FT
-  xgHomeFT?: number | null;
-  xgAwayFT?: number | null;
-  shotsHomeFT?: number | null;
-  shotsAwayFT?: number | null;
-  shotsOnTargetHomeFT?: number | null;
-  shotsOnTargetAwayFT?: number | null;
-  foulsHomeFT?: number | null;
-  foulsAwayFT?: number | null;
-  cornersHomeFT?: number | null;
-  cornersAwayFT?: number | null;
+  // Posse de Bola
+  possessionHomeFT?: number | null;
+  possessionAwayFT?: number | null;
+
+  // Cartões
   yellowCardsHomeFT?: number | null;
   yellowCardsAwayFT?: number | null;
   redCardsHomeFT?: number | null;
   redCardsAwayFT?: number | null;
+
+  // Grupo Finalizações
+  xgHomeFT?: number | null;
+  xgAwayFT?: number | null;
+  xgotHomeFT?: number | null;
+  xgotAwayFT?: number | null;
+  shotsHomeFT?: number | null;
+  shotsAwayFT?: number | null;
+  shotsOnTargetHomeFT?: number | null;
+  shotsOnTargetAwayFT?: number | null;
+  shotsOffTargetHomeFT?: number | null;
+  shotsOffTargetAwayFT?: number | null;
+  shotsBlockedHomeFT?: number | null;
+  shotsBlockedAwayFT?: number | null;
+  shotsInsideBoxHomeFT?: number | null;
+  shotsInsideBoxAwayFT?: number | null;
+  shotsOutsideBoxHomeFT?: number | null;
+  shotsOutsideBoxAwayFT?: number | null;
+  shotsWoodworkHomeFT?: number | null;
+  shotsWoodworkAwayFT?: number | null;
+
+  // Grupo Ataques
+  bigChancesHomeFT?: number | null;
+  bigChancesAwayFT?: number | null;
+  cornersHomeFT?: number | null;
+  cornersAwayFT?: number | null;
+  touchesOppBoxHomeFT?: number | null;
+  touchesOppBoxAwayFT?: number | null;
+  throughBallsHomeFT?: number | null;
+  throughBallsAwayFT?: number | null;
+  offsidesHomeFT?: number | null;
+  offsidesAwayFT?: number | null;
+  foulsDrawnHomeFT?: number | null;
+  foulsDrawnAwayFT?: number | null;
+
+  // Grupo Passes
+  passesAccurateHomeFT?: number | null;
+  passesTotalHomeFT?: number | null;
+  passesPctHomeFT?: number | null;
+  passesAccurateAwayFT?: number | null;
+  passesTotalAwayFT?: number | null;
+  passesPctAwayFT?: number | null;
+
+  longPassesAccurateHomeFT?: number | null;
+  longPassesTotalHomeFT?: number | null;
+  longPassesPctHomeFT?: number | null;
+  longPassesAccurateAwayFT?: number | null;
+  longPassesTotalAwayFT?: number | null;
+  longPassesPctAwayFT?: number | null;
+
+  finalThirdPassesAccurateHomeFT?: number | null;
+  finalThirdPassesTotalHomeFT?: number | null;
+  finalThirdPassesPctHomeFT?: number | null;
+  finalThirdPassesAccurateAwayFT?: number | null;
+  finalThirdPassesTotalAwayFT?: number | null;
+  finalThirdPassesPctAwayFT?: number | null;
+
+  crossesAccurateHomeFT?: number | null;
+  crossesTotalHomeFT?: number | null;
+  crossesPctHomeFT?: number | null;
+  crossesAccurateAwayFT?: number | null;
+  crossesTotalAwayFT?: number | null;
+  crossesPctAwayFT?: number | null;
+
+  xaHomeFT?: number | null;
+  xaAwayFT?: number | null;
+  throwInsHomeFT?: number | null;
+  throwInsAwayFT?: number | null;
+
+  // Grupo Defesa
+  foulsHomeFT?: number | null;
+  foulsAwayFT?: number | null;
+  tacklesAccurateHomeFT?: number | null;
+  tacklesTotalHomeFT?: number | null;
+  tacklesPctHomeFT?: number | null;
+  tacklesAccurateAwayFT?: number | null;
+  tacklesTotalAwayFT?: number | null;
+  tacklesPctAwayFT?: number | null;
+
+  duelsWonHomeFT?: number | null;
+  duelsWonAwayFT?: number | null;
+  clearancesHomeFT?: number | null;
+  clearancesAwayFT?: number | null;
+  interceptionsHomeFT?: number | null;
+  interceptionsAwayFT?: number | null;
+
+  errorsLeadToShotHomeFT?: number | null;
+  errorsLeadToShotAwayFT?: number | null;
+  errorsLeadToGoalHomeFT?: number | null;
+  errorsLeadToGoalAwayFT?: number | null;
+
+  goalkeeperDefActionHomeFT?: number | null;
+  goalkeeperDefActionAwayFT?: number | null;
+
+  // Grupo Goleiro
+  savesHomeFT?: number | null;
+  savesAwayFT?: number | null;
+  xgotFacedHomeFT?: number | null;
+  xgotFacedAwayFT?: number | null;
+  goalsPreventedHomeFT?: number | null;
+  goalsPreventedAwayFT?: number | null;
+  goalKicksHomeFT?: number | null;
+  goalKicksAwayFT?: number | null;
 
   // Odds FT
   oddHomeFT?: number | null;
@@ -140,20 +237,119 @@ export const EXCEL_HEADER_ALIASES = {
   ahHomeOdd: ['odd_handicap_asiatico_mandante_ft', 'odd_handicap_asiático_mandante_ft', 'b365ahh', 'ah_home_odd', 'ah_odd_home'],
   ahAwayLine: ['linha_handicap_asiatico_visitante_ft', 'linha_handicap_asiático_visitante_ft', 'aha', 'ah_away_line', 'ah_line_away'],
   ahAwayOdd: ['odd_handicap_asiatico_visitante_ft', 'odd_handicap_asiático_visitante_ft', 'b365aha', 'ah_away_odd', 'ah_odd_away'],
-  xgHome: ['xg_mandante_ft', 'xg_mandante', 'xg_home_ft', 'xg_home', 'hxg', 'xg_h'],
-  xgAway: ['xg_visitante_ft', 'xg_visitante', 'xg_away_ft', 'xg_away', 'axg', 'xg_a'],
-  shotsHome: ['finalizacoes_mandante_ft', 'finalizacoes_mandante', 'chutes_mandante', 'shots_home_ft', 'shots_home', 'hs'],
-  shotsAway: ['finalizacoes_visitante_ft', 'finalizacoes_visitante', 'chutes_visitante', 'shots_away_ft', 'shots_away', 'as'],
-  shotsOnTargetHome: ['chutes_gol_mandante_ft', 'chutes_gol_mandante', 'chutes_no_alvo_mandante', 'shots_on_target_home_ft', 'shots_on_target_home', 'hst'],
-  shotsOnTargetAway: ['chutes_gol_visitante_ft', 'chutes_gol_visitante', 'chutes_no_alvo_visitante', 'shots_on_target_away_ft', 'shots_on_target_away', 'ast'],
-  foulsHome: ['faltas_mandante_ft', 'faltas_mandante', 'fouls_home_ft', 'fouls_home', 'hf'],
-  foulsAway: ['faltas_visitante_ft', 'faltas_visitante', 'fouls_away_ft', 'fouls_away', 'af'],
-  cornersHome: ['escanteios_mandante_ft', 'escanteios_mandante', 'cantos_mandante', 'corners_home_ft', 'corners_home', 'hc'],
-  cornersAway: ['escanteios_visitante_ft', 'escanteios_visitante', 'cantos_visitante', 'corners_away_ft', 'corners_away', 'ac'],
+
+  // Posse de Bola
+  possessionHome: ['posse_bola_mandante_ft', 'posse_bola_mandante', 'posse_mandante_ft', 'posse_mandante', 'possession_home_ft', 'possession_home'],
+  possessionAway: ['posse_bola_visitante_ft', 'posse_bola_visitante', 'posse_visitante_ft', 'posse_visitante', 'possession_away_ft', 'possession_away'],
+
+  // Disciplina / Cartões
   yellowHome: ['cartao_amarelo_mandante_ft', 'cartao_amarelo_mandante', 'amarelos_mandante', 'yellow_cards_home_ft', 'yellow_cards_home', 'hy'],
   yellowAway: ['cartao_amarelo_visitante_ft', 'cartao_amarelo_visitante', 'amarelos_visitante', 'yellow_cards_away_ft', 'yellow_cards_away', 'ay'],
   redHome: ['cartao_vermelho_mandante_ft', 'cartao_vermelho_mandante', 'vermelhos_mandante', 'red_cards_home_ft', 'red_cards_home', 'hr'],
-  redAway: ['cartao_vermelho_visitante_ft', 'cartao_vermelho_visitante', 'vermelhos_visitante', 'red_cards_away_ft', 'red_cards_away', 'ar']
+  redAway: ['cartao_vermelho_visitante_ft', 'cartao_vermelho_visitante', 'vermelhos_visitante', 'red_cards_away_ft', 'red_cards_away', 'ar'],
+
+  // Grupo Finalizações
+  xgHome: ['finalizacoes_xg_mandante_ft', 'xg_mandante_ft', 'xg_mandante', 'xg_home_ft', 'xg_home', 'hxg', 'xg_h'],
+  xgAway: ['finalizacoes_xg_visitante_ft', 'xg_visitante_ft', 'xg_visitante', 'xg_away_ft', 'xg_away', 'axg', 'xg_a'],
+  xgotHome: ['finalizacoes_xgot_mandante_ft', 'xgot_mandante_ft', 'xgot_mandante', 'xgot_home_ft', 'xgot_home', 'hxgot'],
+  xgotAway: ['finalizacoes_xgot_visitante_ft', 'xgot_visitante_ft', 'xgot_visitante', 'xgot_away_ft', 'xgot_away', 'axgot'],
+  shotsHome: ['finalizacoes_totais_mandante_ft', 'finalizacoes_mandante_ft', 'finalizacoes_mandante', 'chutes_mandante', 'shots_home_ft', 'shots_home', 'hs'],
+  shotsAway: ['finalizacoes_totais_visitante_ft', 'finalizacoes_visitante_ft', 'finalizacoes_visitante', 'chutes_visitante', 'shots_away_ft', 'shots_away', 'as'],
+  shotsOnTargetHome: ['finalizacoes_no_alvo_mandante_ft', 'chutes_gol_mandante_ft', 'chutes_gol_mandante', 'chutes_no_alvo_mandante', 'shots_on_target_home_ft', 'shots_on_target_home', 'hst'],
+  shotsOnTargetAway: ['finalizacoes_no_alvo_visitante_ft', 'chutes_gol_visitante_ft', 'chutes_gol_visitante', 'chutes_no_alvo_visitante', 'shots_on_target_away_ft', 'shots_on_target_away', 'ast'],
+  shotsOffTargetHome: ['finalizacoes_para_fora_mandante_ft', 'chutes_fora_mandante_ft', 'shots_off_target_home_ft'],
+  shotsOffTargetAway: ['finalizacoes_para_fora_visitante_ft', 'chutes_fora_visitante_ft', 'shots_off_target_away_ft'],
+  shotsBlockedHome: ['finalizacoes_bloqueadas_mandante_ft', 'chutes_bloqueados_mandante_ft', 'shots_blocked_home_ft'],
+  shotsBlockedAway: ['finalizacoes_bloqueadas_visitante_ft', 'chutes_bloqueados_visitante_ft', 'shots_blocked_away_ft'],
+  shotsInsideBoxHome: ['finalizacoes_dentro_area_mandante_ft', 'chutes_dentro_area_mandante_ft', 'shots_inside_box_home_ft'],
+  shotsInsideBoxAway: ['finalizacoes_dentro_area_visitante_ft', 'chutes_dentro_area_visitante_ft', 'shots_inside_box_away_ft'],
+  shotsOutsideBoxHome: ['finalizacoes_fora_area_mandante_ft', 'chutes_fora_da_area_mandante_ft', 'shots_outside_box_home_ft'],
+  shotsOutsideBoxAway: ['finalizacoes_fora_area_visitante_ft', 'chutes_fora_da_area_visitante_ft', 'shots_outside_box_away_ft'],
+  shotsWoodworkHome: ['finalizacoes_trave_mandante_ft', 'chutes_trave_mandante_ft', 'shots_woodwork_home_ft', 'trave_mandante_ft'],
+  shotsWoodworkAway: ['finalizacoes_trave_visitante_ft', 'chutes_trave_visitante_ft', 'shots_woodwork_away_ft', 'trave_visitante_ft'],
+
+  // Grupo Ataques
+  bigChancesHome: ['ataque_chances_claras_mandante_ft', 'chances_claras_mandante_ft', 'big_chances_home_ft'],
+  bigChancesAway: ['ataque_chances_claras_visitante_ft', 'chances_claras_visitante_ft', 'big_chances_away_ft'],
+  cornersHome: ['ataque_escanteios_mandante_ft', 'escanteios_mandante_ft', 'escanteios_mandante', 'cantos_mandante', 'corners_home_ft', 'corners_home', 'hc'],
+  cornersAway: ['ataque_escanteios_visitante_ft', 'escanteios_visitante_ft', 'escanteios_visitante', 'cantos_visitante', 'corners_away_ft', 'corners_away', 'ac'],
+  touchesOppBoxHome: ['ataque_toques_area_adv_mandante_ft', 'toques_area_adv_mandante_ft', 'toques_area_adversaria_mandante_ft', 'touches_opp_box_home_ft'],
+  touchesOppBoxAway: ['ataque_toques_area_adv_visitante_ft', 'toques_area_adv_visitante_ft', 'toques_area_adversaria_visitante_ft', 'touches_opp_box_away_ft'],
+  throughBallsHome: ['ataque_passes_profundidade_certos_mandante_ft', 'passes_profundidade_certos_mandante_ft', 'through_balls_home_ft'],
+  throughBallsAway: ['ataque_passes_profundidade_certos_visitante_ft', 'passes_profundidade_certos_visitante_ft', 'through_balls_away_ft'],
+  offsidesHome: ['ataque_impedimentos_mandante_ft', 'impedimentos_mandante_ft', 'offsides_home_ft'],
+  offsidesAway: ['ataque_impedimentos_visitante_ft', 'impedimentos_visitante_ft', 'offsides_away_ft'],
+  foulsDrawnHome: ['ataque_faltas_cobradas_mandante_ft', 'faltas_cobradas_mandante_ft', 'faltas_sofridas_mandante_ft', 'fouls_drawn_home_ft'],
+  foulsDrawnAway: ['ataque_faltas_cobradas_visitante_ft', 'faltas_cobradas_visitante_ft', 'faltas_sofridas_visitante_ft', 'fouls_drawn_away_ft'],
+
+  // Grupo Passes
+  passesAccurateHome: ['passes_certos_mandante_ft', 'passes_certos_mandante', 'passes_accurate_home_ft'],
+  passesTotalHome: ['passes_totais_mandante_ft', 'passes_totais_mandante', 'passes_total_home_ft'],
+  passesPctHome: ['passes_precisao_pct_mandante_ft', 'passes_pct_mandante_ft', 'precisao_passes_mandante_ft'],
+  passesAccurateAway: ['passes_certos_visitante_ft', 'passes_certos_visitante', 'passes_accurate_away_ft'],
+  passesTotalAway: ['passes_totais_visitante_ft', 'passes_totais_visitante', 'passes_total_away_ft'],
+  passesPctAway: ['passes_precisao_pct_visitante_ft', 'passes_pct_visitante_ft', 'precisao_passes_visitante_ft'],
+
+  longPassesAccurateHome: ['passes_longos_certos_mandante_ft', 'long_passes_accurate_home_ft'],
+  longPassesTotalHome: ['passes_longos_totais_mandante_ft', 'long_passes_total_home_ft'],
+  longPassesPctHome: ['passes_longos_pct_mandante_ft', 'long_passes_pct_home_ft'],
+  longPassesAccurateAway: ['passes_longos_certos_visitante_ft', 'long_passes_accurate_away_ft'],
+  longPassesTotalAway: ['passes_longos_totais_visitante_ft', 'long_passes_total_away_ft'],
+  longPassesPctAway: ['passes_longos_pct_visitante_ft', 'long_passes_pct_away_ft'],
+
+  finalThirdPassesAccurateHome: ['passes_terco_final_certos_mandante_ft', 'passes_terco_final_certos_mandante', 'final_third_passes_accurate_home_ft'],
+  finalThirdPassesTotalHome: ['passes_terco_final_totais_mandante_ft', 'final_third_passes_total_home_ft'],
+  finalThirdPassesPctHome: ['passes_terco_final_pct_mandante_ft', 'final_third_passes_pct_home_ft'],
+  finalThirdPassesAccurateAway: ['passes_terco_final_certos_visitante_ft', 'passes_terco_final_certos_visitante', 'final_third_passes_accurate_away_ft'],
+  finalThirdPassesTotalAway: ['passes_terco_final_totais_visitante_ft', 'final_third_passes_total_away_ft'],
+  finalThirdPassesPctAway: ['passes_terco_final_pct_visitante_ft', 'final_third_passes_pct_visitante_ft'],
+
+  crossesAccurateHome: ['passes_cruzamentos_certos_mandante_ft', 'cruzamentos_certos_mandante_ft', 'crosses_accurate_home_ft'],
+  crossesTotalHome: ['passes_cruzamentos_totais_mandante_ft', 'cruzamentos_totais_mandante_ft', 'crosses_total_home_ft'],
+  crossesPctHome: ['passes_cruzamentos_pct_mandante_ft', 'cruzamentos_pct_mandante_ft', 'crosses_pct_home_ft'],
+  crossesAccurateAway: ['passes_cruzamentos_certos_visitante_ft', 'cruzamentos_certos_visitante_ft', 'crosses_accurate_away_ft'],
+  crossesTotalAway: ['passes_cruzamentos_totais_visitante_ft', 'cruzamentos_totais_visitante_ft', 'crosses_total_away_ft'],
+  crossesPctAway: ['passes_cruzamentos_pct_visitante_ft', 'cruzamentos_pct_visitante_ft', 'crosses_pct_away_ft'],
+
+  xaHome: ['passes_xa_mandante_ft', 'xa_mandante_ft', 'xa_mandante', 'expected_assists_home_ft'],
+  xaAway: ['passes_xa_visitante_ft', 'xa_visitante_ft', 'xa_visitante', 'expected_assists_away_ft'],
+  throwInsHome: ['passes_laterais_cobrados_mandante_ft', 'laterais_cobrados_mandante_ft', 'throw_ins_home_ft'],
+  throwInsAway: ['passes_laterais_cobrados_visitante_ft', 'laterais_cobrados_visitante_ft', 'throw_ins_away_ft'],
+
+  // Grupo Defesa
+  foulsHome: ['defesa_faltas_mandante_ft', 'faltas_mandante_ft', 'faltas_mandante', 'fouls_home_ft', 'fouls_home', 'hf'],
+  foulsAway: ['defesa_faltas_visitante_ft', 'faltas_visitante_ft', 'faltas_visitante', 'fouls_away_ft', 'fouls_away', 'af'],
+  tacklesAccurateHome: ['defesa_desarmes_certos_mandante_ft', 'desarmes_certos_mandante_ft', 'tackles_accurate_home_ft'],
+  tacklesTotalHome: ['defesa_desarmes_totais_mandante_ft', 'desarmes_totais_mandante_ft', 'tackles_total_home_ft'],
+  tacklesPctHome: ['defesa_desarmes_pct_mandante_ft', 'desarmes_pct_mandante_ft', 'tackles_pct_home_ft'],
+  tacklesAccurateAway: ['defesa_desarmes_certos_visitante_ft', 'desarmes_certos_visitante_ft', 'tackles_accurate_away_ft'],
+  tacklesTotalAway: ['defesa_desarmes_totais_visitante_ft', 'desarmes_totais_visitante_ft', 'tackles_total_away_ft'],
+  tacklesPctAway: ['defesa_desarmes_pct_visitante_ft', 'desarmes_pct_visitante_ft', 'tackles_pct_away_ft'],
+
+  duelsWonHome: ['defesa_duelos_ganhos_mandante_ft', 'duelos_ganhos_mandante_ft', 'duels_won_home_ft'],
+  duelsWonAway: ['defesa_duelos_ganhos_visitante_ft', 'duelos_ganhos_visitante_ft', 'duels_won_away_ft'],
+  clearancesHome: ['defesa_rebatidas_mandante_ft', 'rebatidas_mandante_ft', 'cortes_mandante_ft', 'clearances_home_ft'],
+  clearancesAway: ['defesa_rebatidas_visitante_ft', 'rebatidas_visitante_ft', 'cortes_visitante_ft', 'clearances_away_ft'],
+  interceptionsHome: ['defesa_interceptacoes_mandante_ft', 'interceptacoes_mandante_ft', 'interceptions_home_ft'],
+  interceptionsAway: ['defesa_interceptacoes_visitante_ft', 'interceptacoes_visitante_ft', 'interceptions_away_ft'],
+
+  errorsLeadToShotHome: ['defesa_erros_resultaram_finalizacao_mandante_ft', 'erros_finalizacao_mandante_ft', 'errors_to_shot_home_ft'],
+  errorsLeadToShotAway: ['defesa_erros_resultaram_finalizacao_visitante_ft', 'erros_finalizacao_visitante_ft', 'errors_to_shot_away_ft'],
+  errorsLeadToGoalHome: ['defesa_erros_resultaram_gol_mandante_ft', 'erros_gol_mandante_ft', 'errors_to_goal_home_ft'],
+  errorsLeadToGoalAway: ['defesa_erros_resultaram_gol_visitante_ft', 'erros_gol_visitante_ft', 'errors_to_goal_away_ft'],
+
+  goalkeeperDefActionHome: ['defesa_goleiro_mandante_ft', 'acoes_defensivas_goleiro_mandante_ft', 'gk_def_action_home_ft'],
+  goalkeeperDefActionAway: ['defesa_goleiro_visitante_ft', 'acoes_defensivas_goleiro_visitante_ft', 'gk_def_action_away_ft'],
+
+  // Grupo Goleiro
+  savesHome: ['goleiro_defesas_mandante_ft', 'defesas_goleiro_mandante_ft', 'saves_home_ft'],
+  savesAway: ['goleiro_defesas_visitante_ft', 'defesas_goleiro_visitante_ft', 'saves_away_ft'],
+  xgotFacedHome: ['goleiro_xgot_enfrentado_mandante_ft', 'xgot_enfrentado_mandante_ft', 'xgot_faced_home_ft'],
+  xgotFacedAway: ['goleiro_xgot_enfrentado_visitante_ft', 'xgot_enfrentado_visitante_ft', 'xgot_faced_away_ft'],
+  goalsPreventedHome: ['goleiro_gols_evitados_mandante_ft', 'gols_evitados_mandante_ft', 'goals_prevented_home_ft', 'gsax_home_ft'],
+  goalsPreventedAway: ['goleiro_gols_evitados_visitante_ft', 'gols_evitados_visitante_ft', 'goals_prevented_away_ft', 'gsax_away_ft'],
+  goalKicksHome: ['goleiro_tiros_de_meta_mandante_ft', 'tiros_de_meta_mandante_ft', 'goal_kicks_home_ft'],
+  goalKicksAway: ['goleiro_tiros_de_meta_visitante_ft', 'tiros_de_meta_visitante_ft', 'goal_kicks_away_ft'],
 };
 
 export function getFlexibleValue(
@@ -540,26 +736,259 @@ export const FINISHED_MATCHES_COLUMNS = [
   'Estadio',
   'Publico',
   'Capacidade',
-  'xG_Mandante_FT',
-  'xG_Visitante_FT',
-  'Finalizacoes_Mandante_FT',
-  'Finalizacoes_Visitante_FT',
-  'Chutes_Gol_Mandante_FT',
-  'Chutes_Gol_Visitante_FT',
-  'Faltas_Mandante_FT',
-  'Faltas_Visitante_FT',
-  'Escanteios_Mandante_FT',
-  'Escanteios_Visitante_FT',
-  'Cartao_Amarelo_Mandante_FT',
-  'Cartao_Amarelo_Visitante_FT',
-  'Cartao_Vermelho_Mandante_FT',
-  'Cartao_Vermelho_Visitante_FT',
+  'posse_bola_mandante_FT',
+  'posse_bola_visitante_FT',
+  'cartao_amarelo_mandante_FT',
+  'cartao_amarelo_visitante_FT',
+  'cartao_vermelho_mandante_FT',
+  'cartao_vermelho_visitante_FT',
+  'finalizacoes_xg_mandante_FT',
+  'finalizacoes_xg_visitante_FT',
+  'finalizacoes_xgot_mandante_FT',
+  'finalizacoes_xgot_visitante_FT',
+  'finalizacoes_totais_mandante_FT',
+  'finalizacoes_totais_visitante_FT',
+  'finalizacoes_no_alvo_mandante_FT',
+  'finalizacoes_no_alvo_visitante_FT',
+  'finalizacoes_para_fora_mandante_FT',
+  'finalizacoes_para_fora_visitante_FT',
+  'finalizacoes_bloqueadas_mandante_FT',
+  'finalizacoes_bloqueadas_visitante_FT',
+  'finalizacoes_dentro_area_mandante_FT',
+  'finalizacoes_dentro_area_visitante_FT',
+  'finalizacoes_fora_area_mandante_FT',
+  'finalizacoes_fora_area_visitante_FT',
+  'finalizacoes_trave_mandante_FT',
+  'finalizacoes_trave_visitante_FT',
+  'ataque_chances_claras_mandante_FT',
+  'ataque_chances_claras_visitante_FT',
+  'ataque_escanteios_mandante_FT',
+  'ataque_escanteios_visitante_FT',
+  'ataque_toques_area_adv_mandante_FT',
+  'ataque_toques_area_adv_visitante_FT',
+  'ataque_passes_profundidade_certos_mandante_FT',
+  'ataque_passes_profundidade_certos_visitante_FT',
+  'ataque_impedimentos_mandante_FT',
+  'ataque_impedimentos_visitante_FT',
+  'ataque_faltas_cobradas_mandante_FT',
+  'ataque_faltas_cobradas_visitante_FT',
+  'passes_certos_mandante_FT',
+  'passes_totais_mandante_FT',
+  'passes_precisao_pct_mandante_FT',
+  'passes_certos_visitante_FT',
+  'passes_totais_visitante_FT',
+  'passes_precisao_pct_visitante_FT',
+  'passes_longos_certos_mandante_FT',
+  'passes_longos_totais_mandante_FT',
+  'passes_longos_pct_mandante_FT',
+  'passes_longos_certos_visitante_FT',
+  'passes_longos_totais_visitante_FT',
+  'passes_longos_pct_visitante_FT',
+  'passes_terco_final_certos_mandante_FT',
+  'passes_terco_final_totais_mandante_FT',
+  'passes_terco_final_pct_mandante_FT',
+  'passes_terco_final_certos_visitante_FT',
+  'passes_terco_final_totais_visitante_FT',
+  'passes_terco_final_pct_visitante_FT',
+  'passes_cruzamentos_certos_mandante_FT',
+  'passes_cruzamentos_totais_mandante_FT',
+  'passes_cruzamentos_pct_mandante_FT',
+  'passes_cruzamentos_certos_visitante_FT',
+  'passes_cruzamentos_totais_visitante_FT',
+  'passes_cruzamentos_pct_visitante_FT',
+  'passes_xa_mandante_FT',
+  'passes_xa_visitante_FT',
+  'passes_laterais_cobrados_mandante_FT',
+  'passes_laterais_cobrados_visitante_FT',
+  'defesa_faltas_mandante_FT',
+  'defesa_faltas_visitante_FT',
+  'defesa_desarmes_certos_mandante_FT',
+  'defesa_desarmes_totais_mandante_FT',
+  'defesa_desarmes_pct_mandante_FT',
+  'defesa_desarmes_certos_visitante_FT',
+  'defesa_desarmes_totais_visitante_FT',
+  'defesa_desarmes_pct_visitante_FT',
+  'defesa_duelos_ganhos_mandante_FT',
+  'defesa_duelos_ganhos_visitante_FT',
+  'defesa_rebatidas_mandante_FT',
+  'defesa_rebatidas_visitante_FT',
+  'defesa_interceptacoes_mandante_FT',
+  'defesa_interceptacoes_visitante_FT',
+  'defesa_erros_resultaram_finalizacao_mandante_FT',
+  'defesa_erros_resultaram_finalizacao_visitante_FT',
+  'defesa_erros_resultaram_gol_mandante_FT',
+  'defesa_erros_resultaram_gol_visitante_FT',
+  'defesa_goleiro_mandante_FT',
+  'defesa_goleiro_visitante_FT',
+  'goleiro_defesas_mandante_FT',
+  'goleiro_defesas_visitante_FT',
+  'goleiro_xgot_enfrentado_mandante_FT',
+  'goleiro_xgot_enfrentado_visitante_FT',
+  'goleiro_gols_evitados_mandante_FT',
+  'goleiro_gols_evitados_visitante_FT',
+  'goleiro_tiros_de_meta_mandante_FT',
+  'goleiro_tiros_de_meta_visitante_FT',
   'Odd_Home_FT',
   'Odd_Draw_FT',
   'Odd_Away_FT',
   'Odd_Over25_FT',
   'Odd_Under25_FT',
 ];
+
+function buildFinishedMatchRowValues(
+  countryName: string,
+  leagueName: string,
+  date: string,
+  time: string,
+  homeTeamName: string,
+  awayTeamName: string,
+  homeScore: any,
+  awayScore: any,
+  st: MatchStats = {},
+  od: MatchOdds = {},
+  referee: string = '',
+  stadium: string = '',
+  attendance: any = '',
+  stadiumCapacity: any = ''
+): Record<string, any> {
+  const v = (val: any) => (val !== null && val !== undefined && !isNaN(val) ? val : '');
+  return {
+    pais: countryName,
+    liga: leagueName,
+    data: date,
+    hora: time,
+    mandante: homeTeamName,
+    visitante: awayTeamName,
+    placarMandanteFT: v(homeScore),
+    placarVisitanteFT: v(awayScore),
+    placarMandanteHT: v(st.halftimeHomeScore),
+    placarVisitanteHT: v(st.halftimeAwayScore),
+    arbitro: referee,
+    estadio: stadium,
+    publico: v(attendance),
+    capacidade: v(stadiumCapacity),
+
+    // Posse
+    posseBolaMandanteFT: v(st.possessionHomeFT),
+    posseBolaVisitanteFT: v(st.possessionAwayFT),
+
+    // Cartoes
+    cartaoAmareloMandanteFT: v(st.yellowCardsHomeFT),
+    cartaoAmareloVisitanteFT: v(st.yellowCardsAwayFT),
+    cartaoVermelhoMandanteFT: v(st.redCardsHomeFT),
+    cartaoVermelhoVisitanteFT: v(st.redCardsAwayFT),
+
+    // Grupo Finalizações
+    finalizacoesXgMandanteFT: v(st.xgHomeFT),
+    finalizacoesXgVisitanteFT: v(st.xgAwayFT),
+    finalizacoesXgotMandanteFT: v(st.xgotHomeFT),
+    finalizacoesXgotVisitanteFT: v(st.xgotAwayFT),
+    finalizacoesTotaisMandanteFT: v(st.shotsHomeFT),
+    finalizacoesTotaisVisitanteFT: v(st.shotsAwayFT),
+    finalizacoesNoAlvoMandanteFT: v(st.shotsOnTargetHomeFT),
+    finalizacoesNoAlvoVisitanteFT: v(st.shotsOnTargetAwayFT),
+    finalizacoesParaForaMandanteFT: v(st.shotsOffTargetHomeFT),
+    finalizacoesParaForaVisitanteFT: v(st.shotsOffTargetAwayFT),
+    finalizacoesBloqueadasMandanteFT: v(st.shotsBlockedHomeFT),
+    finalizacoesBloqueadasVisitanteFT: v(st.shotsBlockedAwayFT),
+    finalizacoesDentroAreaMandanteFT: v(st.shotsInsideBoxHomeFT),
+    finalizacoesDentroAreaVisitanteFT: v(st.shotsInsideBoxAwayFT),
+    finalizacoesForaAreaMandanteFT: v(st.shotsOutsideBoxHomeFT),
+    finalizacoesForaAreaVisitanteFT: v(st.shotsOutsideBoxAwayFT),
+    finalizacoesTraveMandanteFT: v(st.shotsWoodworkHomeFT),
+    finalizacoesTraveVisitanteFT: v(st.shotsWoodworkAwayFT),
+
+    // Grupo Ataques
+    ataqueChancesClarasMandanteFT: v(st.bigChancesHomeFT),
+    ataqueChancesClarasVisitanteFT: v(st.bigChancesAwayFT),
+    ataqueEscanteiosMandanteFT: v(st.cornersHomeFT),
+    ataqueEscanteiosVisitanteFT: v(st.cornersAwayFT),
+    ataqueToquesAreaAdvMandanteFT: v(st.touchesOppBoxHomeFT),
+    ataqueToquesAreaAdvVisitanteFT: v(st.touchesOppBoxAwayFT),
+    ataquePassesProfundidadeCertosMandanteFT: v(st.throughBallsHomeFT),
+    ataquePassesProfundidadeCertosVisitanteFT: v(st.throughBallsAwayFT),
+    ataqueImpedimentosMandanteFT: v(st.offsidesHomeFT),
+    ataqueImpedimentosVisitanteFT: v(st.offsidesAwayFT),
+    ataqueFaltasCobradasMandanteFT: v(st.foulsDrawnHomeFT),
+    ataqueFaltasCobradasVisitanteFT: v(st.foulsDrawnAwayFT),
+
+    // Grupo Passes
+    passesCertosMandanteFT: v(st.passesAccurateHomeFT),
+    passesTotaisMandanteFT: v(st.passesTotalHomeFT),
+    passesPrecisaoPctMandanteFT: v(st.passesPctHomeFT),
+    passesCertosVisitanteFT: v(st.passesAccurateAwayFT),
+    passesTotaisVisitanteFT: v(st.passesTotalAwayFT),
+    passesPrecisaoPctVisitanteFT: v(st.passesPctAwayFT),
+
+    passesLongosCertosMandanteFT: v(st.longPassesAccurateHomeFT),
+    passesLongosTotaisMandanteFT: v(st.longPassesTotalHomeFT),
+    passesLongosPctMandanteFT: v(st.longPassesPctHomeFT),
+    passesLongosCertosVisitanteFT: v(st.longPassesAccurateAwayFT),
+    passesLongosTotaisVisitanteFT: v(st.longPassesTotalAwayFT),
+    passesLongosPctVisitanteFT: v(st.longPassesPctAwayFT),
+
+    passesTercoFinalCertosMandanteFT: v(st.finalThirdPassesAccurateHomeFT),
+    passesTercoFinalTotaisMandanteFT: v(st.finalThirdPassesTotalHomeFT),
+    passesTercoFinalPctMandanteFT: v(st.finalThirdPassesPctHomeFT),
+    passesTercoFinalCertosVisitanteFT: v(st.finalThirdPassesAccurateAwayFT),
+    passesTercoFinalTotaisVisitanteFT: v(st.finalThirdPassesTotalAwayFT),
+    passesTercoFinalPctVisitanteFT: v(st.finalThirdPassesPctAwayFT),
+
+    passesCruzamentosCertosMandanteFT: v(st.crossesAccurateHomeFT),
+    passesCruzamentosTotaisMandanteFT: v(st.crossesTotalHomeFT),
+    passesCruzamentosPctMandanteFT: v(st.crossesPctHomeFT),
+    passesCruzamentosCertosVisitanteFT: v(st.crossesAccurateAwayFT),
+    passesCruzamentosTotaisVisitanteFT: v(st.crossesTotalAwayFT),
+    passesCruzamentosPctVisitanteFT: v(st.crossesPctAwayFT),
+
+    passesXaMandanteFT: v(st.xaHomeFT),
+    passesXaVisitanteFT: v(st.xaAwayFT),
+    passesLateraisCobradosMandanteFT: v(st.throwInsHomeFT),
+    passesLateraisCobradosVisitanteFT: v(st.throwInsAwayFT),
+
+    // Grupo Defesa
+    defesaFaltasMandanteFT: v(st.foulsHomeFT),
+    defesaFaltasVisitanteFT: v(st.foulsAwayFT),
+    defesaDesarmesCertosMandanteFT: v(st.tacklesAccurateHomeFT),
+    defesaDesarmesTotaisMandanteFT: v(st.tacklesTotalHomeFT),
+    defesaDesarmesPctMandanteFT: v(st.tacklesPctHomeFT),
+    defesaDesarmesCertosVisitanteFT: v(st.tacklesAccurateAwayFT),
+    defesaDesarmesTotaisVisitanteFT: v(st.tacklesTotalAwayFT),
+    defesaDesarmesPctVisitanteFT: v(st.tacklesPctAwayFT),
+
+    defesaDuelosGanhosMandanteFT: v(st.duelsWonHomeFT),
+    defesaDuelosGanhosVisitanteFT: v(st.duelsWonAwayFT),
+    defesaRebatidasMandanteFT: v(st.clearancesHomeFT),
+    defesaRebatidasVisitanteFT: v(st.clearancesAwayFT),
+    defesaInterceptacoesMandanteFT: v(st.interceptionsHomeFT),
+    defesaInterceptacoesVisitanteFT: v(st.interceptionsAwayFT),
+
+    defesaErrosResultaramFinalizacaoMandanteFT: v(st.errorsLeadToShotHomeFT),
+    defesaErrosResultaramFinalizacaoVisitanteFT: v(st.errorsLeadToShotAwayFT),
+    defesaErrosResultaramGolMandanteFT: v(st.errorsLeadToGoalHomeFT),
+    defesaErrosResultaramGolVisitanteFT: v(st.errorsLeadToGoalAwayFT),
+
+    defesaGoleiroMandanteFT: v(st.goalkeeperDefActionHomeFT),
+    defesaGoleiroVisitanteFT: v(st.goalkeeperDefActionAwayFT),
+
+    // Grupo Goleiro
+    goleiroDefesasMandanteFT: v(st.savesHomeFT),
+    goleiroDefesasVisitanteFT: v(st.savesAwayFT),
+    goleiroXgotEnfrentadoMandanteFT: v(st.xgotFacedHomeFT),
+    goleiroXgotEnfrentadoVisitanteFT: v(st.xgotFacedAwayFT),
+    goleiroGolsEvitadosMandanteFT: v(st.goalsPreventedHomeFT),
+    goleiroGolsEvitadosVisitanteFT: v(st.goalsPreventedAwayFT),
+    goleiroTirosDeMetaMandanteFT: v(st.goalKicksHomeFT),
+    goleiroTirosDeMetaVisitanteFT: v(st.goalKicksAwayFT),
+
+    // Odds FT
+    oddHomeFT: v(od.homeFT),
+    oddDrawFT: v(od.drawFT),
+    oddAwayFT: v(od.awayFT),
+    oddOver25FT: v(od.over25FT),
+    oddUnder25FT: v(od.under25FT),
+  };
+}
 
 /**
  * Baixa o modelo da Planilha de Jogos Finalizados (com opção de pré-preencher com jogos agendados/futuros)
@@ -578,78 +1007,243 @@ export async function downloadFinishedMatchesTemplate(
     targetMatches = safeMatches;
   }
 
-  const sampleRows = [
+  const sampleMatch1 = buildFinishedMatchRowValues(
+    'Inglaterra',
+    'Premier League ING',
+    '23/08/2026',
+    '16:00',
+    'Arsenal',
+    'Chelsea',
+    2,
+    1,
     {
-      pais: 'Inglaterra',
-      liga: 'Premier League ING',
-      data: '23/08/2026',
-      hora: '16:00',
-      mandante: 'Arsenal',
-      visitante: 'Chelsea',
-      placarMandanteFT: 2,
-      placarVisitanteFT: 1,
-      placarMandanteHT: 1,
-      placarVisitanteHT: 0,
-      arbitro: 'Michael Oliver',
-      estadio: 'Emirates Stadium',
-      publico: 60214,
-      capacidade: 60704,
-      xgMandanteFT: 2.15,
-      xgVisitanteFT: 1.08,
-      finalizacoesMandanteFT: 15,
-      finalizacoesVisitanteFT: 9,
-      chutesGolMandanteFT: 6,
-      chutesGolVisitanteFT: 3,
-      faltasMandanteFT: 11,
-      faltasVisitanteFT: 14,
-      escanteiosMandanteFT: 7,
-      escanteiosVisitanteFT: 4,
-      cartaoAmareloMandanteFT: 2,
-      cartaoAmareloVisitanteFT: 3,
-      cartaoVermelhoMandanteFT: 0,
-      cartaoVermelhoVisitanteFT: 0,
-      oddHomeFT: 2.10,
-      oddDrawFT: 3.40,
-      oddAwayFT: 3.50,
-      oddOver25FT: 1.85,
-      oddUnder25FT: 1.95,
+      halftimeHomeScore: 1,
+      halftimeAwayScore: 0,
+      possessionHomeFT: 58,
+      possessionAwayFT: 42,
+      yellowCardsHomeFT: 2,
+      yellowCardsAwayFT: 3,
+      redCardsHomeFT: 0,
+      redCardsAwayFT: 0,
+      xgHomeFT: 2.15,
+      xgAwayFT: 1.08,
+      xgotHomeFT: 2.30,
+      xgotAwayFT: 0.95,
+      shotsHomeFT: 15,
+      shotsAwayFT: 9,
+      shotsOnTargetHomeFT: 6,
+      shotsOnTargetAwayFT: 3,
+      shotsOffTargetHomeFT: 5,
+      shotsOffTargetAwayFT: 4,
+      shotsBlockedHomeFT: 4,
+      shotsBlockedAwayFT: 2,
+      shotsInsideBoxHomeFT: 10,
+      shotsInsideBoxAwayFT: 5,
+      shotsOutsideBoxHomeFT: 5,
+      shotsOutsideBoxAwayFT: 4,
+      shotsWoodworkHomeFT: 1,
+      shotsWoodworkAwayFT: 0,
+      bigChancesHomeFT: 3,
+      bigChancesAwayFT: 1,
+      cornersHomeFT: 7,
+      cornersAwayFT: 4,
+      touchesOppBoxHomeFT: 28,
+      touchesOppBoxAwayFT: 14,
+      throughBallsHomeFT: 4,
+      throughBallsAwayFT: 1,
+      offsidesHomeFT: 2,
+      offsidesAwayFT: 1,
+      foulsDrawnHomeFT: 14,
+      foulsDrawnAwayFT: 11,
+      passesAccurateHomeFT: 480,
+      passesTotalHomeFT: 560,
+      passesPctHomeFT: 85.7,
+      passesAccurateAwayFT: 320,
+      passesTotalAwayFT: 390,
+      passesPctAwayFT: 82.0,
+      longPassesAccurateHomeFT: 28,
+      longPassesTotalHomeFT: 42,
+      longPassesPctHomeFT: 66.7,
+      longPassesAccurateAwayFT: 20,
+      longPassesTotalAwayFT: 35,
+      longPassesPctAwayFT: 57.1,
+      finalThirdPassesAccurateHomeFT: 95,
+      finalThirdPassesTotalHomeFT: 125,
+      finalThirdPassesPctHomeFT: 76.0,
+      finalThirdPassesAccurateAwayFT: 50,
+      finalThirdPassesTotalAwayFT: 72,
+      finalThirdPassesPctAwayFT: 69.4,
+      crossesAccurateHomeFT: 6,
+      crossesTotalHomeFT: 20,
+      crossesPctHomeFT: 30.0,
+      crossesAccurateAwayFT: 3,
+      crossesTotalAwayFT: 14,
+      crossesPctAwayFT: 21.4,
+      xaHomeFT: 1.80,
+      xaAwayFT: 0.85,
+      throwInsHomeFT: 18,
+      throwInsAwayFT: 15,
+      foulsHomeFT: 11,
+      foulsAwayFT: 14,
+      tacklesAccurateHomeFT: 14,
+      tacklesTotalHomeFT: 20,
+      tacklesPctHomeFT: 70.0,
+      tacklesAccurateAwayFT: 16,
+      tacklesTotalAwayFT: 24,
+      tacklesPctAwayFT: 66.7,
+      duelsWonHomeFT: 54,
+      duelsWonAwayFT: 46,
+      clearancesHomeFT: 18,
+      clearancesAwayFT: 25,
+      interceptionsHomeFT: 8,
+      interceptionsAwayFT: 11,
+      errorsLeadToShotHomeFT: 0,
+      errorsLeadToShotAwayFT: 1,
+      errorsLeadToGoalHomeFT: 0,
+      errorsLeadToGoalAwayFT: 0,
+      goalkeeperDefActionHomeFT: 2,
+      goalkeeperDefActionAwayFT: 4,
+      savesHomeFT: 2,
+      savesAwayFT: 4,
+      xgotFacedHomeFT: 0.95,
+      xgotFacedAwayFT: 2.30,
+      goalsPreventedHomeFT: 0.05,
+      goalsPreventedAwayFT: 0.30,
+      goalKicksHomeFT: 6,
+      goalKicksAwayFT: 9,
     },
     {
-      pais: 'Espanha',
-      liga: 'La Liga 1 ESP',
-      data: '23/08/2026',
-      hora: '17:00',
-      mandante: 'Real Madrid',
-      visitante: 'Barcelona',
-      placarMandanteFT: 3,
-      placarVisitanteFT: 2,
-      placarMandanteHT: 1,
-      placarVisitanteHT: 1,
-      arbitro: 'Jesús Gil Manzano',
-      estadio: 'Santiago Bernabéu',
-      publico: 79850,
-      capacidade: 81044,
-      xgMandanteFT: 2.45,
-      xgVisitanteFT: 1.80,
-      finalizacoesMandanteFT: 18,
-      finalizacoesVisitanteFT: 14,
-      chutesGolMandanteFT: 8,
-      chutesGolVisitanteFT: 5,
-      faltasMandanteFT: 13,
-      faltasVisitanteFT: 16,
-      escanteiosMandanteFT: 8,
-      escanteiosVisitanteFT: 6,
-      cartaoAmareloMandanteFT: 3,
-      cartaoAmareloVisitanteFT: 4,
-      cartaoVermelhoMandanteFT: 0,
-      cartaoVermelhoVisitanteFT: 0,
-      oddHomeFT: 2.25,
-      oddDrawFT: 3.60,
-      oddAwayFT: 3.00,
-      oddOver25FT: 1.65,
-      oddUnder25FT: 2.20,
+      homeFT: 2.10,
+      drawFT: 3.40,
+      awayFT: 3.50,
+      over25FT: 1.85,
+      under25FT: 1.95,
     },
-  ];
+    'Michael Oliver',
+    'Emirates Stadium',
+    60214,
+    60704
+  );
+
+  const sampleMatch2 = buildFinishedMatchRowValues(
+    'Espanha',
+    'La Liga 1 ESP',
+    '23/08/2026',
+    '17:00',
+    'Real Madrid',
+    'Barcelona',
+    3,
+    2,
+    {
+      halftimeHomeScore: 1,
+      halftimeAwayScore: 1,
+      possessionHomeFT: 52,
+      possessionAwayFT: 48,
+      yellowCardsHomeFT: 3,
+      yellowCardsAwayFT: 4,
+      redCardsHomeFT: 0,
+      redCardsAwayFT: 0,
+      xgHomeFT: 2.45,
+      xgAwayFT: 1.80,
+      xgotHomeFT: 2.70,
+      xgotAwayFT: 1.95,
+      shotsHomeFT: 18,
+      shotsAwayFT: 14,
+      shotsOnTargetHomeFT: 8,
+      shotsOnTargetAwayFT: 5,
+      shotsOffTargetHomeFT: 6,
+      shotsOffTargetAwayFT: 6,
+      shotsBlockedHomeFT: 4,
+      shotsBlockedAwayFT: 3,
+      shotsInsideBoxHomeFT: 12,
+      shotsInsideBoxAwayFT: 9,
+      shotsOutsideBoxHomeFT: 6,
+      shotsOutsideBoxAwayFT: 5,
+      shotsWoodworkHomeFT: 1,
+      shotsWoodworkAwayFT: 1,
+      bigChancesHomeFT: 4,
+      bigChancesAwayFT: 3,
+      cornersHomeFT: 8,
+      cornersAwayFT: 6,
+      touchesOppBoxHomeFT: 32,
+      touchesOppBoxAwayFT: 26,
+      throughBallsHomeFT: 5,
+      throughBallsAwayFT: 4,
+      offsidesHomeFT: 1,
+      offsidesAwayFT: 3,
+      foulsDrawnHomeFT: 16,
+      foulsDrawnAwayFT: 13,
+      passesAccurateHomeFT: 440,
+      passesTotalHomeFT: 510,
+      passesPctHomeFT: 86.3,
+      passesAccurateAwayFT: 410,
+      passesTotalAwayFT: 485,
+      passesPctAwayFT: 84.5,
+      longPassesAccurateHomeFT: 32,
+      longPassesTotalHomeFT: 48,
+      longPassesPctHomeFT: 66.7,
+      longPassesAccurateAwayFT: 25,
+      longPassesTotalAwayFT: 40,
+      longPassesPctAwayFT: 62.5,
+      finalThirdPassesAccurateHomeFT: 110,
+      finalThirdPassesTotalHomeFT: 140,
+      finalThirdPassesPctHomeFT: 78.6,
+      finalThirdPassesAccurateAwayFT: 95,
+      finalThirdPassesTotalAwayFT: 125,
+      finalThirdPassesPctAwayFT: 76.0,
+      crossesAccurateHomeFT: 7,
+      crossesTotalHomeFT: 22,
+      crossesPctHomeFT: 31.8,
+      crossesAccurateAwayFT: 5,
+      crossesTotalAwayFT: 18,
+      crossesPctAwayFT: 27.8,
+      xaHomeFT: 2.10,
+      xaAwayFT: 1.55,
+      throwInsHomeFT: 20,
+      throwInsAwayFT: 18,
+      foulsHomeFT: 13,
+      foulsAwayFT: 16,
+      tacklesAccurateHomeFT: 17,
+      tacklesTotalHomeFT: 25,
+      tacklesPctHomeFT: 68.0,
+      tacklesAccurateAwayFT: 18,
+      tacklesTotalAwayFT: 27,
+      tacklesPctAwayFT: 66.7,
+      duelsWonHomeFT: 58,
+      duelsWonAwayFT: 52,
+      clearancesHomeFT: 20,
+      clearancesAwayFT: 22,
+      interceptionsHomeFT: 10,
+      interceptionsAwayFT: 9,
+      errorsLeadToShotHomeFT: 1,
+      errorsLeadToShotAwayFT: 1,
+      errorsLeadToGoalHomeFT: 0,
+      errorsLeadToGoalAwayFT: 0,
+      goalkeeperDefActionHomeFT: 3,
+      goalkeeperDefActionAwayFT: 4,
+      savesHomeFT: 3,
+      savesAwayFT: 5,
+      xgotFacedHomeFT: 1.95,
+      xgotFacedAwayFT: 2.70,
+      goalsPreventedHomeFT: -0.05,
+      goalsPreventedAwayFT: -0.30,
+      goalKicksHomeFT: 7,
+      goalKicksAwayFT: 8,
+    },
+    {
+      homeFT: 2.25,
+      drawFT: 3.60,
+      awayFT: 3.00,
+      over25FT: 1.65,
+      under25FT: 2.20,
+    },
+    'Jesús Gil Manzano',
+    'Santiago Bernabéu',
+    79850,
+    81044
+  );
+
+  const sampleRows = [sampleMatch1, sampleMatch2];
 
   if (format === 'csv') {
     const csvLines: string[] = [];
@@ -658,43 +1252,23 @@ export async function downloadFinishedMatchesTemplate(
     if (targetMatches.length > 0) {
       targetMatches.forEach(m => {
         const { date, time } = splitDateTimeForExcel(m.matchDate);
-        const st = m.stats || {};
-        const od = m.odds || {};
-        csvLines.push([
+        const rowData = buildFinishedMatchRowValues(
           m.countryName || '',
           m.leagueName || '',
           date,
           time,
           m.homeTeamName || '',
           m.awayTeamName || '',
-          m.homeScore !== null && m.homeScore !== undefined ? String(m.homeScore) : '',
-          m.awayScore !== null && m.awayScore !== undefined ? String(m.awayScore) : '',
-          st.halftimeHomeScore !== null && st.halftimeHomeScore !== undefined ? String(st.halftimeHomeScore) : '',
-          st.halftimeAwayScore !== null && st.halftimeAwayScore !== undefined ? String(st.halftimeAwayScore) : '',
+          m.homeScore,
+          m.awayScore,
+          m.stats || {},
+          m.odds || {},
           m.referee || '',
           m.stadium || '',
-          m.attendance !== null && m.attendance !== undefined ? String(m.attendance) : '',
-          m.stadiumCapacity !== null && m.stadiumCapacity !== undefined ? String(m.stadiumCapacity) : '',
-          st.xgHomeFT !== null && st.xgHomeFT !== undefined ? String(st.xgHomeFT) : '',
-          st.xgAwayFT !== null && st.xgAwayFT !== undefined ? String(st.xgAwayFT) : '',
-          st.shotsHomeFT !== null && st.shotsHomeFT !== undefined ? String(st.shotsHomeFT) : '',
-          st.shotsAwayFT !== null && st.shotsAwayFT !== undefined ? String(st.shotsAwayFT) : '',
-          st.shotsOnTargetHomeFT !== null && st.shotsOnTargetHomeFT !== undefined ? String(st.shotsOnTargetHomeFT) : '',
-          st.shotsOnTargetAwayFT !== null && st.shotsOnTargetAwayFT !== undefined ? String(st.shotsOnTargetAwayFT) : '',
-          st.foulsHomeFT !== null && st.foulsHomeFT !== undefined ? String(st.foulsHomeFT) : '',
-          st.foulsAwayFT !== null && st.foulsAwayFT !== undefined ? String(st.foulsAwayFT) : '',
-          st.cornersHomeFT !== null && st.cornersHomeFT !== undefined ? String(st.cornersHomeFT) : '',
-          st.cornersAwayFT !== null && st.cornersAwayFT !== undefined ? String(st.cornersAwayFT) : '',
-          st.yellowCardsHomeFT !== null && st.yellowCardsHomeFT !== undefined ? String(st.yellowCardsHomeFT) : '',
-          st.yellowCardsAwayFT !== null && st.yellowCardsAwayFT !== undefined ? String(st.yellowCardsAwayFT) : '',
-          st.redCardsHomeFT !== null && st.redCardsHomeFT !== undefined ? String(st.redCardsHomeFT) : '',
-          st.redCardsAwayFT !== null && st.redCardsAwayFT !== undefined ? String(st.redCardsAwayFT) : '',
-          od.homeFT !== null && od.homeFT !== undefined ? String(od.homeFT) : '',
-          od.drawFT !== null && od.drawFT !== undefined ? String(od.drawFT) : '',
-          od.awayFT !== null && od.awayFT !== undefined ? String(od.awayFT) : '',
-          od.over25FT !== null && od.over25FT !== undefined ? String(od.over25FT) : '',
-          od.under25FT !== null && od.under25FT !== undefined ? String(od.under25FT) : '',
-        ].join(';'));
+          m.attendance,
+          m.stadiumCapacity
+        );
+        csvLines.push(Object.values(rowData).map(v => (v !== null && v !== undefined ? String(v) : '')).join(';'));
       });
     } else {
       sampleRows.forEach(r => {
@@ -719,7 +1293,7 @@ export async function downloadFinishedMatchesTemplate(
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Jogos_Finalizados');
 
-  worksheet.columns = [
+  const columnDefinitions = [
     { header: 'Pais', key: 'pais', width: 18 },
     { header: 'Liga', key: 'liga', width: 24 },
     { header: 'Data', key: 'data', width: 14 },
@@ -734,26 +1308,106 @@ export async function downloadFinishedMatchesTemplate(
     { header: 'Estadio', key: 'estadio', width: 22 },
     { header: 'Publico', key: 'publico', width: 14 },
     { header: 'Capacidade', key: 'capacidade', width: 14 },
-    { header: 'xG_Mandante_FT', key: 'xgMandanteFT', width: 16 },
-    { header: 'xG_Visitante_FT', key: 'xgVisitanteFT', width: 16 },
-    { header: 'Finalizacoes_Mandante_FT', key: 'finalizacoesMandanteFT', width: 22 },
-    { header: 'Finalizacoes_Visitante_FT', key: 'finalizacoesVisitanteFT', width: 22 },
-    { header: 'Chutes_Gol_Mandante_FT', key: 'chutesGolMandanteFT', width: 22 },
-    { header: 'Chutes_Gol_Visitante_FT', key: 'chutesGolVisitanteFT', width: 22 },
-    { header: 'Faltas_Mandante_FT', key: 'faltasMandanteFT', width: 18 },
-    { header: 'Faltas_Visitante_FT', key: 'faltasVisitanteFT', width: 18 },
-    { header: 'Escanteios_Mandante_FT', key: 'escanteiosMandanteFT', width: 22 },
-    { header: 'Escanteios_Visitante_FT', key: 'escanteiosVisitanteFT', width: 22 },
-    { header: 'Cartao_Amarelo_Mandante_FT', key: 'cartaoAmareloMandanteFT', width: 24 },
-    { header: 'Cartao_Amarelo_Visitante_FT', key: 'cartaoAmareloVisitanteFT', width: 24 },
-    { header: 'Cartao_Vermelho_Mandante_FT', key: 'cartaoVermelhoMandanteFT', width: 24 },
-    { header: 'Cartao_Vermelho_Visitante_FT', key: 'cartaoVermelhoVisitanteFT', width: 24 },
+    { header: 'posse_bola_mandante_FT', key: 'posseBolaMandanteFT', width: 22 },
+    { header: 'posse_bola_visitante_FT', key: 'posseBolaVisitanteFT', width: 22 },
+    { header: 'cartao_amarelo_mandante_FT', key: 'cartaoAmareloMandanteFT', width: 24 },
+    { header: 'cartao_amarelo_visitante_FT', key: 'cartaoAmareloVisitanteFT', width: 24 },
+    { header: 'cartao_vermelho_mandante_FT', key: 'cartaoVermelhoMandanteFT', width: 24 },
+    { header: 'cartao_vermelho_visitante_FT', key: 'cartaoVermelhoVisitanteFT', width: 24 },
+    { header: 'finalizacoes_xg_mandante_FT', key: 'finalizacoesXgMandanteFT', width: 24 },
+    { header: 'finalizacoes_xg_visitante_FT', key: 'finalizacoesXgVisitanteFT', width: 24 },
+    { header: 'finalizacoes_xgot_mandante_FT', key: 'finalizacoesXgotMandanteFT', width: 24 },
+    { header: 'finalizacoes_xgot_visitante_FT', key: 'finalizacoesXgotVisitanteFT', width: 24 },
+    { header: 'finalizacoes_totais_mandante_FT', key: 'finalizacoesTotaisMandanteFT', width: 26 },
+    { header: 'finalizacoes_totais_visitante_FT', key: 'finalizacoesTotaisVisitanteFT', width: 26 },
+    { header: 'finalizacoes_no_alvo_mandante_FT', key: 'finalizacoesNoAlvoMandanteFT', width: 26 },
+    { header: 'finalizacoes_no_alvo_visitante_FT', key: 'finalizacoesNoAlvoVisitanteFT', width: 26 },
+    { header: 'finalizacoes_para_fora_mandante_FT', key: 'finalizacoesParaForaMandanteFT', width: 26 },
+    { header: 'finalizacoes_para_fora_visitante_FT', key: 'finalizacoesParaForaVisitanteFT', width: 26 },
+    { header: 'finalizacoes_bloqueadas_mandante_FT', key: 'finalizacoesBloqueadasMandanteFT', width: 26 },
+    { header: 'finalizacoes_bloqueadas_visitante_FT', key: 'finalizacoesBloqueadasVisitanteFT', width: 26 },
+    { header: 'finalizacoes_dentro_area_mandante_FT', key: 'finalizacoesDentroAreaMandanteFT', width: 28 },
+    { header: 'finalizacoes_dentro_area_visitante_FT', key: 'finalizacoesDentroAreaVisitanteFT', width: 28 },
+    { header: 'finalizacoes_fora_area_mandante_FT', key: 'finalizacoesForaAreaMandanteFT', width: 28 },
+    { header: 'finalizacoes_fora_area_visitante_FT', key: 'finalizacoesForaAreaVisitanteFT', width: 28 },
+    { header: 'finalizacoes_trave_mandante_FT', key: 'finalizacoesTraveMandanteFT', width: 24 },
+    { header: 'finalizacoes_trave_visitante_FT', key: 'finalizacoesTraveVisitanteFT', width: 24 },
+    { header: 'ataque_chances_claras_mandante_FT', key: 'ataqueChancesClarasMandanteFT', width: 28 },
+    { header: 'ataque_chances_claras_visitante_FT', key: 'ataqueChancesClarasVisitanteFT', width: 28 },
+    { header: 'ataque_escanteios_mandante_FT', key: 'ataqueEscanteiosMandanteFT', width: 24 },
+    { header: 'ataque_escanteios_visitante_FT', key: 'ataqueEscanteiosVisitanteFT', width: 24 },
+    { header: 'ataque_toques_area_adv_mandante_FT', key: 'ataqueToquesAreaAdvMandanteFT', width: 28 },
+    { header: 'ataque_toques_area_adv_visitante_FT', key: 'ataqueToquesAreaAdvVisitanteFT', width: 28 },
+    { header: 'ataque_passes_profundidade_certos_mandante_FT', key: 'ataquePassesProfundidadeCertosMandanteFT', width: 34 },
+    { header: 'ataque_passes_profundidade_certos_visitante_FT', key: 'ataquePassesProfundidadeCertosVisitanteFT', width: 34 },
+    { header: 'ataque_impedimentos_mandante_FT', key: 'ataqueImpedimentosMandanteFT', width: 26 },
+    { header: 'ataque_impedimentos_visitante_FT', key: 'ataqueImpedimentosVisitanteFT', width: 26 },
+    { header: 'ataque_faltas_cobradas_mandante_FT', key: 'ataqueFaltasCobradasMandanteFT', width: 28 },
+    { header: 'ataque_faltas_cobradas_visitante_FT', key: 'ataqueFaltasCobradasVisitanteFT', width: 28 },
+    { header: 'passes_certos_mandante_FT', key: 'passesCertosMandanteFT', width: 22 },
+    { header: 'passes_totais_mandante_FT', key: 'passesTotaisMandanteFT', width: 22 },
+    { header: 'passes_precisao_pct_mandante_FT', key: 'passesPrecisaoPctMandanteFT', width: 24 },
+    { header: 'passes_certos_visitante_FT', key: 'passesCertosVisitanteFT', width: 22 },
+    { header: 'passes_totais_visitante_FT', key: 'passesTotaisVisitanteFT', width: 22 },
+    { header: 'passes_precisao_pct_visitante_FT', key: 'passesPrecisaoPctVisitanteFT', width: 24 },
+    { header: 'passes_longos_certos_mandante_FT', key: 'passesLongosCertosMandanteFT', width: 26 },
+    { header: 'passes_longos_totais_mandante_FT', key: 'passesLongosTotaisMandanteFT', width: 26 },
+    { header: 'passes_longos_pct_mandante_FT', key: 'passesLongosPctMandanteFT', width: 24 },
+    { header: 'passes_longos_certos_visitante_FT', key: 'passesLongosCertosVisitanteFT', width: 26 },
+    { header: 'passes_longos_totais_visitante_FT', key: 'passesLongosTotaisVisitanteFT', width: 26 },
+    { header: 'passes_longos_pct_visitante_FT', key: 'passesLongosPctVisitanteFT', width: 24 },
+    { header: 'passes_terco_final_certos_mandante_FT', key: 'passesTercoFinalCertosMandanteFT', width: 30 },
+    { header: 'passes_terco_final_totais_mandante_FT', key: 'passesTercoFinalTotaisMandanteFT', width: 30 },
+    { header: 'passes_terco_final_pct_mandante_FT', key: 'passesTercoFinalPctMandanteFT', width: 26 },
+    { header: 'passes_terco_final_certos_visitante_FT', key: 'passesTercoFinalCertosVisitanteFT', width: 30 },
+    { header: 'passes_terco_final_totais_visitante_FT', key: 'passesTercoFinalTotaisVisitanteFT', width: 30 },
+    { header: 'passes_terco_final_pct_visitante_FT', key: 'passesTercoFinalPctVisitanteFT', width: 26 },
+    { header: 'passes_cruzamentos_certos_mandante_FT', key: 'passesCruzamentosCertosMandanteFT', width: 28 },
+    { header: 'passes_cruzamentos_totais_mandante_FT', key: 'passesCruzamentosTotaisMandanteFT', width: 28 },
+    { header: 'passes_cruzamentos_pct_mandante_FT', key: 'passesCruzamentosPctMandanteFT', width: 26 },
+    { header: 'passes_cruzamentos_certos_visitante_FT', key: 'passesCruzamentosCertosVisitanteFT', width: 28 },
+    { header: 'passes_cruzamentos_totais_visitante_FT', key: 'passesCruzamentosTotaisVisitanteFT', width: 28 },
+    { header: 'passes_cruzamentos_pct_visitante_FT', key: 'passesCruzamentosPctVisitanteFT', width: 26 },
+    { header: 'passes_xa_mandante_FT', key: 'passesXaMandanteFT', width: 22 },
+    { header: 'passes_xa_visitante_FT', key: 'passesXaVisitanteFT', width: 22 },
+    { header: 'passes_laterais_cobrados_mandante_FT', key: 'passesLateraisCobradosMandanteFT', width: 28 },
+    { header: 'passes_laterais_cobrados_visitante_FT', key: 'passesLateraisCobradosVisitanteFT', width: 28 },
+    { header: 'defesa_faltas_mandante_FT', key: 'defesaFaltasMandanteFT', width: 22 },
+    { header: 'defesa_faltas_visitante_FT', key: 'defesaFaltasVisitanteFT', width: 22 },
+    { header: 'defesa_desarmes_certos_mandante_FT', key: 'defesaDesarmesCertosMandanteFT', width: 26 },
+    { header: 'defesa_desarmes_totais_mandante_FT', key: 'defesaDesarmesTotaisMandanteFT', width: 26 },
+    { header: 'defesa_desarmes_pct_mandante_FT', key: 'defesaDesarmesPctMandanteFT', width: 24 },
+    { header: 'defesa_desarmes_certos_visitante_FT', key: 'defesaDesarmesCertosVisitanteFT', width: 26 },
+    { header: 'defesa_desarmes_totais_visitante_FT', key: 'defesaDesarmesTotaisVisitanteFT', width: 26 },
+    { header: 'defesa_desarmes_pct_visitante_FT', key: 'defesaDesarmesPctVisitanteFT', width: 24 },
+    { header: 'defesa_duelos_ganhos_mandante_FT', key: 'defesaDuelosGanhosMandanteFT', width: 26 },
+    { header: 'defesa_duelos_ganhos_visitante_FT', key: 'defesaDuelosGanhosVisitanteFT', width: 26 },
+    { header: 'defesa_rebatidas_mandante_FT', key: 'defesaRebatidasMandanteFT', width: 24 },
+    { header: 'defesa_rebatidas_visitante_FT', key: 'defesaRebatidasVisitanteFT', width: 24 },
+    { header: 'defesa_interceptacoes_mandante_FT', key: 'defesaInterceptacoesMandanteFT', width: 26 },
+    { header: 'defesa_interceptacoes_visitante_FT', key: 'defesaInterceptacoesVisitanteFT', width: 26 },
+    { header: 'defesa_erros_resultaram_finalizacao_mandante_FT', key: 'defesaErrosResultaramFinalizacaoMandanteFT', width: 34 },
+    { header: 'defesa_erros_resultaram_finalizacao_visitante_FT', key: 'defesaErrosResultaramFinalizacaoVisitanteFT', width: 34 },
+    { header: 'defesa_erros_resultaram_gol_mandante_FT', key: 'defesaErrosResultaramGolMandanteFT', width: 30 },
+    { header: 'defesa_erros_resultaram_gol_visitante_FT', key: 'defesaErrosResultaramGolVisitanteFT', width: 30 },
+    { header: 'defesa_goleiro_mandante_FT', key: 'defesaGoleiroMandanteFT', width: 24 },
+    { header: 'defesa_goleiro_visitante_FT', key: 'defesaGoleiroVisitanteFT', width: 24 },
+    { header: 'goleiro_defesas_mandante_FT', key: 'goleiroDefesasMandanteFT', width: 24 },
+    { header: 'goleiro_defesas_visitante_FT', key: 'goleiroDefesasVisitanteFT', width: 24 },
+    { header: 'goleiro_xgot_enfrentado_mandante_FT', key: 'goleiroXgotEnfrentadoMandanteFT', width: 28 },
+    { header: 'goleiro_xgot_enfrentado_visitante_FT', key: 'goleiroXgotEnfrentadoVisitanteFT', width: 28 },
+    { header: 'goleiro_gols_evitados_mandante_FT', key: 'goleiroGolsEvitadosMandanteFT', width: 26 },
+    { header: 'goleiro_gols_evitados_visitante_FT', key: 'goleiroGolsEvitadosVisitanteFT', width: 26 },
+    { header: 'goleiro_tiros_de_meta_mandante_FT', key: 'goleiroTirosDeMetaMandanteFT', width: 26 },
+    { header: 'goleiro_tiros_de_meta_visitante_FT', key: 'goleiroTirosDeMetaVisitanteFT', width: 26 },
     { header: 'Odd_Home_FT', key: 'oddHomeFT', width: 14 },
     { header: 'Odd_Draw_FT', key: 'oddDrawFT', width: 14 },
     { header: 'Odd_Away_FT', key: 'oddAwayFT', width: 14 },
     { header: 'Odd_Over25_FT', key: 'oddOver25FT', width: 14 },
     { header: 'Odd_Under25_FT', key: 'oddUnder25FT', width: 14 },
   ];
+
+  worksheet.columns = columnDefinitions;
 
   const headerRow = worksheet.getRow(1);
   headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -767,43 +1421,23 @@ export async function downloadFinishedMatchesTemplate(
   if (targetMatches.length > 0) {
     targetMatches.forEach(m => {
       const { date, time } = splitDateTimeForExcel(m.matchDate);
-      const st = m.stats || {};
-      const od = m.odds || {};
-      worksheet.addRow({
-        pais: m.countryName || '',
-        liga: m.leagueName || '',
-        data: date,
-        hora: time,
-        mandante: m.homeTeamName || '',
-        visitante: m.awayTeamName || '',
-        placarMandanteFT: m.homeScore !== null && m.homeScore !== undefined ? m.homeScore : '',
-        placarVisitanteFT: m.awayScore !== null && m.awayScore !== undefined ? m.awayScore : '',
-        placarMandanteHT: st.halftimeHomeScore !== null && st.halftimeHomeScore !== undefined ? st.halftimeHomeScore : '',
-        placarVisitanteHT: st.halftimeAwayScore !== null && st.halftimeAwayScore !== undefined ? st.halftimeAwayScore : '',
-        arbitro: m.referee || '',
-        estadio: m.stadium || '',
-        publico: m.attendance !== null && m.attendance !== undefined ? m.attendance : '',
-        capacidade: m.stadiumCapacity !== null && m.stadiumCapacity !== undefined ? m.stadiumCapacity : '',
-        xgMandanteFT: st.xgHomeFT ?? '',
-        xgVisitanteFT: st.xgAwayFT ?? '',
-        finalizacoesMandanteFT: st.shotsHomeFT ?? '',
-        finalizacoesVisitanteFT: st.shotsAwayFT ?? '',
-        chutesGolMandanteFT: st.shotsOnTargetHomeFT ?? '',
-        chutesGolVisitanteFT: st.shotsOnTargetAwayFT ?? '',
-        faltasMandanteFT: st.foulsHomeFT ?? '',
-        faltasVisitanteFT: st.foulsAwayFT ?? '',
-        escanteiosMandanteFT: st.cornersHomeFT ?? '',
-        escanteiosVisitanteFT: st.cornersAwayFT ?? '',
-        cartaoAmareloMandanteFT: st.yellowCardsHomeFT ?? '',
-        cartaoAmareloVisitanteFT: st.yellowCardsAwayFT ?? '',
-        cartaoVermelhoMandanteFT: st.redCardsHomeFT ?? '',
-        cartaoVermelhoVisitanteFT: st.redCardsAwayFT ?? '',
-        oddHomeFT: od.homeFT ?? '',
-        oddDrawFT: od.drawFT ?? '',
-        oddAwayFT: od.awayFT ?? '',
-        oddOver25FT: od.over25FT ?? '',
-        oddUnder25FT: od.under25FT ?? '',
-      });
+      const rowData = buildFinishedMatchRowValues(
+        m.countryName || '',
+        m.leagueName || '',
+        date,
+        time,
+        m.homeTeamName || '',
+        m.awayTeamName || '',
+        m.homeScore,
+        m.awayScore,
+        m.stats || {},
+        m.odds || {},
+        m.referee || '',
+        m.stadium || '',
+        m.attendance,
+        m.stadiumCapacity
+      );
+      worksheet.addRow(rowData);
     });
   } else {
     sampleRows.forEach(r => worksheet.addRow(r));
@@ -1063,6 +1697,277 @@ export function findMatchingMatch(
   return undefined;
 }
 
+export function extractBulkMatchUpdateFields(
+  getValue: (aliases: string[], colIndex?: number) => any
+) {
+  const countryName = String(getValue(EXCEL_HEADER_ALIASES.country, 1) || '').trim();
+  const leagueName = String(getValue(EXCEL_HEADER_ALIASES.league, 2) || '').trim();
+  const dateVal = getValue(EXCEL_HEADER_ALIASES.date, 3);
+  const timeVal = getValue(EXCEL_HEADER_ALIASES.time, 4);
+  const homeTeamName = String(getValue(EXCEL_HEADER_ALIASES.homeTeam, 5) || '').trim();
+  const awayTeamName = String(getValue(EXCEL_HEADER_ALIASES.awayTeam, 6) || '').trim();
+
+  const homeScore = parseInteger(getValue(EXCEL_HEADER_ALIASES.scoreHomeFT, 7));
+  const awayScore = parseInteger(getValue(EXCEL_HEADER_ALIASES.scoreAwayFT, 8));
+  const halftimeHomeScore = parseInteger(getValue(EXCEL_HEADER_ALIASES.scoreHomeHT, 9));
+  const halftimeAwayScore = parseInteger(getValue(EXCEL_HEADER_ALIASES.scoreAwayHT, 10));
+
+  const referee = String(getValue(EXCEL_HEADER_ALIASES.referee, 11) || '').trim();
+  const stadium = String(getValue(EXCEL_HEADER_ALIASES.stadium, 12) || '').trim();
+  const attendance = parseInteger(getValue(EXCEL_HEADER_ALIASES.attendance, 13));
+  const stadiumCapacity = parseInteger(getValue(EXCEL_HEADER_ALIASES.capacity, 14));
+
+  // Posse
+  const possessionHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.possessionHome, 15));
+  const possessionAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.possessionAway, 16));
+
+  // Cartoes
+  const yellowCardsHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.yellowHome, 17));
+  const yellowCardsAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.yellowAway, 18));
+  const redCardsHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.redHome, 19));
+  const redCardsAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.redAway, 20));
+
+  // Finalizações
+  const xgHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.xgHome, 21));
+  const xgAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.xgAway, 22));
+  const xgotHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.xgotHome, 23));
+  const xgotAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.xgotAway, 24));
+  const shotsHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsHome, 25));
+  const shotsAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsAway, 26));
+  const shotsOnTargetHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsOnTargetHome, 27));
+  const shotsOnTargetAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsOnTargetAway, 28));
+  const shotsOffTargetHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsOffTargetHome, 29));
+  const shotsOffTargetAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsOffTargetAway, 30));
+  const shotsBlockedHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsBlockedHome, 31));
+  const shotsBlockedAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsBlockedAway, 32));
+  const shotsInsideBoxHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsInsideBoxHome, 33));
+  const shotsInsideBoxAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsInsideBoxAway, 34));
+  const shotsOutsideBoxHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsOutsideBoxHome, 35));
+  const shotsOutsideBoxAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsOutsideBoxAway, 36));
+  const shotsWoodworkHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsWoodworkHome, 37));
+  const shotsWoodworkAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.shotsWoodworkAway, 38));
+
+  // Ataques
+  const bigChancesHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.bigChancesHome, 39));
+  const bigChancesAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.bigChancesAway, 40));
+  const cornersHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.cornersHome, 41));
+  const cornersAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.cornersAway, 42));
+  const touchesOppBoxHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.touchesOppBoxHome, 43));
+  const touchesOppBoxAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.touchesOppBoxAway, 44));
+  const throughBallsHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.throughBallsHome, 45));
+  const throughBallsAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.throughBallsAway, 46));
+  const offsidesHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.offsidesHome, 47));
+  const offsidesAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.offsidesAway, 48));
+  const foulsDrawnHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.foulsDrawnHome, 49));
+  const foulsDrawnAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.foulsDrawnAway, 50));
+
+  // Passes
+  const passesAccurateHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.passesAccurateHome, 51));
+  const passesTotalHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.passesTotalHome, 52));
+  const passesPctHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.passesPctHome, 53));
+  const passesAccurateAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.passesAccurateAway, 54));
+  const passesTotalAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.passesTotalAway, 55));
+  const passesPctAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.passesPctAway, 56));
+
+  const longPassesAccurateHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.longPassesAccurateHome, 57));
+  const longPassesTotalHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.longPassesTotalHome, 58));
+  const longPassesPctHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.longPassesPctHome, 59));
+  const longPassesAccurateAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.longPassesAccurateAway, 60));
+  const longPassesTotalAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.longPassesTotalAway, 61));
+  const longPassesPctAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.longPassesPctAway, 62));
+
+  const finalThirdPassesAccurateHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.finalThirdPassesAccurateHome, 63));
+  const finalThirdPassesTotalHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.finalThirdPassesTotalHome, 64));
+  const finalThirdPassesPctHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.finalThirdPassesPctHome, 65));
+  const finalThirdPassesAccurateAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.finalThirdPassesAccurateAway, 66));
+  const finalThirdPassesTotalAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.finalThirdPassesTotalAway, 67));
+  const finalThirdPassesPctAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.finalThirdPassesPctAway, 68));
+
+  const crossesAccurateHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.crossesAccurateHome, 69));
+  const crossesTotalHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.crossesTotalHome, 70));
+  const crossesPctHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.crossesPctHome, 71));
+  const crossesAccurateAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.crossesAccurateAway, 72));
+  const crossesTotalAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.crossesTotalAway, 73));
+  const crossesPctAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.crossesPctAway, 74));
+
+  const xaHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.xaHome, 75));
+  const xaAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.xaAway, 76));
+  const throwInsHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.throwInsHome, 77));
+  const throwInsAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.throwInsAway, 78));
+
+  // Defesa
+  const foulsHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.foulsHome, 79));
+  const foulsAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.foulsAway, 80));
+  const tacklesAccurateHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.tacklesAccurateHome, 81));
+  const tacklesTotalHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.tacklesTotalHome, 82));
+  const tacklesPctHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.tacklesPctHome, 83));
+  const tacklesAccurateAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.tacklesAccurateAway, 84));
+  const tacklesTotalAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.tacklesTotalAway, 85));
+  const tacklesPctAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.tacklesPctAway, 86));
+
+  const duelsWonHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.duelsWonHome, 87));
+  const duelsWonAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.duelsWonAway, 88));
+  const clearancesHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.clearancesHome, 89));
+  const clearancesAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.clearancesAway, 90));
+  const interceptionsHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.interceptionsHome, 91));
+  const interceptionsAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.interceptionsAway, 92));
+
+  const errorsLeadToShotHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.errorsLeadToShotHome, 93));
+  const errorsLeadToShotAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.errorsLeadToShotAway, 94));
+  const errorsLeadToGoalHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.errorsLeadToGoalHome, 95));
+  const errorsLeadToGoalAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.errorsLeadToGoalAway, 96));
+  const goalkeeperDefActionHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.goalkeeperDefActionHome, 97));
+  const goalkeeperDefActionAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.goalkeeperDefActionAway, 98));
+
+  // Goleiro
+  const savesHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.savesHome, 99));
+  const savesAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.savesAway, 100));
+  const xgotFacedHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.xgotFacedHome, 101));
+  const xgotFacedAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.xgotFacedAway, 102));
+  const goalsPreventedHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.goalsPreventedHome, 103));
+  const goalsPreventedAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.goalsPreventedAway, 104));
+  const goalKicksHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.goalKicksHome, 105));
+  const goalKicksAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.goalKicksAway, 106));
+
+  // Odds
+  const oddHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddHome, 107));
+  const oddDrawFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddDraw, 108));
+  const oddAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddAway, 109));
+  const oddOver25FT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddOver25, 110));
+  const oddUnder25FT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddUnder25, 111));
+
+  const ahHomeLine = parseNumber(getValue(EXCEL_HEADER_ALIASES.ahHomeLine));
+  const ahHomeOdd = parseNumber(getValue(EXCEL_HEADER_ALIASES.ahHomeOdd));
+  let ahAwayLine = parseNumber(getValue(EXCEL_HEADER_ALIASES.ahAwayLine));
+  if (ahAwayLine === null && ahHomeLine !== null) {
+    ahAwayLine = -ahHomeLine;
+  }
+  const ahAwayOdd = parseNumber(getValue(EXCEL_HEADER_ALIASES.ahAwayOdd));
+
+  const matchId = String(getValue(EXCEL_HEADER_ALIASES.matchId) || '').trim() || undefined;
+  const matchDateIso = formatIsoDateTime(dateVal, timeVal);
+
+  return {
+    countryName,
+    leagueName,
+    dateVal,
+    timeVal,
+    homeTeamName,
+    awayTeamName,
+    homeScore,
+    awayScore,
+    halftimeHomeScore,
+    halftimeAwayScore,
+    referee,
+    stadium,
+    attendance,
+    stadiumCapacity,
+    possessionHomeFT,
+    possessionAwayFT,
+    yellowCardsHomeFT,
+    yellowCardsAwayFT,
+    redCardsHomeFT,
+    redCardsAwayFT,
+    xgHomeFT,
+    xgAwayFT,
+    xgotHomeFT,
+    xgotAwayFT,
+    shotsHomeFT,
+    shotsAwayFT,
+    shotsOnTargetHomeFT,
+    shotsOnTargetAwayFT,
+    shotsOffTargetHomeFT,
+    shotsOffTargetAwayFT,
+    shotsBlockedHomeFT,
+    shotsBlockedAwayFT,
+    shotsInsideBoxHomeFT,
+    shotsInsideBoxAwayFT,
+    shotsOutsideBoxHomeFT,
+    shotsOutsideBoxAwayFT,
+    shotsWoodworkHomeFT,
+    shotsWoodworkAwayFT,
+    bigChancesHomeFT,
+    bigChancesAwayFT,
+    cornersHomeFT,
+    cornersAwayFT,
+    touchesOppBoxHomeFT,
+    touchesOppBoxAwayFT,
+    throughBallsHomeFT,
+    throughBallsAwayFT,
+    offsidesHomeFT,
+    offsidesAwayFT,
+    foulsDrawnHomeFT,
+    foulsDrawnAwayFT,
+    passesAccurateHomeFT,
+    passesTotalHomeFT,
+    passesPctHomeFT,
+    passesAccurateAwayFT,
+    passesTotalAwayFT,
+    passesPctAwayFT,
+    longPassesAccurateHomeFT,
+    longPassesTotalHomeFT,
+    longPassesPctHomeFT,
+    longPassesAccurateAwayFT,
+    longPassesTotalAwayFT,
+    longPassesPctAwayFT,
+    finalThirdPassesAccurateHomeFT,
+    finalThirdPassesTotalHomeFT,
+    finalThirdPassesPctHomeFT,
+    finalThirdPassesAccurateAwayFT,
+    finalThirdPassesTotalAwayFT,
+    finalThirdPassesPctAwayFT,
+    crossesAccurateHomeFT,
+    crossesTotalHomeFT,
+    crossesPctHomeFT,
+    crossesAccurateAwayFT,
+    crossesTotalAwayFT,
+    crossesPctAwayFT,
+    xaHomeFT,
+    xaAwayFT,
+    throwInsHomeFT,
+    throwInsAwayFT,
+    foulsHomeFT,
+    foulsAwayFT,
+    tacklesAccurateHomeFT,
+    tacklesTotalHomeFT,
+    tacklesPctHomeFT,
+    tacklesAccurateAwayFT,
+    tacklesTotalAwayFT,
+    tacklesPctAwayFT,
+    duelsWonHomeFT,
+    duelsWonAwayFT,
+    clearancesHomeFT,
+    clearancesAwayFT,
+    interceptionsHomeFT,
+    interceptionsAwayFT,
+    errorsLeadToShotHomeFT,
+    errorsLeadToShotAwayFT,
+    errorsLeadToGoalHomeFT,
+    errorsLeadToGoalAwayFT,
+    goalkeeperDefActionHomeFT,
+    goalkeeperDefActionAwayFT,
+    savesHomeFT,
+    savesAwayFT,
+    xgotFacedHomeFT,
+    xgotFacedAwayFT,
+    goalsPreventedHomeFT,
+    goalsPreventedAwayFT,
+    goalKicksHomeFT,
+    goalKicksAwayFT,
+    oddHomeFT,
+    oddDrawFT,
+    oddAwayFT,
+    oddOver25FT,
+    oddUnder25FT,
+    asianHandicapHomeLine: ahHomeLine,
+    asianHandicapHomeOdd: ahHomeOdd,
+    asianHandicapAwayLine: ahAwayLine,
+    asianHandicapAwayOdd: ahAwayOdd,
+    matchId,
+    matchDateIso,
+  };
+}
+
 export async function parseBulkMatchUpdateExcel(
   file: File,
   existingMatches: Match[]
@@ -1099,115 +2004,149 @@ export async function parseBulkMatchUpdateExcel(
       }
     });
 
-    const countryName = String(
-      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.country, 1) || ''
-    ).trim();
-    const leagueName = String(
-      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.league, 2) || ''
-    ).trim();
-    const dateVal = getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.date, 3);
-    const timeVal = getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.time, 4);
-    const homeTeamName = String(
-      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.homeTeam, 5) || ''
-    ).trim();
-    const awayTeamName = String(
-      getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.awayTeam, 6) || ''
-    ).trim();
-
-    const homeScore = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.scoreHomeFT, 7));
-    const awayScore = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.scoreAwayFT, 8));
-    const halftimeHomeScore = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.scoreHomeHT, 9));
-    const halftimeAwayScore = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.scoreAwayHT, 10));
-
-    const referee = String(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.referee, 11) || '').trim();
-    const stadium = String(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.stadium, 12) || '').trim();
-    const attendance = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.attendance, 13));
-    const stadiumCapacity = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.capacity, 14));
-
-    const xgHomeFT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.xgHome, 15));
-    const xgAwayFT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.xgAway, 16));
-    const shotsHomeFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.shotsHome, 17));
-    const shotsAwayFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.shotsAway, 18));
-    const shotsOnTargetHomeFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.shotsOnTargetHome, 19));
-    const shotsOnTargetAwayFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.shotsOnTargetAway, 20));
-    const foulsHomeFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.foulsHome, 21));
-    const foulsAwayFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.foulsAway, 22));
-    const cornersHomeFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.cornersHome, 23));
-    const cornersAwayFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.cornersAway, 24));
-    const yellowCardsHomeFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.yellowHome, 25));
-    const yellowCardsAwayFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.yellowAway, 26));
-    const redCardsHomeFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.redHome, 27));
-    const redCardsAwayFT = parseInteger(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.redAway, 28));
-
-    const oddHomeFT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddHome, 29));
-    const oddDrawFT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddDraw, 30));
-    const oddAwayFT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddAway, 31));
-    const oddOver25FT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddOver25, 32));
-    const oddUnder25FT = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.oddUnder25, 33));
-
-    const ahHomeLine = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.ahHomeLine));
-    const ahHomeOdd = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.ahHomeOdd));
-    let ahAwayLine = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.ahAwayLine));
-    if (ahAwayLine === null && ahHomeLine !== null) {
-      ahAwayLine = -ahHomeLine;
-    }
-    const ahAwayOdd = parseNumber(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.ahAwayOdd));
-
-    const matchDateIso = formatIsoDateTime(dateVal, timeVal);
-    const matchId = String(getFlexibleValue(rowData, row, EXCEL_HEADER_ALIASES.matchId) || '').trim() || undefined;
-
-    const matchedMatch = findMatchingMatch(
-      homeTeamName,
-      awayTeamName,
-      matchDateIso,
-      matchId,
-      existingMatches
+    const fields = extractBulkMatchUpdateFields((aliases, colIndex) =>
+      getFlexibleValue(rowData, row, aliases, colIndex)
     );
 
-    const isNewMatch = !matchedMatch;
+    if (fields.homeTeamName && fields.awayTeamName) {
+      const matchedMatch = findMatchingMatch(
+        fields.homeTeamName,
+        fields.awayTeamName,
+        fields.matchDateIso,
+        fields.matchId,
+        existingMatches
+      );
 
-    if (homeTeamName && awayTeamName) {
+      const isNewMatch = !matchedMatch;
+
       parsedRows.push({
         rowIndex: rowNumber,
-        matchId: matchedMatch?.id || matchId,
-        matchDate: matchedMatch?.matchDate || matchDateIso,
-        countryName: countryName || matchedMatch?.countryName || 'Outro',
-        leagueName: leagueName || matchedMatch?.leagueName || 'Liga Principal',
-        homeTeamName: homeTeamName || matchedMatch?.homeTeamName || '',
-        awayTeamName: awayTeamName || matchedMatch?.awayTeamName || '',
-        referee: referee || matchedMatch?.referee || '',
-        stadium: stadium || matchedMatch?.stadium || '',
-        stadiumCapacity: stadiumCapacity ?? matchedMatch?.stadiumCapacity ?? null,
-        attendance: attendance ?? matchedMatch?.attendance ?? null,
-        status: homeScore !== null && awayScore !== null ? 'FINALIZADO' : 'AGENDADO',
+        matchId: matchedMatch?.id || fields.matchId,
+        matchDate: matchedMatch?.matchDate || fields.matchDateIso,
+        countryName: fields.countryName || matchedMatch?.countryName || 'Outro',
+        leagueName: fields.leagueName || matchedMatch?.leagueName || 'Liga Principal',
+        homeTeamName: fields.homeTeamName || matchedMatch?.homeTeamName || '',
+        awayTeamName: fields.awayTeamName || matchedMatch?.awayTeamName || '',
+        referee: fields.referee || matchedMatch?.referee || '',
+        stadium: fields.stadium || matchedMatch?.stadium || '',
+        stadiumCapacity: fields.stadiumCapacity ?? matchedMatch?.stadiumCapacity ?? null,
+        attendance: fields.attendance ?? matchedMatch?.attendance ?? null,
+        status: fields.homeScore !== null && fields.awayScore !== null ? 'FINALIZADO' : 'AGENDADO',
         matchedMatch,
         isNewMatch,
 
-        homeScore,
-        awayScore,
-        halftimeHomeScore,
-        halftimeAwayScore,
+        homeScore: fields.homeScore,
+        awayScore: fields.awayScore,
+        halftimeHomeScore: fields.halftimeHomeScore,
+        halftimeAwayScore: fields.halftimeAwayScore,
 
-        xgHomeFT,
-        xgAwayFT,
-        shotsHomeFT,
-        shotsAwayFT,
-        shotsOnTargetHomeFT,
-        shotsOnTargetAwayFT,
-        foulsHomeFT,
-        foulsAwayFT,
-        cornersHomeFT,
-        cornersAwayFT,
-        yellowCardsHomeFT,
-        yellowCardsAwayFT,
-        redCardsHomeFT,
-        redCardsAwayFT,
+        possessionHomeFT: fields.possessionHomeFT,
+        possessionAwayFT: fields.possessionAwayFT,
+        yellowCardsHomeFT: fields.yellowCardsHomeFT,
+        yellowCardsAwayFT: fields.yellowCardsAwayFT,
+        redCardsHomeFT: fields.redCardsHomeFT,
+        redCardsAwayFT: fields.redCardsAwayFT,
 
-        oddHomeFT,
-        oddDrawFT,
-        oddAwayFT,
-        oddOver25FT,
-        oddUnder25FT,
+        xgHomeFT: fields.xgHomeFT,
+        xgAwayFT: fields.xgAwayFT,
+        xgotHomeFT: fields.xgotHomeFT,
+        xgotAwayFT: fields.xgotAwayFT,
+        shotsHomeFT: fields.shotsHomeFT,
+        shotsAwayFT: fields.shotsAwayFT,
+        shotsOnTargetHomeFT: fields.shotsOnTargetHomeFT,
+        shotsOnTargetAwayFT: fields.shotsOnTargetAwayFT,
+        shotsOffTargetHomeFT: fields.shotsOffTargetHomeFT,
+        shotsOffTargetAwayFT: fields.shotsOffTargetAwayFT,
+        shotsBlockedHomeFT: fields.shotsBlockedHomeFT,
+        shotsBlockedAwayFT: fields.shotsBlockedAwayFT,
+        shotsInsideBoxHomeFT: fields.shotsInsideBoxHomeFT,
+        shotsInsideBoxAwayFT: fields.shotsInsideBoxAwayFT,
+        shotsOutsideBoxHomeFT: fields.shotsOutsideBoxHomeFT,
+        shotsOutsideBoxAwayFT: fields.shotsOutsideBoxAwayFT,
+        shotsWoodworkHomeFT: fields.shotsWoodworkHomeFT,
+        shotsWoodworkAwayFT: fields.shotsWoodworkAwayFT,
+
+        bigChancesHomeFT: fields.bigChancesHomeFT,
+        bigChancesAwayFT: fields.bigChancesAwayFT,
+        cornersHomeFT: fields.cornersHomeFT,
+        cornersAwayFT: fields.cornersAwayFT,
+        touchesOppBoxHomeFT: fields.touchesOppBoxHomeFT,
+        touchesOppBoxAwayFT: fields.touchesOppBoxAwayFT,
+        throughBallsHomeFT: fields.throughBallsHomeFT,
+        throughBallsAwayFT: fields.throughBallsAwayFT,
+        offsidesHomeFT: fields.offsidesHomeFT,
+        offsidesAwayFT: fields.offsidesAwayFT,
+        foulsDrawnHomeFT: fields.foulsDrawnHomeFT,
+        foulsDrawnAwayFT: fields.foulsDrawnAwayFT,
+
+        passesAccurateHomeFT: fields.passesAccurateHomeFT,
+        passesTotalHomeFT: fields.passesTotalHomeFT,
+        passesPctHomeFT: fields.passesPctHomeFT,
+        passesAccurateAwayFT: fields.passesAccurateAwayFT,
+        passesTotalAwayFT: fields.passesTotalAwayFT,
+        passesPctAwayFT: fields.passesPctAwayFT,
+        longPassesAccurateHomeFT: fields.longPassesAccurateHomeFT,
+        longPassesTotalHomeFT: fields.longPassesTotalHomeFT,
+        longPassesPctHomeFT: fields.longPassesPctHomeFT,
+        longPassesAccurateAwayFT: fields.longPassesAccurateAwayFT,
+        longPassesTotalAwayFT: fields.longPassesTotalAwayFT,
+        longPassesPctAwayFT: fields.longPassesPctAwayFT,
+        finalThirdPassesAccurateHomeFT: fields.finalThirdPassesAccurateHomeFT,
+        finalThirdPassesTotalHomeFT: fields.finalThirdPassesTotalHomeFT,
+        finalThirdPassesPctHomeFT: fields.finalThirdPassesPctHomeFT,
+        finalThirdPassesAccurateAwayFT: fields.finalThirdPassesAccurateAwayFT,
+        finalThirdPassesTotalAwayFT: fields.finalThirdPassesTotalAwayFT,
+        finalThirdPassesPctAwayFT: fields.finalThirdPassesPctAwayFT,
+        crossesAccurateHomeFT: fields.crossesAccurateHomeFT,
+        crossesTotalHomeFT: fields.crossesTotalHomeFT,
+        crossesPctHomeFT: fields.crossesPctHomeFT,
+        crossesAccurateAwayFT: fields.crossesAccurateAwayFT,
+        crossesTotalAwayFT: fields.crossesTotalAwayFT,
+        crossesPctAwayFT: fields.crossesPctAwayFT,
+        xaHomeFT: fields.xaHomeFT,
+        xaAwayFT: fields.xaAwayFT,
+        throwInsHomeFT: fields.throwInsHomeFT,
+        throwInsAwayFT: fields.throwInsAwayFT,
+
+        foulsHomeFT: fields.foulsHomeFT,
+        foulsAwayFT: fields.foulsAwayFT,
+        tacklesAccurateHomeFT: fields.tacklesAccurateHomeFT,
+        tacklesTotalHomeFT: fields.tacklesTotalHomeFT,
+        tacklesPctHomeFT: fields.tacklesPctHomeFT,
+        tacklesAccurateAwayFT: fields.tacklesAccurateAwayFT,
+        tacklesTotalAwayFT: fields.tacklesTotalAwayFT,
+        tacklesPctAwayFT: fields.tacklesPctAwayFT,
+        duelsWonHomeFT: fields.duelsWonHomeFT,
+        duelsWonAwayFT: fields.duelsWonAwayFT,
+        clearancesHomeFT: fields.clearancesHomeFT,
+        clearancesAwayFT: fields.clearancesAwayFT,
+        interceptionsHomeFT: fields.interceptionsHomeFT,
+        interceptionsAwayFT: fields.interceptionsAwayFT,
+        errorsLeadToShotHomeFT: fields.errorsLeadToShotHomeFT,
+        errorsLeadToShotAwayFT: fields.errorsLeadToShotAwayFT,
+        errorsLeadToGoalHomeFT: fields.errorsLeadToGoalHomeFT,
+        errorsLeadToGoalAwayFT: fields.errorsLeadToGoalAwayFT,
+        goalkeeperDefActionHomeFT: fields.goalkeeperDefActionHomeFT,
+        goalkeeperDefActionAwayFT: fields.goalkeeperDefActionAwayFT,
+
+        savesHomeFT: fields.savesHomeFT,
+        savesAwayFT: fields.savesAwayFT,
+        xgotFacedHomeFT: fields.xgotFacedHomeFT,
+        xgotFacedAwayFT: fields.xgotFacedAwayFT,
+        goalsPreventedHomeFT: fields.goalsPreventedHomeFT,
+        goalsPreventedAwayFT: fields.goalsPreventedAwayFT,
+        goalKicksHomeFT: fields.goalKicksHomeFT,
+        goalKicksAwayFT: fields.goalKicksAwayFT,
+
+        oddHomeFT: fields.oddHomeFT,
+        oddDrawFT: fields.oddDrawFT,
+        oddAwayFT: fields.oddAwayFT,
+        oddOver25FT: fields.oddOver25FT,
+        oddUnder25FT: fields.oddUnder25FT,
+        asianHandicapHomeLine: fields.asianHandicapHomeLine,
+        asianHandicapHomeOdd: fields.asianHandicapHomeOdd,
+        asianHandicapAwayLine: fields.asianHandicapAwayLine,
+        asianHandicapAwayOdd: fields.asianHandicapAwayOdd,
 
         isValid: true,
       });
@@ -1238,119 +2177,154 @@ export function parseFinishedMatchesText(
       if (h) rowData[h] = cells[idx] || '';
     });
 
-    const countryName = String(
-      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.country) || cells[0] || ''
-    ).trim();
-    const leagueName = String(
-      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.league) || cells[1] || ''
-    ).trim();
-    const dateVal = getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.date) || cells[2] || '';
-    const timeVal = getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.time) || cells[3] || '';
-    const homeTeamName = String(
-      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.homeTeam) || cells[4] || ''
-    ).trim();
-    const awayTeamName = String(
-      getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.awayTeam) || cells[5] || ''
-    ).trim();
+    const fields = extractBulkMatchUpdateFields((aliases, colIndex) => {
+      const v = getFlexibleValue(rowData, null, aliases);
+      if (v !== undefined && v !== null && v !== '') return v;
+      if (colIndex !== undefined && colIndex >= 1 && colIndex <= cells.length) {
+        return cells[colIndex - 1];
+      }
+      return undefined;
+    });
 
-    const homeScore = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.scoreHomeFT) || cells[6]);
-    const awayScore = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.scoreAwayFT) || cells[7]);
-    const halftimeHomeScore = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.scoreHomeHT) || cells[8]);
-    const halftimeAwayScore = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.scoreAwayHT) || cells[9]);
+    if (fields.homeTeamName && fields.awayTeamName) {
+      const matchedMatch = findMatchingMatch(
+        fields.homeTeamName,
+        fields.awayTeamName,
+        fields.matchDateIso,
+        fields.matchId,
+        existingMatches
+      );
 
-    const referee = String(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.referee) || cells[10] || '').trim();
-    const stadium = String(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.stadium) || cells[11] || '').trim();
-    const attendance = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.attendance) || cells[12]);
-    const stadiumCapacity = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.capacity) || cells[13]);
+      const isNewMatch = !matchedMatch;
 
-    const xgHomeFT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.xgHome) || cells[14]);
-    const xgAwayFT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.xgAway) || cells[15]);
-    const shotsHomeFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.shotsHome) || cells[16]);
-    const shotsAwayFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.shotsAway) || cells[17]);
-    const shotsOnTargetHomeFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.shotsOnTargetHome) || cells[18]);
-    const shotsOnTargetAwayFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.shotsOnTargetAway) || cells[19]);
-    const foulsHomeFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.foulsHome) || cells[20]);
-    const foulsAwayFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.foulsAway) || cells[21]);
-    const cornersHomeFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.cornersHome) || cells[22]);
-    const cornersAwayFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.cornersAway) || cells[23]);
-    const yellowCardsHomeFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.yellowHome) || cells[24]);
-    const yellowCardsAwayFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.yellowAway) || cells[25]);
-    const redCardsHomeFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.redHome) || cells[26]);
-    const redCardsAwayFT = parseInteger(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.redAway) || cells[27]);
-
-    const oddHomeFT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddHome) || cells[28]);
-    const oddDrawFT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddDraw) || cells[29]);
-    const oddAwayFT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddAway) || cells[30]);
-    const oddOver25FT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddOver25) || cells[31]);
-    const oddUnder25FT = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.oddUnder25) || cells[32]);
-
-    const ahHomeLine = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.ahHomeLine));
-    const ahHomeOdd = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.ahHomeOdd));
-    let ahAwayLine = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.ahAwayLine));
-    if (ahAwayLine === null && ahHomeLine !== null) {
-      ahAwayLine = -ahHomeLine;
-    }
-    const ahAwayOdd = parseNumber(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.ahAwayOdd));
-
-    const matchDateIso = formatIsoDateTime(dateVal, timeVal);
-    const matchId = String(getFlexibleValue(rowData, null, EXCEL_HEADER_ALIASES.matchId) || '').trim() || undefined;
-
-    const matchedMatch = findMatchingMatch(
-      homeTeamName,
-      awayTeamName,
-      matchDateIso,
-      matchId,
-      existingMatches
-    );
-
-    const isNewMatch = !matchedMatch;
-
-    if (homeTeamName && awayTeamName) {
       parsedRows.push({
         rowIndex: i + 1,
-        matchId: matchedMatch?.id || matchId,
-        matchDate: matchedMatch?.matchDate || matchDateIso,
-        countryName: countryName || matchedMatch?.countryName || 'Outro',
-        leagueName: leagueName || matchedMatch?.leagueName || 'Liga Principal',
-        homeTeamName: homeTeamName || matchedMatch?.homeTeamName || '',
-        awayTeamName: awayTeamName || matchedMatch?.awayTeamName || '',
-        referee: referee || matchedMatch?.referee || '',
-        stadium: stadium || matchedMatch?.stadium || '',
-        stadiumCapacity: stadiumCapacity ?? matchedMatch?.stadiumCapacity ?? null,
-        attendance: attendance ?? matchedMatch?.attendance ?? null,
-        status: homeScore !== null && awayScore !== null ? 'FINALIZADO' : 'AGENDADO',
+        matchId: matchedMatch?.id || fields.matchId,
+        matchDate: matchedMatch?.matchDate || fields.matchDateIso,
+        countryName: fields.countryName || matchedMatch?.countryName || 'Outro',
+        leagueName: fields.leagueName || matchedMatch?.leagueName || 'Liga Principal',
+        homeTeamName: fields.homeTeamName || matchedMatch?.homeTeamName || '',
+        awayTeamName: fields.awayTeamName || matchedMatch?.awayTeamName || '',
+        referee: fields.referee || matchedMatch?.referee || '',
+        stadium: fields.stadium || matchedMatch?.stadium || '',
+        stadiumCapacity: fields.stadiumCapacity ?? matchedMatch?.stadiumCapacity ?? null,
+        attendance: fields.attendance ?? matchedMatch?.attendance ?? null,
+        status: fields.homeScore !== null && fields.awayScore !== null ? 'FINALIZADO' : 'AGENDADO',
         matchedMatch,
         isNewMatch,
 
-        homeScore,
-        awayScore,
-        halftimeHomeScore,
-        halftimeAwayScore,
+        homeScore: fields.homeScore,
+        awayScore: fields.awayScore,
+        halftimeHomeScore: fields.halftimeHomeScore,
+        halftimeAwayScore: fields.halftimeAwayScore,
 
-        xgHomeFT,
-        xgAwayFT,
-        shotsHomeFT,
-        shotsAwayFT,
-        shotsOnTargetHomeFT,
-        shotsOnTargetAwayFT,
-        foulsHomeFT,
-        foulsAwayFT,
-        cornersHomeFT,
-        cornersAwayFT,
-        yellowCardsHomeFT,
-        yellowCardsAwayFT,
-        redCardsHomeFT,
-        redCardsAwayFT,
+        possessionHomeFT: fields.possessionHomeFT,
+        possessionAwayFT: fields.possessionAwayFT,
+        yellowCardsHomeFT: fields.yellowCardsHomeFT,
+        yellowCardsAwayFT: fields.yellowCardsAwayFT,
+        redCardsHomeFT: fields.redCardsHomeFT,
+        redCardsAwayFT: fields.redCardsAwayFT,
 
-        oddHomeFT,
-        oddDrawFT,
-        oddAwayFT,
-        oddOver25FT,
-        oddUnder25FT,
-        asianHandicapHomeLine: ahHomeLine,
-        asianHandicapHomeOdd: ahHomeOdd,
-        asianHandicapAwayLine: ahAwayLine,
-        asianHandicapAwayOdd: ahAwayOdd,
+        xgHomeFT: fields.xgHomeFT,
+        xgAwayFT: fields.xgAwayFT,
+        xgotHomeFT: fields.xgotHomeFT,
+        xgotAwayFT: fields.xgotAwayFT,
+        shotsHomeFT: fields.shotsHomeFT,
+        shotsAwayFT: fields.shotsAwayFT,
+        shotsOnTargetHomeFT: fields.shotsOnTargetHomeFT,
+        shotsOnTargetAwayFT: fields.shotsOnTargetAwayFT,
+        shotsOffTargetHomeFT: fields.shotsOffTargetHomeFT,
+        shotsOffTargetAwayFT: fields.shotsOffTargetAwayFT,
+        shotsBlockedHomeFT: fields.shotsBlockedHomeFT,
+        shotsBlockedAwayFT: fields.shotsBlockedAwayFT,
+        shotsInsideBoxHomeFT: fields.shotsInsideBoxHomeFT,
+        shotsInsideBoxAwayFT: fields.shotsInsideBoxAwayFT,
+        shotsOutsideBoxHomeFT: fields.shotsOutsideBoxHomeFT,
+        shotsOutsideBoxAwayFT: fields.shotsOutsideBoxAwayFT,
+        shotsWoodworkHomeFT: fields.shotsWoodworkHomeFT,
+        shotsWoodworkAwayFT: fields.shotsWoodworkAwayFT,
+
+        bigChancesHomeFT: fields.bigChancesHomeFT,
+        bigChancesAwayFT: fields.bigChancesAwayFT,
+        cornersHomeFT: fields.cornersHomeFT,
+        cornersAwayFT: fields.cornersAwayFT,
+        touchesOppBoxHomeFT: fields.touchesOppBoxHomeFT,
+        touchesOppBoxAwayFT: fields.touchesOppBoxAwayFT,
+        throughBallsHomeFT: fields.throughBallsHomeFT,
+        throughBallsAwayFT: fields.throughBallsAwayFT,
+        offsidesHomeFT: fields.offsidesHomeFT,
+        offsidesAwayFT: fields.offsidesAwayFT,
+        foulsDrawnHomeFT: fields.foulsDrawnHomeFT,
+        foulsDrawnAwayFT: fields.foulsDrawnAwayFT,
+
+        passesAccurateHomeFT: fields.passesAccurateHomeFT,
+        passesTotalHomeFT: fields.passesTotalHomeFT,
+        passesPctHomeFT: fields.passesPctHomeFT,
+        passesAccurateAwayFT: fields.passesAccurateAwayFT,
+        passesTotalAwayFT: fields.passesTotalAwayFT,
+        passesPctAwayFT: fields.passesPctAwayFT,
+        longPassesAccurateHomeFT: fields.longPassesAccurateHomeFT,
+        longPassesTotalHomeFT: fields.longPassesTotalHomeFT,
+        longPassesPctHomeFT: fields.longPassesPctHomeFT,
+        longPassesAccurateAwayFT: fields.longPassesAccurateAwayFT,
+        longPassesTotalAwayFT: fields.longPassesTotalAwayFT,
+        longPassesPctAwayFT: fields.longPassesPctAwayFT,
+        finalThirdPassesAccurateHomeFT: fields.finalThirdPassesAccurateHomeFT,
+        finalThirdPassesTotalHomeFT: fields.finalThirdPassesTotalHomeFT,
+        finalThirdPassesPctHomeFT: fields.finalThirdPassesPctHomeFT,
+        finalThirdPassesAccurateAwayFT: fields.finalThirdPassesAccurateAwayFT,
+        finalThirdPassesTotalAwayFT: fields.finalThirdPassesTotalAwayFT,
+        finalThirdPassesPctAwayFT: fields.finalThirdPassesPctAwayFT,
+        crossesAccurateHomeFT: fields.crossesAccurateHomeFT,
+        crossesTotalHomeFT: fields.crossesTotalHomeFT,
+        crossesPctHomeFT: fields.crossesPctHomeFT,
+        crossesAccurateAwayFT: fields.crossesAccurateAwayFT,
+        crossesTotalAwayFT: fields.crossesTotalAwayFT,
+        crossesPctAwayFT: fields.crossesPctAwayFT,
+        xaHomeFT: fields.xaHomeFT,
+        xaAwayFT: fields.xaAwayFT,
+        throwInsHomeFT: fields.throwInsHomeFT,
+        throwInsAwayFT: fields.throwInsAwayFT,
+
+        foulsHomeFT: fields.foulsHomeFT,
+        foulsAwayFT: fields.foulsAwayFT,
+        tacklesAccurateHomeFT: fields.tacklesAccurateHomeFT,
+        tacklesTotalHomeFT: fields.tacklesTotalHomeFT,
+        tacklesPctHomeFT: fields.tacklesPctHomeFT,
+        tacklesAccurateAwayFT: fields.tacklesAccurateAwayFT,
+        tacklesTotalAwayFT: fields.tacklesTotalAwayFT,
+        tacklesPctAwayFT: fields.tacklesPctAwayFT,
+        duelsWonHomeFT: fields.duelsWonHomeFT,
+        duelsWonAwayFT: fields.duelsWonAwayFT,
+        clearancesHomeFT: fields.clearancesHomeFT,
+        clearancesAwayFT: fields.clearancesAwayFT,
+        interceptionsHomeFT: fields.interceptionsHomeFT,
+        interceptionsAwayFT: fields.interceptionsAwayFT,
+        errorsLeadToShotHomeFT: fields.errorsLeadToShotHomeFT,
+        errorsLeadToShotAwayFT: fields.errorsLeadToShotAwayFT,
+        errorsLeadToGoalHomeFT: fields.errorsLeadToGoalHomeFT,
+        errorsLeadToGoalAwayFT: fields.errorsLeadToGoalAwayFT,
+        goalkeeperDefActionHomeFT: fields.goalkeeperDefActionHomeFT,
+        goalkeeperDefActionAwayFT: fields.goalkeeperDefActionAwayFT,
+
+        savesHomeFT: fields.savesHomeFT,
+        savesAwayFT: fields.savesAwayFT,
+        xgotFacedHomeFT: fields.xgotFacedHomeFT,
+        xgotFacedAwayFT: fields.xgotFacedAwayFT,
+        goalsPreventedHomeFT: fields.goalsPreventedHomeFT,
+        goalsPreventedAwayFT: fields.goalsPreventedAwayFT,
+        goalKicksHomeFT: fields.goalKicksHomeFT,
+        goalKicksAwayFT: fields.goalKicksAwayFT,
+
+        oddHomeFT: fields.oddHomeFT,
+        oddDrawFT: fields.oddDrawFT,
+        oddAwayFT: fields.oddAwayFT,
+        oddOver25FT: fields.oddOver25FT,
+        oddUnder25FT: fields.oddUnder25FT,
+        asianHandicapHomeLine: fields.asianHandicapHomeLine,
+        asianHandicapHomeOdd: fields.asianHandicapHomeOdd,
+        asianHandicapAwayLine: fields.asianHandicapAwayLine,
+        asianHandicapAwayOdd: fields.asianHandicapAwayOdd,
 
         isValid: true,
       });

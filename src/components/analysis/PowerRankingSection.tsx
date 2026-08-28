@@ -1,14 +1,28 @@
-import React from 'react';
-import { Award, Zap, TrendingUp, ShieldAlert, Target, DollarSign, Percent, BarChart2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Award, Zap, TrendingUp, ShieldAlert, Target, DollarSign, Percent, BarChart2, Radio, Layers } from 'lucide-react';
 import { MatchAnalysisResult, TeamPowerRating } from '../../utils/analysisEngine';
 import { isValidImageUrl } from '../../utils/imageHelper';
+import { SectoralPowerRadar } from './SectoralPowerRadar';
 
 interface PowerRankingSectionProps {
   analysis: MatchAnalysisResult;
 }
 
 export const PowerRankingSection: React.FC<PowerRankingSectionProps> = ({ analysis }) => {
-  const { homeTeam, awayTeam, homePower, awayPower, sampleSize, venueMode } = analysis;
+  const {
+    homeTeam,
+    awayTeam,
+    homePower,
+    awayPower,
+    homeSectoralPower,
+    awaySectoralPower,
+    homeAdvancedIndices,
+    awayAdvancedIndices,
+    sampleSize,
+    venueMode,
+  } = analysis;
+
+  const [activeTab, setActiveTab] = useState<'SECTORAL' | 'COMPOSITE' | 'BOTH'>('BOTH');
 
   const renderTeamPowerCard = (
     power: TeamPowerRating,
@@ -235,11 +249,76 @@ export const PowerRankingSection: React.FC<PowerRankingSectionProps> = ({ analys
         </div>
       </div>
 
-      {/* 2-Column Team Comparison */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {renderTeamPowerCard(homePower, homeTeam.name, homeTeam.logoUrl, 'home')}
-        {renderTeamPowerCard(awayPower, awayTeam.name, awayTeam.logoUrl, 'away')}
+      {/* Navigation Sub-Tabs for Module 2 */}
+      <div className="flex items-center gap-2 border-b border-slate-100 pb-2 text-xs font-bold">
+        <button
+          type="button"
+          onClick={() => setActiveTab('BOTH')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
+            activeTab === 'BOTH'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          Visão Geral & Setorial
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('SECTORAL')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
+            activeTab === 'SECTORAL'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <Radio className="w-3.5 h-3.5" />
+          Radar & Índices Setoriais (BTI, xG, Baliza)
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('COMPOSITE')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
+            activeTab === 'COMPOSITE'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <Award className="w-3.5 h-3.5" />
+          Power Ranking Ponderado (Detalhes)
+        </button>
       </div>
+
+      {/* Sectoral Radar & Advanced Indices */}
+      {(activeTab === 'BOTH' || activeTab === 'SECTORAL') && homeSectoralPower && awaySectoralPower && homeAdvancedIndices && awayAdvancedIndices && (
+        <SectoralPowerRadar
+          homeTeamName={homeTeam.name}
+          awayTeamName={awayTeam.name}
+          homeLogoUrl={homeTeam.logoUrl}
+          awayLogoUrl={awayTeam.logoUrl}
+          homeSectoral={homeSectoralPower}
+          awaySectoral={awaySectoralPower}
+          homeIndices={homeAdvancedIndices}
+          awayIndices={awayAdvancedIndices}
+        />
+      )}
+
+      {/* Detailed Team Power Cards */}
+      {(activeTab === 'BOTH' || activeTab === 'COMPOSITE') && (
+        <div className="space-y-3 pt-2">
+          {activeTab === 'BOTH' && (
+            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+              Detalhamento de Aproveitamento & Linhas de Mercado
+            </span>
+          )}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {renderTeamPowerCard(homePower, homeTeam.name, homeTeam.logoUrl, 'home')}
+            {renderTeamPowerCard(awayPower, awayTeam.name, awayTeam.logoUrl, 'away')}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

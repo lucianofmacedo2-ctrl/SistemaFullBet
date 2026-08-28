@@ -1,34 +1,127 @@
 export type MatchStatus = 'AGENDADO' | 'EM_ANDAMENTO' | 'FINALIZADO' | 'ADIADO';
 
 export interface MatchStats {
-  // Gols & Placar HT (Único mercado HT mantido)
+  // Gols & Placar HT
   halftimeHomeScore?: number | null;
   halftimeAwayScore?: number | null;
 
-  // Estatísticas FT (Full Time)
-  xgHomeFT?: number | null;
-  xgAwayFT?: number | null;
-  shotsHomeFT?: number | null; // Finalizações Mandante FT
-  shotsAwayFT?: number | null; // Finalizações Visitante FT
-  shotsOnTargetHomeFT?: number | null; // Chutes a Gol Mandante FT
-  shotsOnTargetAwayFT?: number | null; // Chutes a Gol Visitante FT
-  foulsHomeFT?: number | null; // Faltas Mandante FT
-  foulsAwayFT?: number | null; // Faltas Visitante FT
-  cornersHomeFT?: number | null; // Escanteios Mandante FT
-  cornersAwayFT?: number | null; // Escanteios Visitante FT
-  yellowCardsHomeFT?: number | null; // Cartão Amarelo Mandante FT
-  yellowCardsAwayFT?: number | null; // Cartão Amarelo Visitante FT
-  redCardsHomeFT?: number | null; // Cartão Vermelho Mandante FT
-  redCardsAwayFT?: number | null; // Cartão Vermelho Visitante FT
-
   // Informações de Estádio e Público
-  stadium?: string; // Estadio
-  stadiumCapacity?: number | null; // Capacidade
-  attendance?: number | null; // Publico
+  stadium?: string;
+  stadiumCapacity?: number | null;
+  attendance?: number | null;
 
-  // Posse de bola FT opcional se disponível
-  possessionHomeFT?: number | null;
-  possessionAwayFT?: number | null;
+  // Posse de Bola
+  possessionHomeFT?: number | null; // posse_bola_mandante_FT
+  possessionAwayFT?: number | null; // posse_bola_visitante_FT
+
+  // Disciplina / Cartões
+  yellowCardsHomeFT?: number | null; // cartao_amarelo_mandante_FT
+  yellowCardsAwayFT?: number | null; // cartao_amarelo_visitante_FT
+  redCardsHomeFT?: number | null; // cartao_vermelho_mandante_FT
+  redCardsAwayFT?: number | null; // cartao_vermelho_visitante_FT
+
+  // Grupo de Finalizações
+  xgHomeFT?: number | null; // finalizacoes_xg_mandante_FT
+  xgAwayFT?: number | null; // finalizacoes_xg_visitante_FT
+  xgotHomeFT?: number | null; // finalizacoes_xgot_mandante_FT
+  xgotAwayFT?: number | null; // finalizacoes_xgot_visitante_FT
+  shotsHomeFT?: number | null; // finalizacoes_totais_mandante_FT
+  shotsAwayFT?: number | null; // finalizacoes_totais_visitante_FT
+  shotsOnTargetHomeFT?: number | null; // finalizacoes_no_alvo_mandante_FT
+  shotsOnTargetAwayFT?: number | null; // finalizacoes_no_alvo_visitante_FT
+  shotsOffTargetHomeFT?: number | null; // finalizacoes_para_fora_mandante_FT
+  shotsOffTargetAwayFT?: number | null; // finalizacoes_para_fora_visitante_FT
+  shotsBlockedHomeFT?: number | null; // finalizacoes_bloqueadas_mandante_FT
+  shotsBlockedAwayFT?: number | null; // finalizacoes_bloqueadas_visitante_FT
+  shotsInsideBoxHomeFT?: number | null; // finalizacoes_dentro_area_mandante_FT
+  shotsInsideBoxAwayFT?: number | null; // finalizacoes_dentro_area_visitante_FT
+  shotsOutsideBoxHomeFT?: number | null; // finalizacoes_fora_area_mandante_FT
+  shotsOutsideBoxAwayFT?: number | null; // finalizacoes_fora_area_visitante_FT
+  shotsWoodworkHomeFT?: number | null; // finalizacoes_trave_mandante_FT
+  shotsWoodworkAwayFT?: number | null; // finalizacoes_trave_visitante_FT
+
+  // Grupo de Ataques
+  bigChancesHomeFT?: number | null; // ataque_chances_claras_mandante_FT
+  bigChancesAwayFT?: number | null; // ataque_chances_claras_visitante_FT
+  cornersHomeFT?: number | null; // ataque_escanteios_mandante_FT
+  cornersAwayFT?: number | null; // ataque_escanteios_visitante_FT
+  touchesOppBoxHomeFT?: number | null; // ataque_toques_area_adv_mandante_FT
+  touchesOppBoxAwayFT?: number | null; // ataque_toques_area_adv_visitante_FT
+  throughBallsHomeFT?: number | null; // ataque_passes_profundidade_certos_mandante_FT
+  throughBallsAwayFT?: number | null; // ataque_passes_profundidade_certos_visitante_FT
+  offsidesHomeFT?: number | null; // ataque_impedimentos_mandante_FT
+  offsidesAwayFT?: number | null; // ataque_impedimentos_visitante_FT
+  foulsDrawnHomeFT?: number | null; // ataque_faltas_cobradas_mandante_FT
+  foulsDrawnAwayFT?: number | null; // ataque_faltas_cobradas_visitante_FT
+
+  // Grupo de Passes
+  passesAccurateHomeFT?: number | null; // passes_certos_mandante_FT
+  passesTotalHomeFT?: number | null; // passes_totais_mandante_FT
+  passesPctHomeFT?: number | null; // passes_precisao_pct_mandante_FT
+  passesAccurateAwayFT?: number | null; // passes_certos_visitante_FT
+  passesTotalAwayFT?: number | null; // passes_totais_visitante_FT
+  passesPctAwayFT?: number | null; // passes_precisao_pct_visitante_FT
+
+  longPassesAccurateHomeFT?: number | null; // passes_longos_certos_mandante_FT
+  longPassesTotalHomeFT?: number | null; // passes_longos_totais_mandante_FT
+  longPassesPctHomeFT?: number | null; // passes_longos_pct_mandante_FT
+  longPassesAccurateAwayFT?: number | null; // passes_longos_certos_visitante_FT
+  longPassesTotalAwayFT?: number | null; // passes_longos_totais_visitante_FT
+  longPassesPctAwayFT?: number | null; // passes_longos_pct_visitante_FT
+
+  finalThirdPassesAccurateHomeFT?: number | null; // passes_terco_final_certos_mandante_FT
+  finalThirdPassesTotalHomeFT?: number | null; // passes_terco_final_totais_mandante_FT
+  finalThirdPassesPctHomeFT?: number | null; // passes_terco_final_pct_mandante_FT
+  finalThirdPassesAccurateAwayFT?: number | null; // passes_terco_final_certos_visitante_FT
+  finalThirdPassesTotalAwayFT?: number | null; // passes_terco_final_totais_visitante_FT
+  finalThirdPassesPctAwayFT?: number | null; // passes_terco_final_pct_visitante_FT
+
+  crossesAccurateHomeFT?: number | null; // passes_cruzamentos_certos_mandante_FT
+  crossesTotalHomeFT?: number | null; // passes_cruzamentos_totais_mandante_FT
+  crossesPctHomeFT?: number | null; // passes_cruzamentos_pct_mandante_FT
+  crossesAccurateAwayFT?: number | null; // passes_cruzamentos_certos_visitante_FT
+  crossesTotalAwayFT?: number | null; // passes_cruzamentos_totais_visitante_FT
+  crossesPctAwayFT?: number | null; // passes_cruzamentos_pct_visitante_FT
+
+  xaHomeFT?: number | null; // passes_xa_mandante_FT
+  xaAwayFT?: number | null; // passes_xa_visitante_FT
+  throwInsHomeFT?: number | null; // passes_laterais_cobrados_mandante_FT
+  throwInsAwayFT?: number | null; // passes_laterais_cobrados_visitante_FT
+
+  // Grupo de Defesa
+  foulsHomeFT?: number | null; // defesa_faltas_mandante_FT
+  foulsAwayFT?: number | null; // defesa_faltas_visitante_FT
+  tacklesAccurateHomeFT?: number | null; // defesa_desarmes_certos_mandante_FT
+  tacklesTotalHomeFT?: number | null; // defesa_desarmes_totais_mandante_FT
+  tacklesPctHomeFT?: number | null; // defesa_desarmes_pct_mandante_FT
+  tacklesAccurateAwayFT?: number | null; // defesa_desarmes_certos_visitante_FT
+  tacklesTotalAwayFT?: number | null; // defesa_desarmes_totais_visitante_FT
+  tacklesPctAwayFT?: number | null; // defesa_desarmes_pct_visitante_FT
+
+  duelsWonHomeFT?: number | null; // defesa_duelos_ganhos_mandante_FT
+  duelsWonAwayFT?: number | null; // defesa_duelos_ganhos_visitante_FT
+  clearancesHomeFT?: number | null; // defesa_rebatidas_mandante_FT
+  clearancesAwayFT?: number | null; // defesa_rebatidas_visitante_FT
+  interceptionsHomeFT?: number | null; // defesa_interceptacoes_mandante_FT
+  interceptionsAwayFT?: number | null; // defesa_interceptacoes_visitante_FT
+
+  errorsLeadToShotHomeFT?: number | null; // defesa_erros_resultaram_finalizacao_mandante_FT
+  errorsLeadToShotAwayFT?: number | null; // defesa_erros_resultaram_finalizacao_visitante_FT
+  errorsLeadToGoalHomeFT?: number | null; // defesa_erros_resultaram_gol_mandante_FT
+  errorsLeadToGoalAwayFT?: number | null; // defesa_erros_resultaram_gol_visitante_FT
+
+  goalkeeperDefActionHomeFT?: number | null; // defesa_goleiro_mandante_FT
+  goalkeeperDefActionAwayFT?: number | null; // defesa_goleiro_visitante_FT
+
+  // Grupo Goleiro
+  savesHomeFT?: number | null; // goleiro_defesas_mandante_FT
+  savesAwayFT?: number | null; // goleiro_defesas_visitante_FT
+  xgotFacedHomeFT?: number | null; // goleiro_xgot_enfrentado_mandante_FT
+  xgotFacedAwayFT?: number | null; // goleiro_xgot_enfrentado_visitante_FT
+  goalsPreventedHomeFT?: number | null; // goleiro_gols_evitados_mandante_FT
+  goalsPreventedAwayFT?: number | null; // goleiro_gols_evitados_visitante_FT
+  goalKicksHomeFT?: number | null; // goleiro_tiros_de_meta_mandante_FT
+  goalKicksAwayFT?: number | null; // goleiro_tiros_de_meta_visitante_FT
 }
 
 export interface Country {
