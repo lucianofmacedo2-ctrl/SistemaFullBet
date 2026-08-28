@@ -329,12 +329,13 @@ export async function syncDatabaseFromServer(): Promise<DbState> {
   throw new Error('Falha ao obter dados do servidor.');
 }
 
-export async function saveDatabaseState(state: DbState): Promise<boolean> {
-  // Always update LocalStorage immediately for instant UX
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  if (Array.isArray(state.users)) {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(state.users));
-  }
+let remoteSaveTimer: NodeJS.Timeout | null = null;
+let pendingStateToSave: DbState | null = null;
+
+async function flushPendingRemoteSave(): Promise<boolean> {
+  if (!pendingStateToSave) return true;
+  const state = pendingStateToSave;
+  pendingStateToSave = null;
 
   // 1. Save to Cloud Firestore in real-time (Multi-device instant replication)
   saveDbToFirestore(state).catch((err) => {
@@ -353,6 +354,38 @@ export async function saveDatabaseState(state: DbState): Promise<boolean> {
     console.warn('Failed to persist to backend server (Firestore saved)', err);
     return true; // Still true if local/firestore handled
   }
+}
+
+export async function saveDatabaseState(state: DbState, immediate: boolean = false): Promise<boolean> {
+  // Always update LocalStorage immediately for instant UX
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (Array.isArray(state.users)) {
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(state.users));
+    }
+  } catch (err) {
+    console.warn('LocalStorage quota or write issue:', err);
+  }
+
+  pendingStateToSave = state;
+
+  if (immediate) {
+    if (remoteSaveTimer) {
+      clearTimeout(remoteSaveTimer);
+      remoteSaveTimer = null;
+    }
+    return await flushPendingRemoteSave();
+  }
+
+  if (remoteSaveTimer) {
+    clearTimeout(remoteSaveTimer);
+  }
+
+  remoteSaveTimer = setTimeout(() => {
+    flushPendingRemoteSave().catch(() => {});
+  }, 600);
+
+  return true;
 }
 
 export async function clearDatabase(): Promise<DbState> {

@@ -77,6 +77,12 @@ const MATCH_CHUNK_SIZE = 100; // max 100 matches per doc (~20-40 KB, well under 
 const TEAM_CHUNK_SIZE = 200; // max 200 teams per doc (~50-80 KB, well under 1MB limit)
 const COLLECTION_NAME = 'app_data';
 
+export const CLIENT_INSTANCE_ID = `client_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+// In-memory cache for Firestore snapshot to eliminate redundant fetches
+let cachedFirestoreState: { timestamp: string; data: DbState } | null = null;
+let lastLocalSavedTimestamp: string | null = null;
+
 export interface CloudSyncStats {
   matchesCount: number;
   teamsCount: number;
@@ -198,10 +204,14 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
       );
     }
 
+    const nowIso = new Date().toISOString();
+    lastLocalSavedTimestamp = nowIso;
+
     // 7. Meta info
     writeTasks.push(
       setDoc(doc(db, COLLECTION_NAME, 'meta'), {
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: nowIso,
+        writerId: CLIENT_INSTANCE_ID,
         counts: {
           countries: state.countries?.length || 0,
           leagues: state.leagues?.length || 0,
@@ -349,9 +359,16 @@ export function subscribeToFirestoreSync(
         if (snap.exists()) {
           const metaData = snap.data();
           const currentUpdatedAt = metaData?.lastUpdated || null;
+          const writerId = metaData?.writerId || null;
 
-          // If timestamp hasn't changed or we're already fetching, skip redundant roundtrip
-          if (currentUpdatedAt && currentUpdatedAt === lastProcessedUpdatedAt) {
+          // If the update was written by THIS client, skip redundant reload
+          if (writerId && writerId === CLIENT_INSTANCE_ID) {
+            lastProcessedUpdatedAt = currentUpdatedAt;
+            return;
+          }
+
+          // If timestamp hasn't changed or matches our last local save, skip redundant roundtrip
+          if (currentUpdatedAt && (currentUpdatedAt === lastProcessedUpdatedAt || currentUpdatedAt === lastLocalSavedTimestamp)) {
             return;
           }
           if (isFetching) return;

@@ -211,14 +211,23 @@ export function ensureDefaultUsers(users?: AppUser[]): AppUser[] {
   return result;
 }
 
+let lastTouchTimestamp = 0;
+const TOUCH_THROTTLE_MS = 60000; // 60 seconds
+
 /**
  * Updates sliding window activity timestamp (extends 8-hour session window on user interaction).
+ * Throttled to at most once per 60 seconds to prevent blocking UI input threads.
  */
-export function touchUserActivity(): void {
+export function touchUserActivity(force: boolean = false): void {
+  const now = Date.now();
+  if (!force && now - lastTouchTimestamp < TOUCH_THROTTLE_MS) {
+    return;
+  }
+  lastTouchTimestamp = now;
+
   try {
     const raw = localStorage.getItem(ACTIVE_USER_STORAGE_KEY) || sessionStorage.getItem(ACTIVE_USER_STORAGE_KEY);
     if (!raw) return;
-    const now = Date.now();
     const expiry = now + SESSION_DURATION_MS;
     localStorage.setItem(SESSION_EXPIRY_KEY, expiry.toString());
     sessionStorage.setItem(SESSION_EXPIRY_KEY, expiry.toString());

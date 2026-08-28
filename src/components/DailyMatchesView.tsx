@@ -184,6 +184,14 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   // Expandable odds/stats per card
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
 
+  // Progressive rendering for instantaneous UI responsiveness
+  const [visibleCount, setVisibleCount] = useState<number>(30);
+
+  // Reset pagination on filter or date change
+  React.useEffect(() => {
+    setVisibleCount(30);
+  }, [dayMode, customDateYMD, searchTerm, selectedLeagueId, selectedStatus]);
+
   // Fast O(1) Lookup Maps for instant rendering without linear scans
   const countriesMap = useMemo(() => {
     const map = new Map<string, any>();
@@ -935,7 +943,7 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
           </div>
 
           <div className={viewLayout === 'single' ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-            {dailyMatches.map((match, idx) => {
+            {dailyMatches.slice(0, visibleCount).map((match, idx) => {
               const fullComp = completenessMap.get(match.id) || checkMatchFullCompleteness(match);
               const isExpanded = expandedMatchId === match.id;
               const matchTime = extractTime(match.matchDate);
@@ -1374,6 +1382,29 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
               );
             })}
           </div>
+
+          {/* Load More Pagination Controls */}
+          {visibleCount < dailyMatches.length && (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3 pb-2">
+              <button
+                type="button"
+                onClick={() => setVisibleCount(prev => prev + 30)}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer flex items-center gap-2 hover:scale-[1.02]"
+              >
+                <span>Carregar mais 30 jogos</span>
+                <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-mono">
+                  {dailyMatches.length - visibleCount} restantes
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisibleCount(dailyMatches.length)}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer border border-slate-200"
+              >
+                Mostrar todos ({dailyMatches.length})
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
