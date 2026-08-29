@@ -220,7 +220,7 @@ function parseDate(dateStr?: string, timeStr?: string): string {
     }
   }
 
-  const d = new Date(year, month - 1, day, hours, mins, 0);
+  const d = new Date(Date.UTC(year, month - 1, day, hours, mins, 0));
   return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 

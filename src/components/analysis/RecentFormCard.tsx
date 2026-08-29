@@ -19,16 +19,13 @@ export interface RecentFormCardProps {
   };
 }
 
+import { formatBrasiliaDotDate, formatBrasiliaDate } from '../../utils/dateTimeUtils';
+
 /**
- * Formata a data no formato exato "DD.MM." (ex: "09.05.", "14.08.") conforme o padrão solicitado
+ * Formata a data no formato exato "DD.MM." (ex: "09.05.", "14.08.") conforme o padrão solicitado em Horário de Brasília
  */
 export function formatFormDateDot(dateStr?: string): string {
-  if (!dateStr) return '--.--.';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '--.--.';
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  return `${day}.${month}.`;
+  return formatBrasiliaDotDate(dateStr);
 }
 
 export const RecentFormCard: React.FC<RecentFormCardProps> = ({
@@ -168,7 +165,7 @@ export const RecentFormCard: React.FC<RecentFormCardProps> = ({
                   <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-50 w-56 sm:w-64 p-3.5 bg-slate-950 text-white rounded-2xl shadow-2xl text-xs space-y-2 border border-slate-700 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
                     <div className="flex items-center justify-between text-[11px] text-slate-400 border-b border-slate-800 pb-1.5">
                       <span className="font-semibold text-slate-300">
-                        {item.match.matchDate ? new Date(item.match.matchDate).toLocaleDateString('pt-BR') : ''}
+                        {formatBrasiliaDate(item.match.matchDate)}
                       </span>
                       <span
                         className={`font-black px-2 py-0.5 rounded text-[10px] uppercase ${

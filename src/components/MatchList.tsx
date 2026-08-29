@@ -38,6 +38,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { DbState, Match, MatchStatus, Country, League, Team } from '../types';
+import { formatBrasiliaDateTime } from '../utils/dateTimeUtils';
 import { PressureChartViewer } from './PressureChartViewer';
 
 interface MatchListProps {
@@ -443,19 +444,7 @@ export const MatchList: React.FC<MatchListProps> = ({
   };
 
   const formatDate = (isoString: string) => {
-    if (!isoString) return '';
-    try {
-      const date = new Date(isoString);
-      return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return isoString;
-    }
+    return formatBrasiliaDateTime(isoString);
   };
 
   return (

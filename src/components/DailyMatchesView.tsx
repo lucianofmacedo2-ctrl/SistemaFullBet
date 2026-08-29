@@ -36,6 +36,22 @@ import {
 import { DbState, Match, MatchStatus } from '../types';
 import { checkMatchCompleteness, checkMatchFullCompleteness } from './MatchList';
 import { PressureChartViewer } from './PressureChartViewer';
+import {
+  formatDateToYMD,
+  extractBrasiliaYMD,
+  formatBrasiliaFriendlyDate,
+  formatMatchTimeBRT,
+  getBrasiliaTodayYMD,
+  getBrasiliaYesterdayYMD,
+  getBrasiliaTomorrowYMD,
+  getBrasiliaAfterTomorrowYMD,
+} from '../utils/dateTimeUtils';
+
+// Export aliases for backwards compatibility across the app
+export { formatDateToYMD };
+export const extractYMD = extractBrasiliaYMD;
+export const formatFriendlyDate = (ymd: string) => formatBrasiliaFriendlyDate(ymd);
+export const extractTime = (dateStr: string) => formatMatchTimeBRT(dateStr);
 
 interface DailyMatchesViewProps {
   dbState: DbState;
@@ -57,78 +73,6 @@ interface DailyMatchesViewProps {
 
 export type DaySelectionMode = 'TODAY' | 'YESTERDAY' | 'TOMORROW' | 'AFTER_TOMORROW' | 'THREE_DAYS' | 'CUSTOM';
 
-// Helper to format Date object into YYYY-MM-DD in local time
-export function formatDateToYMD(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-// Helper to extract YYYY-MM-DD from any matchDate string format
-export function extractYMD(dateStr: string | null | undefined): string | null {
-  if (!dateStr) return null;
-  const str = dateStr.trim();
-
-  // YYYY-MM-DD or YYYY-MM-DDTHH:mm
-  const ymdMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (ymdMatch) {
-    return `${ymdMatch[1]}-${ymdMatch[2]}-${ymdMatch[3]}`;
-  }
-
-  // DD/MM/YYYY
-  const dmyMatch = str.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  if (dmyMatch) {
-    return `${dmyMatch[3]}-${dmyMatch[2]}-${dmyMatch[1]}`;
-  }
-
-  try {
-    const parsed = new Date(str);
-    if (!isNaN(parsed.getTime())) {
-      return formatDateToYMD(parsed);
-    }
-  } catch {}
-
-  return null;
-}
-
-// Helper to format date in Portuguese display e.g. "Sexta-feira, 14/08"
-export function formatFriendlyDate(ymd: string): { title: string; subtitle: string; fullDate: string } {
-  try {
-    const [y, m, d] = ymd.split('-').map(Number);
-    const date = new Date(y, m - 1, d, 12, 0, 0);
-    const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'long' });
-    const capitalizedDay = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1);
-    const formattedShort = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    const fullDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-    return {
-      title: capitalizedDay,
-      subtitle: formattedShort,
-      fullDate,
-    };
-  } catch {
-    return { title: ymd, subtitle: '', fullDate: ymd };
-  }
-}
-
-// Helper to extract time (HH:mm) from matchDate
-export function extractTime(dateStr: string): string {
-  if (!dateStr) return '';
-  try {
-    // Check if ISO with time
-    const timeMatch = dateStr.match(/[T\s](\d{2}):(\d{2})/);
-    if (timeMatch) {
-      return `${timeMatch[1]}:${timeMatch[2]}`;
-    }
-    const parsed = new Date(dateStr);
-    if (!isNaN(parsed.getTime())) {
-      return parsed.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    }
-  } catch {}
-  return '';
-}
-
 export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   dbState,
   isMaster = true,
@@ -146,28 +90,11 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
   onOpenHtGoalsScanner,
   onNavigateToAllMatches,
 }) => {
-  // Base reference date (today)
-  const today = useMemo(() => new Date(), []);
-  
-  const todayYMD = useMemo(() => formatDateToYMD(today), [today]);
-  
-  const yesterdayYMD = useMemo(() => {
-    const y = new Date(today);
-    y.setDate(today.getDate() - 1);
-    return formatDateToYMD(y);
-  }, [today]);
-
-  const tomorrowYMD = useMemo(() => {
-    const t = new Date(today);
-    t.setDate(today.getDate() + 1);
-    return formatDateToYMD(t);
-  }, [today]);
-
-  const afterTomorrowYMD = useMemo(() => {
-    const at = new Date(today);
-    at.setDate(today.getDate() + 2);
-    return formatDateToYMD(at);
-  }, [today]);
+  // Base reference dates aligned with Horário Oficial de Brasília (UTC-3)
+  const todayYMD = useMemo(() => getBrasiliaTodayYMD(), []);
+  const yesterdayYMD = useMemo(() => getBrasiliaYesterdayYMD(), []);
+  const tomorrowYMD = useMemo(() => getBrasiliaTomorrowYMD(), []);
+  const afterTomorrowYMD = useMemo(() => getBrasiliaAfterTomorrowYMD(), []);
 
   // View mode and selected custom date
   const [dayMode, setDayMode] = useState<DaySelectionMode>('TODAY');

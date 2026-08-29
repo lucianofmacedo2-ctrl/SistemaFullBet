@@ -13,6 +13,7 @@ import {
 import { DbState, Match } from '../types';
 import { extractYMD, formatDateToYMD } from './DailyMatchesView';
 import { extractTeamMatches } from '../utils/analysisEngine';
+import { formatMatchTimeBRT } from '../utils/dateTimeUtils';
 
 interface HtGoalsScannerModalProps {
   isOpen: boolean;
@@ -211,11 +212,7 @@ export const HtGoalsScannerModal: React.FC<HtGoalsScannerModalProps> = ({
       if (projectedHtGoals >= 1.3) highlights.push(`Média conjunta projetada de ${projectedHtGoals.toFixed(2)} gols no 1º tempo`);
       if (evPercent && evPercent > 5) highlights.push(`Valor Esperado Positivo (+${evPercent}% EV)`);
 
-      const timeFormatted = match.matchDate.includes('T')
-        ? match.matchDate.split('T')[1].substring(0, 5)
-        : match.matchDate.includes(' ')
-        ? match.matchDate.split(' ')[1].substring(0, 5)
-        : '00:00';
+      const timeFormatted = formatMatchTimeBRT(match.matchDate) || '00:00';
 
       results.push({
         match,

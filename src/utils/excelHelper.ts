@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 import { Match, MatchStatus, MatchStats, MatchOdds, Team, League, Country } from '../types';
+import { parseDateToBrasilia, BRASILIA_TIMEZONE } from './dateTimeUtils';
 
 export interface ParsedTeamRow {
   rowIndex: number;
@@ -385,74 +386,26 @@ function normalizeTextForMatch(text: string): string {
     .replace(/[^a-z0-9]/g, '');
 }
 
-function splitDateTimeForExcel(isoString: string): { date: string; time: string } {
+export function splitDateTimeForExcel(isoString?: string): { date: string; time: string } {
   try {
     if (!isoString) return { date: '', time: '' };
 
-    let year = '';
-    let month = '';
-    let day = '';
-    let hours = '16';
-    let mins = '00';
+    const d = parseDateToBrasilia(isoString);
+    if (!d) return { date: '', time: '' };
 
-    if (isoString.includes('T')) {
-      const [dPart, tPart] = isoString.split('T');
-      const dPieces = dPart.split('-');
-      if (dPieces.length === 3) {
-        year = dPieces[0];
-        month = dPieces[1].padStart(2, '0');
-        day = dPieces[2].padStart(2, '0');
-      }
-      if (tPart) {
-        const tPieces = tPart.split(':');
-        if (tPieces.length >= 2) {
-          hours = tPieces[0].padStart(2, '0');
-          mins = tPieces[1].slice(0, 2).padStart(2, '0');
-        }
-      }
-    } else if (isoString.includes('-')) {
-      const dPieces = isoString.trim().split('-');
-      if (dPieces.length === 3) {
-        if (dPieces[0].length === 4) {
-          year = dPieces[0];
-          month = dPieces[1].padStart(2, '0');
-          day = dPieces[2].padStart(2, '0');
-        } else if (dPieces[2].length === 4) {
-          day = dPieces[0].padStart(2, '0');
-          month = dPieces[1].padStart(2, '0');
-          year = dPieces[2];
-        }
-      }
-    } else if (isoString.includes('/')) {
-      const dPieces = isoString.trim().split('/');
-      if (dPieces.length === 3) {
-        if (dPieces[2].length === 4) {
-          day = dPieces[0].padStart(2, '0');
-          month = dPieces[1].padStart(2, '0');
-          year = dPieces[2];
-        } else if (dPieces[0].length === 4) {
-          year = dPieces[0];
-          month = dPieces[1].padStart(2, '0');
-          day = dPieces[2].padStart(2, '0');
-        }
-      }
-    }
-
-    if (year && month && day) {
-      return {
-        date: `${day}/${month}/${year}`,
-        time: `${hours}:${mins}`,
-      };
-    }
-
-    const d = new Date(isoString);
-    if (isNaN(d.getTime())) return { date: '', time: '' };
-    const dayStr = String(d.getUTCDate ? d.getUTCDate() : d.getDate()).padStart(2, '0');
-    const monStr = String((d.getUTCMonth ? d.getUTCMonth() : d.getMonth()) + 1).padStart(2, '0');
-    const yrStr = String(d.getUTCFullYear ? d.getUTCFullYear() : d.getFullYear());
-    const hStr = String(d.getHours()).padStart(2, '0');
-    const minStr = String(d.getMinutes()).padStart(2, '0');
-    return { date: `${dayStr}/${monStr}/${yrStr}`, time: `${hStr}:${minStr}` };
+    const dateFormatted = d.toLocaleDateString('pt-BR', {
+      timeZone: BRASILIA_TIMEZONE,
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+    const timeFormatted = d.toLocaleTimeString('pt-BR', {
+      timeZone: BRASILIA_TIMEZONE,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    return { date: dateFormatted, time: timeFormatted };
   } catch {
     return { date: '', time: '' };
   }

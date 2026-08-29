@@ -37,6 +37,11 @@ import {
 } from 'lucide-react';
 import { DbState, AppUser } from '../types';
 import { extractYMD, formatDateToYMD } from './DailyMatchesView';
+import {
+  getBrasiliaTodayYMD,
+  getBrasiliaTomorrowYMD,
+  getBrasiliaAfterTomorrowYMD,
+} from '../utils/dateTimeUtils';
 import { isMatchComplete, exportTeamsToExcel } from '../utils/excelHelper';
 import { isValidImageUrl } from '../utils/imageHelper';
 import { getUserEffectiveStatus } from '../services/authService';
@@ -123,15 +128,10 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Calculate matches for today, tomorrow, and after tomorrow
-  const today = new Date();
-  const todayYMD = formatDateToYMD(today);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  const tomorrowYMD = formatDateToYMD(tomorrow);
-  const afterTomorrow = new Date(today);
-  afterTomorrow.setDate(today.getDate() + 2);
-  const afterTomorrowYMD = formatDateToYMD(afterTomorrow);
+  // Calculate matches for today, tomorrow, and after tomorrow in Brasília time
+  const todayYMD = getBrasiliaTodayYMD();
+  const tomorrowYMD = getBrasiliaTomorrowYMD();
+  const afterTomorrowYMD = getBrasiliaAfterTomorrowYMD();
 
   const allMatches = Array.isArray(dbState.matches) ? dbState.matches : [];
   const allTeams = Array.isArray(dbState.teams) ? dbState.teams : [];

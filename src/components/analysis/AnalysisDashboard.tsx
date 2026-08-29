@@ -22,6 +22,7 @@ import { DbState, Match, Team } from '../../types';
 import { runFullMatchAnalysis, MatchAnalysisResult } from '../../utils/analysisEngine';
 import { isValidImageUrl } from '../../utils/imageHelper';
 import { getLeaguesForCountry, getTeamsForLeagueOrCountry } from '../../utils/countryLeagueHelper';
+import { formatBrasiliaDate } from '../../utils/dateTimeUtils';
 import { FormTrackerSection } from './FormTrackerSection';
 import { PowerRankingSection } from './PowerRankingSection';
 import { DescriptiveStatsSection } from './DescriptiveStatsSection';
@@ -306,7 +307,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-slate-500 font-mono">
-                      {m.matchDate ? new Date(m.matchDate).toLocaleDateString('pt-BR') : ''}
+                      {formatBrasiliaDate(m.matchDate)}
                     </span>
                     <span className="font-bold text-slate-900">{m.homeTeamName}</span>
                     <span className="text-slate-400">x</span>
