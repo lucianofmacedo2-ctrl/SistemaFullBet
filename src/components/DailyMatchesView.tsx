@@ -408,13 +408,13 @@ export const DailyMatchesView: React.FC<DailyMatchesViewProps> = ({
               <button
                 type="button"
                 onClick={onOpenHtGoalsScanner}
-                className="px-3.5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-orange-600 via-rose-600 to-amber-600 hover:from-orange-500 hover:to-rose-500 text-white shadow-md shadow-orange-500/20 flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                title="Filtrar automaticamente jogos com projeção para Over 1.5 Gols HT no 1º Tempo"
+                className="px-3.5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 via-orange-600 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                title="Central de Radares Inteligentes: Ambas Marcam (HT/FT), Over 2.5 / 3.5 Gols e Mandante para Vencer"
               >
-                <Flame className="w-4 h-4 text-amber-300 fill-amber-300" />
-                <span>Radar Over 1.5 HT</span>
-                <span className="px-1.5 py-0.2 bg-white text-orange-800 rounded text-[10px] font-black uppercase">
-                  1º Tempo
+                <Flame className="w-4 h-4 text-amber-200 fill-amber-200" />
+                <span>Central de Radares</span>
+                <span className="px-1.5 py-0.2 bg-slate-950 text-amber-300 rounded text-[10px] font-black uppercase">
+                  5 Modos
                 </span>
               </button>
             )}

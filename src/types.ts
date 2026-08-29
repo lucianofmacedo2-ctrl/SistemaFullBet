@@ -122,6 +122,36 @@ export interface MatchStats {
   goalsPreventedAwayFT?: number | null; // goleiro_gols_evitados_visitante_FT
   goalKicksHomeFT?: number | null; // goleiro_tiros_de_meta_mandante_FT
   goalKicksAwayFT?: number | null; // goleiro_tiros_de_meta_visitante_FT
+
+  // Minutagem dos Gols
+  goalMinutesHomeFT?: string | null; // minutos_gols_mandante_ft (ex: "9,19,43,74")
+  goalMinutesAwayFT?: string | null; // minutos_gols_visitante_ft (ex: "12,65")
+}
+
+export type RadarCategory =
+  | 'BTTS_HT' // Ambas Marcam HT (1º Tempo)
+  | 'BTTS_FT' // Ambas Marcam FT (Jogo Completo)
+  | 'OVER_25_FT' // Over 2.5 Gols FT
+  | 'OVER_35_FT' // Over 3.5 Gols FT
+  | 'HOME_WIN' // Mandante para Vencer (Home Win)
+  | 'OVER_15_HT'; // Over 1.5 Gols HT (1º Tempo)
+
+export interface RadarMatchProjection {
+  match: Match;
+  category: RadarCategory;
+  categoryLabel: string;
+  categoryMarketBadge: string;
+  dateFormatted: string;
+  timeFormatted: string;
+  probPoisson: number;
+  probSampleReal: number;
+  confidenceScore: number;
+  marketOddJusta: number;
+  marketOddBookie?: number;
+  evPercent?: number;
+  ratingTier: 'DIAMOND' | 'GOLD' | 'SILVER' | 'BRONZE';
+  highlights: string[];
+  metrics: Record<string, any>;
 }
 
 export interface Country {

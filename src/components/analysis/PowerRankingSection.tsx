@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Award, Zap, TrendingUp, ShieldAlert, Target, DollarSign, Percent, BarChart2, Radio, Layers } from 'lucide-react';
+import { Award, Zap, TrendingUp, ShieldAlert, Target, DollarSign, Percent, BarChart2, Radio, Layers, Clock, Flame } from 'lucide-react';
 import { MatchAnalysisResult, TeamPowerRating } from '../../utils/analysisEngine';
 import { isValidImageUrl } from '../../utils/imageHelper';
 import { SectoralPowerRadar } from './SectoralPowerRadar';
@@ -216,6 +216,51 @@ export const PowerRankingSection: React.FC<PowerRankingSectionProps> = ({ analys
             <span>Sem Marcar Gol: <strong>{power.failedToScoreRatePct.toFixed(0)}%</strong></span>
           </div>
         </div>
+
+        {/* 5. Timing Profile & First Goal Overview */}
+        {(() => {
+          const timing = isHome ? analysis.homeGoalTiming : analysis.awayGoalTiming;
+          return (
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-blue-600" />
+                5. Padrão de Minutagem & 1º Gol
+              </span>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] text-slate-500 font-bold block">1º Gol Marcado (Médio)</span>
+                  <span className="text-xs font-black text-emerald-700 font-mono">
+                    {timing.firstGoalScored.avgMinute !== null ? `${timing.firstGoalScored.avgMinute}'` : 'N/D'}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block">
+                    {timing.firstGoalScored.scoredInFirst15Pct}% nos primeiros 15m
+                  </span>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] text-slate-500 font-bold block">1º Gol Sofrido (Médio)</span>
+                  <span className="text-xs font-black text-rose-700 font-mono">
+                    {timing.firstGoalConceded.avgMinute !== null ? `${timing.firstGoalConceded.avgMinute}'` : 'N/D'}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block">
+                    {timing.firstGoalConceded.scoredInFirst15Pct}% nos primeiros 15m
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                <span className="text-slate-600 font-semibold flex items-center gap-1">
+                  <Flame className="w-3 h-3 text-amber-500" />
+                  Faixa de Pico Ofensivo:
+                </span>
+                <span className="font-bold text-slate-900 bg-amber-50 text-amber-900 px-2 py-0.5 rounded text-[11px]">
+                  {timing.mostDangerousScoringBin.label} ({timing.bins.find(b => b.bin.key === timing.mostDangerousScoringBin.key)?.goalsScoredPct || 0}%)
+                </span>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     );
   };

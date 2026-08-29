@@ -25,6 +25,7 @@ import { getLeaguesForCountry, getTeamsForLeagueOrCountry } from '../../utils/co
 import { formatBrasiliaDate } from '../../utils/dateTimeUtils';
 import { FormTrackerSection } from './FormTrackerSection';
 import { PowerRankingSection } from './PowerRankingSection';
+import { GoalTimingAnalysisSection } from './GoalTimingAnalysisSection';
 import { DescriptiveStatsSection } from './DescriptiveStatsSection';
 import { ProjectionsPoissonSection } from './ProjectionsPoissonSection';
 import { ValueAndTacticalSection } from './ValueAndTacticalSection';
@@ -59,7 +60,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
   // General Settings / Cut Parameters
   const [sampleSize, setSampleSize] = useState<number>(10); // 5, 10, 15, 20, 999
   const [venueMode, setVenueMode] = useState<'SPECIFIC' | 'GENERAL'>('SPECIFIC'); // SPECIFIC = Casa x Fora; GENERAL = Geral
-  const [activeModuleTab, setActiveModuleTab] = useState<'ALL' | 'FORM' | 'POWER' | 'DESCRIPTIVE' | 'PROJECTIONS' | 'VALUE' | 'STANDINGS'>('ALL');
+  const [activeModuleTab, setActiveModuleTab] = useState<'ALL' | 'FORM' | 'POWER' | 'TIMING' | 'DESCRIPTIVE' | 'PROJECTIONS' | 'VALUE' | 'STANDINGS'>('ALL');
 
   // Quick match selection search
   const [matchSearchQuery, setMatchSearchQuery] = useState('');
@@ -539,6 +540,19 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
 
         <button
           type="button"
+          onClick={() => setActiveModuleTab('TIMING')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
+            activeModuleTab === 'TIMING'
+              ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
+              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          <Clock className="w-3.5 h-3.5 text-indigo-500" />
+          Módulo 3: Minutagem dos Gols (0-90 min)
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveModuleTab('DESCRIPTIVE')}
           className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
             activeModuleTab === 'DESCRIPTIVE'
@@ -547,7 +561,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
           }`}
         >
           <BarChart3 className="w-3.5 h-3.5 text-blue-500" />
-          Módulo 3: Estatísticas Descritivas
+          Módulo 4: Estatísticas Descritivas
         </button>
 
         <button
@@ -560,7 +574,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
           }`}
         >
           <Cpu className="w-3.5 h-3.5 text-purple-500" />
-          Módulo 4: Projeção & Poisson
+          Módulo 5: Projeção & Poisson
         </button>
 
         <button
@@ -573,7 +587,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
           }`}
         >
           <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
-          Módulo 5: +EV & Tático
+          Módulo 6: +EV & Tático
         </button>
 
         <button
@@ -586,7 +600,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
           }`}
         >
           <Trophy className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
-          Módulo 6: Tabela & Classificação
+          Módulo 7: Tabela & Classificação
         </button>
       </div>
 
@@ -630,7 +644,12 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             <PowerRankingSection analysis={analysisResult} />
           )}
 
-          {/* MÓDULO 3: Estatísticas Descritivas */}
+          {/* MÓDULO 3: Análise de Minutagem dos Gols (0-90 min) */}
+          {(activeModuleTab === 'ALL' || activeModuleTab === 'TIMING') && (
+            <GoalTimingAnalysisSection analysis={analysisResult} />
+          )}
+
+          {/* MÓDULO 4: Estatísticas Descritivas */}
           {(activeModuleTab === 'ALL' || activeModuleTab === 'DESCRIPTIVE') && (
             <DescriptiveStatsSection analysis={analysisResult} />
           )}

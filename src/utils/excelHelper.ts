@@ -171,6 +171,10 @@ export interface ParsedMatchUpdateRow {
   goalKicksHomeFT?: number | null;
   goalKicksAwayFT?: number | null;
 
+  // Minutagem dos Gols
+  goalMinutesHomeFT?: string | null;
+  goalMinutesAwayFT?: string | null;
+
   // Odds FT
   oddHomeFT?: number | null;
   oddDrawFT?: number | null;
@@ -351,6 +355,32 @@ export const EXCEL_HEADER_ALIASES = {
   goalsPreventedAway: ['goleiro_gols_evitados_visitante_ft', 'gols_evitados_visitante_ft', 'goals_prevented_away_ft', 'gsax_away_ft'],
   goalKicksHome: ['goleiro_tiros_de_meta_mandante_ft', 'tiros_de_meta_mandante_ft', 'goal_kicks_home_ft'],
   goalKicksAway: ['goleiro_tiros_de_meta_visitante_ft', 'tiros_de_meta_visitante_ft', 'goal_kicks_away_ft'],
+
+  // Minutagem dos Gols
+  goalMinutesHome: [
+    'minutos_gols_mandante_ft',
+    'minutos_gols_mandante',
+    'minutos_gol_mandante_ft',
+    'minutos_mandante_ft',
+    'minutos_mandante',
+    'goal_minutes_home_ft',
+    'goal_minutes_home',
+    'minutosgolsmandanteft',
+    'minutos_dos_gols_mandante',
+    'minutos_gols_casa',
+  ],
+  goalMinutesAway: [
+    'minutos_gols_visitante_ft',
+    'minutos_gols_visitante',
+    'minutos_gol_visitante_ft',
+    'minutos_visitante_ft',
+    'minutos_visitante',
+    'goal_minutes_away_ft',
+    'goal_minutes_away',
+    'minutosgolsvisitanteft',
+    'minutos_dos_gols_visitante',
+    'minutos_gols_fora',
+  ],
 };
 
 export function getFlexibleValue(
@@ -781,6 +811,8 @@ export const FINISHED_MATCHES_COLUMNS = [
   'goleiro_gols_evitados_visitante_FT',
   'goleiro_tiros_de_meta_mandante_FT',
   'goleiro_tiros_de_meta_visitante_FT',
+  'minutos_gols_mandante_ft',
+  'minutos_gols_visitante_ft',
   'Odd_Home_FT',
   'Odd_Draw_FT',
   'Odd_Away_FT',
@@ -933,6 +965,9 @@ function buildFinishedMatchRowValues(
     goleiroGolsEvitadosVisitanteFT: v(st.goalsPreventedAwayFT),
     goleiroTirosDeMetaMandanteFT: v(st.goalKicksHomeFT),
     goleiroTirosDeMetaVisitanteFT: v(st.goalKicksAwayFT),
+
+    minutosGolsMandanteFT: st.goalMinutesHomeFT || '',
+    minutosGolsVisitanteFT: st.goalMinutesAwayFT || '',
 
     // Odds FT
     oddHomeFT: v(od.homeFT),
@@ -1782,6 +1817,17 @@ export function extractBulkMatchUpdateFields(
   const goalKicksHomeFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.goalKicksHome, 105));
   const goalKicksAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.goalKicksAway, 106));
 
+  // Minutagem dos Gols (ex: "9,19,43,74")
+  const rawGoalMinutesHome = getValue(EXCEL_HEADER_ALIASES.goalMinutesHome);
+  const goalMinutesHomeFT = rawGoalMinutesHome !== null && rawGoalMinutesHome !== undefined
+    ? String(rawGoalMinutesHome).trim()
+    : null;
+
+  const rawGoalMinutesAway = getValue(EXCEL_HEADER_ALIASES.goalMinutesAway);
+  const goalMinutesAwayFT = rawGoalMinutesAway !== null && rawGoalMinutesAway !== undefined
+    ? String(rawGoalMinutesAway).trim()
+    : null;
+
   // Odds
   const oddHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddHome, 107));
   const oddDrawFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddDraw, 108));
@@ -1907,6 +1953,8 @@ export function extractBulkMatchUpdateFields(
     goalsPreventedAwayFT,
     goalKicksHomeFT,
     goalKicksAwayFT,
+    goalMinutesHomeFT,
+    goalMinutesAwayFT,
     oddHomeFT,
     oddDrawFT,
     oddAwayFT,
@@ -2091,6 +2139,9 @@ export async function parseBulkMatchUpdateExcel(
         goalKicksHomeFT: fields.goalKicksHomeFT,
         goalKicksAwayFT: fields.goalKicksAwayFT,
 
+        goalMinutesHomeFT: fields.goalMinutesHomeFT,
+        goalMinutesAwayFT: fields.goalMinutesAwayFT,
+
         oddHomeFT: fields.oddHomeFT,
         oddDrawFT: fields.oddDrawFT,
         oddAwayFT: fields.oddAwayFT,
@@ -2268,6 +2319,9 @@ export function parseFinishedMatchesText(
         goalsPreventedAwayFT: fields.goalsPreventedAwayFT,
         goalKicksHomeFT: fields.goalKicksHomeFT,
         goalKicksAwayFT: fields.goalKicksAwayFT,
+
+        goalMinutesHomeFT: fields.goalMinutesHomeFT,
+        goalMinutesAwayFT: fields.goalMinutesAwayFT,
 
         oddHomeFT: fields.oddHomeFT,
         oddDrawFT: fields.oddDrawFT,

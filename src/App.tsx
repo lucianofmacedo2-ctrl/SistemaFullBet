@@ -1235,6 +1235,9 @@ export default function App() {
           goalKicksHomeFT: row.goalKicksHomeFT !== null && row.goalKicksHomeFT !== undefined ? row.goalKicksHomeFT : existingStats.goalKicksHomeFT,
           goalKicksAwayFT: row.goalKicksAwayFT !== null && row.goalKicksAwayFT !== undefined ? row.goalKicksAwayFT : existingStats.goalKicksAwayFT,
 
+          goalMinutesHomeFT: row.goalMinutesHomeFT !== null && row.goalMinutesHomeFT !== undefined ? row.goalMinutesHomeFT : existingStats.goalMinutesHomeFT,
+          goalMinutesAwayFT: row.goalMinutesAwayFT !== null && row.goalMinutesAwayFT !== undefined ? row.goalMinutesAwayFT : existingStats.goalMinutesAwayFT,
+
           stadium: row.stadium || existingStats.stadium || existing.stadium || '',
           stadiumCapacity: row.stadiumCapacity ?? existingStats.stadiumCapacity ?? existing.stadiumCapacity ?? null,
           attendance: row.attendance ?? existingStats.attendance ?? existing.attendance ?? null,
@@ -1446,6 +1449,9 @@ export default function App() {
             goalsPreventedAwayFT: row.goalsPreventedAwayFT ?? null,
             goalKicksHomeFT: row.goalKicksHomeFT ?? null,
             goalKicksAwayFT: row.goalKicksAwayFT ?? null,
+
+            goalMinutesHomeFT: row.goalMinutesHomeFT ?? null,
+            goalMinutesAwayFT: row.goalMinutesAwayFT ?? null,
 
             stadium: row.stadium || '',
             stadiumCapacity: row.stadiumCapacity ?? null,

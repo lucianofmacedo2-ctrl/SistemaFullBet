@@ -1,4 +1,10 @@
 import { Match, MatchStats, MatchOdds, DbState, Team, League, Country } from '../types';
+import {
+  calculateTeamGoalTiming,
+  generateHeadToHeadTimingInsights,
+  TeamGoalTimingSummary,
+  HeadToHeadTimingInsight,
+} from './goalTimingAnalysis';
 
 export interface TeamSampleMatch {
   match: Match;
@@ -230,6 +236,11 @@ export interface MatchAnalysisResult {
   // Módulo 4: Projeções Contínuas e Poisson
   projections: ContinuousProjections;
   poisson: PoissonAnalysis;
+
+  // Análise de Minutagem dos Gols
+  homeGoalTiming: TeamGoalTimingSummary;
+  awayGoalTiming: TeamGoalTimingSummary;
+  timingInsights: HeadToHeadTimingInsight;
 
   // Complementares
   htFtAnalysis: HtFtDifferential;
@@ -1708,6 +1719,11 @@ export function runFullMatchAnalysis(
   valueBets.push(evaluateValue('Ambas Marcam', 'Ambas Marcam: SIM', poisson.probBttsYes, null));
   valueBets.push(evaluateValue('Ambas Marcam', 'Ambas Marcam: NÃO', poisson.probBttsNo, null));
 
+  // Análise de Minutagem dos Gols
+  const homeGoalTiming = calculateTeamGoalTiming(homeTeam.id, homeActiveSample, homeTeam.name);
+  const awayGoalTiming = calculateTeamGoalTiming(awayTeam.id, awayActiveSample, awayTeam.name);
+  const timingInsights = generateHeadToHeadTimingInsights(homeGoalTiming, awayGoalTiming);
+
   return {
     homeTeam,
     awayTeam,
@@ -1730,6 +1746,9 @@ export function runFullMatchAnalysis(
     descriptiveMetrics,
     projections,
     poisson,
+    homeGoalTiming,
+    awayGoalTiming,
+    timingInsights,
     htFtAnalysis,
     refereeAnalysis,
     valueBets,

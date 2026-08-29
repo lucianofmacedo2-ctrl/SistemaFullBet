@@ -937,13 +937,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   type="button"
                   onClick={onOpenHtGoalsScanner}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all bg-gradient-to-r from-orange-600 via-rose-600 to-amber-600 hover:from-orange-500 hover:to-rose-500 text-white shadow-2xs cursor-pointer hover:scale-[1.02]"
-                  title="Filtrar automaticamente jogos do dia com padrão para Over 1.5 Gols HT (1º Tempo)"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all bg-gradient-to-r from-amber-500 via-orange-600 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white shadow-2xs cursor-pointer hover:scale-[1.02]"
+                  title="Central de Radares Inteligentes: Ambas Marcam (HT/FT), Over 2.5 / 3.5 Gols e Mandante para Vencer"
                 >
-                  <Flame className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-                  <span>RADAR OVER 1.5 HT</span>
-                  <span className="px-1.5 py-0.2 rounded-md text-[9px] font-black bg-white text-orange-800 uppercase">
-                    1ºT
+                  <Flame className="w-3.5 h-3.5 text-amber-200 fill-amber-200" />
+                  <span>RADARES</span>
+                  <span className="px-1.5 py-0.2 rounded-md text-[9px] font-black bg-slate-950 text-amber-300 uppercase">
+                    5 MODOS
                   </span>
                 </button>
               )}
