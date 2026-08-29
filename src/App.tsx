@@ -43,7 +43,6 @@ import { SyncModal } from './components/SyncModal';
 import { LoginModal } from './components/LoginModal';
 import { UserManagerModal } from './components/UserManagerModal';
 import { AccessExpiredOverlay } from './components/AccessExpiredOverlay';
-import { ConcurrentSessionOverlay } from './components/ConcurrentSessionOverlay';
 import { ToastNotification } from './components/ToastNotification';
 import { TeamsReportModal } from './components/TeamsReportModal';
 import { DbSanitizerModal } from './components/DbSanitizerModal';
@@ -69,8 +68,7 @@ import {
   fetchDbFromFirestore,
 } from './services/firebaseDbService';
 import {
-  registerActiveSession,
-  subscribeToUserSession,
+  startActiveSessionKeepalive,
   clearActiveSession,
   getOrCreateClientSessionId,
   ActiveSessionRecord,
@@ -101,10 +99,7 @@ export default function App() {
   const [loginInitialUsername, setLoginInitialUsername] = useState('');
   const [isConsultaPortalMode, setIsConsultaPortalMode] = useState(false);
   const [isUserManagerModalOpen, setIsUserManagerModalOpen] = useState(false);
-
-  // Single-device Active Session Management (Prevents simultaneous access on CONSULTOR accounts)
-  const [isConcurrentLocked, setIsConcurrentLocked] = useState(false);
-  const [concurrentRemoteInfo, setConcurrentRemoteInfo] = useState<ActiveSessionRecord | null>(null);
+  const [userManagerInitialTab, setUserManagerInitialTab] = useState<'USERS' | 'SESSIONS'>('USERS');
 
   // Modals state
   const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
@@ -354,67 +349,48 @@ export default function App() {
     };
   }, []);
 
-  // Single-device Session Enforcement Hook (Restricts simultaneous access on CONSULTOR accounts)
+  // Multi-Device Active Session Keepalive & Presence Management
   useEffect(() => {
-    if (!currentUser || currentUser.role !== 'CONSULTOR') {
-      setIsConcurrentLocked(false);
-      setConcurrentRemoteInfo(null);
-      return;
-    }
+    if (!currentUser) return;
 
     const clientSessionId = getOrCreateClientSessionId();
-    // Register this instance as the authoritative active session
-    registerActiveSession(currentUser, clientSessionId);
-
-    // Subscribe to concurrent login changes in real-time
-    const unsubscribeSession = subscribeToUserSession(
+    // Start active session keepalive and listen for remote disconnect from Master
+    const cleanupKeepalive = startActiveSessionKeepalive(
       currentUser,
       clientSessionId,
-      (remoteInfo) => {
-        setIsConcurrentLocked(true);
-        setConcurrentRemoteInfo(remoteInfo || null);
+      () => {
+        // Disconnected remotely by Master
+        handleLogout();
+        setNotifications(prev => [
+          ...prev,
+          {
+            id: `session-disconnected-${Date.now()}`,
+            type: 'team',
+            entityId: 'AUTH',
+            name: 'Sua sessão foi encerrada remotamente pelo Administrador Master.',
+            timestamp: Date.now(),
+          },
+        ]);
       }
     );
 
     return () => {
-      unsubscribeSession();
+      cleanupKeepalive();
     };
   }, [currentUser?.id, currentUser?.username, currentUser?.role]);
-
-  const handleReconnectSessionHere = async () => {
-    if (!currentUser) return;
-    const newSessionId = getOrCreateClientSessionId(true);
-    await registerActiveSession(currentUser, newSessionId);
-    setIsConcurrentLocked(false);
-    setConcurrentRemoteInfo(null);
-  };
-
-  const handleSwitchAccountFromLock = () => {
-    setIsConcurrentLocked(false);
-    setConcurrentRemoteInfo(null);
-    handleLogout();
-  };
 
   const handleLoginSuccess = async (user: AppUser) => {
     setCurrentUser(user);
     setCurrentAuthUser(user);
     setIsLoginModalOpen(false);
-    setIsConcurrentLocked(false);
-    setConcurrentRemoteInfo(null);
-    if (user.role === 'CONSULTOR') {
-      const sessionId = getOrCreateClientSessionId(true);
-      await registerActiveSession(user, sessionId);
-    }
   };
 
   const handleLogout = () => {
-    if (currentUser && currentUser.role === 'CONSULTOR') {
+    if (currentUser) {
       clearActiveSession(currentUser);
     }
     setCurrentUser(null);
     setCurrentAuthUser(null);
-    setIsConcurrentLocked(false);
-    setConcurrentRemoteInfo(null);
     setIsLoginModalOpen(true);
   };
 
@@ -422,12 +398,6 @@ export default function App() {
     setCurrentUser(user);
     setCurrentAuthUser(user);
     setIsUserManagerModalOpen(false);
-    setIsConcurrentLocked(false);
-    setConcurrentRemoteInfo(null);
-    if (user.role === 'CONSULTOR') {
-      const sessionId = getOrCreateClientSessionId(true);
-      registerActiveSession(user, sessionId);
-    }
   };
 
   const handleSaveUsers = async (updatedUsers: AppUser[], isExplicitReplacement: boolean = false) => {
@@ -1672,7 +1642,10 @@ export default function App() {
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
         onOpenResetModal={() => setIsResetModalOpen(true)}
         onOpenSanitizerModal={() => setIsSanitizerModalOpen(true)}
-        onOpenUserManagerModal={() => setIsUserManagerModalOpen(true)}
+        onOpenUserManagerModal={(tab = 'USERS') => {
+          setUserManagerInitialTab(tab);
+          setIsUserManagerModalOpen(true);
+        }}
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
         onLogout={handleLogout}
         onOpenOpportunitiesHub={() => setIsOpportunitiesHubOpen(true)}
@@ -1976,6 +1949,7 @@ export default function App() {
           currentAuthUser={currentUser}
           onSaveUsers={handleSaveUsers}
           onSwitchUser={handleSwitchUser}
+          initialTab={userManagerInitialTab}
         />
       )}
 
@@ -2085,17 +2059,6 @@ export default function App() {
         <TechDocsModal
           isOpen={isTechDocsOpen}
           onClose={() => setIsTechDocsOpen(false)}
-        />
-      )}
-
-      {/* Concurrent / Simultaneous Session Restriction Overlay */}
-      {isConcurrentLocked && (
-        <ConcurrentSessionOverlay
-          isOpen={isConcurrentLocked}
-          user={currentUser}
-          remoteInfo={concurrentRemoteInfo}
-          onReconnectHere={handleReconnectSessionHere}
-          onSwitchAccount={handleSwitchAccountFromLock}
         />
       )}
     </div>

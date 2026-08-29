@@ -27,6 +27,7 @@ import {
   Share2,
   ExternalLink,
   Link as LinkIcon,
+  Globe,
 } from 'lucide-react';
 import { AppUser, UserRole, UserAccessDuration, UserStatus, DbState } from '../types';
 import {
@@ -39,6 +40,7 @@ import {
 } from '../services/authService';
 import { deleteUserPermanently } from '../services/dbService';
 import { getNextUniqueId } from '../utils/idGenerator';
+import { ActiveSessionsPanel } from './ActiveSessionsPanel';
 
 // Helper to determine clean base app URL
 export function getAppBaseUrl(): string {
@@ -77,6 +79,7 @@ interface UserManagerModalProps {
   currentAuthUser: AppUser | null;
   onSaveUsers: (updatedUsers: AppUser[], isExplicitReplacement?: boolean) => void;
   onSwitchUser?: (user: AppUser) => void;
+  initialTab?: 'USERS' | 'SESSIONS';
 }
 
 export const UserManagerModal: React.FC<UserManagerModalProps> = ({
@@ -86,7 +89,9 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
   currentAuthUser,
   onSaveUsers,
   onSwitchUser,
+  initialTab = 'USERS',
 }) => {
+  const [activeTab, setActiveTab] = useState<'USERS' | 'SESSIONS'>(initialTab);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'MASTER' | 'CONSULTOR'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'EXPIRED' | 'BLOCKED'>('ALL');
@@ -347,35 +352,39 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
         <div className="p-4 sm:p-6 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">
-              <Users className="w-5 h-5 text-white" />
+              {activeTab === 'USERS' ? <Users className="w-5 h-5 text-white" /> : <Globe className="w-5 h-5 text-white" />}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2">
-                  Gestão de Usuários & Permissões
+                  {activeTab === 'USERS' ? 'Gestão de Usuários & Permissões' : 'Painel de Sessões & Dispositivos Conectados'}
                 </h2>
                 <span className="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-[10px] font-bold">
                   Exclusivo Master
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Controle quem pode acessar o sistema e defina prazos de uso (30d, 60d, 90d, 180d, 1 ano, manual personalizado ou Vitalício).
+                {activeTab === 'USERS'
+                  ? 'Controle quem pode acessar o sistema e defina prazos de uso (30d, 60d, 90d, 180d, 1 ano, manual personalizado ou Vitalício).'
+                  : 'Monitore em tempo real onde cada usuário está conectado (computador, celular, tablet) e encerre acessos com 1 clique.'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleOpenCreateForm}
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Novo Usuário</span>
-            </button>
+            {activeTab === 'USERS' && (
+              <button
+                onClick={handleOpenCreateForm}
+                className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all cursor-pointer"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Novo Usuário</span>
+              </button>
+            )}
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               title="Fechar"
             >
               <X className="w-5 h-5" />
@@ -383,6 +392,42 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
           </div>
         </div>
 
+        {/* Tab Selector Bar */}
+        <div className="bg-slate-900 px-4 sm:px-6 pt-0 pb-3 flex items-center gap-2 border-b border-slate-800 shrink-0 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('USERS')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'USERS'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Usuários Cadastrados ({users.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('SESSIONS')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'SESSIONS'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Globe className="w-4 h-4 text-emerald-400 animate-pulse" />
+            <span>Sessões & Dispositivos Conectados</span>
+            <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+              Tempo Real
+            </span>
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'SESSIONS' ? (
+          <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-slate-50/50">
+            <ActiveSessionsPanel currentAuthUser={currentAuthUser} users={users} />
+          </div>
+        ) : (
+          <>
         {/* Quick Stats Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 p-3 sm:p-4 bg-slate-50 border-b border-slate-200 shrink-0">
           <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
@@ -818,6 +863,8 @@ export const UserManagerModal: React.FC<UserManagerModalProps> = ({
             </div>
           )}
         </div>
+        </>
+        )}
 
         {/* Modal Footer */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 shrink-0">

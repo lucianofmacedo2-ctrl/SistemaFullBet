@@ -57,7 +57,7 @@ interface NavbarProps {
   onOpenSyncModal?: () => void;
   onOpenResetModal?: () => void;
   onOpenSanitizerModal?: () => void;
-  onOpenUserManagerModal?: () => void;
+  onOpenUserManagerModal?: (tab?: 'USERS' | 'SESSIONS') => void;
   onOpenLoginModal?: () => void;
   onLogout?: () => void;
   onOpenOpportunitiesHub?: () => void;
@@ -615,18 +615,37 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <Globe className="w-3.5 h-3.5 text-slate-500" />
                   </button>
                   {onOpenUserManagerModal && (
-                    <button
-                      onClick={() => {
-                        setIsMasterPanelOpen(false);
-                        onOpenUserManagerModal();
-                      }}
-                      className="w-full text-left px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-900 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
-                    >
-                      <span>Gestão de Usuários</span>
-                      <span className="px-1.5 py-0.2 bg-purple-200 text-purple-900 text-[10px] font-bold rounded-md">
-                        {activeUsersCount} ativos
-                      </span>
-                    </button>
+                    <>
+                      <button
+                        onClick={() => {
+                          setIsMasterPanelOpen(false);
+                          onOpenUserManagerModal('USERS');
+                        }}
+                        className="w-full text-left px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-900 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                      >
+                        <span>Gestão de Usuários</span>
+                        <span className="px-1.5 py-0.2 bg-purple-200 text-purple-900 text-[10px] font-bold rounded-md">
+                          {activeUsersCount} ativos
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsMasterPanelOpen(false);
+                          onOpenUserManagerModal('SESSIONS');
+                        }}
+                        className="w-full text-left px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Globe className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Sessões & Dispositivos</span>
+                        </div>
+                        <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-md flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                          Ao Vivo
+                        </span>
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

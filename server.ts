@@ -138,16 +138,76 @@ function saveUsers(users: any[], replaceAll: boolean = false) {
   }
 }
 
-// In-Memory Active Session Tracker for single-device session locking
-interface ActiveSession {
+const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
+
+// Multi-device Active Session Model
+export interface ActiveSession {
   sessionId: string;
   userId: string;
   username: string;
+  name?: string;
+  role?: string;
+  deviceType?: 'Desktop' | 'Mobile' | 'Tablet' | string;
+  deviceModel?: string;
+  os?: string;
+  browser?: string;
+  screenResolution?: string;
+  timezone?: string;
+  ip?: string;
+  loginTime: string;
   updatedAt: string;
   lastHeartbeat: number;
   clientInfo?: string;
+  status?: 'ONLINE' | 'IDLE' | 'OFFLINE';
+  isRevoked?: boolean;
 }
+
 const activeSessions = new Map<string, ActiveSession>();
+
+// Load sessions from disk on startup
+function loadSessionsFromDisk() {
+  if (fs.existsSync(SESSIONS_FILE)) {
+    try {
+      const raw = fs.readFileSync(SESSIONS_FILE, 'utf-8');
+      const list = JSON.parse(raw);
+      if (Array.isArray(list)) {
+        list.forEach((s: ActiveSession) => {
+          if (s && s.sessionId) {
+            activeSessions.set(s.sessionId, s);
+          }
+        });
+      }
+    } catch {
+      // non-fatal
+    }
+  }
+}
+loadSessionsFromDisk();
+
+function saveSessionsToDisk() {
+  try {
+    const list = Array.from(activeSessions.values());
+    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(list, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error saving sessions.json:', err);
+  }
+}
+
+// Clean old sessions every 10 minutes (keep active within 24h)
+setInterval(() => {
+  const now = Date.now();
+  const ONE_DAY = 24 * 60 * 60 * 1000;
+  let changed = false;
+  for (const [key, session] of activeSessions.entries()) {
+    if (now - session.lastHeartbeat > ONE_DAY) {
+      activeSessions.delete(key);
+      changed = true;
+    }
+  }
+  if (changed) {
+    saveSessionsToDisk();
+  }
+}, 10 * 60 * 1000);
 
 // Lazy Gemini AI initialization
 function getGeminiAI(): GoogleGenAI | null {
@@ -244,61 +304,217 @@ app.post('/api/users/delete', (req, res) => {
   res.json({ success: true, users: loadUsers() });
 });
 
-// Single-device Active Session Endpoints
+// Multi-Device Active Session Endpoints
 app.post('/api/sessions/register', (req, res) => {
-  const { userId, username, sessionId, clientInfo } = req.body;
-  if (!userId || !sessionId) {
-    return res.status(400).json({ error: 'Dados de sessão incompletos.' });
-  }
-  const record: ActiveSession = {
+  const {
     userId,
-    username: username || '',
+    username,
+    name,
+    role,
     sessionId,
+    deviceType,
+    deviceModel,
+    os,
+    browser,
+    screenResolution,
+    timezone,
+    clientInfo,
+  } = req.body;
+
+  if (!userId || !sessionId) {
+    return res.status(400).json({ error: 'Dados de sessão incompletos (userId e sessionId obrigatórios).' });
+  }
+
+  // Derive client IP from request headers or socket
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : req.socket.remoteAddress || '';
+
+  const users = loadUsers();
+  const matchedUser = users.find(u => u.id === userId || u.username.toLowerCase() === String(username || '').toLowerCase());
+
+  const existing = activeSessions.get(sessionId);
+  const record: ActiveSession = {
+    sessionId,
+    userId,
+    username: username || matchedUser?.username || '',
+    name: name || matchedUser?.name || '',
+    role: role || matchedUser?.role || 'CONSULTOR',
+    deviceType: deviceType || existing?.deviceType || 'Desktop',
+    deviceModel: deviceModel || existing?.deviceModel || '',
+    os: os || existing?.os || 'Desconhecido',
+    browser: browser || existing?.browser || 'Navegador Web',
+    screenResolution: screenResolution || existing?.screenResolution || '',
+    timezone: timezone || existing?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    ip: ip || existing?.ip || '',
+    loginTime: existing?.loginTime || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     lastHeartbeat: Date.now(),
-    clientInfo: clientInfo || '',
+    clientInfo: clientInfo || existing?.clientInfo || '',
+    status: 'ONLINE',
+    isRevoked: false,
   };
-  activeSessions.set(userId, record);
-  if (username) {
-    activeSessions.set(`user_${username.toLowerCase()}`, record);
-  }
+
+  activeSessions.set(sessionId, record);
+  saveSessionsToDisk();
+
   res.json({ success: true, record });
 });
 
-app.get('/api/sessions/status/:userId', (req, res) => {
-  const { userId } = req.params;
-  const clientSessionId = String(req.query.sessionId || '');
-  const record = activeSessions.get(userId);
-
-  if (!record || !record.sessionId) {
-    return res.json({ isValid: true });
-  }
-
-  if (record.sessionId !== clientSessionId) {
-    return res.json({ isValid: false, remoteInfo: record });
-  }
-
-  return res.json({ isValid: true, record });
-});
-
+// Periodic heartbeat from device
 app.post('/api/sessions/heartbeat', (req, res) => {
-  const { userId, sessionId } = req.body;
-  if (userId && sessionId) {
-    const record = activeSessions.get(userId);
-    if (record && record.sessionId === sessionId) {
-      record.lastHeartbeat = Date.now();
-      record.updatedAt = new Date().toISOString();
-      activeSessions.set(userId, record);
-    }
+  const { sessionId, userId } = req.body;
+  if (!sessionId) {
+    return res.status(400).json({ error: 'sessionId obrigatório' });
   }
+
+  const record = activeSessions.get(sessionId);
+  if (record) {
+    if (record.isRevoked) {
+      return res.json({ success: false, isRevoked: true });
+    }
+    record.lastHeartbeat = Date.now();
+    record.updatedAt = new Date().toISOString();
+    record.status = 'ONLINE';
+    activeSessions.set(sessionId, record);
+  } else if (userId) {
+    // If not found in memory (e.g. server restart), register lightweight placeholder
+    const record: ActiveSession = {
+      sessionId,
+      userId,
+      username: '',
+      loginTime: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastHeartbeat: Date.now(),
+      status: 'ONLINE',
+    };
+    activeSessions.set(sessionId, record);
+  }
+
   res.json({ success: true });
 });
 
-app.post('/api/sessions/clear', (req, res) => {
-  const { userId } = req.body;
-  if (userId) {
-    activeSessions.delete(userId);
+// Check if a specific session is valid or was revoked by Master
+app.get('/api/sessions/status/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+  const record = activeSessions.get(sessionId);
+
+  if (!record) {
+    return res.json({ isValid: true, isRevoked: false });
   }
+
+  if (record.isRevoked) {
+    return res.json({ isValid: false, isRevoked: true, reason: 'Sessão encerrada pelo administrador.' });
+  }
+
+  return res.json({ isValid: true, isRevoked: false, record });
+});
+
+// MASTER PANEL: List all active sessions across all profiles in real-time
+app.get('/api/sessions/all', (req, res) => {
+  const now = Date.now();
+  const users = loadUsers();
+  const usersMap = new Map<string, any>(users.map(u => [u.id, u]));
+  const usernameMap = new Map<string, any>(users.map(u => [u.username.toLowerCase(), u]));
+
+  const rawSessions = Array.from(activeSessions.values());
+  const enrichedSessions = rawSessions
+    .filter(s => !s.isRevoked)
+    .map(s => {
+      const u = usersMap.get(s.userId) || usernameMap.get(s.username.toLowerCase());
+      const timeSinceHeartbeat = now - (s.lastHeartbeat || 0);
+
+      let status: 'ONLINE' | 'IDLE' | 'OFFLINE' = 'ONLINE';
+      if (timeSinceHeartbeat > 5 * 60 * 1000) {
+        status = 'OFFLINE';
+      } else if (timeSinceHeartbeat > 90 * 1000) {
+        status = 'IDLE';
+      }
+
+      return {
+        ...s,
+        name: s.name || u?.name || 'Usuário',
+        username: s.username || u?.username || '',
+        role: s.role || u?.role || 'CONSULTOR',
+        status,
+        timeSinceHeartbeatMs: timeSinceHeartbeat,
+      };
+    })
+    .sort((a, b) => b.lastHeartbeat - a.lastHeartbeat);
+
+  // Group by user to calculate simultaneous devices count
+  const userDeviceCount: Record<string, number> = {};
+  enrichedSessions.forEach(s => {
+    if (s.status !== 'OFFLINE') {
+      const key = s.username || s.userId;
+      userDeviceCount[key] = (userDeviceCount[key] || 0) + 1;
+    }
+  });
+
+  const finalSessions = enrichedSessions.map(s => ({
+    ...s,
+    simultaneousCountForUser: userDeviceCount[s.username || s.userId] || 1,
+  }));
+
+  const onlineCount = finalSessions.filter(s => s.status === 'ONLINE').length;
+  const idleCount = finalSessions.filter(s => s.status === 'IDLE').length;
+  const uniqueUsersOnline = new Set(finalSessions.filter(s => s.status !== 'OFFLINE').map(s => s.username || s.userId)).size;
+
+  res.json({
+    success: true,
+    totalSessions: finalSessions.length,
+    onlineCount,
+    idleCount,
+    uniqueUsersOnline,
+    sessions: finalSessions,
+  });
+});
+
+// MASTER ACTION: Remotely disconnect a session or all sessions of a user
+app.post('/api/sessions/disconnect', (req, res) => {
+  const { sessionId, userId, username } = req.body;
+
+  if (sessionId) {
+    const record = activeSessions.get(sessionId);
+    if (record) {
+      record.isRevoked = true;
+      activeSessions.delete(sessionId);
+    }
+    saveSessionsToDisk();
+    return res.json({ success: true, message: 'Sessão desconectada com sucesso.' });
+  }
+
+  if (userId || username) {
+    let count = 0;
+    for (const [key, session] of activeSessions.entries()) {
+      if (
+        (userId && session.userId === userId) ||
+        (username && session.username.toLowerCase() === String(username).toLowerCase())
+      ) {
+        session.isRevoked = true;
+        activeSessions.delete(key);
+        count++;
+      }
+    }
+    saveSessionsToDisk();
+    return res.json({ success: true, count, message: `${count} sessão(ões) desconectada(s) com sucesso.` });
+  }
+
+  return res.status(400).json({ error: 'sessionId ou userId obrigatório para desconexão.' });
+});
+
+// Explicit user logout from current device
+app.post('/api/sessions/clear', (req, res) => {
+  const { sessionId, userId } = req.body;
+  if (sessionId) {
+    activeSessions.delete(sessionId);
+  } else if (userId) {
+    for (const [key, session] of activeSessions.entries()) {
+      if (session.userId === userId) {
+        activeSessions.delete(key);
+      }
+    }
+  }
+  saveSessionsToDisk();
   res.json({ success: true });
 });
 
