@@ -919,20 +919,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </button>
 
-              {onOpenOpportunitiesHub && (
-                <button
-                  type="button"
-                  onClick={onOpenOpportunitiesHub}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-700 text-slate-950 shadow-2xs cursor-pointer hover:scale-[1.02]"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-slate-950" />
-                  <span>OPORTUNIDADES (+EV)</span>
-                  <span className="px-1.5 py-0.2 rounded-md text-[9px] font-black bg-slate-950 text-amber-300 uppercase">
-                    AI
-                  </span>
-                </button>
-              )}
-
               {onOpenHtGoalsScanner && (
                 <button
                   type="button"
