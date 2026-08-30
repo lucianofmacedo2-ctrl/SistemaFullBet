@@ -656,20 +656,48 @@ export function parseAndSyncCsvLocally(
     const status = isFinished ? 'FINALIZADO' : 'AGENDADO';
 
     // Exact Stats matching columns
-    const xgHome = safeNum(getRowValue(r, ['xG_Mandante_FT', 'HxG', 'xG_Home', 'xG_Mandante']));
-    const xgAway = safeNum(getRowValue(r, ['xG_Visitante_FT', 'AxG', 'xG_Away', 'xG_Visitante']));
-    const shotsHome = safeNum(getRowValue(r, ['Finalizacoes_Mandante_FT', 'HS', 'Finalizacoes_Mandante', 'Chutes_Mandante']));
-    const shotsAway = safeNum(getRowValue(r, ['Finalizacoes_Visitante_FT', 'AS', 'Finalizacoes_Visitante', 'Chutes_Visitante']));
-    const shotsOnTargetHome = safeNum(getRowValue(r, ['Chutes_Gol_Mandante_FT', 'HST', 'Chutes_Gol_Mandante', 'ChutesNoAlvo_Mandante']));
-    const shotsOnTargetAway = safeNum(getRowValue(r, ['Chutes_Gol_Visitante_FT', 'AST', 'Chutes_Gol_Visitante', 'ChutesNoAlvo_Visitante']));
-    const foulsHome = safeNum(getRowValue(r, ['Faltas_Mandante_FT', 'HF', 'Faltas_Mandante']));
-    const foulsAway = safeNum(getRowValue(r, ['Faltas_Visitante_FT', 'AF', 'Faltas_Visitante']));
-    const cornersHome = safeNum(getRowValue(r, ['Escanteios_Mandante_FT', 'HC', 'Escanteios_Mandante', 'Cantos_Mandante']));
-    const cornersAway = safeNum(getRowValue(r, ['Escanteios_Visitante_FT', 'AC', 'Escanteios_Visitante', 'Cantos_Visitante']));
-    const yellowHome = safeNum(getRowValue(r, ['Cartao_Amarelo_Mandante_FT', 'HY', 'Amarelos_Mandante', 'Cartoes_Amarelos_Mandante']));
-    const yellowAway = safeNum(getRowValue(r, ['Cartao_Amarelo_Visitante_FT', 'AY', 'Amarelos_Visitante', 'Cartoes_Amarelos_Visitante']));
-    const redHome = safeNum(getRowValue(r, ['Cartao_Vermelho_Mandante_FT', 'HR', 'Vermelhos_Mandante', 'Cartoes_Vermelhos_Mandante']));
-    const redAway = safeNum(getRowValue(r, ['Cartao_Vermelho_Visitante_FT', 'AR', 'Vermelhos_Visitante', 'Cartoes_Vermelhos_Visitante']));
+    const xgHome = safeNum(getRowValue(r, ['xG_Mandante_FT', 'HxG', 'xG_Home', 'xG_Mandante', 'finalizacoes_xg_mandante_ft', 'xg_mandante']));
+    const xgAway = safeNum(getRowValue(r, ['xG_Visitante_FT', 'AxG', 'xG_Away', 'xG_Visitante', 'finalizacoes_xg_visitante_ft', 'xg_visitante']));
+    const shotsHome = safeNum(getRowValue(r, ['Finalizacoes_Mandante_FT', 'HS', 'Finalizacoes_Mandante', 'Chutes_Mandante', 'finalizacoes_totais_mandante_ft']));
+    const shotsAway = safeNum(getRowValue(r, ['Finalizacoes_Visitante_FT', 'AS', 'Finalizacoes_Visitante', 'Chutes_Visitante', 'finalizacoes_totais_visitante_ft']));
+    const shotsOnTargetHome = safeNum(getRowValue(r, ['Chutes_Gol_Mandante_FT', 'HST', 'Chutes_Gol_Mandante', 'ChutesNoAlvo_Mandante', 'finalizacoes_no_alvo_mandante_ft']));
+    const shotsOnTargetAway = safeNum(getRowValue(r, ['Chutes_Gol_Visitante_FT', 'AST', 'Chutes_Gol_Visitante', 'ChutesNoAlvo_Visitante', 'finalizacoes_no_alvo_visitante_ft']));
+    const foulsHome = safeNum(getRowValue(r, ['Faltas_Mandante_FT', 'HF', 'Faltas_Mandante', 'defesa_faltas_mandante_ft']));
+    const foulsAway = safeNum(getRowValue(r, ['Faltas_Visitante_FT', 'AF', 'Faltas_Visitante', 'defesa_faltas_visitante_ft']));
+    const cornersHome = safeNum(getRowValue(r, ['Escanteios_Mandante_FT', 'HC', 'Escanteios_Mandante', 'Cantos_Mandante', 'ataque_escanteios_mandante_ft']));
+    const cornersAway = safeNum(getRowValue(r, ['Escanteios_Visitante_FT', 'AC', 'Escanteios_Visitante', 'Cantos_Visitante', 'ataque_escanteios_visitante_ft']));
+    const yellowHome = safeNum(getRowValue(r, ['Cartao_Amarelo_Mandante_FT', 'HY', 'Amarelos_Mandante', 'Cartoes_Amarelos_Mandante', 'cartao_amarelo_mandante_ft']));
+    const yellowAway = safeNum(getRowValue(r, ['Cartao_Amarelo_Visitante_FT', 'AY', 'Amarelos_Visitante', 'Cartoes_Amarelos_Visitante', 'cartao_amarelo_visitante_ft']));
+    const redHome = safeNum(getRowValue(r, ['Cartao_Vermelho_Mandante_FT', 'HR', 'Vermelhos_Mandante', 'Cartoes_Vermelhos_Mandante', 'cartao_vermelho_mandante_ft']));
+    const redAway = safeNum(getRowValue(r, ['Cartao_Vermelho_Visitante_FT', 'AR', 'Vermelhos_Visitante', 'Cartoes_Vermelhos_Visitante', 'cartao_vermelho_visitante_ft']));
+
+    const possHome = safeNum(getRowValue(r, ['posse_bola_mandante_ft', 'Posse_Mandante', 'Posse_Mandante_FT', 'Possession_Home', 'Posse_Casa']));
+    const possAway = safeNum(getRowValue(r, ['posse_bola_visitante_ft', 'Posse_Visitante', 'Posse_Visitante_FT', 'Possession_Away', 'Posse_Fora']));
+
+    // Minutagem dos Gols
+    const rawGoalMinHome = getRowValue(r, [
+      'minutos_gols_mandante_ft', 'Minutos_Gols_Mandante_FT', 'minutos_gols_mandante', 'Minutos_Gols_Mandante',
+      'minutos_gol_mandante_ft', 'minutos_gol_mandante', 'minutos_mandante_ft', 'minutos_mandante',
+      'minutos_gols_casa', 'minutos_casa', 'gols_minutos_mandante', 'gols_minutos_casa',
+      'goal_minutes_home_ft', 'goal_minutes_home', 'home_goal_minutes', 'home_goals_minutes',
+      'minutosgolsmandanteft', 'minutosgolsmandante', 'minuto_gols_mandante', 'minuto_mandante',
+      'tempo_gols_mandante', 'horario_gols_mandante', 'minutos_hg', 'hg_min', 'min_hg'
+    ]);
+    const goalMinutesHome = rawGoalMinHome && String(rawGoalMinHome).trim() !== '' ? String(rawGoalMinHome).trim() : null;
+
+    const rawGoalMinAway = getRowValue(r, [
+      'minutos_gols_visitante_ft', 'Minutos_Gols_Visitante_FT', 'minutos_gols_visitante', 'Minutos_Gols_Visitante',
+      'minutos_gol_visitante_ft', 'minutos_gol_visitante', 'minutos_visitante_ft', 'minutos_visitante',
+      'minutos_gols_fora', 'minutos_fora', 'gols_minutos_visitante', 'gols_minutos_fora',
+      'goal_minutes_away_ft', 'goal_minutes_away', 'away_goal_minutes', 'away_goals_minutes',
+      'minutosgolsvisitanteft', 'minutosgolsvisitante', 'minuto_gols_visitante', 'minuto_visitante',
+      'tempo_gols_visitante', 'horario_gols_visitante', 'minutos_ag', 'ag_min', 'min_ag'
+    ]);
+    const goalMinutesAway = rawGoalMinAway && String(rawGoalMinAway).trim() !== '' ? String(rawGoalMinAway).trim() : null;
+
+    const stadium = getRowValue(r, ['Estadio', 'Estádio', 'Stadium', 'Local', 'Arena']) || undefined;
+    const attendance = safeNum(getRowValue(r, ['Publico', 'Público', 'Attendance', 'Espectadores']));
+    const capacity = safeNum(getRowValue(r, ['Capacidade', 'Capacity', 'Capacidade_Estadio']));
 
     const statsObj: MatchStats = {
       halftimeHomeScore: hthg,
@@ -688,6 +716,13 @@ export function parseAndSyncCsvLocally(
       yellowCardsAwayFT: yellowAway,
       redCardsHomeFT: redHome,
       redCardsAwayFT: redAway,
+      possessionHomeFT: possHome,
+      possessionAwayFT: possAway,
+      goalMinutesHomeFT: goalMinutesHome,
+      goalMinutesAwayFT: goalMinutesAway,
+      stadium: stadium || undefined,
+      attendance: attendance ?? null,
+      stadiumCapacity: capacity ?? null,
     };
 
     // Exact Odds matching columns
@@ -726,8 +761,24 @@ export function parseAndSyncCsvLocally(
       if (fthg !== null) existingMatch.homeScore = fthg;
       if (ftag !== null) existingMatch.awayScore = ftag;
       if (referee) existingMatch.referee = referee;
-      existingMatch.stats = { ...(existingMatch.stats || {}), ...statsObj };
-      existingMatch.odds = { ...(existingMatch.odds || {}), ...oddsObj };
+
+      const mergedStats: MatchStats = { ...(existingMatch.stats || {}) };
+      (Object.keys(statsObj) as (keyof MatchStats)[]).forEach((k) => {
+        const val = statsObj[k];
+        if (val !== null && val !== undefined && val !== '') {
+          (mergedStats as any)[k] = val;
+        }
+      });
+      existingMatch.stats = mergedStats;
+
+      const mergedOdds: MatchOdds = { ...(existingMatch.odds || {}) };
+      (Object.keys(oddsObj) as (keyof MatchOdds)[]).forEach((k) => {
+        const val = oddsObj[k];
+        if (val !== null && val !== undefined) {
+          (mergedOdds as any)[k] = val;
+        }
+      });
+      existingMatch.odds = mergedOdds;
     } else {
       nextMatchNum++;
       const matchId = `JOGO-${String(nextMatchNum).padStart(3, '0')}`;

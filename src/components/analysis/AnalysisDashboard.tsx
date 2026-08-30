@@ -238,17 +238,6 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
 
           {/* Quick Match Picker Button & Hub Triggers */}
           <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-            {onOpenOpportunitiesHub && (
-              <button
-                type="button"
-                onClick={onOpenOpportunitiesHub}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs rounded-xl shadow-xs transition-all cursor-pointer hover:scale-105"
-              >
-                <Sparkles className="w-4 h-4 text-slate-950" />
-                <span>Central de Oportunidades</span>
-              </button>
-            )}
-
             {onOpenBankrollTracker && (
               <button
                 type="button"

@@ -20,36 +20,72 @@ export const MINUTE_BINS: MinuteBin[] = [
 
 /**
  * Parses minute string into an array of integer numbers.
- * Supports patterns like "9,19,43,74", "9, 19, 43, 74", "45+2, 90+3", "9; 19; 43", or numbers.
+ * Supports patterns like "9,19,43,74", "9, 19, 43, 74", "45+2, 90+3", "9; 19; 43",
+ * "12' (P), 45+1', 89'", "[12, 45, 89]", "12min, 45min", arrays, or numbers.
  */
-export function parseGoalMinutes(val: string | number | null | undefined): number[] {
+export function parseGoalMinutes(val: string | number | number[] | (string | number)[] | null | undefined): number[] {
   if (val === null || val === undefined) return [];
+
+  // If already an array
+  if (Array.isArray(val)) {
+    const result: number[] = [];
+    for (const item of val) {
+      const sub = parseGoalMinutes(item as any);
+      result.push(...sub);
+    }
+    return Array.from(new Set(result)).sort((a, b) => a - b);
+  }
+
   if (typeof val === 'number') {
     return isNaN(val) || val < 0 ? [] : [Math.round(val)];
   }
 
-  const str = String(val).trim();
+  let str = String(val).trim();
   if (!str) return [];
 
-  const rawParts = str.split(/[,;\/\s]+/).filter(Boolean);
+  // Strip brackets, single/double quotes
+  str = str.replace(/[\[\]"']/g, ' ');
+
+  // Split by common separators: comma, semicolon, slash, pipe, newline, tab
+  const rawParts = str.split(/[,;\/\|\r?\n\t]+/).filter(Boolean);
   const result: number[] = [];
 
-  for (const part of rawParts) {
-    const cleaned = part.trim();
+  for (const rawPart of rawParts) {
+    let cleaned = rawPart.trim();
     if (!cleaned) continue;
 
-    // Handle stoppage time notation, e.g. "45+2" -> 45 + 2 = 47, or "90+4" -> 94
-    if (cleaned.includes('+')) {
-      const subParts = cleaned.split('+').map(p => parseInt(p.trim(), 10));
-      if (subParts.length === 2 && !isNaN(subParts[0]) && !isNaN(subParts[1])) {
-        result.push(subParts[0] + subParts[1]);
-        continue;
-      }
-    }
+    // Remove text in parentheses (e.g. '(P)', '(OG)', '(pen)') but keep the numbers
+    cleaned = cleaned.replace(/\([^)]*\)/g, '').trim();
 
-    const num = parseInt(cleaned, 10);
-    if (!isNaN(num) && num >= 0) {
-      result.push(num);
+    // Remove suffixes like 'min', 'm', apostrophe "'", "’"
+    cleaned = cleaned.replace(/(min|mins|minutos?|m|['’])/gi, '').trim();
+
+    // Handle space-separated minutes inside a token if someone pasted "12 45 89"
+    const subTokens = cleaned.split(/\s+/).filter(Boolean);
+
+    for (const token of subTokens) {
+      const trimmed = token.trim();
+      if (!trimmed) continue;
+
+      // Handle stoppage time notation, e.g. "45+2" -> 45 + 2 = 47, or "90+4" -> 94
+      if (trimmed.includes('+')) {
+        const subParts = trimmed.split('+').map(p => parseInt(p.trim().replace(/[^0-9]/g, ''), 10));
+        if (subParts.length >= 2 && !isNaN(subParts[0]) && !isNaN(subParts[1])) {
+          const mainMin = subParts[0];
+          const extraMin = subParts[1];
+          result.push(mainMin + extraMin);
+          continue;
+        }
+      }
+
+      // Extract numeric value
+      const digitsOnly = trimmed.replace(/[^0-9]/g, '');
+      if (digitsOnly) {
+        const num = parseInt(digitsOnly, 10);
+        if (!isNaN(num) && num >= 0 && num <= 130) {
+          result.push(num);
+        }
+      }
     }
   }
 

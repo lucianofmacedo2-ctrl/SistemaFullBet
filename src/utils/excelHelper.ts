@@ -361,25 +361,81 @@ export const EXCEL_HEADER_ALIASES = {
     'minutos_gols_mandante_ft',
     'minutos_gols_mandante',
     'minutos_gol_mandante_ft',
+    'minutos_gol_mandante',
     'minutos_mandante_ft',
     'minutos_mandante',
+    'minutos_gols_casa',
+    'minutos_casa',
+    'gols_minutos_mandante',
+    'gols_minutos_casa',
+    'minuto_gols_mandante',
+    'minuto_mandante',
+    'minutos_dos_gols_mandante',
+    'minutos_dos_gols_casa',
+    'tempo_gols_mandante',
+    'horario_gols_mandante',
+    'minutosgolsmandanteft',
+    'minutosgolsmandante',
+    'minutosmandanteft',
+    'minutosmandante',
+    'minutosgolscasa',
+    'minutoscasa',
+    'minutogolsmandante',
+    'minutomandante',
     'goal_minutes_home_ft',
     'goal_minutes_home',
-    'minutosgolsmandanteft',
-    'minutos_dos_gols_mandante',
-    'minutos_gols_casa',
+    'goalminuteshomeft',
+    'goalminuteshome',
+    'home_goal_minutes',
+    'home_goals_minutes',
+    'homegoalminutes',
+    'homegoalsminutes',
+    'minutos_hg',
+    'minutoshg',
+    'hg_min',
+    'hgmin',
+    'min_hg',
+    'minhg',
   ],
   goalMinutesAway: [
     'minutos_gols_visitante_ft',
     'minutos_gols_visitante',
     'minutos_gol_visitante_ft',
+    'minutos_gol_visitante',
     'minutos_visitante_ft',
     'minutos_visitante',
+    'minutos_gols_fora',
+    'minutos_fora',
+    'gols_minutos_visitante',
+    'gols_minutos_fora',
+    'minuto_gols_visitante',
+    'minuto_visitante',
+    'minutos_dos_gols_visitante',
+    'minutos_dos_gols_fora',
+    'tempo_gols_visitante',
+    'horario_gols_visitante',
+    'minutosgolsvisitanteft',
+    'minutosgolsvisitante',
+    'minutosvisitanteft',
+    'minutosvisitante',
+    'minutosgolsfora',
+    'minutosfora',
+    'minutogolsvisitante',
+    'minutovisitante',
     'goal_minutes_away_ft',
     'goal_minutes_away',
-    'minutosgolsvisitanteft',
-    'minutos_dos_gols_visitante',
-    'minutos_gols_fora',
+    'goalminutesawayft',
+    'goalminutesaway',
+    'away_goal_minutes',
+    'away_goals_minutes',
+    'awaygoalminutes',
+    'awaygoalsminutes',
+    'minutos_ag',
+    'minutosag',
+    'ag_min',
+    'agmin',
+    'min_ag',
+    'minag',
   ],
 };
 
@@ -1818,22 +1874,22 @@ export function extractBulkMatchUpdateFields(
   const goalKicksAwayFT = parseInteger(getValue(EXCEL_HEADER_ALIASES.goalKicksAway, 106));
 
   // Minutagem dos Gols (ex: "9,19,43,74")
-  const rawGoalMinutesHome = getValue(EXCEL_HEADER_ALIASES.goalMinutesHome);
-  const goalMinutesHomeFT = rawGoalMinutesHome !== null && rawGoalMinutesHome !== undefined
+  const rawGoalMinutesHome = getValue(EXCEL_HEADER_ALIASES.goalMinutesHome, 107);
+  const goalMinutesHomeFT = rawGoalMinutesHome !== null && rawGoalMinutesHome !== undefined && String(rawGoalMinutesHome).trim() !== ''
     ? String(rawGoalMinutesHome).trim()
     : null;
 
-  const rawGoalMinutesAway = getValue(EXCEL_HEADER_ALIASES.goalMinutesAway);
-  const goalMinutesAwayFT = rawGoalMinutesAway !== null && rawGoalMinutesAway !== undefined
+  const rawGoalMinutesAway = getValue(EXCEL_HEADER_ALIASES.goalMinutesAway, 108);
+  const goalMinutesAwayFT = rawGoalMinutesAway !== null && rawGoalMinutesAway !== undefined && String(rawGoalMinutesAway).trim() !== ''
     ? String(rawGoalMinutesAway).trim()
     : null;
 
   // Odds
-  const oddHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddHome, 107));
-  const oddDrawFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddDraw, 108));
-  const oddAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddAway, 109));
-  const oddOver25FT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddOver25, 110));
-  const oddUnder25FT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddUnder25, 111));
+  const oddHomeFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddHome, 109));
+  const oddDrawFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddDraw, 110));
+  const oddAwayFT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddAway, 111));
+  const oddOver25FT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddOver25, 112));
+  const oddUnder25FT = parseNumber(getValue(EXCEL_HEADER_ALIASES.oddUnder25, 113));
 
   const ahHomeLine = parseNumber(getValue(EXCEL_HEADER_ALIASES.ahHomeLine));
   const ahHomeOdd = parseNumber(getValue(EXCEL_HEADER_ALIASES.ahHomeOdd));

@@ -80,6 +80,10 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
   const [possHomeFT, setPossHomeFT] = useState<string>('');
   const [possAwayFT, setPossAwayFT] = useState<string>('');
 
+  // Minutagem dos Gols FT
+  const [goalMinutesHomeFT, setGoalMinutesHomeFT] = useState<string>('');
+  const [goalMinutesAwayFT, setGoalMinutesAwayFT] = useState<string>('');
+
   // Tabela de Pressão & Índice Líquido
   const [pressureCsvText, setPressureCsvText] = useState<string>('');
   const [parsedPressureData, setParsedPressureData] = useState<MatchPressureData | null>(null);
@@ -121,6 +125,9 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
 
       setPossHomeFT(st.possessionHomeFT != null ? String(st.possessionHomeFT) : '');
       setPossAwayFT(st.possessionAwayFT != null ? String(st.possessionAwayFT) : '');
+
+      setGoalMinutesHomeFT(st.goalMinutesHomeFT || '');
+      setGoalMinutesAwayFT(st.goalMinutesAwayFT || '');
 
       if (match.pressureData) {
         setParsedPressureData(match.pressureData);
@@ -212,6 +219,8 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
     const finalAwayScore = parseIntOrNull(awayScore);
 
     const statsToSave: MatchStats = {
+      ...(match.stats || {}),
+
       // Placar HT
       halftimeHomeScore: parseIntOrNull(htHome),
       halftimeAwayScore: parseIntOrNull(htAway),
@@ -235,6 +244,10 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
       // Posse FT opcional
       possessionHomeFT: parseIntOrNull(possHomeFT),
       possessionAwayFT: parseIntOrNull(possAwayFT),
+
+      // Minutagem dos Gols
+      goalMinutesHomeFT: goalMinutesHomeFT.trim() || null,
+      goalMinutesAwayFT: goalMinutesAwayFT.trim() || null,
 
       // Estádio, Público e Capacidade
       stadium: match.stadium || match.stats?.stadium || '',
@@ -621,6 +634,50 @@ export const MatchStatsModal: React.FC<MatchStatsModalProps> = ({
                       className="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs text-slate-900 font-mono focus:border-blue-500"
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Minutagem dos Gols FT */}
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-2 mt-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-indigo-700 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" /> Minutagem dos Gols Marcados (FT)
+                </span>
+                <span className="text-[10px] text-slate-500">
+                  Separe os minutos por vírgula (ex: <code className="font-mono font-bold bg-slate-100 px-1 py-0.5 rounded">12, 45+2, 89</code>)
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Minutos dos Gols: {match.homeTeamName} (Mandante)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="ex: 14, 45+1, 78"
+                    value={goalMinutesHomeFT}
+                    onChange={(e) => setGoalMinutesHomeFT(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs text-slate-900 font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <span className="text-[10px] text-slate-400 block mt-0.5">
+                    Alimenta o módulo de análise temporal e primeiro gol
+                  </span>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Minutos dos Gols: {match.awayTeamName} (Visitante)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="ex: 32, 90+3"
+                    value={goalMinutesAwayFT}
+                    onChange={(e) => setGoalMinutesAwayFT(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs text-slate-900 font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <span className="text-[10px] text-slate-400 block mt-0.5">
+                    Alimenta o módulo de análise temporal e primeiro gol
+                  </span>
                 </div>
               </div>
             </div>
