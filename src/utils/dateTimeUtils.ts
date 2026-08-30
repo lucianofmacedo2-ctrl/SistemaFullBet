@@ -8,9 +8,7 @@
 export const BRASILIA_TIMEZONE = 'America/Sao_Paulo';
 
 /**
- * Normalizes any date input string to a valid Date object.
- * If an ISO string lacks timezone information (e.g., '2026-08-29T11:00:00'),
- * it is treated as UTC ('Z') so it converts to Brasília Time (-3h) as expected.
+ * Normalizes any date input string to a valid Date object without timezone shifting.
  */
 export function parseDateToBrasilia(dateInput?: string | Date | null): Date | null {
   if (!dateInput) return null;
@@ -21,32 +19,28 @@ export function parseDateToBrasilia(dateInput?: string | Date | null): Date | nu
   const str = String(dateInput).trim();
   if (!str) return null;
 
-  // If already an ISO string with explicit timezone Z or offset (+/-)
-  if (str.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(str)) {
-    const d = new Date(str);
-    return isNaN(d.getTime()) ? null : d;
+  // If ISO YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+  const isoMatch = str.match(/^(\d{4})[-\/](\d{2})[-\/](\d{2})(?:[T\s](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (isoMatch) {
+    const year = parseInt(isoMatch[1], 10);
+    const month = parseInt(isoMatch[2], 10);
+    const day = parseInt(isoMatch[3], 10);
+    const hours = isoMatch[4] !== undefined ? parseInt(isoMatch[4], 10) : 12;
+    const mins = isoMatch[5] !== undefined ? parseInt(isoMatch[5], 10) : 0;
+    const secs = isoMatch[6] !== undefined ? parseInt(isoMatch[6], 10) : 0;
+    return new Date(year, month - 1, day, hours, mins, secs);
   }
 
-  // If ISO without timezone e.g. "2026-08-29T11:00:00" or "2026-08-29 11:00:00"
-  if (/^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}(:\d{2})?(\.\d+)?$/.test(str)) {
-    const isoUtc = str.replace(' ', 'T') + 'Z';
-    const d = new Date(isoUtc);
-    if (!isNaN(d.getTime())) return d;
-  }
-
-  // If DD/MM/YYYY HH:mm:ss
-  const dmyMatch = str.match(/^(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{4})([\sT](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  // If DD/MM/YYYY or DD/MM/YYYY HH:mm:ss
+  const dmyMatch = str.match(/^(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{4})(?:[\sT](\d{2}):(\d{2})(?::(\d{2}))?)?/);
   if (dmyMatch) {
     const day = parseInt(dmyMatch[1], 10);
     const month = parseInt(dmyMatch[2], 10);
     const year = parseInt(dmyMatch[3], 10);
-    const hours = dmyMatch[5] ? parseInt(dmyMatch[5], 10) : 12;
-    const mins = dmyMatch[6] ? parseInt(dmyMatch[6], 10) : 0;
-    const secs = dmyMatch[7] ? parseInt(dmyMatch[7], 10) : 0;
-
-    // Treat European/UTC match times as UTC instant
-    const d = new Date(Date.UTC(year, month - 1, day, hours, mins, secs));
-    if (!isNaN(d.getTime())) return d;
+    const hours = dmyMatch[4] !== undefined ? parseInt(dmyMatch[4], 10) : 12;
+    const mins = dmyMatch[5] !== undefined ? parseInt(dmyMatch[5], 10) : 0;
+    const secs = dmyMatch[6] !== undefined ? parseInt(dmyMatch[6], 10) : 0;
+    return new Date(year, month - 1, day, hours, mins, secs);
   }
 
   // Fallback to standard parsing
@@ -60,59 +54,62 @@ export function parseDateToBrasilia(dateInput?: string | Date | null): Date | nu
 
 /**
  * Extracts and formats the time in Horário de Brasília (HH:mm)
- * Example: "2026-08-29T11:00:00.000Z" -> "08:00"
+ * Example: "2026-08-29T09:30:00" -> "09:30"
+ * Example: "2026-08-29T09:30:00.000Z" -> "09:30"
  */
 export function formatMatchTimeBRT(dateInput?: string | Date | null): string {
   if (!dateInput) return '';
+
+  if (typeof dateInput === 'string') {
+    const str = dateInput.trim();
+    const timeMatch = str.match(/[T\s](\d{1,2}):(\d{2})/);
+    if (timeMatch) {
+      const hh = timeMatch[1].padStart(2, '0');
+      const mm = timeMatch[2];
+      return `${hh}:${mm}`;
+    }
+    if (/^\d{1,2}:\d{2}$/.test(str)) {
+      const parts = str.split(':');
+      return `${parts[0].padStart(2, '0')}:${parts[1]}`;
+    }
+  }
+
   const d = parseDateToBrasilia(dateInput);
   if (!d) return '';
 
-  try {
-    return new Intl.DateTimeFormat('pt-BR', {
-      timeZone: BRASILIA_TIMEZONE,
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).format(d);
-  } catch {
-    return '';
-  }
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
 }
 
 /**
  * Extracts the YYYY-MM-DD date key in Horário de Brasília timezone.
- * Example: "2026-08-29T01:00:00.000Z" (22:00 BRT on 28th) -> "2026-08-28"
+ * Example: "2026-08-29T09:30:00.000Z" -> "2026-08-29"
  */
 export function extractBrasiliaYMD(dateInput?: string | Date | null): string | null {
   if (!dateInput) return null;
+
+  if (typeof dateInput === 'string') {
+    const str = dateInput.trim();
+    // YYYY-MM-DD
+    const isoMatch = str.match(/^(\d{4})[-\/](\d{2})[-\/](\d{2})/);
+    if (isoMatch) {
+      return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+    }
+    // DD/MM/YYYY
+    const dmyMatch = str.match(/^(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{4})/);
+    if (dmyMatch) {
+      return `${dmyMatch[3]}-${dmyMatch[2]}-${dmyMatch[1]}`;
+    }
+  }
+
+  if (dateInput instanceof Date) {
+    if (isNaN(dateInput.getTime())) return null;
+    return formatDateToYMD(dateInput);
+  }
+
   const d = parseDateToBrasilia(dateInput);
   if (!d) return null;
-
-  try {
-    const formatter = new Intl.DateTimeFormat('pt-BR', {
-      timeZone: BRASILIA_TIMEZONE,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-
-    const parts = formatter.formatToParts(d);
-    let year = '';
-    let month = '';
-    let day = '';
-
-    for (const part of parts) {
-      if (part.type === 'year') year = part.value;
-      if (part.type === 'month') month = part.value;
-      if (part.type === 'day') day = part.value;
-    }
-
-    if (year && month && day) {
-      return `${year}-${month}-${day}`;
-    }
-  } catch {}
-
-  // Fallback
   return formatDateToYMD(d);
 }
 
@@ -123,65 +120,37 @@ export function extractBrasiliaYMD(dateInput?: string | Date | null): string | n
 export function formatBrasiliaFriendlyDate(ymdOrIso?: string | Date | null): { title: string; subtitle: string; fullDate: string } {
   if (!ymdOrIso) return { title: '', subtitle: '', fullDate: '' };
 
-  let d: Date | null = null;
-  if (typeof ymdOrIso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ymdOrIso.trim())) {
-    const [y, m, day] = ymdOrIso.trim().split('-').map(Number);
-    d = new Date(y, m - 1, day, 12, 0, 0);
-  } else {
-    d = parseDateToBrasilia(ymdOrIso);
-  }
+  const ymd = extractBrasiliaYMD(ymdOrIso);
+  if (!ymd) return { title: String(ymdOrIso), subtitle: '', fullDate: String(ymdOrIso) };
 
-  if (!d) return { title: String(ymdOrIso), subtitle: '', fullDate: String(ymdOrIso) };
+  const [y, m, day] = ymd.split('-').map(Number);
+  const d = new Date(y, m - 1, day, 12, 0, 0);
 
-  try {
-    const dayOfWeek = d.toLocaleDateString('pt-BR', {
-      timeZone: BRASILIA_TIMEZONE,
-      weekday: 'long',
-    });
-    const capitalizedDay = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1);
-    const formattedShort = d.toLocaleDateString('pt-BR', {
-      timeZone: BRASILIA_TIMEZONE,
-      day: '2-digit',
-      month: '2-digit',
-    });
-    const fullDate = d.toLocaleDateString('pt-BR', {
-      timeZone: BRASILIA_TIMEZONE,
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+  const dayNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+  const dayOfWeek = dayNames[d.getDay()] || '';
+  const dayStr = String(day).padStart(2, '0');
+  const monthStr = String(m).padStart(2, '0');
 
-    return {
-      title: capitalizedDay,
-      subtitle: formattedShort,
-      fullDate,
-    };
-  } catch {
-    return { title: String(ymdOrIso), subtitle: '', fullDate: String(ymdOrIso) };
-  }
+  return {
+    title: dayOfWeek,
+    subtitle: `${dayStr}/${monthStr}`,
+    fullDate: `${dayStr}/${monthStr}/${y}`,
+  };
 }
 
 /**
- * Formats date and time for table listings e.g. "29/08/2026 08:00"
+ * Formats date and time for table listings e.g. "29/08/2026 09:30"
  */
 export function formatBrasiliaDateTime(dateInput?: string | Date | null): string {
   if (!dateInput) return '';
-  const d = parseDateToBrasilia(dateInput);
-  if (!d) return String(dateInput);
-
-  try {
-    return d.toLocaleDateString('pt-BR', {
-      timeZone: BRASILIA_TIMEZONE,
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-  } catch {
-    return String(dateInput);
+  const ymd = extractBrasiliaYMD(dateInput);
+  const time = formatMatchTimeBRT(dateInput);
+  if (ymd) {
+    const [y, m, d] = ymd.split('-');
+    const dateFormatted = `${d}/${m}/${y}`;
+    return time ? `${dateFormatted} ${time}` : dateFormatted;
   }
+  return String(dateInput);
 }
 
 /**
@@ -189,19 +158,12 @@ export function formatBrasiliaDateTime(dateInput?: string | Date | null): string
  */
 export function formatBrasiliaDate(dateInput?: string | Date | null): string {
   if (!dateInput) return '';
-  const d = parseDateToBrasilia(dateInput);
-  if (!d) return String(dateInput);
-
-  try {
-    return d.toLocaleDateString('pt-BR', {
-      timeZone: BRASILIA_TIMEZONE,
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  } catch {
-    return String(dateInput);
+  const ymd = extractBrasiliaYMD(dateInput);
+  if (ymd) {
+    const [y, m, d] = ymd.split('-');
+    return `${d}/${m}/${y}`;
   }
+  return String(dateInput);
 }
 
 /**
@@ -209,16 +171,12 @@ export function formatBrasiliaDate(dateInput?: string | Date | null): string {
  */
 export function formatBrasiliaDotDate(dateInput?: string | Date | null): string {
   if (!dateInput) return '--.--.';
-  const d = parseDateToBrasilia(dateInput);
-  if (!d) return '--.--.';
-
-  try {
-    const day = d.toLocaleDateString('pt-BR', { timeZone: BRASILIA_TIMEZONE, day: '2-digit' });
-    const month = d.toLocaleDateString('pt-BR', { timeZone: BRASILIA_TIMEZONE, month: '2-digit' });
-    return `${day}.${month}.`;
-  } catch {
-    return '--.--.';
+  const ymd = extractBrasiliaYMD(dateInput);
+  if (ymd) {
+    const [, m, d] = ymd.split('-');
+    return `${d}.${m}.`;
   }
+  return '--.--.';
 }
 
 /**
@@ -235,7 +193,8 @@ export function formatDateToYMD(date: Date): string {
  * Returns today's YYYY-MM-DD in Horário de Brasília
  */
 export function getBrasiliaTodayYMD(): string {
-  return extractBrasiliaYMD(new Date()) || formatDateToYMD(new Date());
+  const now = new Date();
+  return formatDateToYMD(now);
 }
 
 /**
@@ -244,7 +203,7 @@ export function getBrasiliaTodayYMD(): string {
 export function getBrasiliaYesterdayYMD(): string {
   const now = new Date();
   now.setDate(now.getDate() - 1);
-  return extractBrasiliaYMD(now) || formatDateToYMD(now);
+  return formatDateToYMD(now);
 }
 
 /**
@@ -253,7 +212,7 @@ export function getBrasiliaYesterdayYMD(): string {
 export function getBrasiliaTomorrowYMD(): string {
   const now = new Date();
   now.setDate(now.getDate() + 1);
-  return extractBrasiliaYMD(now) || formatDateToYMD(now);
+  return formatDateToYMD(now);
 }
 
 /**
@@ -262,5 +221,6 @@ export function getBrasiliaTomorrowYMD(): string {
 export function getBrasiliaAfterTomorrowYMD(): string {
   const now = new Date();
   now.setDate(now.getDate() + 2);
-  return extractBrasiliaYMD(now) || formatDateToYMD(now);
+  return formatDateToYMD(now);
 }
+

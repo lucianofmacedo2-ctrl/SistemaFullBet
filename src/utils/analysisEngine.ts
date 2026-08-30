@@ -1,4 +1,6 @@
 import { Match, MatchStats, MatchOdds, DbState, Team, League, Country } from '../types';
+import { normalizeText } from './countryLeagueHelper';
+import { lookupCanonicalTeam } from './dbSanitizer';
 import {
   calculateTeamGoalTiming,
   generateHeadToHeadTimingInsights,
@@ -426,8 +428,40 @@ export function poissonProbability(k: number, lambda: number): number {
 
 // ----------------- DATA EXTRACTOR -----------------
 
+export function isMatchingTeam(
+  matchTeamId?: string,
+  matchTeamName?: string,
+  targetTeamId?: string,
+  targetTeamName?: string
+): boolean {
+  if (matchTeamId && targetTeamId && matchTeamId === targetTeamId) return true;
+
+  const normMatch = normalizeText(matchTeamName || '');
+  const normTarget = normalizeText(targetTeamName || '');
+
+  if (normMatch && normTarget) {
+    if (normMatch === normTarget) return true;
+    if (normMatch.length >= 4 && normTarget.length >= 4) {
+      if (normMatch.includes(normTarget) || normTarget.includes(normMatch)) return true;
+    }
+
+    const canonMatch = lookupCanonicalTeam(matchTeamName);
+    const canonTarget = lookupCanonicalTeam(targetTeamName);
+    if (canonMatch && canonTarget && canonMatch.countryCode === canonTarget.countryCode) {
+      if (
+        canonMatch.defaultLeaguePattern.toLowerCase() === canonTarget.defaultLeaguePattern.toLowerCase() &&
+        (normMatch.includes(normTarget) || normTarget.includes(normMatch))
+      ) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 export function extractTeamMatches(
-  teamId: string,
+  teamOrId: string | Team,
   matches: Match[],
   options?: {
     venueOnly?: 'HOME' | 'AWAY' | 'ALL';
@@ -436,40 +470,49 @@ export function extractTeamMatches(
     teams?: Team[];
   }
 ): TeamSampleMatch[] {
-  // Defensive check if arguments passed in reversed order
-  let safeTeamId = typeof teamId === 'string' ? teamId : '';
+  let safeTeamId = '';
+  let targetTeamName = '';
+
+  if (typeof teamOrId === 'object' && teamOrId !== null) {
+    safeTeamId = teamOrId.id || '';
+    targetTeamName = teamOrId.name || '';
+  } else if (typeof teamOrId === 'string') {
+    safeTeamId = teamOrId;
+  }
+
   let safeMatches = Array.isArray(matches) ? matches : [];
-  if (Array.isArray(teamId) && typeof matches === 'string') {
-    safeMatches = teamId as unknown as Match[];
+  if (Array.isArray(teamOrId) && typeof matches === 'string') {
+    safeMatches = teamOrId as unknown as Match[];
     safeTeamId = matches;
   }
+
   if (!Array.isArray(safeMatches) || safeMatches.length === 0) {
     return [];
   }
 
+  if (!targetTeamName && options?.teams) {
+    const found = options.teams.find(t => t.id === safeTeamId);
+    if (found) targetTeamName = found.name;
+  }
+
   const venue = options?.venueOnly || 'ALL';
   const leagueId = options?.leagueId;
-  const targetTeam = options?.teams?.find(t => t.id === safeTeamId);
-  const targetTeamName = (targetTeam?.name || '').toLowerCase().trim();
 
   // Filter completed matches sorted chronologically descending (newest first)
   const finished = safeMatches
     .filter(m => {
       if (!m) return false;
       // Must have scores or be marked finished
-      const hasScores = m.homeScore !== null && m.homeScore !== undefined && m.awayScore !== null && m.awayScore !== undefined;
+      const hasHomeScore = typeof m.homeScore === 'number' && !isNaN(m.homeScore);
+      const hasAwayScore = typeof m.awayScore === 'number' && !isNaN(m.awayScore);
       const statusUpper = String(m.status || '').toUpperCase();
-      const isFinishedStatus = statusUpper === 'FINALIZADO' || statusUpper === 'FT' || statusUpper === 'ENCERRADO';
+      const isFinishedStatus = ['FINALIZADO', 'FT', 'ENCERRADO', 'FINISHED', 'TERMINADO', 'POST', 'LIVE', 'AO VIVO', '1T', '2T', 'HT', 'INTERVALO'].includes(statusUpper);
 
-      if (!hasScores && !isFinishedStatus) return false;
-      if (m.homeScore === null || m.awayScore === null) return false;
+      if (!hasHomeScore && !hasAwayScore && !isFinishedStatus) return false;
       if (leagueId && m.leagueId && m.leagueId !== leagueId) return false;
 
-      const normHome = (m.homeTeamName || '').toLowerCase().trim();
-      const normAway = (m.awayTeamName || '').toLowerCase().trim();
-
-      const isHome = m.homeTeamId === safeTeamId || (targetTeamName !== '' && normHome === targetTeamName);
-      const isAway = m.awayTeamId === safeTeamId || (targetTeamName !== '' && normAway === targetTeamName);
+      const isHome = isMatchingTeam(m.homeTeamId, m.homeTeamName, safeTeamId, targetTeamName);
+      const isAway = isMatchingTeam(m.awayTeamId, m.awayTeamName, safeTeamId, targetTeamName);
 
       if (venue === 'HOME') return isHome;
       if (venue === 'AWAY') return isAway;
@@ -480,10 +523,9 @@ export function extractTeamMatches(
   const sliced = options?.maxCount ? finished.slice(0, options.maxCount) : finished;
 
   return sliced.map(m => {
-    const normHome = (m.homeTeamName || '').toLowerCase().trim();
-    const isHome = m.homeTeamId === safeTeamId || (targetTeamName !== '' && normHome === targetTeamName);
-    const teamGoals = isHome ? (m.homeScore ?? 0) : (m.awayScore ?? 0);
-    const oppGoals = isHome ? (m.awayScore ?? 0) : (m.homeScore ?? 0);
+    const isHome = isMatchingTeam(m.homeTeamId, m.homeTeamName, safeTeamId, targetTeamName);
+    const teamGoals = isHome ? Number(m.homeScore ?? 0) : Number(m.awayScore ?? 0);
+    const oppGoals = isHome ? Number(m.awayScore ?? 0) : Number(m.homeScore ?? 0);
 
     const teamGoalsHT = isHome ? (m.stats?.halftimeHomeScore ?? 0) : (m.stats?.halftimeAwayScore ?? 0);
     const oppGoalsHT = isHome ? (m.stats?.halftimeAwayScore ?? 0) : (m.stats?.halftimeHomeScore ?? 0);
@@ -1334,19 +1376,19 @@ export function runFullMatchAnalysis(
   const league = dbState.leagues.find(l => l.id === homeTeam.leagueId || homeTeam.leagueIds?.includes(l.id));
 
   // Extract Form Trackers (G5 & E5 for both teams)
-  const homeFormG5 = extractTeamMatches(homeTeam.id, dbState.matches, { venueOnly: 'ALL', maxCount: 5, teams: dbState.teams });
-  const homeFormE5 = extractTeamMatches(homeTeam.id, dbState.matches, { venueOnly: 'HOME', maxCount: 5, teams: dbState.teams });
-  const awayFormG5 = extractTeamMatches(awayTeam.id, dbState.matches, { venueOnly: 'ALL', maxCount: 5, teams: dbState.teams });
-  const awayFormE5 = extractTeamMatches(awayTeam.id, dbState.matches, { venueOnly: 'AWAY', maxCount: 5, teams: dbState.teams });
+  const homeFormG5 = extractTeamMatches(homeTeam, dbState.matches, { venueOnly: 'ALL', maxCount: 5, teams: dbState.teams });
+  const homeFormE5 = extractTeamMatches(homeTeam, dbState.matches, { venueOnly: 'HOME', maxCount: 5, teams: dbState.teams });
+  const awayFormG5 = extractTeamMatches(awayTeam, dbState.matches, { venueOnly: 'ALL', maxCount: 5, teams: dbState.teams });
+  const awayFormE5 = extractTeamMatches(awayTeam, dbState.matches, { venueOnly: 'AWAY', maxCount: 5, teams: dbState.teams });
 
   // Extract Active Samples according to configuration
-  const homeActiveSample = extractTeamMatches(homeTeam.id, dbState.matches, {
+  const homeActiveSample = extractTeamMatches(homeTeam, dbState.matches, {
     venueOnly: venueMode === 'SPECIFIC' ? 'HOME' : 'ALL',
     maxCount: sampleSize >= 999 ? undefined : sampleSize,
     teams: dbState.teams,
   });
 
-  const awayActiveSample = extractTeamMatches(awayTeam.id, dbState.matches, {
+  const awayActiveSample = extractTeamMatches(awayTeam, dbState.matches, {
     venueOnly: venueMode === 'SPECIFIC' ? 'AWAY' : 'ALL',
     maxCount: sampleSize >= 999 ? undefined : sampleSize,
     teams: dbState.teams,

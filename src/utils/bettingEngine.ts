@@ -1,5 +1,6 @@
 import { DbState, Match, Team, MatchOdds } from '../types';
 import { calculateMean, extractTeamMatches, poissonProbability, runFullMatchAnalysis, MatchAnalysisResult } from './analysisEngine';
+import { formatBrasiliaDateTime } from './dateTimeUtils';
 
 // ==========================================
 // TIPOS DO MÓDULO DE APOSTAS & OPORTUNIDADES
@@ -824,7 +825,7 @@ export function formatMatchReportForSharing(analysis: MatchAnalysisResult): stri
   const { homeTeam, awayTeam, projections, poisson, activeMatch } = analysis;
 
   const dateFormatted = activeMatch?.matchDate
-    ? new Date(activeMatch.matchDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+    ? formatBrasiliaDateTime(activeMatch.matchDate)
     : 'Em breve';
 
   const probH = (poisson.probHomeWin * 100).toFixed(1);

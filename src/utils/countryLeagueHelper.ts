@@ -505,17 +505,15 @@ export function isLeagueInCountry(
 
   // 3. Country Name match
   if (normTargetName) {
-    if (normLeagueCountryName === normTargetName) return true;
-    if (normLeagueCountryId === normTargetName) return true;
-    if (normLeagueName.includes(normTargetName)) return true;
+    if (normLeagueCountryName && normLeagueCountryName === normTargetName) return true;
+    if (normLeagueCountryId && normLeagueCountryId === normTargetName) return true;
   }
 
-  // 4. Check canonical country database definition
+  // 4. Check canonical country database definition (ONLY for the target country)
   const canonicalDef = CANONICAL_COUNTRIES.find(
     c =>
       normalizeText(c.name) === normTargetName ||
-      c.code.toUpperCase() === targetCode.toUpperCase() ||
-      normalizeText(c.name) === normLeagueCountryName
+      (targetCode && c.code.toUpperCase() === targetCode.toUpperCase())
   );
 
   if (canonicalDef) {
@@ -536,88 +534,109 @@ export function isLeagueInCountry(
  * combining dbState.leagues, matches distinct leagues, and canonical league definitions.
  */
 export function getLeaguesForCountry(dbState: DbState, selectedCountryId?: string): League[] {
+  let leaguesList: League[] = [];
+
   if (!selectedCountryId || selectedCountryId === 'ALL') {
-    return dbState.leagues || [];
-  }
+    leaguesList = dbState.leagues || [];
+  } else {
+    const country = (dbState.countries || []).find(
+      c => c.id === selectedCountryId || c.name === selectedCountryId || c.code === selectedCountryId
+    );
 
-  const country = (dbState.countries || []).find(
-    c => c.id === selectedCountryId || c.name === selectedCountryId || c.code === selectedCountryId
-  );
+    const directLeagues = (dbState.leagues || []).filter(l =>
+      isLeagueInCountry(l, country || selectedCountryId, dbState.countries || [])
+    );
 
-  const directLeagues = (dbState.leagues || []).filter(l =>
-    isLeagueInCountry(l, country || selectedCountryId, dbState.countries || [])
-  );
+    const leaguesMap = new Map<string, League>();
+    directLeagues.forEach(l => {
+      const norm = normalizeText(l.name);
+      if (!leaguesMap.has(norm)) {
+        leaguesMap.set(norm, l);
+      }
+    });
 
-  const leaguesMap = new Map<string, League>();
-  directLeagues.forEach(l => leaguesMap.set(l.id, l));
+    // Also check matches in case there are leagues linked to this country in matches
+    const normCountryName = normalizeText(country?.name || selectedCountryId);
+    const countryMatches = (dbState.matches || []).filter(m => {
+      if (m.countryId === selectedCountryId) return true;
+      if (m.countryName && normalizeText(m.countryName) === normCountryName) return true;
+      if (country?.code && m.countryId?.toUpperCase() === country.code.toUpperCase()) return true;
+      return false;
+    });
 
-  // Also check matches in case there are leagues linked to this country in matches
-  const normCountryName = normalizeText(country?.name || selectedCountryId);
-  const countryMatches = (dbState.matches || []).filter(m => {
-    if (m.countryId === selectedCountryId) return true;
-    if (m.countryName && normalizeText(m.countryName) === normCountryName) return true;
-    if (country?.code && m.countryId?.toUpperCase() === country.code.toUpperCase()) return true;
-    return false;
-  });
+    for (const m of countryMatches) {
+      if (m.leagueName) {
+        const norm = normalizeText(m.leagueName);
+        if (!leaguesMap.has(norm)) {
+          const lid = m.leagueId || `LIGA-EXTRA-${norm.replace(/\s+/g, '-')}`;
+          const syntheticLeague: League = {
+            id: lid,
+            name: m.leagueName,
+            countryId: country?.id || selectedCountryId,
+            countryName: country?.name || m.countryName || 'País',
+            type: 'Pontos Corridos',
+            createdAt: new Date().toISOString(),
+          };
+          leaguesMap.set(norm, syntheticLeague);
+        }
+      }
+    }
 
-  for (const m of countryMatches) {
-    if (m.leagueName) {
-      const alreadyHas = Array.from(leaguesMap.values()).some(
-        l => l.id === m.leagueId || normalizeText(l.name) === normalizeText(m.leagueName)
+    // If still empty, check canonical database definition (e.g. Islândia, Noruega, Dinamarca, Brasil, etc.)
+    if (leaguesMap.size === 0 && country) {
+      const canonicalDef = CANONICAL_COUNTRIES.find(
+        c =>
+          normalizeText(c.name) === normCountryName ||
+          (country.code && c.code.toUpperCase() === country.code.toUpperCase()) ||
+          c.name.toLowerCase() === country.name.toLowerCase()
       );
-      if (!alreadyHas) {
-        const lid = m.leagueId || `LIGA-EXTRA-${normalizeText(m.leagueName).replace(/\s+/g, '-')}`;
-        const syntheticLeague: League = {
-          id: lid,
-          name: m.leagueName,
-          countryId: country?.id || selectedCountryId,
-          countryName: country?.name || m.countryName || 'País',
+
+      if (canonicalDef) {
+        canonicalDef.leagues.forEach((cl, idx) => {
+          const norm = normalizeText(cl.name);
+          if (!leaguesMap.has(norm)) {
+            const generatedId = `LIGA-${canonicalDef.code}-${String(idx + 1).padStart(3, '0')}`;
+            const canonicalLeague: League = {
+              id: generatedId,
+              name: cl.name,
+              countryId: country.id,
+              countryName: country.name,
+              type: cl.type || 'Pontos Corridos',
+              createdAt: new Date().toISOString(),
+            };
+            leaguesMap.set(norm, canonicalLeague);
+          }
+        });
+      } else {
+        // Generic fallback for any user-created country
+        const fallbackId = `LIGA-${normalizeText(country.name).toUpperCase().substring(0, 3)}-001`;
+        const fallbackLeague: League = {
+          id: fallbackId,
+          name: `Liga Principal ${country.name}`,
+          countryId: country.id,
+          countryName: country.name,
           type: 'Pontos Corridos',
           createdAt: new Date().toISOString(),
         };
-        leaguesMap.set(lid, syntheticLeague);
+        leaguesMap.set(normalizeText(fallbackLeague.name), fallbackLeague);
       }
     }
+
+    leaguesList = Array.from(leaguesMap.values());
   }
 
-  // If still empty, check canonical database definition (e.g. Islândia, Noruega, Dinamarca, etc.)
-  if (leaguesMap.size === 0 && country) {
-    const canonicalDef = CANONICAL_COUNTRIES.find(
-      c =>
-        normalizeText(c.name) === normCountryName ||
-        c.code.toUpperCase() === (country.code || '').toUpperCase() ||
-        c.name.toLowerCase() === country.name.toLowerCase()
-    );
-
-    if (canonicalDef) {
-      canonicalDef.leagues.forEach((cl, idx) => {
-        const generatedId = `LIGA-${canonicalDef.code}-${String(idx + 1).padStart(3, '0')}`;
-        const canonicalLeague: League = {
-          id: generatedId,
-          name: cl.name,
-          countryId: country.id,
-          countryName: country.name,
-          type: cl.type || 'Pontos Corridos',
-          createdAt: new Date().toISOString(),
-        };
-        leaguesMap.set(generatedId, canonicalLeague);
-      });
-    } else {
-      // Generic fallback for any user-created country
-      const fallbackId = `LIGA-${normalizeText(country.name).toUpperCase().substring(0, 3)}-001`;
-      const fallbackLeague: League = {
-        id: fallbackId,
-        name: `Liga Principal ${country.name}`,
-        countryId: country.id,
-        countryName: country.name,
-        type: 'Pontos Corridos',
-        createdAt: new Date().toISOString(),
-      };
-      leaguesMap.set(fallbackId, fallbackLeague);
+  // Deduplicate leagues by normalized name
+  const deduplicated = new Map<string, League>();
+  for (const l of leaguesList) {
+    if (!l || !l.name) continue;
+    const norm = normalizeText(l.name);
+    if (!norm) continue;
+    if (!deduplicated.has(norm)) {
+      deduplicated.set(norm, l);
     }
   }
 
-  return Array.from(leaguesMap.values());
+  return Array.from(deduplicated.values()).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 }
 
 /**
@@ -642,7 +661,7 @@ export function getTeamsForLeagueOrCountry(
   const matchedTeamsMap = new Map<string, Team>();
 
   // If league is selected:
-  if (selectedLeagueId && selectedLeagueId !== '') {
+  if (selectedLeagueId && selectedLeagueId !== '' && selectedLeagueId !== 'ALL') {
     // 1. Teams with matching leagueId or in leagueIds
     teams.forEach(t => {
       if (t.leagueId === selectedLeagueId || t.leagueIds?.includes(selectedLeagueId)) {
@@ -729,12 +748,53 @@ export function getTeamsForLeagueOrCountry(
       }
     });
 
+    // Also check matches of this country
+    matches.forEach(m => {
+      const isCountryMatch =
+        m.countryId === selectedCountryId ||
+        (m.countryName && normalizeText(m.countryName) === normCountryName) ||
+        (country?.code && m.countryId?.toUpperCase() === country.code.toUpperCase());
+
+      if (isCountryMatch) {
+        if (m.homeTeamId && !matchedTeamsMap.has(m.homeTeamId)) {
+          const t = teams.find(team => team.id === m.homeTeamId);
+          if (t) matchedTeamsMap.set(t.id, t);
+          else if (m.homeTeamName) {
+            matchedTeamsMap.set(m.homeTeamId, {
+              id: m.homeTeamId,
+              name: m.homeTeamName,
+              countryId: country?.id || m.countryId || '',
+              countryName: country?.name || m.countryName || '',
+              leagueId: m.leagueId,
+              leagueName: m.leagueName,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        }
+        if (m.awayTeamId && !matchedTeamsMap.has(m.awayTeamId)) {
+          const t = teams.find(team => team.id === m.awayTeamId);
+          if (t) matchedTeamsMap.set(t.id, t);
+          else if (m.awayTeamName) {
+            matchedTeamsMap.set(m.awayTeamId, {
+              id: m.awayTeamId,
+              name: m.awayTeamName,
+              countryId: country?.id || m.countryId || '',
+              countryName: country?.name || m.countryName || '',
+              leagueId: m.leagueId,
+              leagueName: m.leagueName,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        }
+      }
+    });
+
     // Check canonical country teams
     if (matchedTeamsMap.size === 0 && country) {
       const canonicalDef = CANONICAL_COUNTRIES.find(
         c =>
           normalizeText(c.name) === normCountryName ||
-          c.code.toUpperCase() === (country.code || '').toUpperCase()
+          (country.code && c.code.toUpperCase() === country.code.toUpperCase())
       );
       if (canonicalDef) {
         canonicalDef.leagues.forEach(lDef => {
@@ -758,11 +818,22 @@ export function getTeamsForLeagueOrCountry(
   }
 
   // If completely unfiltered and nothing found, return all teams
-  if (matchedTeamsMap.size === 0 && (!selectedCountryId || selectedCountryId === 'ALL') && (!selectedLeagueId || selectedLeagueId === '')) {
-    return teams;
+  if (matchedTeamsMap.size === 0 && (!selectedCountryId || selectedCountryId === 'ALL') && (!selectedLeagueId || selectedLeagueId === '' || selectedLeagueId === 'ALL')) {
+    teams.forEach(t => matchedTeamsMap.set(t.id, t));
   }
 
-  return Array.from(matchedTeamsMap.values());
+  // Deduplicate teams by normalized name
+  const deduplicated = new Map<string, Team>();
+  for (const t of matchedTeamsMap.values()) {
+    if (!t || !t.name) continue;
+    const norm = normalizeText(t.name);
+    if (!norm) continue;
+    if (!deduplicated.has(norm)) {
+      deduplicated.set(norm, t);
+    }
+  }
+
+  return Array.from(deduplicated.values()).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 }
 
 /**

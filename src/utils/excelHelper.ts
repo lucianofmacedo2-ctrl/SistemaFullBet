@@ -1,6 +1,58 @@
 import ExcelJS from 'exceljs';
 import { Match, MatchStatus, MatchStats, MatchOdds, Team, League, Country } from '../types';
 import { parseDateToBrasilia, BRASILIA_TIMEZONE } from './dateTimeUtils';
+import { lookupCanonicalTeam } from './dbSanitizer';
+
+const CANONICAL_COUNTRY_NAMES: Record<string, string> = {
+  HOL: 'Holanda',
+  TUR: 'Turquia',
+  ING: 'Inglaterra',
+  ESP: 'Espanha',
+  ITA: 'Itália',
+  ALE: 'Alemanha',
+  FRA: 'França',
+  POR: 'Portugal',
+  BEL: 'Bélgica',
+  ESC: 'Escócia',
+  BRA: 'Brasil',
+  ARG: 'Argentina',
+  GRE: 'Grécia',
+};
+
+export function resolveCanonicalMatchCountryLeague(
+  homeTeamName?: string,
+  awayTeamName?: string,
+  rawCountry?: string,
+  rawLeague?: string
+): { countryName: string; leagueName: string } {
+  const htCanonical = lookupCanonicalTeam(homeTeamName);
+  const atCanonical = lookupCanonicalTeam(awayTeamName);
+
+  let detectedCountry = (rawCountry || '').trim();
+  let detectedLeague = (rawLeague || '').trim();
+
+  if (htCanonical && atCanonical && htCanonical.countryCode === atCanonical.countryCode) {
+    detectedCountry = CANONICAL_COUNTRY_NAMES[htCanonical.countryCode] || htCanonical.countryCode;
+    if (!detectedLeague || detectedLeague === 'Liga Principal' || detectedLeague === 'Outro' || detectedLeague === 'Liga') {
+      detectedLeague = htCanonical.defaultLeaguePattern;
+    }
+  } else if (htCanonical && (!detectedCountry || detectedCountry === 'Outro' || detectedCountry === 'INT' || detectedCountry === 'País')) {
+    detectedCountry = CANONICAL_COUNTRY_NAMES[htCanonical.countryCode] || htCanonical.countryCode;
+    if (!detectedLeague || detectedLeague === 'Liga Principal' || detectedLeague === 'Outro' || detectedLeague === 'Liga') {
+      detectedLeague = htCanonical.defaultLeaguePattern;
+    }
+  } else if (atCanonical && (!detectedCountry || detectedCountry === 'Outro' || detectedCountry === 'INT' || detectedCountry === 'País')) {
+    detectedCountry = CANONICAL_COUNTRY_NAMES[atCanonical.countryCode] || atCanonical.countryCode;
+    if (!detectedLeague || detectedLeague === 'Liga Principal' || detectedLeague === 'Outro' || detectedLeague === 'Liga') {
+      detectedLeague = atCanonical.defaultLeaguePattern;
+    }
+  }
+
+  return {
+    countryName: detectedCountry || 'Outro',
+    leagueName: detectedLeague || 'Liga Principal',
+  };
+}
 
 export interface ParsedTeamRow {
   rowIndex: number;
@@ -1660,11 +1712,12 @@ export function parseFutureMatchesText(rawText: string): ParsedMatchRow[] {
 
     if (homeTeamName && awayTeamName) {
       const matchDateIso = formatIsoDateTime(dateVal, timeVal);
+      const canonical = resolveCanonicalMatchCountryLeague(homeTeamName, awayTeamName, countryName, leagueName);
       rows.push({
         rowIndex: i + 1,
         matchDate: matchDateIso,
-        countryName: countryName || 'Outro',
-        leagueName: leagueName || 'Liga Principal',
+        countryName: canonical.countryName,
+        leagueName: canonical.leagueName,
         homeTeamName,
         awayTeamName,
         referee,
@@ -1901,10 +1954,11 @@ export function extractBulkMatchUpdateFields(
 
   const matchId = String(getValue(EXCEL_HEADER_ALIASES.matchId) || '').trim() || undefined;
   const matchDateIso = formatIsoDateTime(dateVal, timeVal);
+  const canonical = resolveCanonicalMatchCountryLeague(homeTeamName, awayTeamName, countryName, leagueName);
 
   return {
-    countryName,
-    leagueName,
+    countryName: canonical.countryName,
+    leagueName: canonical.leagueName,
     dateVal,
     timeVal,
     homeTeamName,

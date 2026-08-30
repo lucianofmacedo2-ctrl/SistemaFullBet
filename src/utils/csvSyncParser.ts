@@ -1,6 +1,6 @@
 import { DbState, Country, League, Team, Match, MatchStats, MatchOdds } from '../types';
 
-import { sanitizeAndCleanDb } from './dbSanitizer';
+import { sanitizeAndCleanDb, lookupCanonicalTeam } from './dbSanitizer';
 
 export interface ClientSyncResult {
   success: boolean;
@@ -279,26 +279,28 @@ function getRowValue(row: Record<string, string>, aliases: string[]): string {
 }
 
 function parseDate(dateStr?: string, timeStr?: string): string {
-  if (!dateStr || !dateStr.trim()) return new Date().toISOString();
-  const rawDate = dateStr.trim();
-  const parts = rawDate.split(/[\/\-\.]/);
   let year = new Date().getFullYear();
   let month = 1;
   let day = 1;
 
-  if (parts.length === 3) {
-    // Check if ISO format YYYY-MM-DD
-    if (parts[0].length === 4) {
-      year = parseInt(parts[0], 10) || year;
-      month = parseInt(parts[1], 10) || 1;
-      day = parseInt(parts[2], 10) || 1;
-    } else {
-      // DD/MM/YYYY or DD/MM/YY
-      day = parseInt(parts[0], 10) || 1;
-      month = parseInt(parts[1], 10) || 1;
-      let y = parseInt(parts[2], 10);
-      if (y < 100) y += 2000;
-      year = y || year;
+  if (dateStr && dateStr.trim()) {
+    const rawDate = dateStr.trim();
+    const parts = rawDate.split(/[\/\-\.]/);
+
+    if (parts.length === 3) {
+      // Check if ISO format YYYY-MM-DD
+      if (parts[0].length === 4) {
+        year = parseInt(parts[0], 10) || year;
+        month = parseInt(parts[1], 10) || 1;
+        day = parseInt(parts[2], 10) || 1;
+      } else {
+        // DD/MM/YYYY or DD/MM/YY
+        day = parseInt(parts[0], 10) || 1;
+        month = parseInt(parts[1], 10) || 1;
+        let y = parseInt(parts[2], 10);
+        if (y < 100) y += 2000;
+        year = y || year;
+      }
     }
   }
 
@@ -312,8 +314,13 @@ function parseDate(dateStr?: string, timeStr?: string): string {
     }
   }
 
-  const d = new Date(Date.UTC(year, month - 1, day, hours, mins, 0));
-  return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+  const yStr = String(year);
+  const mStr = String(month).padStart(2, '0');
+  const dStr = String(day).padStart(2, '0');
+  const hStr = String(hours).padStart(2, '0');
+  const minStr = String(mins).padStart(2, '0');
+
+  return `${yStr}-${mStr}-${dStr}T${hStr}:${minStr}:00`;
 }
 
 function safeNum(val: any): number | null {
@@ -446,12 +453,29 @@ export function parseAndSyncCsvLocally(
       if (!leagueName) leagueName = mapped.leagueName;
     }
 
+    // Auto-detect canonical country and league from team names if missing or generic
+    const htCanonical = lookupCanonicalTeam(homeName);
+    const atCanonical = lookupCanonicalTeam(awayName);
+    if (htCanonical && (!countryCodeOrName || countryCodeOrName === 'INT' || countryCodeOrName === 'Outro')) {
+      countryCodeOrName = htCanonical.countryCode;
+    } else if (atCanonical && (!countryCodeOrName || countryCodeOrName === 'INT' || countryCodeOrName === 'Outro')) {
+      countryCodeOrName = atCanonical.countryCode;
+    }
+
     if (!countryCodeOrName) countryCodeOrName = 'INT';
     const friendlyCountryName = COUNTRY_NAMES[countryCodeOrName.toUpperCase()] ||
       COUNTRY_NAMES[normalizeHeaderKey(countryCodeOrName).toUpperCase()] ||
       countryCodeOrName;
 
-    if (!leagueName) leagueName = `Liga Principal ${countryCodeOrName}`;
+    if (!leagueName) {
+      if (htCanonical && htCanonical.countryCode === countryCodeOrName) {
+        leagueName = htCanonical.defaultLeaguePattern;
+      } else if (atCanonical && atCanonical.countryCode === countryCodeOrName) {
+        leagueName = atCanonical.defaultLeaguePattern;
+      } else {
+        leagueName = `Liga Principal ${countryCodeOrName}`;
+      }
+    }
 
     // 1. Ensure Country
     const cKeyUpper = countryCodeOrName.toUpperCase();

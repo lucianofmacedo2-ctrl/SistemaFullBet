@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Match, MatchPressureData } from '../types';
 import { PressureChartViewer } from './PressureChartViewer';
+import { formatBrasiliaDate } from '../utils/dateTimeUtils';
 
 interface PressureChartImportModalProps {
   isOpen: boolean;
@@ -293,7 +294,7 @@ export const PressureChartImportModal: React.FC<PressureChartImportModalProps> =
                   <option key={`${m.id || 'm'}_${idx}`} value={m.id}>
                     {m.id} • {m.homeTeamName} {m.homeScore !== null ? m.homeScore : ''} x{' '}
                     {m.awayScore !== null ? m.awayScore : ''} {m.awayTeamName} ({m.leagueName} -{' '}
-                    {new Date(m.matchDate).toLocaleDateString('pt-BR')})
+                    {formatBrasiliaDate(m.matchDate)})
                   </option>
                 ))}
               </select>

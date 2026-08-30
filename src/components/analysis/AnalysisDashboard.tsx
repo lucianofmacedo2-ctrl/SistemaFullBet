@@ -18,10 +18,10 @@ import {
   RefreshCw,
   Clock
 } from 'lucide-react';
-import { DbState, Match, Team } from '../../types';
+import { DbState, Match, Team, Country } from '../../types';
 import { runFullMatchAnalysis, MatchAnalysisResult } from '../../utils/analysisEngine';
 import { isValidImageUrl } from '../../utils/imageHelper';
-import { getLeaguesForCountry, getTeamsForLeagueOrCountry } from '../../utils/countryLeagueHelper';
+import { getLeaguesForCountry, getTeamsForLeagueOrCountry, normalizeText } from '../../utils/countryLeagueHelper';
 import { formatBrasiliaDate } from '../../utils/dateTimeUtils';
 import { FormTrackerSection } from './FormTrackerSection';
 import { PowerRankingSection } from './PowerRankingSection';
@@ -104,7 +104,20 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     }
   }, [dbState, initialMatchId]);
 
-  // 1. Available Leagues filtered by Country (resilient matching)
+  // Unique list of Countries deduplicated
+  const uniqueCountries = useMemo(() => {
+    const map = new Map<string, Country>();
+    (dbState.countries || []).forEach(c => {
+      if (!c || !c.name) return;
+      const norm = normalizeText(c.name);
+      if (norm && !map.has(norm)) {
+        map.set(norm, c);
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  }, [dbState.countries]);
+
+  // 1. Available Leagues strictly filtered by Country (with deduplication)
   const availableLeagues = useMemo(() => {
     return getLeaguesForCountry(dbState, selectedCountryId);
   }, [dbState, selectedCountryId]);
@@ -134,14 +147,29 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
       }
     } else {
       setSelectedLeagueId('');
-      setSelectedHomeTeamId('');
-      setSelectedAwayTeamId('');
+      const countryTeams = getTeamsForLeagueOrCountry(dbState, '', countryId);
+      if (countryTeams.length >= 2) {
+        setSelectedHomeTeamId(countryTeams[0].id);
+        setSelectedAwayTeamId(countryTeams[1].id);
+      } else if (countryTeams.length === 1) {
+        setSelectedHomeTeamId(countryTeams[0].id);
+        setSelectedAwayTeamId('');
+      } else {
+        setSelectedHomeTeamId('');
+        setSelectedAwayTeamId('');
+      }
     }
   };
 
   // Handle League change
   const handleLeagueChange = (leagueId: string) => {
     setSelectedLeagueId(leagueId);
+    if (leagueId) {
+      const targetLeague = dbState.leagues.find(l => l.id === leagueId);
+      if (targetLeague?.countryId && targetLeague.countryId !== selectedCountryId) {
+        setSelectedCountryId(targetLeague.countryId);
+      }
+    }
     const filteredTeams = getTeamsForLeagueOrCountry(dbState, leagueId, selectedCountryId);
     if (filteredTeams.length >= 2) {
       setSelectedHomeTeamId(filteredTeams[0].id);
@@ -171,23 +199,36 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     setIsQuickMatchPickerOpen(false);
   };
 
-  // Find active teams
-  const homeTeam = useMemo(
-    () => dbState.teams.find(t => t.id === selectedHomeTeamId),
-    [dbState.teams, selectedHomeTeamId]
-  );
-  const awayTeam = useMemo(
-    () => dbState.teams.find(t => t.id === selectedAwayTeamId),
-    [dbState.teams, selectedAwayTeamId]
-  );
+  // Find active teams with fallback to availableTeams or name-based match
+  const homeTeam = useMemo(() => {
+    if (!selectedHomeTeamId) return undefined;
+    return (
+      dbState.teams.find(t => t.id === selectedHomeTeamId) ||
+      availableTeams.find(t => t.id === selectedHomeTeamId) ||
+      dbState.teams.find(t => normalizeText(t.name) === normalizeText(selectedHomeTeamId)) ||
+      availableTeams.find(t => normalizeText(t.name) === normalizeText(selectedHomeTeamId))
+    );
+  }, [dbState.teams, availableTeams, selectedHomeTeamId]);
+
+  const awayTeam = useMemo(() => {
+    if (!selectedAwayTeamId) return undefined;
+    return (
+      dbState.teams.find(t => t.id === selectedAwayTeamId) ||
+      availableTeams.find(t => t.id === selectedAwayTeamId) ||
+      dbState.teams.find(t => normalizeText(t.name) === normalizeText(selectedAwayTeamId)) ||
+      availableTeams.find(t => normalizeText(t.name) === normalizeText(selectedAwayTeamId))
+    );
+  }, [dbState.teams, availableTeams, selectedAwayTeamId]);
 
   // Active match if existing between these two teams
   const activeMatch = useMemo(() => {
     if (!selectedHomeTeamId || !selectedAwayTeamId) return null;
     return dbState.matches.find(
-      m => m.homeTeamId === selectedHomeTeamId && m.awayTeamId === selectedAwayTeamId
+      m =>
+        (m.homeTeamId === selectedHomeTeamId && m.awayTeamId === selectedAwayTeamId) ||
+        (homeTeam && awayTeam && normalizeText(m.homeTeamName) === normalizeText(homeTeam.name) && normalizeText(m.awayTeamName) === normalizeText(awayTeam.name))
     ) || null;
-  }, [dbState.matches, selectedHomeTeamId, selectedAwayTeamId]);
+  }, [dbState.matches, selectedHomeTeamId, selectedAwayTeamId, homeTeam, awayTeam]);
 
   // Run full analysis pipeline when inputs are ready
   const analysisResult = useMemo<MatchAnalysisResult | null>(() => {
@@ -335,7 +376,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all cursor-pointer"
             >
               <option value="">Todos os Países</option>
-              {dbState.countries.map(c => (
+              {uniqueCountries.map(c => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>

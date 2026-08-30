@@ -1,4 +1,5 @@
 import { DbState, Country, League, Team, Match } from '../types';
+import { normalizeText } from './countryLeagueHelper';
 
 export interface SanitizeStats {
   foreignLeaguesRemoved: number;
@@ -9,56 +10,275 @@ export interface SanitizeStats {
 }
 
 /**
+ * Base de conhecimento canônica de aliases e variações de nomes de ligas/campeonatos.
+ */
+export const CANONICAL_LEAGUE_ALIASES: Record<string, { canonicalName: string; countryCode?: string }> = {
+  // USA
+  'mls': { canonicalName: 'Major League Soccer', countryCode: 'USA' },
+  'major league soccer': { canonicalName: 'Major League Soccer', countryCode: 'USA' },
+  'usa major league soccer': { canonicalName: 'Major League Soccer', countryCode: 'USA' },
+  'us major league soccer': { canonicalName: 'Major League Soccer', countryCode: 'USA' },
+  'usl': { canonicalName: 'USL Championship', countryCode: 'USA' },
+  'usl championship': { canonicalName: 'USL Championship', countryCode: 'USA' },
+
+  // Brasil
+  'brasileirao': { canonicalName: 'Brasileirão Série A', countryCode: 'BRA' },
+  'brasileirão': { canonicalName: 'Brasileirão Série A', countryCode: 'BRA' },
+  'brasileirao serie a': { canonicalName: 'Brasileirão Série A', countryCode: 'BRA' },
+  'brasileirão série a': { canonicalName: 'Brasileirão Série A', countryCode: 'BRA' },
+  'campeonato brasileiro': { canonicalName: 'Brasileirão Série A', countryCode: 'BRA' },
+  'campeonato brasileiro serie a': { canonicalName: 'Brasileirão Série A', countryCode: 'BRA' },
+  'campeonato brasileiro série a': { canonicalName: 'Brasileirão Série A', countryCode: 'BRA' },
+  'brasileirao betano': { canonicalName: 'Brasileirão Série A', countryCode: 'BRA' },
+  'brasileirão betano': { canonicalName: 'Brasileirão Série A', countryCode: 'BRA' },
+  'serie a brasil': { canonicalName: 'Brasileirão Série A', countryCode: 'BRA' },
+  'brasileirao serie b': { canonicalName: 'Brasileirão Série B', countryCode: 'BRA' },
+  'brasileirão série b': { canonicalName: 'Brasileirão Série B', countryCode: 'BRA' },
+  'serie b brasil': { canonicalName: 'Brasileirão Série B', countryCode: 'BRA' },
+  'campeonato brasileiro serie b': { canonicalName: 'Brasileirão Série B', countryCode: 'BRA' },
+  'copa do brasil': { canonicalName: 'Copa do Brasil', countryCode: 'BRA' },
+  'copa do nordeste': { canonicalName: 'Copa do Nordeste', countryCode: 'BRA' },
+
+  // Inglaterra
+  'premier league': { canonicalName: 'Premier League', countryCode: 'ENG' },
+  'epl': { canonicalName: 'Premier League', countryCode: 'ENG' },
+  'english premier league': { canonicalName: 'Premier League', countryCode: 'ENG' },
+  'inglaterra premier league': { canonicalName: 'Premier League', countryCode: 'ENG' },
+  'championship': { canonicalName: 'Championship', countryCode: 'ENG' },
+  'efl championship': { canonicalName: 'Championship', countryCode: 'ENG' },
+  'championship ing': { canonicalName: 'Championship', countryCode: 'ENG' },
+  'league one': { canonicalName: 'League One', countryCode: 'ENG' },
+  'league two': { canonicalName: 'League Two', countryCode: 'ENG' },
+
+  // Espanha
+  'laliga': { canonicalName: 'La Liga', countryCode: 'ESP' },
+  'la liga': { canonicalName: 'La Liga', countryCode: 'ESP' },
+  'laliga ea sports': { canonicalName: 'La Liga', countryCode: 'ESP' },
+  'primera division': { canonicalName: 'La Liga', countryCode: 'ESP' },
+  'primera división': { canonicalName: 'La Liga', countryCode: 'ESP' },
+  'laliga 2': { canonicalName: 'La Liga 2', countryCode: 'ESP' },
+  'laliga hypermotion': { canonicalName: 'La Liga 2', countryCode: 'ESP' },
+  'segunda division': { canonicalName: 'La Liga 2', countryCode: 'ESP' },
+  'segunda división': { canonicalName: 'La Liga 2', countryCode: 'ESP' },
+
+  // Itália
+  'serie a italia': { canonicalName: 'Serie A', countryCode: 'ITA' },
+  'serie a itália': { canonicalName: 'Serie A', countryCode: 'ITA' },
+  'serie a tim': { canonicalName: 'Serie A', countryCode: 'ITA' },
+  'serie b italia': { canonicalName: 'Serie B', countryCode: 'ITA' },
+  'serie b itália': { canonicalName: 'Serie B', countryCode: 'ITA' },
+
+  // Alemanha
+  'bundesliga': { canonicalName: 'Bundesliga', countryCode: 'GER' },
+  '1. bundesliga': { canonicalName: 'Bundesliga', countryCode: 'GER' },
+  'bundesliga 1': { canonicalName: 'Bundesliga', countryCode: 'GER' },
+  '2. bundesliga': { canonicalName: '2. Bundesliga', countryCode: 'GER' },
+  'bundesliga 2': { canonicalName: '2. Bundesliga', countryCode: 'GER' },
+
+  // França
+  'ligue 1': { canonicalName: 'Ligue 1', countryCode: 'FRA' },
+  'ligue 1 mcdonalds': { canonicalName: 'Ligue 1', countryCode: 'FRA' },
+  'ligue 1 uber eats': { canonicalName: 'Ligue 1', countryCode: 'FRA' },
+  'ligue 2': { canonicalName: 'Ligue 2', countryCode: 'FRA' },
+
+  // Portugal
+  'primeira liga': { canonicalName: 'Liga Portugal', countryCode: 'POR' },
+  'liga portugal': { canonicalName: 'Liga Portugal', countryCode: 'POR' },
+  'liga portugal betclic': { canonicalName: 'Liga Portugal', countryCode: 'POR' },
+  'liga nos': { canonicalName: 'Liga Portugal', countryCode: 'POR' },
+  'segunda liga': { canonicalName: 'Liga Portugal 2', countryCode: 'POR' },
+  'liga portugal 2': { canonicalName: 'Liga Portugal 2', countryCode: 'POR' },
+
+  // Holanda
+  'eredivisie': { canonicalName: 'Eredivisie', countryCode: 'HOL' },
+  'eerste divisie': { canonicalName: 'Eerste Divisie', countryCode: 'HOL' },
+  'keuken kampioen divisie': { canonicalName: 'Eerste Divisie', countryCode: 'HOL' },
+
+  // Turquia
+  'super lig': { canonicalName: 'Süper Lig', countryCode: 'TUR' },
+  'superlig': { canonicalName: 'Süper Lig', countryCode: 'TUR' },
+  'süper lig': { canonicalName: 'Süper Lig', countryCode: 'TUR' },
+  'trendyol super lig': { canonicalName: 'Süper Lig', countryCode: 'TUR' },
+  'trendyol süper lig': { canonicalName: 'Süper Lig', countryCode: 'TUR' },
+
+  // Bélgica
+  'jupiler pro league': { canonicalName: 'Jupiler Pro League', countryCode: 'BEL' },
+  'belgian pro league': { canonicalName: 'Jupiler Pro League', countryCode: 'BEL' },
+  'pro league belgica': { canonicalName: 'Jupiler Pro League', countryCode: 'BEL' },
+
+  // Dinamarca
+  'superliga': { canonicalName: 'Superligaen', countryCode: 'DEN' },
+  'superligaen': { canonicalName: 'Superligaen', countryCode: 'DEN' },
+  'danish superliga': { canonicalName: 'Superligaen', countryCode: 'DEN' },
+
+  // Noruega
+  'eliteserien': { canonicalName: 'Eliteserien', countryCode: 'NOR' },
+  'norwegian eliteserien': { canonicalName: 'Eliteserien', countryCode: 'NOR' },
+  'obos-ligaen': { canonicalName: 'OBOS-ligaen', countryCode: 'NOR' },
+  'obos ligaen': { canonicalName: 'OBOS-ligaen', countryCode: 'NOR' },
+
+  // Suécia
+  'allsvenskan': { canonicalName: 'Allsvenskan', countryCode: 'SWE' },
+  'superettan': { canonicalName: 'Superettan', countryCode: 'SWE' },
+
+  // Islândia
+  'besta deild': { canonicalName: 'Besta deild karla', countryCode: 'ISL' },
+  'besta deild karla': { canonicalName: 'Besta deild karla', countryCode: 'ISL' },
+  '1. deild karla': { canonicalName: '1. deild karla', countryCode: 'ISL' },
+  '1. deild': { canonicalName: '1. deild karla', countryCode: 'ISL' },
+
+  // Escócia
+  'scottish premiership': { canonicalName: 'Scottish Premiership', countryCode: 'SCO' },
+  'premiership escocia': { canonicalName: 'Scottish Premiership', countryCode: 'SCO' },
+  'premiership': { canonicalName: 'Scottish Premiership', countryCode: 'SCO' },
+
+  // Arábia Saudita
+  'saudi pro league': { canonicalName: 'Saudi Pro League', countryCode: 'KSA' },
+  'roshn saudi league': { canonicalName: 'Saudi Pro League', countryCode: 'KSA' },
+
+  // Argentina
+  'liga profesional': { canonicalName: 'Liga Profesional', countryCode: 'ARG' },
+  'copa de la liga': { canonicalName: 'Copa de la Liga Profesional', countryCode: 'ARG' },
+};
+
+export function lookupCanonicalLeague(leagueName?: string): { canonicalName: string; countryCode?: string } | undefined {
+  if (!leagueName) return undefined;
+  const norm = normalizeText(leagueName);
+  if (CANONICAL_LEAGUE_ALIASES[norm]) {
+    return CANONICAL_LEAGUE_ALIASES[norm];
+  }
+  for (const [alias, data] of Object.entries(CANONICAL_LEAGUE_ALIASES)) {
+    if (norm === alias || norm.replace(/\s+/g, '') === alias.replace(/\s+/g, '')) {
+      return data;
+    }
+  }
+  return undefined;
+}
+
+/**
  * Base de conhecimento canônica de clubes conhecidos para desambiguação automática
  * e garantia de vínculo correto de País e Liga principal.
  */
-const CANONICAL_CLUBS: Record<string, { countryCode: string; defaultLeaguePattern: string }> = {
-  // Holanda (NLD / HOL)
+export const CANONICAL_CLUBS: Record<string, { countryCode: string; defaultLeaguePattern: string }> = {
+  // Holanda (HOL / NLD)
   ajax: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'afc ajax': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   'psv eindhoven': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   psv: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  eindhoven: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'fc eindhoven': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   feyenoord: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'feyenoord rotterdam': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   'az alkmaar': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   az: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   utrecht: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'fc utrecht': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   twente: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'fc twente': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   heerenveen: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'sc heerenveen': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   zwolle: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'pec zwolle': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   groningen: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'fc groningen': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   'sparta rotterdam': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  sparta: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   'den haag': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'ado den haag': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   'for sittard': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   'fortuna sittard': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   'willem ii': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'willem 2': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   'go ahead eagles': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'go ahead': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   telstar: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   nijmegen: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   nec: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'nec nijmegen': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   excelsior: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   cambuur: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'sc cambuur': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   vitesse: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'vitesse arnhem': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   volendam: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'fc volendam': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   breda: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   'nac breda': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   'almere city': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  almere: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   heracles: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'heracles almelo': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
   waalwijk: { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  'rkc waalwijk': { countryCode: 'HOL', defaultLeaguePattern: 'Eredivisie' },
+  dordrecht: { countryCode: 'HOL', defaultLeaguePattern: 'Eerste Divisie' },
+  'de graafschap': { countryCode: 'HOL', defaultLeaguePattern: 'Eerste Divisie' },
+  emmen: { countryCode: 'HOL', defaultLeaguePattern: 'Eerste Divisie' },
+  'fc emmen': { countryCode: 'HOL', defaultLeaguePattern: 'Eerste Divisie' },
+  'helmond sport': { countryCode: 'HOL', defaultLeaguePattern: 'Eerste Divisie' },
+  'mvv maastricht': { countryCode: 'HOL', defaultLeaguePattern: 'Eerste Divisie' },
+  'roda jc': { countryCode: 'HOL', defaultLeaguePattern: 'Eerste Divisie' },
+  'top oss': { countryCode: 'HOL', defaultLeaguePattern: 'Eerste Divisie' },
+  'vvv venlo': { countryCode: 'HOL', defaultLeaguePattern: 'Eerste Divisie' },
+
+  // Turquia (TUR)
+  galatasaray: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  fenerbahce: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  fenerbahçe: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  besiktas: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  beşiktaş: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  trabzonspor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  basaksehir: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  başakşehir: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  'istanbul basaksehir': { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  kasimpasa: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  kasımpaşa: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  konyaspor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  rizespor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  'caykur rizespor': { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  antalyaspor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  sivasspor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  'adana demirspor': { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  alanyaspor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  gaziantep: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  'gaziantep fk': { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  hatayspor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  samsunspor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  kayserispor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  eyupspor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  eyüpspor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  'bodrum fk': { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  bodrum: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  goztepe: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  göztepe: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  corum: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  çorum: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  'corum fk': { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  sakaryaspor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  bandirmaspor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  umraniyespor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  pendikspor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  istanbulspor: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
+  ankaragucu: { countryCode: 'TUR', defaultLeaguePattern: 'Futbol Ligi' },
 
   // Bélgica (BEL)
   'raal la louviere': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   'la louviere': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   'club brugge': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
+  brugge: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   kortrijk: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   standard: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   'standard liege': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   'cercle brugge': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   'st truiden': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
+  'sint-truiden': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   'lommel sk': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   lommel: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   westerlo: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   'st. gilloise': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   'union st. gilloise': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
+  'union sg': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   gent: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
+  'kaa gent': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   mechelen: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   charleroi: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   'oud-heverlee leuven': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
@@ -66,8 +286,10 @@ const CANONICAL_CLUBS: Record<string, { countryCode: string; defaultLeaguePatter
   waregem: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   'zulte waregem': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   genk: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
+  'krc genk': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   anderlecht: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   antwerp: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
+  'royal antwerp': { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   eupen: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   beerschot: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
   dender: { countryCode: 'BEL', defaultLeaguePattern: 'Jupiler' },
@@ -78,21 +300,27 @@ const CANONICAL_CLUBS: Record<string, { countryCode: string; defaultLeaguePatter
   'ayr united': { countryCode: 'ESC', defaultLeaguePattern: 'Division 1' },
   arbroath: { countryCode: 'ESC', defaultLeaguePattern: 'Division 1' },
   'inverness c': { countryCode: 'ESC', defaultLeaguePattern: 'Division 1' },
+  inverness: { countryCode: 'ESC', defaultLeaguePattern: 'Division 1' },
   livingston: { countryCode: 'ESC', defaultLeaguePattern: 'Division 1' },
   'queens park': { countryCode: 'ESC', defaultLeaguePattern: 'Division 1' },
   morton: { countryCode: 'ESC', defaultLeaguePattern: 'Division 1' },
   partick: { countryCode: 'ESC', defaultLeaguePattern: 'Division 1' },
+  'partick thistle': { countryCode: 'ESC', defaultLeaguePattern: 'Division 1' },
   'raith rvs': { countryCode: 'ESC', defaultLeaguePattern: 'Division 1' },
   'raith rovers': { countryCode: 'ESC', defaultLeaguePattern: 'Division 1' },
   stenhousemuir: { countryCode: 'ESC', defaultLeaguePattern: 'Division 1' },
   alloa: { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
+  'alloa athletic': { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
   'east fife': { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
   'cove rangers': { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
   'airdrie utd': { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
+  'airdrieonians': { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
   'east kilbride': { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
   'queen of sth': { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
+  'queen of the south': { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
   montrose: { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
   hamilton: { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
+  'hamilton academical': { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
   peterhead: { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
   'ross county': { countryCode: 'ESC', defaultLeaguePattern: 'Division 2' },
   'annan athletic': { countryCode: 'ESC', defaultLeaguePattern: 'Division 3' },
@@ -101,9 +329,12 @@ const CANONICAL_CLUBS: Record<string, { countryCode: string; defaultLeaguePatter
   stranraer: { countryCode: 'ESC', defaultLeaguePattern: 'Division 3' },
   'edinburgh city': { countryCode: 'ESC', defaultLeaguePattern: 'Division 3' },
   elgin: { countryCode: 'ESC', defaultLeaguePattern: 'Division 3' },
+  'elgin city': { countryCode: 'ESC', defaultLeaguePattern: 'Division 3' },
   forfar: { countryCode: 'ESC', defaultLeaguePattern: 'Division 3' },
+  'forfar athletic': { countryCode: 'ESC', defaultLeaguePattern: 'Division 3' },
   'kelty hearts': { countryCode: 'ESC', defaultLeaguePattern: 'Division 3' },
   stirling: { countryCode: 'ESC', defaultLeaguePattern: 'Division 3' },
+  'stirling albion': { countryCode: 'ESC', defaultLeaguePattern: 'Division 3' },
   dumbarton: { countryCode: 'ESC', defaultLeaguePattern: 'Division 3' },
   'dundee united': { countryCode: 'ESC', defaultLeaguePattern: 'Premiere' },
   rangers: { countryCode: 'ESC', defaultLeaguePattern: 'Premiere' },
@@ -111,6 +342,7 @@ const CANONICAL_CLUBS: Record<string, { countryCode: string; defaultLeaguePatter
   'st mirren': { countryCode: 'ESC', defaultLeaguePattern: 'Premiere' },
   aberdeen: { countryCode: 'ESC', defaultLeaguePattern: 'Premiere' },
   hearts: { countryCode: 'ESC', defaultLeaguePattern: 'Premiere' },
+  'heart of midlothian': { countryCode: 'ESC', defaultLeaguePattern: 'Premiere' },
   'st johnstone': { countryCode: 'ESC', defaultLeaguePattern: 'Premiere' },
   kilmarnock: { countryCode: 'ESC', defaultLeaguePattern: 'Premiere' },
   hibernian: { countryCode: 'ESC', defaultLeaguePattern: 'Premiere' },
@@ -119,31 +351,267 @@ const CANONICAL_CLUBS: Record<string, { countryCode: string; defaultLeaguePatter
   dundee: { countryCode: 'ESC', defaultLeaguePattern: 'Premiere' },
 
   // Inglaterra (ING)
-  wolves: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  arsenal: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'aston villa': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  bournemouth: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  brentford: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  brighton: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  chelsea: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'crystal palace': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  everton: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  fulham: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  ipswich: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'ipswich town': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  leicester: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'leicester city': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  liverpool: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'manchester city': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'man city': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'manchester united': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'man united': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'man utd': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  newcastle: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'newcastle united': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'nottingham forest': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'nottm forest': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  southampton: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  tottenham: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'tottenham hotspur': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  spurs: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'west ham': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  'west ham united': { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  wolves: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
+  wolverhampton: { countryCode: 'ING', defaultLeaguePattern: 'Premier' },
   blackburn: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'blackburn rovers': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   bolton: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   preston: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'preston north end': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   'bristol city': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   millwall: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   charlton: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   derby: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'derby county': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   middlesbrough: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   lincoln: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   norwich: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'norwich city': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   'west brom': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'west bromwich': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   portsmouth: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   qpr: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'queens park rangers': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   stoke: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'stoke city': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   swansea: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'swansea city': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   'sheffield united': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'sheffield utd': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'sheffield wednesday': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'sheff wed': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   birmingham: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'birmingham city': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   watford: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
-  southampton: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   burnley: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
-  'west ham': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   cardiff: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'cardiff city': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
   wrexham: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  coventry: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'coventry city': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  hull: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'hull city': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  leeds: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'leeds united': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  luton: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'luton town': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  oxford: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'oxford united': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  plymouth: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  'plymouth argyle': { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+  sunderland: { countryCode: 'ING', defaultLeaguePattern: 'Championship' },
+
+  // Espanha (ESP)
+  'real madrid': { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  barcelona: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  'fc barcelona': { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  'atletico madrid': { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  'atlético madrid': { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  'athletic bilbao': { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  'athletic club': { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  'real sociedad': { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  betis: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  'real betis': { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  sevilla: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  villarreal: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  valencia: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  girona: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  'celta vigo': { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  celta: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  osasuna: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  mallorca: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  getafe: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  'rayo vallecano': { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  'las palmas': { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  alaves: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  alavés: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  espanyol: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  leganes: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  leganés: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+  valladolid: { countryCode: 'ESP', defaultLeaguePattern: 'La Liga' },
+
+  // Itália (ITA)
+  inter: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  internazionale: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  milan: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  'ac milan': { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  juventus: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  napoli: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  roma: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  'as roma': { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  lazio: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  atalanta: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  fiorentina: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  bologna: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  torino: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  udinese: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  genoa: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  parma: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  como: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  cagliari: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  empoli: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  verona: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  'hellas verona': { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  monza: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  venezia: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+  lecce: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
+
+  // Alemanha (ALE)
+  bayern: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'bayern munich': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'bayern munchen': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'bayern munique': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  dortmund: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'borussia dortmund': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  leverkusen: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'bayer leverkusen': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  leipzig: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'rb leipzig': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  frankfurt: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'eintracht frankfurt': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  stuttgart: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  wolfsburg: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  gladbach: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'borussia monchengladbach': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  freiburg: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  augsburg: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  bremen: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'werder bremen': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  heidenheim: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  mainz: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  bochum: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'st. pauli': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'st pauli': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'holstein kiel': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'union berlin': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  hoffenheim: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+
+  // França (FRA)
+  psg: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  'paris saint-germain': { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  'paris sg': { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  monaco: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  marseille: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  'olympique marseille': { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  lyon: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  'olympique lyonnais': { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  lille: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  nice: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  lens: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  rennes: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  reims: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  strasbourg: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  brest: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  toulouse: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  montpellier: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  nantes: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  auxerre: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  'le havre': { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  'saint-etienne': { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+  angers: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
+
+  // Portugal (POR)
+  benfica: { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  porto: { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  'fc porto': { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  sporting: { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  'sporting cp': { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  'sporting lisbon': { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  braga: { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  'sc braga': { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  'vitoria guimaraes': { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  'vitoria de guimaraes': { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  famalicao: { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  arouca: { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  moreirense: { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  'rio ave': { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  'gil vicente': { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  estoril: { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  boavista: { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  'santa clara': { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  nacional: { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  farense: { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  'estrela amadora': { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+  avs: { countryCode: 'POR', defaultLeaguePattern: 'Liga' },
+
+  // Brasil (BRA)
+  flamengo: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  palmeiras: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  'sao paulo': { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  'são paulo': { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  corinthians: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  fluminense: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  botafogo: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  vasco: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  'vasco da gama': { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  gremio: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  grêmio: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  internacional: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  'atletico mineiro': { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  'atlético mineiro': { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  'atletico-mg': { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  cruzeiro: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  'athletico-pr': { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  'athletico paranaense': { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  bahia: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  fortaleza: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  vitoria: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  vitória: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  cuiaba: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  cuiabá: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  criciuma: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  criciúma: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  juventude: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  bragantino: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  'red bull bragantino': { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  santos: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  sport: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  ceara: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  ceará: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  goias: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  goiás: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  coritiba: { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  'america-mg': { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
+  'américa-mg': { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
 };
+
+/**
+ * Retorna dados canônicos de País e Liga se o time for reconhecido.
+ */
+export function lookupCanonicalTeam(teamName?: string): { countryCode: string; defaultLeaguePattern: string } | undefined {
+  if (!teamName) return undefined;
+  const norm = teamName.trim().toLowerCase();
+  return CANONICAL_CLUBS[norm];
+}
 
 /**
  * Sanitiza e repara o banco de dados contra inconsistências:
@@ -180,14 +648,61 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
     countryByCode.set(c.name.toUpperCase(), c);
   });
 
-  const leagueById = new Map<string, League>();
-  leagues.forEach(l => {
-    leagueById.set(l.id, l);
-    // Garantir que a liga tenha countryName correto
+  // 0. Sanitizar e deduplicar ligas
+  const cleanedLeagues: League[] = [];
+  const leagueNameToId = new Map<string, string>(); // `countryKey_normLeagueName` -> canonicalLeagueId
+  const leagueRemap = new Map<string, string>(); // oldDuplicateId -> canonicalLeagueId
+
+  for (const league of leagues) {
+    if (!league || !league.name) continue;
+    const l: League = { ...league };
+    const canonInfo = lookupCanonicalLeague(l.name);
+    const effectiveName = canonInfo?.canonicalName || l.name.trim();
+    const normName = normalizeText(effectiveName);
+
+    // Garantir país da liga
+    if (!l.countryId && canonInfo?.countryCode) {
+      const c = countryByCode.get(canonInfo.countryCode);
+      if (c) {
+        l.countryId = c.id;
+        l.countryName = c.name;
+      }
+    }
     if (l.countryId && !l.countryName) {
       const c = countryById.get(l.countryId);
       if (c) l.countryName = c.name;
     }
+
+    const countryKey = (l.countryId || l.countryName || 'NO_COUNTRY').trim().toLowerCase();
+    const lookupKey = `${countryKey}_${normName}`;
+    const rawLookupKey = `${countryKey}_${normalizeText(l.name)}`;
+
+    const existingLeagueId =
+      leagueNameToId.get(lookupKey) ||
+      leagueNameToId.get(rawLookupKey) ||
+      leagueNameToId.get(`no_country_${normName}`);
+
+    if (existingLeagueId && existingLeagueId !== l.id) {
+      leagueRemap.set(l.id, existingLeagueId);
+      stats.duplicatesRemoved++;
+      stats.details.push(`Liga duplicada mesclada: "${l.name}" (${l.id}) unificada em "${effectiveName}" (${existingLeagueId}).`);
+      const targetL = cleanedLeagues.find(cl => cl.id === existingLeagueId);
+      if (targetL && !targetL.logoUrl && l.logoUrl) {
+        targetL.logoUrl = l.logoUrl;
+      }
+      continue;
+    }
+
+    l.name = effectiveName;
+    leagueNameToId.set(lookupKey, l.id);
+    leagueNameToId.set(rawLookupKey, l.id);
+    leagueRemap.set(l.id, l.id);
+    cleanedLeagues.push(l);
+  }
+
+  const leagueById = new Map<string, League>();
+  cleanedLeagues.forEach(l => {
+    leagueById.set(l.id, l);
   });
 
   // 1. Sanitizar e corrigir cada time
@@ -235,6 +750,16 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
       }
     }
 
+    // Remap de liga se foi mesclada
+    if (cloned.leagueId && leagueRemap.has(cloned.leagueId)) {
+      const mappedLid = leagueRemap.get(cloned.leagueId)!;
+      if (cloned.leagueId !== mappedLid) {
+        cloned.leagueId = mappedLid;
+        cloned.leagueName = leagueById.get(mappedLid)?.name || cloned.leagueName;
+        modified = true;
+      }
+    }
+
     if (cloned.countryId && !cloned.countryName) {
       const c = countryById.get(cloned.countryId);
       if (c) {
@@ -244,7 +769,8 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
     }
 
     // C. Limpar `leagueIds` - NUNCA permitir ligas de outro país!
-    const rawLeagueIds = cloned.leagueIds ? [...cloned.leagueIds] : (cloned.leagueId ? [cloned.leagueId] : []);
+    const rawLeagueIds = (cloned.leagueIds ? [...cloned.leagueIds] : (cloned.leagueId ? [cloned.leagueId] : []))
+      .map(lid => leagueRemap.get(lid) || lid);
     const validLeagueIds: string[] = [];
 
     for (const lid of rawLeagueIds) {
@@ -456,8 +982,123 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
       }
     }
 
-    // Garantir que a liga e o país do jogo estejam preenchidos
-    if (match.leagueId && leagueById.has(match.leagueId)) {
+    // -------------------------------------------------------------------------
+    // RECONCILIAÇÃO INTELIGENTE DE PAÍS E LIGA DA PARTIDA COM BASE NOS TIMES
+    // -------------------------------------------------------------------------
+    const ht = match.homeTeamId ? teamById.get(match.homeTeamId) : undefined;
+    const at = match.awayTeamId ? teamById.get(match.awayTeamId) : undefined;
+
+    const htCanonical = lookupCanonicalTeam(match.homeTeamName);
+    const atCanonical = lookupCanonicalTeam(match.awayTeamName);
+
+    let targetCountryId = '';
+    let targetCountryName = '';
+    let targetLeagueId = '';
+    let targetLeagueName = '';
+
+    // Determinar país canônico dos times
+    if (htCanonical && atCanonical && htCanonical.countryCode === atCanonical.countryCode) {
+      const c = countryByCode.get(htCanonical.countryCode) || countries.find(c => c.code === htCanonical.countryCode || c.name.toUpperCase().includes(htCanonical.countryCode));
+      if (c) {
+        targetCountryId = c.id;
+        targetCountryName = c.name;
+        const matchingLeague = leagues.find(l => l.countryId === c.id && l.name.toLowerCase().includes(htCanonical.defaultLeaguePattern.toLowerCase()));
+        if (matchingLeague) {
+          targetLeagueId = matchingLeague.id;
+          targetLeagueName = matchingLeague.name;
+        }
+      }
+    } else if (ht?.countryId && at?.countryId && ht.countryId === at.countryId) {
+      targetCountryId = ht.countryId;
+      targetCountryName = ht.countryName || countryById.get(ht.countryId)?.name || '';
+      if (ht.leagueId && at.leagueId && ht.leagueId === at.leagueId) {
+        targetLeagueId = ht.leagueId;
+        targetLeagueName = ht.leagueName || leagueById.get(ht.leagueId)?.name || '';
+      } else if (ht.leagueId && leagueById.has(ht.leagueId)) {
+        targetLeagueId = ht.leagueId;
+        targetLeagueName = ht.leagueName || leagueById.get(ht.leagueId)?.name || '';
+      } else if (at.leagueId && leagueById.has(at.leagueId)) {
+        targetLeagueId = at.leagueId;
+        targetLeagueName = at.leagueName || leagueById.get(at.leagueId)?.name || '';
+      }
+    } else if (htCanonical) {
+      const c = countryByCode.get(htCanonical.countryCode) || countries.find(c => c.code === htCanonical.countryCode || c.name.toUpperCase().includes(htCanonical.countryCode));
+      if (c) {
+        targetCountryId = c.id;
+        targetCountryName = c.name;
+        const matchingLeague = leagues.find(l => l.countryId === c.id && l.name.toLowerCase().includes(htCanonical.defaultLeaguePattern.toLowerCase()));
+        if (matchingLeague) {
+          targetLeagueId = matchingLeague.id;
+          targetLeagueName = matchingLeague.name;
+        }
+      }
+    } else if (atCanonical) {
+      const c = countryByCode.get(atCanonical.countryCode) || countries.find(c => c.code === atCanonical.countryCode || c.name.toUpperCase().includes(atCanonical.countryCode));
+      if (c) {
+        targetCountryId = c.id;
+        targetCountryName = c.name;
+        const matchingLeague = leagues.find(l => l.countryId === c.id && l.name.toLowerCase().includes(atCanonical.defaultLeaguePattern.toLowerCase()));
+        if (matchingLeague) {
+          targetLeagueId = matchingLeague.id;
+          targetLeagueName = matchingLeague.name;
+        }
+      }
+    } else if (ht?.countryId) {
+      targetCountryId = ht.countryId;
+      targetCountryName = ht.countryName || countryById.get(ht.countryId)?.name || '';
+      if (ht.leagueId && leagueById.has(ht.leagueId)) {
+        targetLeagueId = ht.leagueId;
+        targetLeagueName = ht.leagueName || leagueById.get(ht.leagueId)?.name || '';
+      }
+    } else if (at?.countryId) {
+      targetCountryId = at.countryId;
+      targetCountryName = at.countryName || countryById.get(at.countryId)?.name || '';
+      if (at.leagueId && leagueById.has(at.leagueId)) {
+        targetLeagueId = at.leagueId;
+        targetLeagueName = at.leagueName || leagueById.get(at.leagueId)?.name || '';
+      }
+    }
+
+    // 1. Remap de liga se foi mesclada
+    if (match.leagueId && leagueRemap.has(match.leagueId)) {
+      const mappedLid = leagueRemap.get(match.leagueId)!;
+      if (match.leagueId !== mappedLid) {
+        match.leagueId = mappedLid;
+        const targetL = leagueById.get(mappedLid);
+        if (targetL) {
+          match.leagueName = targetL.name;
+          if (targetL.logoUrl) match.leagueLogoUrl = targetL.logoUrl;
+          if (targetL.countryId) {
+            match.countryId = targetL.countryId;
+            match.countryName = targetL.countryName || countryById.get(targetL.countryId)?.name || match.countryName;
+          }
+        }
+        matchModified = true;
+      }
+    }
+
+    // Se encontramos país alvo e o país da partida está diferente ou incorreto:
+    if (targetCountryId && match.countryId !== targetCountryId) {
+      stats.details.push(`Partida "${match.homeTeamName} x ${match.awayTeamName}" reclassificada de "${match.countryName || 'País'}" para "${targetCountryName}".`);
+      match.countryId = targetCountryId;
+      match.countryName = targetCountryName;
+      const c = countryById.get(targetCountryId);
+      if (c?.flagUrl) match.countryFlagUrl = c.flagUrl;
+      matchModified = true;
+    }
+
+    // Se encontramos liga alvo e a liga da partida está divergente ou de outro país:
+    if (targetLeagueId) {
+      const currentLeague = match.leagueId ? leagueById.get(match.leagueId) : null;
+      if (!currentLeague || currentLeague.countryId !== match.countryId || match.leagueId !== targetLeagueId) {
+        stats.details.push(`Partida "${match.homeTeamName} x ${match.awayTeamName}" reclassificada de "${match.leagueName || 'Liga'}" para "${targetLeagueName}".`);
+        match.leagueId = targetLeagueId;
+        match.leagueName = targetLeagueName;
+        const l = leagueById.get(targetLeagueId);
+        if (l?.logoUrl) match.leagueLogoUrl = l.logoUrl;
+        matchModified = true;
+      }
+    } else if (match.leagueId && leagueById.has(match.leagueId)) {
       const l = leagueById.get(match.leagueId)!;
       if (match.leagueName !== l.name) {
         match.leagueName = l.name;
@@ -466,6 +1107,8 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
       if (l.countryId && match.countryId !== l.countryId) {
         match.countryId = l.countryId;
         match.countryName = l.countryName || countryById.get(l.countryId)?.name || match.countryName;
+        const c = countryById.get(l.countryId);
+        if (c?.flagUrl) match.countryFlagUrl = c.flagUrl;
         matchModified = true;
       }
     }
@@ -521,7 +1164,7 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
   return {
     cleanedDb: {
       countries,
-      leagues,
+      leagues: cleanedLeagues,
       teams: cleanedTeams,
       matches: cleanedMatches,
       users,
@@ -531,6 +1174,14 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
 }
 
 export interface AnomalyReport {
+  duplicateLeagues: Array<{
+    canonicalName: string;
+    countryName: string;
+    count: number;
+    leagueNames: string[];
+    leagueIds: string[];
+    totalMatches: number;
+  }>;
   crossCountryTeams: Array<{
     teamId: string;
     teamName: string;
@@ -555,6 +1206,7 @@ export interface AnomalyReport {
 export function diagnoseDatabaseAnomalies(dbState: DbState): AnomalyReport {
   if (!dbState) {
     return {
+      duplicateLeagues: [],
       crossCountryTeams: [],
       duplicateTeams: [],
       orphanTeams: [],
@@ -564,6 +1216,39 @@ export function diagnoseDatabaseAnomalies(dbState: DbState): AnomalyReport {
 
   const leagueById = new Map<string, League>(dbState.leagues.map(l => [l.id, l]));
   const countryById = new Map<string, Country>(dbState.countries.map(c => [c.id, c]));
+
+  // 1. Diagnosticar Ligas Duplicadas (ex: MLS e Major League Soccer)
+  const leagueGroups = new Map<string, Array<{ league: League; matchesCount: number }>>();
+  for (const l of dbState.leagues || []) {
+    if (!l?.name) continue;
+    const canonInfo = lookupCanonicalLeague(l.name);
+    const effectiveName = canonInfo?.canonicalName || l.name.trim();
+    const countryKey = (l.countryId || l.countryName || 'NO_COUNTRY').trim().toLowerCase();
+    const groupKey = `${countryKey}__${normalizeText(effectiveName)}`;
+    
+    const matchesCount = (dbState.matches || []).filter(m => m.leagueId === l.id).length;
+    const group = leagueGroups.get(groupKey) || [];
+    group.push({ league: l, matchesCount });
+    leagueGroups.set(groupKey, group);
+  }
+
+  const duplicateLeagues: AnomalyReport['duplicateLeagues'] = [];
+  for (const group of leagueGroups.values()) {
+    if (group.length > 1) {
+      const first = group[0].league;
+      const canonInfo = lookupCanonicalLeague(first.name);
+      const canonicalName = canonInfo?.canonicalName || first.name;
+      const totalMatches = group.reduce((acc, item) => acc + item.matchesCount, 0);
+      duplicateLeagues.push({
+        canonicalName,
+        countryName: first.countryName || 'País',
+        count: group.length,
+        leagueNames: group.map(g => `${g.league.name} (${g.matchesCount} partidas)`),
+        leagueIds: group.map(g => g.league.id),
+        totalMatches,
+      });
+    }
+  }
 
   const crossCountryTeams: AnomalyReport['crossCountryTeams'] = [];
   const nameAndCountryMap = new Map<string, string[]>(); // `countryId_normName` -> teamIds[]
@@ -578,7 +1263,7 @@ export function diagnoseDatabaseAnomalies(dbState: DbState): AnomalyReport {
     const allLeagueIds = team.leagueIds ? [...team.leagueIds] : (team.leagueId ? [team.leagueId] : []);
     
     const invalidLeagues: Array<{ id: string; name: string; countryName: string }> = [];
-    const validLeagues: Array<{ id: string; name: string }> = [];
+    const validIds: Array<{ id: string; name: string }> = [];
 
     for (const lid of allLeagueIds) {
       const l = leagueById.get(lid);
@@ -591,7 +1276,7 @@ export function diagnoseDatabaseAnomalies(dbState: DbState): AnomalyReport {
           countryName: leagueCountry?.name || l.countryName || 'Outro País',
         });
       } else {
-        validLeagues.push({
+        validIds.push({
           id: l.id,
           name: l.name,
         });
@@ -605,7 +1290,7 @@ export function diagnoseDatabaseAnomalies(dbState: DbState): AnomalyReport {
         countryName: team.countryName || countryById.get(teamCountryId)?.name || 'Sem País',
         countryId: teamCountryId,
         invalidLeagues,
-        validLeagues,
+        validLeagues: validIds,
       });
     }
 
@@ -628,9 +1313,10 @@ export function diagnoseDatabaseAnomalies(dbState: DbState): AnomalyReport {
     }
   }
 
-  const totalAnomaliesCount = crossCountryTeams.length + duplicateTeams.length + orphanTeams.length;
+  const totalAnomaliesCount = duplicateLeagues.length + crossCountryTeams.length + duplicateTeams.length + orphanTeams.length;
 
   return {
+    duplicateLeagues,
     crossCountryTeams,
     duplicateTeams,
     orphanTeams,

@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Trophy, Plus, Search, Trash2, Globe, Link2, Check, X, Edit2, AlertCircle } from 'lucide-react';
+import { Trophy, Plus, Search, Trash2, Globe, Link2, Check, X, Edit2, AlertCircle, Zap, Sparkles } from 'lucide-react';
 import { DbState, League } from '../types';
 import { isValidImageUrl, validateImageUrlInput, sanitizeImageUrl } from '../utils/imageHelper';
+import { diagnoseDatabaseAnomalies } from '../utils/dbSanitizer';
 
 interface LeagueManagerProps {
   dbState: DbState;
@@ -11,6 +12,7 @@ interface LeagueManagerProps {
   onUpdateLeagueLogo?: (leagueId: string, logoUrl: string) => void;
   onEditLeague?: (league: League) => void;
   onNavigateToStandings?: (leagueId?: string) => void;
+  onOpenSanitizerModal?: () => void;
 }
 
 export const LeagueManager: React.FC<LeagueManagerProps> = ({
@@ -21,11 +23,17 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
   onUpdateLeagueLogo,
   onEditLeague,
   onNavigateToStandings,
+  onOpenSanitizerModal,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingLeagueId, setEditingLeagueId] = useState<string | null>(null);
   const [editUrl, setEditUrl] = useState('');
   const [urlError, setUrlError] = useState<string | null>(null);
+
+  // Diagnosticar anomalias no banco (incluindo ligas com nomes/aliases duplicados como MLS e Major League Soccer)
+  const anomalies = useMemo(() => {
+    return diagnoseDatabaseAnomalies(dbState);
+  }, [dbState]);
 
   // Ordenação prioritária por ordem alfabética de País (countryName), com desempate por Nome da Liga (name)
   const leagues = useMemo(() => {
@@ -70,6 +78,35 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Duplicate leagues warning banner if detected */}
+      {anomalies.duplicateLeagues.length > 0 && onOpenSanitizerModal && (
+        <div className="bg-amber-950/40 border border-amber-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-200 shadow-xl">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
+              <Zap className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-bold text-white text-sm flex items-center gap-2">
+                <span>{anomalies.duplicateLeagues.length} Liga(s) com Variações ou Sinônimos Detectados</span>
+                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-mono rounded-full border border-amber-500/30">
+                  Ação Recomendada
+                </span>
+              </div>
+              <p className="text-xs text-amber-300/80">
+                {anomalies.duplicateLeagues.map(d => `${d.canonicalName} (${d.leagueNames.join(' + ')})`).join(', ')} podem ser unificadas em uma única liga com todas as partidas consolidadas.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenSanitizerModal}
+            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs rounded-xl shadow-lg shadow-amber-500/10 flex items-center gap-1.5 transition-all hover:scale-[1.02] cursor-pointer shrink-0"
+          >
+            <Sparkles className="w-4 h-4" />
+            Unificar Ligas Duplicadas
+          </button>
+        </div>
+      )}
+
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0e0e0e] border border-white/10 rounded-2xl p-4 shadow-xl">
         <div>
@@ -93,6 +130,16 @@ export const LeagueManager: React.FC<LeagueManagerProps> = ({
               className="bg-[#1a1a1a] border border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
             />
           </div>
+
+          {onOpenSanitizerModal && (
+            <button
+              onClick={onOpenSanitizerModal}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 font-bold text-xs rounded-xl transition-all"
+              title="Verificar integridade do banco de dados e unificar sinônimos de ligas"
+            >
+              <Zap className="w-3.5 h-3.5 text-indigo-400" /> Sanitizar Ligas
+            </button>
+          )}
 
           {isMaster && (
             <button

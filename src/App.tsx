@@ -1736,6 +1736,7 @@ export default function App() {
                 onUpdateLeagueLogo={handleUpdateLeagueLogo}
                 onEditLeague={handleOpenEditLeague}
                 onNavigateToStandings={() => setActiveTab('standings')}
+                onOpenSanitizerModal={() => setIsSanitizerModalOpen(true)}
               />
             )}
 

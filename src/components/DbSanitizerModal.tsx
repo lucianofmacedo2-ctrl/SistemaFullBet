@@ -192,6 +192,46 @@ export const DbSanitizerModal: React.FC<DbSanitizerModalProps> = ({
             </div>
           )}
 
+          {/* Duplicate Leagues List */}
+          {report.duplicateLeagues && report.duplicateLeagues.length > 0 && (
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <Layers className="w-4 h-4 text-emerald-600" />
+                  <span>Ligas Duplicadas ou Sinônimos Detectados ({report.duplicateLeagues.length})</span>
+                </h3>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  Serão mescladas em 1 única liga com todos os jogos unificados
+                </span>
+              </div>
+              <div className="max-h-48 overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-2 bg-slate-50">
+                {report.duplicateLeagues.map((dup, idx) => (
+                  <div key={idx} className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-slate-900 text-sm">{dup.canonicalName}</span>
+                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-[11px] font-bold">
+                          {dup.countryName}
+                        </span>
+                      </div>
+                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-950 font-bold text-xs rounded-full">
+                        Total consolidado: {dup.totalMatches} partidas
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-600 flex flex-wrap items-center gap-1.5 pt-0.5">
+                      <span className="font-semibold text-slate-700">Variações encontradas:</span>
+                      {dup.leagueNames.map((nameStr, nIdx) => (
+                        <span key={nIdx} className="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded font-mono text-[11px] font-bold text-slate-800">
+                          {nameStr}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Duplicates List */}
           {report.duplicateTeams.length > 0 && (
             <div className="space-y-2.5">
