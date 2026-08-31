@@ -485,11 +485,12 @@ export const CANONICAL_CLUBS: Record<string, { countryCode: string; defaultLeagu
   venezia: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
   lecce: { countryCode: 'ITA', defaultLeaguePattern: 'Serie A' },
 
-  // Alemanha (ALE)
+  // Alemanha (ALE) - 1. Bundesliga
   bayern: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   'bayern munich': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   'bayern munchen': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   'bayern munique': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'bayern münchen': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   dortmund: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   'borussia dortmund': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   leverkusen: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
@@ -499,21 +500,124 @@ export const CANONICAL_CLUBS: Record<string, { countryCode: string; defaultLeagu
   frankfurt: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   'eintracht frankfurt': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   stuttgart: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
-  wolfsburg: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'vfb stuttgart': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   gladbach: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   'borussia monchengladbach': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  "borussia m'gladbach": { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'borussia mönchengladbach': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   freiburg: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'sc freiburg': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   augsburg: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'fc augsburg': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   bremen: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   'werder bremen': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
-  heidenheim: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   mainz: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
-  bochum: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
-  'st. pauli': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
-  'st pauli': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
-  'holstein kiel': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'mainz 05': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  '1. fsv mainz 05': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   'union berlin': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  '1. fc union berlin': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
   hoffenheim: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'tsg hoffenheim': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'tsg 1899 hoffenheim': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  '1. fc koln': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  '1. fc köln': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'fc koln': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'fc köln': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'hamburger sv': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  hsv: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'sc paderborn 07': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'paderborn 07': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'schalke 04': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  schalke: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'fc schalke 04': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  elversberg: { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+  'sv elversberg': { countryCode: 'ALE', defaultLeaguePattern: 'Bundesliga' },
+
+  // Alemanha (ALE) - 2. Bundesliga
+  'holstein kiel': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  kiel: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  heidenheim: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  '1. fc heidenheim': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'fc st. pauli': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'st. pauli': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'st pauli': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'sv darmstadt 98': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  darmstadt: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  magdeburg: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  '1. fc magdeburg': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'hertha bsc': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  hertha: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'hertha berlin': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'hannover 96': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  hannover: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  osnabruck: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'vfl osnabrück': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  bochum: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'vfl bochum': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  wolfsburg: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'vfl wolfsburg': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  kaiserslautern: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  '1. fc kaiserslautern': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  '1. fc nurnberg': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  '1. fc nürnberg': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  nurnberg: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  nürnberg: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  bielefeld: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'arminia bielefeld': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  braunschweig: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'eintracht braunschweig': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  cottbus: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'energie cottbus': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  dresden: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'dynamo dresden': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  furth: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'greuther furth': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'greuther fürth': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  karlsruher: { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+  'karlsruher sc': { countryCode: 'ALE', defaultLeaguePattern: '2. Bundesliga' },
+
+  // Alemanha (ALE) - 3. Liga
+  aachen: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'alemannia aachen': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  duisburg: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'msv duisburg': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'fortuna dusseldorf': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'fortuna düsseldorf': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'fortuna koln': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'fortuna köln': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  grossaspach: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  havelse: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'hoffenheim ii': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  ingolstadt: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'fc ingolstadt 04': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  mannheim: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'waldhof mannheim': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  meppen: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'sv meppen': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  munster: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  münster: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'preussen munster': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'preußen münster': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'rw essen': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'rot-weiss essen': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  regensburg: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'jahn regensburg': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  rostock: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'hansa rostock': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  saarbrucken: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  saarbrücken: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  '1. fc saarbrücken': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'stuttgart ii': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'vfb stuttgart ii': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  verl: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'sc verl': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'viktoria koln': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'viktoria köln': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  wehen: { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'wehen wiesbaden': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'sv wehen wiesbaden': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'wurzburger kickers': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
+  'würzburger kickers': { countryCode: 'ALE', defaultLeaguePattern: '3. Liga' },
 
   // França (FRA)
   psg: { countryCode: 'FRA', defaultLeaguePattern: 'Championnat' },
@@ -603,6 +707,51 @@ export const CANONICAL_CLUBS: Record<string, { countryCode: string; defaultLeagu
   'america-mg': { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
   'américa-mg': { countryCode: 'BRA', defaultLeaguePattern: 'Brasileir' },
 };
+
+/**
+ * Compara o nome da liga com um padrão canônico (evitando falso-positivo entre 1ª, 2ª e 3ª divisões).
+ */
+export function matchLeagueByPattern(leagueName: string, pattern: string): boolean {
+  const normLeague = (leagueName || '').toLowerCase().trim();
+  const normPattern = (pattern || '').toLowerCase().trim();
+  if (!normLeague || !normPattern) return false;
+
+  if (normPattern === '2. bundesliga' || normPattern === '2.bundesliga' || normPattern === 'bundesliga 2' || normPattern === '2 bundesliga') {
+    return normLeague.includes('2. bundesliga') || normLeague.includes('bundesliga 2') || normLeague.includes('2 bundesliga');
+  }
+  if (normPattern === '3. liga' || normPattern === '3 liga' || normPattern === 'liga 3') {
+    return normLeague.includes('3. liga') || normLeague.includes('3 liga') || normLeague.includes('liga 3');
+  }
+  if (normPattern === 'bundesliga' || normPattern === 'bundesliga 1' || normPattern === '1. bundesliga') {
+    // Não pode casar com 2. Bundesliga nem 3. Liga
+    return (normLeague.includes('bundesliga') && !normLeague.includes('2.') && !normLeague.includes('2 ') && !normLeague.includes('bundesliga 2')) || normLeague === 'bundesliga' || normLeague.includes('bundesliga 1');
+  }
+  if (normPattern === 'serie a') {
+    return (normLeague.includes('serie a') && !normLeague.includes('serie a2') && !normLeague.includes('serie b')) || normLeague === 'serie a';
+  }
+  if (normPattern === 'serie b') {
+    return normLeague.includes('serie b');
+  }
+  if (normPattern === 'la liga' || normPattern === 'la liga 1') {
+    return (normLeague.includes('la liga') && !normLeague.includes('la liga 2') && !normLeague.includes('hypermotion')) || normLeague === 'la liga';
+  }
+  if (normPattern === 'la liga 2' || normPattern === 'segunda división') {
+    return normLeague.includes('la liga 2') || normLeague.includes('segunda') || normLeague.includes('hypermotion');
+  }
+  if (normPattern === 'premier league' || normPattern === 'premier') {
+    return normLeague.includes('premier') && !normLeague.includes('2');
+  }
+  if (normPattern === 'championship') {
+    return normLeague.includes('championship');
+  }
+  if (normPattern === 'league 1' || normPattern === 'league one') {
+    return normLeague.includes('league 1') || normLeague.includes('league one');
+  }
+  if (normPattern === 'league 2' || normPattern === 'league two') {
+    return normLeague.includes('league 2') || normLeague.includes('league two');
+  }
+  return normLeague.includes(normPattern);
+}
 
 /**
  * Retorna dados canônicos de País e Liga se o time for reconhecido.
@@ -730,7 +879,7 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
       // Procurar liga correta no país alvo SOMENTE se o time não possuir nenhuma liga ou sua liga for de outro país
       if (targetCountry && (!cloned.leagueId || !leagueById.has(cloned.leagueId) || leagueById.get(cloned.leagueId)?.countryId !== targetCountry.id)) {
         const matchingLeague = leagues.find(
-          l => l.countryId === targetCountry.id && l.name.toLowerCase().includes(canonical.defaultLeaguePattern.toLowerCase())
+          l => l.countryId === targetCountry.id && matchLeagueByPattern(l.name, canonical.defaultLeaguePattern)
         );
         if (matchingLeague && cloned.leagueId !== matchingLeague.id) {
           cloned.leagueId = matchingLeague.id;
@@ -1002,7 +1151,7 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
       if (c) {
         targetCountryId = c.id;
         targetCountryName = c.name;
-        const matchingLeague = leagues.find(l => l.countryId === c.id && l.name.toLowerCase().includes(htCanonical.defaultLeaguePattern.toLowerCase()));
+        const matchingLeague = leagues.find(l => l.countryId === c.id && matchLeagueByPattern(l.name, htCanonical.defaultLeaguePattern));
         if (matchingLeague) {
           targetLeagueId = matchingLeague.id;
           targetLeagueName = matchingLeague.name;
@@ -1026,7 +1175,7 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
       if (c) {
         targetCountryId = c.id;
         targetCountryName = c.name;
-        const matchingLeague = leagues.find(l => l.countryId === c.id && l.name.toLowerCase().includes(htCanonical.defaultLeaguePattern.toLowerCase()));
+        const matchingLeague = leagues.find(l => l.countryId === c.id && matchLeagueByPattern(l.name, htCanonical.defaultLeaguePattern));
         if (matchingLeague) {
           targetLeagueId = matchingLeague.id;
           targetLeagueName = matchingLeague.name;
@@ -1037,7 +1186,7 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
       if (c) {
         targetCountryId = c.id;
         targetCountryName = c.name;
-        const matchingLeague = leagues.find(l => l.countryId === c.id && l.name.toLowerCase().includes(atCanonical.defaultLeaguePattern.toLowerCase()));
+        const matchingLeague = leagues.find(l => l.countryId === c.id && matchLeagueByPattern(l.name, atCanonical.defaultLeaguePattern));
         if (matchingLeague) {
           targetLeagueId = matchingLeague.id;
           targetLeagueName = matchingLeague.name;
