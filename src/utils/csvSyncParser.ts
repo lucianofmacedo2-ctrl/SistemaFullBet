@@ -682,14 +682,106 @@ export function parseAndSyncCsvLocally(
     // Exact Stats matching columns
     const xgHome = safeNum(getRowValue(r, ['xG_Mandante_FT', 'HxG', 'xG_Home', 'xG_Mandante', 'finalizacoes_xg_mandante_ft', 'xg_mandante']));
     const xgAway = safeNum(getRowValue(r, ['xG_Visitante_FT', 'AxG', 'xG_Away', 'xG_Visitante', 'finalizacoes_xg_visitante_ft', 'xg_visitante']));
+    const xgotHome = safeNum(getRowValue(r, ['finalizacoes_xgot_mandante_ft', 'xgot_mandante_ft', 'xgot_mandante', 'xgot_home_ft', 'xgot_home', 'hxgot']));
+    const xgotAway = safeNum(getRowValue(r, ['finalizacoes_xgot_visitante_ft', 'xgot_visitante_ft', 'xgot_visitante', 'xgot_away_ft', 'xgot_away', 'axgot']));
+
     const shotsHome = safeNum(getRowValue(r, ['Finalizacoes_Mandante_FT', 'HS', 'Finalizacoes_Mandante', 'Chutes_Mandante', 'finalizacoes_totais_mandante_ft']));
     const shotsAway = safeNum(getRowValue(r, ['Finalizacoes_Visitante_FT', 'AS', 'Finalizacoes_Visitante', 'Chutes_Visitante', 'finalizacoes_totais_visitante_ft']));
     const shotsOnTargetHome = safeNum(getRowValue(r, ['Chutes_Gol_Mandante_FT', 'HST', 'Chutes_Gol_Mandante', 'ChutesNoAlvo_Mandante', 'finalizacoes_no_alvo_mandante_ft']));
     const shotsOnTargetAway = safeNum(getRowValue(r, ['Chutes_Gol_Visitante_FT', 'AST', 'Chutes_Gol_Visitante', 'ChutesNoAlvo_Visitante', 'finalizacoes_no_alvo_visitante_ft']));
-    const foulsHome = safeNum(getRowValue(r, ['Faltas_Mandante_FT', 'HF', 'Faltas_Mandante', 'defesa_faltas_mandante_ft']));
-    const foulsAway = safeNum(getRowValue(r, ['Faltas_Visitante_FT', 'AF', 'Faltas_Visitante', 'defesa_faltas_visitante_ft']));
+    const shotsOffTargetHome = safeNum(getRowValue(r, ['finalizacoes_para_fora_mandante_ft', 'shots_off_target_home', 'chutes_fora_mandante']));
+    const shotsOffTargetAway = safeNum(getRowValue(r, ['finalizacoes_para_fora_visitante_ft', 'shots_off_target_away', 'chutes_fora_visitante']));
+    const shotsBlockedHome = safeNum(getRowValue(r, ['finalizacoes_bloqueadas_mandante_ft', 'shots_blocked_home', 'chutes_bloqueados_mandante']));
+    const shotsBlockedAway = safeNum(getRowValue(r, ['finalizacoes_bloqueadas_visitante_ft', 'shots_blocked_away', 'chutes_bloqueados_visitante']));
+    const shotsInsideBoxHome = safeNum(getRowValue(r, ['finalizacoes_dentro_area_mandante_ft', 'shots_inside_box_home', 'chutes_dentro_area_mandante']));
+    const shotsInsideBoxAway = safeNum(getRowValue(r, ['finalizacoes_dentro_area_visitante_ft', 'shots_inside_box_away', 'chutes_dentro_area_visitante']));
+    const shotsOutsideBoxHome = safeNum(getRowValue(r, ['finalizacoes_fora_area_mandante_ft', 'shots_outside_box_home', 'chutes_fora_area_mandante']));
+    const shotsOutsideBoxAway = safeNum(getRowValue(r, ['finalizacoes_fora_area_visitante_ft', 'shots_outside_box_away', 'chutes_fora_area_visitante']));
+    const shotsWoodworkHome = safeNum(getRowValue(r, ['finalizacoes_trave_mandante_ft', 'shots_woodwork_home', 'bolas_trave_mandante']));
+    const shotsWoodworkAway = safeNum(getRowValue(r, ['finalizacoes_trave_visitante_ft', 'shots_woodwork_away', 'bolas_trave_visitante']));
+
+    // Ataque
+    const bigChancesHome = safeNum(getRowValue(r, ['ataque_chances_claras_mandante_ft', 'big_chances_home', 'chances_claras_mandante']));
+    const bigChancesAway = safeNum(getRowValue(r, ['ataque_chances_claras_visitante_ft', 'big_chances_away', 'chances_claras_visitante']));
     const cornersHome = safeNum(getRowValue(r, ['Escanteios_Mandante_FT', 'HC', 'Escanteios_Mandante', 'Cantos_Mandante', 'ataque_escanteios_mandante_ft']));
     const cornersAway = safeNum(getRowValue(r, ['Escanteios_Visitante_FT', 'AC', 'Escanteios_Visitante', 'Cantos_Visitante', 'ataque_escanteios_visitante_ft']));
+    const touchesOppBoxHome = safeNum(getRowValue(r, ['ataque_toques_area_adv_mandante_ft', 'touches_opp_box_home', 'toques_area_adv_mandante']));
+    const touchesOppBoxAway = safeNum(getRowValue(r, ['ataque_toques_area_adv_visitante_ft', 'touches_opp_box_away', 'toques_area_adv_visitante']));
+    const throughBallsHome = safeNum(getRowValue(r, ['ataque_passes_profundidade_certos_mandante_ft', 'through_balls_home', 'passes_profundidade_mandante']));
+    const throughBallsAway = safeNum(getRowValue(r, ['ataque_passes_profundidade_certos_visitante_ft', 'through_balls_away', 'passes_profundidade_visitante']));
+    const offsidesHome = safeNum(getRowValue(r, ['ataque_impedimentos_mandante_ft', 'offsides_home', 'impedimentos_mandante']));
+    const offsidesAway = safeNum(getRowValue(r, ['ataque_impedimentos_visitante_ft', 'offsides_away', 'impedimentos_visitante']));
+    const foulsDrawnHome = safeNum(getRowValue(r, ['ataque_faltas_cobradas_mandante_ft', 'fouls_drawn_home', 'faltas_sofridas_mandante']));
+    const foulsDrawnAway = safeNum(getRowValue(r, ['ataque_faltas_cobradas_visitante_ft', 'fouls_drawn_away', 'faltas_sofridas_visitante']));
+
+    // Passes
+    const passesAccurateHome = safeNum(getRowValue(r, ['passes_certos_mandante_ft', 'passes_accurate_home']));
+    const passesTotalHome = safeNum(getRowValue(r, ['passes_totais_mandante_ft', 'passes_total_home']));
+    const passesPctHome = safeNum(getRowValue(r, ['passes_precisao_pct_mandante_ft', 'passes_pct_home']));
+    const passesAccurateAway = safeNum(getRowValue(r, ['passes_certos_visitante_ft', 'passes_accurate_away']));
+    const passesTotalAway = safeNum(getRowValue(r, ['passes_totais_visitante_ft', 'passes_total_away']));
+    const passesPctAway = safeNum(getRowValue(r, ['passes_precisao_pct_visitante_ft', 'passes_pct_away']));
+
+    const longPassesAccurateHome = safeNum(getRowValue(r, ['passes_longos_certos_mandante_ft', 'long_passes_accurate_home']));
+    const longPassesTotalHome = safeNum(getRowValue(r, ['passes_longos_totais_mandante_ft', 'long_passes_total_home']));
+    const longPassesPctHome = safeNum(getRowValue(r, ['passes_longos_pct_mandante_ft', 'long_passes_pct_home']));
+    const longPassesAccurateAway = safeNum(getRowValue(r, ['passes_longos_certos_visitante_ft', 'long_passes_accurate_away']));
+    const longPassesTotalAway = safeNum(getRowValue(r, ['passes_longos_totais_visitante_ft', 'long_passes_total_away']));
+    const longPassesPctAway = safeNum(getRowValue(r, ['passes_longos_pct_visitante_ft', 'long_passes_pct_away']));
+
+    const finalThirdPassesAccurateHome = safeNum(getRowValue(r, ['passes_terco_final_certos_mandante_ft', 'final_third_passes_accurate_home']));
+    const finalThirdPassesTotalHome = safeNum(getRowValue(r, ['passes_terco_final_totais_mandante_ft', 'final_third_passes_total_home']));
+    const finalThirdPassesPctHome = safeNum(getRowValue(r, ['passes_terco_final_pct_mandante_ft', 'final_third_passes_pct_home']));
+    const finalThirdPassesAccurateAway = safeNum(getRowValue(r, ['passes_terco_final_certos_visitante_ft', 'final_third_passes_accurate_away']));
+    const finalThirdPassesTotalAway = safeNum(getRowValue(r, ['passes_terco_final_totais_visitante_ft', 'final_third_passes_total_away']));
+    const finalThirdPassesPctAway = safeNum(getRowValue(r, ['passes_terco_final_pct_visitante_ft', 'final_third_passes_pct_away']));
+
+    const crossesAccurateHome = safeNum(getRowValue(r, ['passes_cruzamentos_certos_mandante_ft', 'crosses_accurate_home']));
+    const crossesTotalHome = safeNum(getRowValue(r, ['passes_cruzamentos_totais_mandante_ft', 'crosses_total_home']));
+    const crossesPctHome = safeNum(getRowValue(r, ['passes_cruzamentos_pct_mandante_ft', 'crosses_pct_home']));
+    const crossesAccurateAway = safeNum(getRowValue(r, ['passes_cruzamentos_certos_visitante_ft', 'crosses_accurate_away']));
+    const crossesTotalAway = safeNum(getRowValue(r, ['passes_cruzamentos_totais_visitante_ft', 'crosses_total_away']));
+    const crossesPctAway = safeNum(getRowValue(r, ['passes_cruzamentos_pct_visitante_ft', 'crosses_pct_away']));
+
+    const xaHome = safeNum(getRowValue(r, ['passes_xa_mandante_ft', 'xa_home']));
+    const xaAway = safeNum(getRowValue(r, ['passes_xa_visitante_ft', 'xa_away']));
+    const throwInsHome = safeNum(getRowValue(r, ['passes_laterais_cobrados_mandante_ft', 'throw_ins_home', 'laterais_mandante']));
+    const throwInsAway = safeNum(getRowValue(r, ['passes_laterais_cobrados_visitante_ft', 'throw_ins_away', 'laterais_visitante']));
+
+    // Defesa & Faltas
+    const foulsHome = safeNum(getRowValue(r, ['Faltas_Mandante_FT', 'HF', 'Faltas_Mandante', 'defesa_faltas_mandante_ft']));
+    const foulsAway = safeNum(getRowValue(r, ['Faltas_Visitante_FT', 'AF', 'Faltas_Visitante', 'defesa_faltas_visitante_ft']));
+    const tacklesAccurateHome = safeNum(getRowValue(r, ['defesa_desarmes_certos_mandante_ft', 'tackles_accurate_home']));
+    const tacklesTotalHome = safeNum(getRowValue(r, ['defesa_desarmes_totais_mandante_ft', 'tackles_total_home']));
+    const tacklesPctHome = safeNum(getRowValue(r, ['defesa_desarmes_pct_mandante_ft', 'tackles_pct_home']));
+    const tacklesAccurateAway = safeNum(getRowValue(r, ['defesa_desarmes_certos_visitante_ft', 'tackles_accurate_away']));
+    const tacklesTotalAway = safeNum(getRowValue(r, ['defesa_desarmes_totais_visitante_ft', 'tackles_total_away']));
+    const tacklesPctAway = safeNum(getRowValue(r, ['defesa_desarmes_pct_visitante_ft', 'tackles_pct_away']));
+
+    const duelsWonHome = safeNum(getRowValue(r, ['defesa_duelos_ganhos_mandante_ft', 'duels_won_home']));
+    const duelsWonAway = safeNum(getRowValue(r, ['defesa_duelos_ganhos_visitante_ft', 'duels_won_away']));
+    const clearancesHome = safeNum(getRowValue(r, ['defesa_rebatidas_mandante_ft', 'clearances_home', 'rebatidas_mandante']));
+    const clearancesAway = safeNum(getRowValue(r, ['defesa_rebatidas_visitante_ft', 'clearances_away', 'rebatidas_visitante']));
+    const interceptionsHome = safeNum(getRowValue(r, ['defesa_interceptacoes_mandante_ft', 'interceptions_home', 'interceptacoes_mandante']));
+    const interceptionsAway = safeNum(getRowValue(r, ['defesa_interceptacoes_visitante_ft', 'interceptions_away', 'interceptacoes_visitante']));
+    const errorsLeadToShotHome = safeNum(getRowValue(r, ['defesa_erros_resultaram_finalizacao_mandante_ft', 'errors_lead_to_shot_home']));
+    const errorsLeadToShotAway = safeNum(getRowValue(r, ['defesa_erros_resultaram_finalizacao_visitante_ft', 'errors_lead_to_shot_away']));
+    const errorsLeadToGoalHome = safeNum(getRowValue(r, ['defesa_erros_resultaram_gol_mandante_ft', 'errors_lead_to_goal_home']));
+    const errorsLeadToGoalAway = safeNum(getRowValue(r, ['defesa_erros_resultaram_gol_visitante_ft', 'errors_lead_to_goal_away']));
+    const goalkeeperDefActionHome = safeNum(getRowValue(r, ['defesa_goleiro_mandante_ft', 'goalkeeper_def_action_home']));
+    const goalkeeperDefActionAway = safeNum(getRowValue(r, ['defesa_goleiro_visitante_ft', 'goalkeeper_def_action_away']));
+
+    // Goleiro
+    const savesHome = safeNum(getRowValue(r, ['goleiro_defesas_mandante_ft', 'saves_home', 'defesas_goleiro_mandante']));
+    const savesAway = safeNum(getRowValue(r, ['goleiro_defesas_visitante_ft', 'saves_away', 'defesas_goleiro_visitante']));
+    const xgotFacedHome = safeNum(getRowValue(r, ['goleiro_xgot_enfrentado_mandante_ft', 'xgot_faced_home']));
+    const xgotFacedAway = safeNum(getRowValue(r, ['goleiro_xgot_enfrentado_visitante_ft', 'xgot_faced_away']));
+    const goalsPreventedHome = safeNum(getRowValue(r, ['goleiro_gols_evitados_mandante_ft', 'goals_prevented_home']));
+    const goalsPreventedAway = safeNum(getRowValue(r, ['goleiro_gols_evitados_visitante_ft', 'goals_prevented_away']));
+    const goalKicksHome = safeNum(getRowValue(r, ['goleiro_tiros_de_meta_mandante_ft', 'goal_kicks_home', 'tiros_meta_mandante']));
+    const goalKicksAway = safeNum(getRowValue(r, ['goleiro_tiros_de_meta_visitante_ft', 'goal_kicks_away', 'tiros_meta_visitante']));
+
+    // Disciplina
     const yellowHome = safeNum(getRowValue(r, ['Cartao_Amarelo_Mandante_FT', 'HY', 'Amarelos_Mandante', 'Cartoes_Amarelos_Mandante', 'cartao_amarelo_mandante_ft']));
     const yellowAway = safeNum(getRowValue(r, ['Cartao_Amarelo_Visitante_FT', 'AY', 'Amarelos_Visitante', 'Cartoes_Amarelos_Visitante', 'cartao_amarelo_visitante_ft']));
     const redHome = safeNum(getRowValue(r, ['Cartao_Vermelho_Mandante_FT', 'HR', 'Vermelhos_Mandante', 'Cartoes_Vermelhos_Mandante', 'cartao_vermelho_mandante_ft']));
