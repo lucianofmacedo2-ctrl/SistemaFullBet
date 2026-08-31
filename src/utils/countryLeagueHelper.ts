@@ -887,98 +887,18 @@ export function ensureCanonicalCountriesAndLeagues(dbState: DbState): DbState {
     }
   });
 
-  // 1. Ensure all Canonical Countries exist in countries list
-  for (const canon of CANONICAL_COUNTRIES) {
-    let country = countryByNorm.get(normalizeText(canon.name)) || countryByNorm.get(canon.code.toUpperCase());
-    if (!country) {
-      maxCountryNum++;
-      const newCountryId = `PAIS-${String(maxCountryNum).padStart(3, '0')}`;
-      country = {
-        id: newCountryId,
-        name: canon.name,
-        code: canon.code,
-        flagUrl: canon.flag,
-        createdAt: new Date().toISOString(),
-      };
-      countries.push(country);
-      countryById.set(country.id, country);
-      countryByNorm.set(normalizeText(canon.name), country);
-      countryByNorm.set(canon.code.toUpperCase(), country);
-    } else {
-      // Ensure code and flag
+  // 1. Enrich existing countries with standard code & flag if available
+  for (const country of countries) {
+    const canon = CANONICAL_COUNTRIES.find(
+      c => normalizeText(c.name) === normalizeText(country.name) || c.code.toUpperCase() === country.code?.toUpperCase()
+    );
+    if (canon) {
       if (!country.code) country.code = canon.code;
-      if (!country.flagUrl && canon.flag) country.flagUrl = canon.flag;
-    }
-
-    // 2. Ensure Leagues for this Country
-    for (const canonLeague of canon.leagues) {
-      const normLeagueName = normalizeText(canonLeague.name);
-      let league = leagues.find(
-        l =>
-          (l.countryId === country!.id || normalizeText(l.countryName) === normalizeText(country!.name)) &&
-          (normalizeText(l.name) === normLeagueName || normalizeText(l.name).includes(normLeagueName))
-      );
-
-      if (!league) {
-        maxLeagueNum++;
-        const newLeagueId = `LIGA-${String(maxLeagueNum).padStart(3, '0')}`;
-        league = {
-          id: newLeagueId,
-          name: canonLeague.name,
-          countryId: country.id,
-          countryName: country.name,
-          type: canonLeague.type || 'Pontos Corridos',
-          createdAt: new Date().toISOString(),
-        };
-        leagues.push(league);
-      } else {
-        // Heal linkage
-        if (league.countryId !== country.id) {
-          league.countryId = country.id;
-        }
-        if (!league.countryName || league.countryName !== country.name) {
-          league.countryName = country.name;
-        }
-      }
-
-      // 3. Ensure Teams for this League
-      for (const teamName of canonLeague.teams) {
-        const normTeamName = normalizeText(teamName);
-        let team = teams.find(
-          t =>
-            (t.countryId === country!.id || normalizeText(t.countryName) === normalizeText(country!.name)) &&
-            normalizeText(t.name) === normTeamName
-        );
-
-        if (!team) {
-          maxTeamNum++;
-          const newTeamId = `TIME-${String(maxTeamNum).padStart(3, '0')}`;
-          team = {
-            id: newTeamId,
-            name: teamName,
-            countryId: country.id,
-            countryName: country.name,
-            leagueId: league.id,
-            leagueName: league.name,
-            leagueIds: [league.id],
-            createdAt: new Date().toISOString(),
-          };
-          teams.push(team);
-        } else {
-          // Heal team links
-          if (team.countryId !== country.id) team.countryId = country.id;
-          if (!team.countryName) team.countryName = country.name;
-          if (!team.leagueId) team.leagueId = league.id;
-          if (!team.leagueName) team.leagueName = league.name;
-          if (!team.leagueIds || !team.leagueIds.includes(league.id)) {
-            team.leagueIds = [...(team.leagueIds || []), league.id];
-          }
-        }
-      }
+      if (!country.flagUrl) country.flagUrl = canon.flag;
     }
   }
 
-  // 4. Heal any existing leagues and matches with loose countryIds
+  // 2. Heal existing leagues and matches with proper countryIds
   leagues.forEach(l => {
     if (!l.countryId || !countryById.has(l.countryId)) {
       const matchCountry =

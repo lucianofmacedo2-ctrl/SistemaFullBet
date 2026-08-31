@@ -319,10 +319,10 @@ export default function App() {
         setDbState(prev => {
           // If cloud data is richer or updated, seamlessly update local UI
           return {
-            countries: cloudDb.countries?.length > 0 ? cloudDb.countries : prev.countries,
-            leagues: cloudDb.leagues?.length > 0 ? cloudDb.leagues : prev.leagues,
-            teams: cloudDb.teams?.length > 0 ? cloudDb.teams : prev.teams,
-            matches: cloudDb.matches?.length > 0 ? cloudDb.matches : prev.matches,
+            countries: cloudDb.countries || [],
+            leagues: cloudDb.leagues || [],
+            teams: cloudDb.teams || [],
+            matches: cloudDb.matches || [],
             users: ensureDefaultUsers(cloudDb.users?.length > 0 ? cloudDb.users : prev.users),
           };
         });

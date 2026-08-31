@@ -9,6 +9,8 @@ export interface ClientSyncResult {
   totalLeagues: number;
   totalTeams: number;
   totalMatches: number;
+  finishedMatchesCount?: number;
+  futureMatchesCount?: number;
   newCountriesCount: number;
   newLeaguesCount: number;
   newTeamsCount: number;
@@ -350,20 +352,22 @@ function getHighestIdNumber(prefix: string, items: { id?: string }[]): number {
 
 export function parseAndSyncCsvLocally(
   csvText: string,
-  currentDb: DbState
+  currentDb: DbState,
+  options?: { replaceEntireDb?: boolean }
 ): { updatedDb: DbState; result: ClientSyncResult } {
+  const replace = options?.replaceEntireDb ?? true;
   const parsedRows = parseCsvLines(csvText);
 
-  const countries = [...(currentDb.countries || [])];
-  const leagues = [...(currentDb.leagues || [])];
-  const teams = [...(currentDb.teams || [])];
-  const matches = [...(currentDb.matches || [])];
+  const countries = replace ? [] : [...(currentDb.countries || [])];
+  const leagues = replace ? [] : [...(currentDb.leagues || [])];
+  const teams = replace ? [] : [...(currentDb.teams || [])];
+  const matches = replace ? [] : [...(currentDb.matches || [])];
 
   // Track highest ID numbers to ensure unique sequential IDs
-  let nextCountryNum = Math.max(countries.length, getHighestIdNumber('PAIS', countries));
-  let nextLeagueNum = Math.max(leagues.length, getHighestIdNumber('LIGA', leagues));
-  let nextTeamNum = Math.max(teams.length, getHighestIdNumber('TIME', teams));
-  let nextMatchNum = Math.max(matches.length, getHighestIdNumber('JOGO', matches));
+  let nextCountryNum = replace ? 0 : Math.max(countries.length, getHighestIdNumber('PAIS', countries));
+  let nextLeagueNum = replace ? 0 : Math.max(leagues.length, getHighestIdNumber('LIGA', leagues));
+  let nextTeamNum = replace ? 0 : Math.max(teams.length, getHighestIdNumber('TIME', teams));
+  let nextMatchNum = replace ? 0 : Math.max(matches.length, getHighestIdNumber('JOGO', matches));
 
   // Multi-index Maps for ultra-fast and resilient lookups
   const countriesMap = new Map<string, Country>();
@@ -939,13 +943,20 @@ export function parseAndSyncCsvLocally(
 
   const { cleanedDb } = sanitizeAndCleanDb(rawUpdatedDb);
 
+  const finishedMatchesCount = cleanedDb.matches.filter(m => m.status === 'FINALIZADO').length;
+  const futureMatchesCount = cleanedDb.matches.filter(m => m.status === 'AGENDADO').length;
+
   const result: ClientSyncResult = {
     success: parsedRows.length > 0,
-    message: `Processamento concluído com sucesso: +${newTeamsCount} times, +${newLeaguesCount} ligas, +${newCountriesCount} países e +${newMatchesCount} jogos consolidados!`,
+    message: replace
+      ? `Base sincronizada com sucesso: ${cleanedDb.countries.length} país(es), ${cleanedDb.leagues.length} liga(s), ${cleanedDb.teams.length} times e ${cleanedDb.matches.length} jogos (${finishedMatchesCount} finalizados e ${futureMatchesCount} futuros)!`
+      : `Processamento concluído: +${newTeamsCount} times, +${newLeaguesCount} ligas, +${newCountriesCount} países e +${newMatchesCount} jogos adicionados/atualizados!`,
     totalCountries: cleanedDb.countries.length,
     totalLeagues: cleanedDb.leagues.length,
     totalTeams: cleanedDb.teams.length,
     totalMatches: cleanedDb.matches.length,
+    finishedMatchesCount,
+    futureMatchesCount,
     newCountriesCount,
     newLeaguesCount,
     newTeamsCount,

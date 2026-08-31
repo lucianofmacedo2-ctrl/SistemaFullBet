@@ -245,20 +245,6 @@ export async function fetchDatabaseState(): Promise<DbState> {
       matches: SEED_DATABASE.matches || [],
       users: SEED_DATABASE.users || [],
     };
-  } else {
-    // If dbData has missing countries or leagues compared to SEED_DATABASE, ensure base leagues exist
-    if ((!dbData.countries || dbData.countries.length === 0) && SEED_DATABASE.countries?.length > 0) {
-      dbData.countries = SEED_DATABASE.countries;
-    }
-    if ((!dbData.leagues || dbData.leagues.length === 0) && SEED_DATABASE.leagues?.length > 0) {
-      dbData.leagues = SEED_DATABASE.leagues;
-    }
-    if ((!dbData.teams || dbData.teams.length === 0) && SEED_DATABASE.teams?.length > 0) {
-      dbData.teams = SEED_DATABASE.teams;
-    }
-    if ((!dbData.matches || dbData.matches.length === 0) && SEED_DATABASE.matches?.length > 0) {
-      dbData.matches = SEED_DATABASE.matches;
-    }
   }
 
   // Resilient User Union across Firestore, LocalStorage, Server and Seed

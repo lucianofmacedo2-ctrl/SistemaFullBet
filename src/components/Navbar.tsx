@@ -336,8 +336,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                         >
                           <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
                           <div>
-                            <div className="font-bold text-slate-900">Subir CSV Consolidado</div>
-                            <div className="text-[10px] text-slate-500">Auto-cadastra ligas, times e odds</div>
+                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                              Sincronizar GitHub / CSV
+                              <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded">Auto</span>
+                            </div>
+                            <div className="text-[10px] text-slate-500">Puxa direto do repo ou sobe arquivo</div>
                           </div>
                         </button>
                       )}
