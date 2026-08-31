@@ -286,7 +286,7 @@ export async function fetchDatabaseState(): Promise<DbState> {
   localStorage.setItem(USERS_BACKUP_STORAGE_KEY, JSON.stringify(mergedUsers));
 
   // If corrections were made or initializing cloud for first time, sync back
-  if (stats.foreignLeaguesRemoved > 0 || stats.teamsCleaned > 0 || stats.duplicatesRemoved > 0) {
+  if (stats.foreignLeaguesRemoved > 0 || stats.teamsCleaned > 0 || stats.duplicatesRemoved > 0 || stats.matchesFixed > 0 || stats.details.length > 0) {
     saveDatabaseState(cleanedDb).catch(() => {});
   }
 

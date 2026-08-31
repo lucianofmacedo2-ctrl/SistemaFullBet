@@ -339,12 +339,32 @@ export const MatchList: React.FC<MatchListProps> = ({
         if (!matchesSearch) return false;
       }
 
-      if (filterCountryId && match.countryId !== filterCountryId) {
-        return false;
+      if (filterCountryId) {
+        const countryObj = countriesMap.get(filterCountryId) || (dbState.countries || []).find(c => c.id === filterCountryId);
+        const matchesCountry =
+          match.countryId === filterCountryId ||
+          (countryObj && match.countryName && match.countryName.toLowerCase().trim() === countryObj.name.toLowerCase().trim());
+        if (!matchesCountry) {
+          return false;
+        }
       }
       
-      if (selectedLeagueIds.length > 0 && !selectedLeagueIds.includes(match.leagueId)) {
-        return false;
+      if (selectedLeagueIds.length > 0) {
+        const matchesLeague = selectedLeagueIds.some(selId => {
+          if (match.leagueId === selId) return true;
+          const leagueObj = leaguesMap.get(selId) || (dbState.leagues || []).find(l => l.id === selId);
+          if (
+            leagueObj &&
+            ((match.leagueName && match.leagueName.toLowerCase().trim() === leagueObj.name.toLowerCase().trim()) ||
+              match.leagueId === leagueObj.id)
+          ) {
+            return true;
+          }
+          return false;
+        });
+        if (!matchesLeague) {
+          return false;
+        }
       }
 
       if (filterStatus && match.status !== filterStatus) {
@@ -577,9 +597,13 @@ export const MatchList: React.FC<MatchListProps> = ({
                     .map(league => {
                       const isSelected = selectedLeagueIds.includes(league.id);
                       return (
-                        <label
+                        <button
+                          type="button"
                           key={league.id}
-                          className="flex items-center justify-between p-1.5 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors"
+                          onClick={() => toggleLeagueSelection(league.id)}
+                          className={`w-full flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors text-left ${
+                            isSelected ? 'bg-blue-50/90 text-blue-950 font-bold border border-blue-200' : 'hover:bg-slate-50 text-slate-700'
+                          }`}
                         >
                           <div className="flex items-center gap-2 truncate">
                             {isSelected ? (
@@ -592,11 +616,11 @@ export const MatchList: React.FC<MatchListProps> = ({
                             </span>
                           </div>
                           {league.countryName && (
-                            <span className="text-[10px] text-slate-500 shrink-0 ml-2">
+                            <span className="text-[10px] text-slate-500 shrink-0 ml-2 bg-slate-100 px-1.5 py-0.5 rounded">
                               {league.countryName}
                             </span>
                           )}
-                        </label>
+                        </button>
                       );
                     })}
                 </div>

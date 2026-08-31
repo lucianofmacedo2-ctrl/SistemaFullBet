@@ -727,8 +727,8 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
         stats.details.push(`Time "${cloned.name}" corrigido para o país ${targetCountry.name}.`);
       }
 
-      // Procurar liga correta no país alvo
-      if (targetCountry) {
+      // Procurar liga correta no país alvo SOMENTE se o time não possuir nenhuma liga ou sua liga for de outro país
+      if (targetCountry && (!cloned.leagueId || !leagueById.has(cloned.leagueId) || leagueById.get(cloned.leagueId)?.countryId !== targetCountry.id)) {
         const matchingLeague = leagues.find(
           l => l.countryId === targetCountry.id && l.name.toLowerCase().includes(canonical.defaultLeaguePattern.toLowerCase())
         );
@@ -1077,6 +1077,22 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
       }
     }
 
+    // 2. Se ambos os times pertencem comprovadamente à mesma liga (ex: ambos da 2. Bundesliga), alinhar a partida a essa liga
+    if (ht?.leagueId && at?.leagueId && ht.leagueId === at.leagueId && match.leagueId !== ht.leagueId) {
+      const l = leagueById.get(ht.leagueId);
+      if (l) {
+        stats.details.push(`Partida "${match.homeTeamName} x ${match.awayTeamName}" realinhada para a liga "${l.name}" de ambos os clubes.`);
+        match.leagueId = l.id;
+        match.leagueName = l.name;
+        if (l.logoUrl) match.leagueLogoUrl = l.logoUrl;
+        if (l.countryId) {
+          match.countryId = l.countryId;
+          match.countryName = l.countryName || countryById.get(l.countryId)?.name || match.countryName;
+        }
+        matchModified = true;
+      }
+    }
+
     // Se encontramos país alvo e o país da partida está diferente ou incorreto:
     if (targetCountryId && match.countryId !== targetCountryId) {
       stats.details.push(`Partida "${match.homeTeamName} x ${match.awayTeamName}" reclassificada de "${match.countryName || 'País'}" para "${targetCountryName}".`);
@@ -1087,17 +1103,17 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
       matchModified = true;
     }
 
-    // Se encontramos liga alvo e a liga da partida está divergente ou de outro país:
-    if (targetLeagueId) {
-      const currentLeague = match.leagueId ? leagueById.get(match.leagueId) : null;
-      if (!currentLeague || currentLeague.countryId !== match.countryId || match.leagueId !== targetLeagueId) {
-        stats.details.push(`Partida "${match.homeTeamName} x ${match.awayTeamName}" reclassificada de "${match.leagueName || 'Liga'}" para "${targetLeagueName}".`);
-        match.leagueId = targetLeagueId;
-        match.leagueName = targetLeagueName;
-        const l = leagueById.get(targetLeagueId);
-        if (l?.logoUrl) match.leagueLogoUrl = l.logoUrl;
-        matchModified = true;
-      }
+    // Se a partida estiver sem liga ou com liga de outro país, usar liga alvo
+    const currentLeague = match.leagueId ? leagueById.get(match.leagueId) : null;
+    const isCurrentLeagueValid = currentLeague && (!currentLeague.countryId || !match.countryId || currentLeague.countryId === match.countryId);
+
+    if (!isCurrentLeagueValid && targetLeagueId) {
+      stats.details.push(`Partida "${match.homeTeamName} x ${match.awayTeamName}" reclassificada de "${match.leagueName || 'Liga'}" para "${targetLeagueName}".`);
+      match.leagueId = targetLeagueId;
+      match.leagueName = targetLeagueName;
+      const l = leagueById.get(targetLeagueId);
+      if (l?.logoUrl) match.leagueLogoUrl = l.logoUrl;
+      matchModified = true;
     } else if (match.leagueId && leagueById.has(match.leagueId)) {
       const l = leagueById.get(match.leagueId)!;
       if (match.leagueName !== l.name) {
