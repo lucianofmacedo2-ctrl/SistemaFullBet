@@ -218,11 +218,29 @@ export async function fetchDatabaseState(): Promise<DbState> {
         }
       }
     } catch (err) {
-      console.warn('Backend API not available, falling back to LocalStorage', err);
+      console.warn('Backend API not available, falling back to static /data/football_db.json or LocalStorage', err);
     }
   }
 
-  // 3. Fallback to local storage if API failed or returned empty
+  // 2.5 Fallback to static public JSON (/data/football_db.json) for static deploys (e.g. Vercel)
+  if (!dbData) {
+    try {
+      const response = await fetch('/data/football_db.json', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      if (response.ok) {
+        const staticData = await response.json();
+        if (staticData && (staticData.matches?.length > 0 || staticData.countries?.length > 0)) {
+          dbData = staticData;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // 3. Fallback to local storage if static fetch failed or returned empty
   if (!dbData) {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {

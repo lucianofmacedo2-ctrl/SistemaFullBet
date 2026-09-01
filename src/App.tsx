@@ -73,7 +73,6 @@ import {
   getOrCreateClientSessionId,
   ActiveSessionRecord,
 } from './services/sessionService';
-import defaultDatabaseData from './data/defaultDatabase.json';
 
 export default function App() {
   const [dbState, setDbState] = useState<DbState>(() => {
