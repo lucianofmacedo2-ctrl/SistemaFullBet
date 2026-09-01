@@ -1,6 +1,110 @@
 import { Match, Team, RadarCategory } from '../types';
 import { extractTeamMatches } from './analysisEngine';
 import { formatMatchTimeBRT } from './dateTimeUtils';
+import { normalizeText } from './countryLeagueHelper';
+
+export interface FastRadarMatchSample {
+  matchId: string;
+  matchDate: string;
+  isHome: boolean;
+  teamGoals: number;
+  oppGoals: number;
+  teamGoalsHT: number;
+  oppGoalsHT: number;
+  result: 'W' | 'D' | 'L';
+}
+
+export type RadarTeamMap = Map<string, FastRadarMatchSample[]>;
+
+/**
+ * Builds an ultra-fast O(N) indexed team map to eliminate O(N^2) scans across the entire database
+ */
+export function buildRadarTeamMap(allMatches: Match[] = [], teams: Team[] = []): RadarTeamMap {
+  const map: RadarTeamMap = new Map();
+
+  for (const m of allMatches) {
+    const isFinished = m.status === 'FINALIZADO' ||
+      (m.homeScore !== undefined && m.awayScore !== undefined && m.homeScore !== null && m.awayScore !== null);
+    if (!isFinished) continue;
+
+    const hScore = Number(m.homeScore ?? 0);
+    const aScore = Number(m.awayScore ?? 0);
+    const hHT = m.stats?.halftimeHomeScore !== undefined && m.stats?.halftimeHomeScore !== null
+      ? Number(m.stats.halftimeHomeScore)
+      : 0;
+    const aHT = m.stats?.halftimeAwayScore !== undefined && m.stats?.halftimeAwayScore !== null
+      ? Number(m.stats.halftimeAwayScore)
+      : 0;
+
+    const hRes: 'W' | 'D' | 'L' = hScore > aScore ? 'W' : (hScore === aScore ? 'D' : 'L');
+    const aRes: 'W' | 'D' | 'L' = aScore > hScore ? 'W' : (aScore === hScore ? 'D' : 'L');
+
+    const homeItem: FastRadarMatchSample = {
+      matchId: m.id,
+      matchDate: m.matchDate || '',
+      isHome: true,
+      teamGoals: hScore,
+      oppGoals: aScore,
+      teamGoalsHT: hHT,
+      oppGoalsHT: aHT,
+      result: hRes,
+    };
+
+    const awayItem: FastRadarMatchSample = {
+      matchId: m.id,
+      matchDate: m.matchDate || '',
+      isHome: false,
+      teamGoals: aScore,
+      oppGoals: hScore,
+      teamGoalsHT: aHT,
+      oppGoalsHT: hHT,
+      result: aRes,
+    };
+
+    const add = (key: string | undefined, item: FastRadarMatchSample) => {
+      if (!key) return;
+      let list = map.get(key);
+      if (!list) {
+        list = [];
+        map.set(key, list);
+      }
+      list.push(item);
+
+      const norm = normalizeText(key);
+      if (norm && norm !== key) {
+        let normList = map.get(norm);
+        if (!normList) {
+          normList = [];
+          map.set(norm, normList);
+        }
+        normList.push(item);
+      }
+    };
+
+    add(m.homeTeamId, homeItem);
+    add(m.homeTeamName, homeItem);
+    add(m.awayTeamId, awayItem);
+    add(m.awayTeamName, awayItem);
+  }
+
+  for (const list of map.values()) {
+    list.sort((a, b) => (b.matchDate || '').localeCompare(a.matchDate || ''));
+  }
+
+  return map;
+}
+
+function getTeamHistoryFast(teamKey: string, map: RadarTeamMap): FastRadarMatchSample[] {
+  if (!teamKey) return [];
+  const exact = map.get(teamKey);
+  if (exact) return exact;
+  const norm = normalizeText(teamKey);
+  if (norm) {
+    const fromNorm = map.get(norm);
+    if (fromNorm) return fromNorm;
+  }
+  return [];
+}
 
 export interface RadarMatchProjection {
   match: Match;
@@ -166,20 +270,29 @@ export function calculateSingleRadarProjection(
   match: Match,
   allMatches: Match[],
   teams: Team[],
-  category: RadarCategory
+  category: RadarCategory,
+  teamMap?: RadarTeamMap
 ): RadarMatchProjection | null {
   const homeTeamId = match.homeTeamId || match.homeTeamName;
   const awayTeamId = match.awayTeamId || match.awayTeamName;
 
   if (!homeTeamId || !awayTeamId) return null;
 
-  // Extract prior matches strictly
-  const homeTeamHistory = extractTeamMatches(homeTeamId, allMatches, { teams });
-  const awayTeamHistory = extractTeamMatches(awayTeamId, allMatches, { teams });
+  // Extract prior matches strictly using fast indexed map if available or analysis engine
+  let homeFinished: (FastRadarMatchSample | { isHome: boolean; teamGoals: number; oppGoals: number; teamGoalsHT: number; oppGoalsHT: number; result: string; match: { id: string } })[];
+  let awayFinished: (FastRadarMatchSample | { isHome: boolean; teamGoals: number; oppGoals: number; teamGoalsHT: number; oppGoalsHT: number; result: string; match: { id: string } })[];
 
-  // Exclude current match
-  const homeFinished = homeTeamHistory.filter(s => s.match.id !== match.id);
-  const awayFinished = awayTeamHistory.filter(s => s.match.id !== match.id);
+  if (teamMap) {
+    const homeHistory = getTeamHistoryFast(homeTeamId, teamMap);
+    const awayHistory = getTeamHistoryFast(awayTeamId, teamMap);
+    homeFinished = homeHistory.filter(s => s.matchId !== match.id);
+    awayFinished = awayHistory.filter(s => s.matchId !== match.id);
+  } else {
+    const homeTeamHistory = extractTeamMatches(homeTeamId, allMatches, { teams });
+    const awayTeamHistory = extractTeamMatches(awayTeamId, allMatches, { teams });
+    homeFinished = homeTeamHistory.filter(s => s.match.id !== match.id);
+    awayFinished = awayTeamHistory.filter(s => s.match.id !== match.id);
+  }
 
   // G5 & E5 for Home
   const homeG5 = homeFinished.slice(0, 5);
@@ -612,6 +725,9 @@ export function runRadarBacktest(
     ? RADAR_CATEGORIES_CONFIG
     : RADAR_CATEGORIES_CONFIG.filter(c => c.id === targetCategory);
 
+  // Build ultra-fast O(N) team map once for the entire backtest
+  const teamMap = buildRadarTeamMap(allMatches, teams);
+
   for (const match of sortedMatches) {
     const hScore = Number(match.homeScore ?? 0);
     const aScore = Number(match.awayScore ?? 0);
@@ -623,7 +739,7 @@ export function runRadarBacktest(
       : undefined;
 
     for (const catConfig of categoryConfigs) {
-      const proj = calculateSingleRadarProjection(match, allMatches, teams, catConfig.id);
+      const proj = calculateSingleRadarProjection(match, allMatches, teams, catConfig.id, teamMap);
       if (!proj) continue;
 
       if (proj.confidenceScore < minConfidence) continue;

@@ -31,7 +31,8 @@ import {
   calculateSingleRadarProjection,
   runRadarBacktest,
   RadarBacktestReport,
-  RadarBacktestEntry
+  RadarBacktestEntry,
+  buildRadarTeamMap
 } from '../utils/radarEngine';
 
 export interface RadarScannerModalProps {
@@ -76,6 +77,12 @@ export const RadarScannerModal: React.FC<RadarScannerModalProps> = ({
     return Array.from(datesSet).sort();
   }, [dbState.matches]);
 
+  // Build ultra-fast O(N) team index once when modal is open
+  const teamMap = useMemo(() => {
+    if (!isOpen) return new Map();
+    return buildRadarTeamMap(dbState.matches || [], dbState.teams || []);
+  }, [isOpen, dbState.matches, dbState.teams]);
+
   // Daily Radar Projections
   const projections = useMemo(() => {
     if (!isOpen || activeModalTab !== 'SCANNER') return [];
@@ -94,7 +101,8 @@ export const RadarScannerModal: React.FC<RadarScannerModalProps> = ({
         match,
         dbState.matches || [],
         dbState.teams || [],
-        selectedCategory
+        selectedCategory,
+        teamMap
       );
       if (proj && proj.confidenceScore >= minConfidence) {
         results.push(proj);
@@ -117,11 +125,12 @@ export const RadarScannerModal: React.FC<RadarScannerModalProps> = ({
     selectedCategory,
     minConfidence,
     sortBy,
+    teamMap,
   ]);
 
-  // Backtest Report calculation
+  // Backtest Report calculation (only computed when user explicitly views the BACKTEST tab)
   const backtestReport: RadarBacktestReport = useMemo(() => {
-    if (!isOpen) {
+    if (!isOpen || activeModalTab !== 'BACKTEST') {
       return {
         totalMatchesAnalyzed: 0,
         totalSuggestionsGenerated: 0,
@@ -146,6 +155,7 @@ export const RadarScannerModal: React.FC<RadarScannerModalProps> = ({
     });
   }, [
     isOpen,
+    activeModalTab,
     dbState.matches,
     dbState.teams,
     backtestLeagueId,
