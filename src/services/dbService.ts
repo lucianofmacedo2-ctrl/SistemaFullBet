@@ -185,9 +185,7 @@ export function getInstantCachedDatabaseState(): DbState {
 export const LAST_SAVED_KEY = 'football_db_last_saved_at';
 
 export async function fetchDatabaseState(): Promise<DbState> {
-  // Check if we have valid local storage data with a recent timestamp
   const localSavedRaw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
-  const localSavedTime = typeof localStorage !== 'undefined' ? Number(localStorage.getItem(LAST_SAVED_KEY) || 0) : 0;
   let localData: DbState | null = null;
   if (localSavedRaw) {
     try {
@@ -203,32 +201,23 @@ export async function fetchDatabaseState(): Promise<DbState> {
   let dbData: DbState | null = null;
   let firestoreUsers: AppUser[] = [];
 
-  // If local user has saved data (e.g. from GitHub/CSV sync), keep localData as high priority
-  if (localData && (localData.matches?.length || 0) > 0) {
-    dbData = localData;
-  }
-
-  // 1. Try fetching from Firebase Firestore if quota is not exhausted
-  if (!isFirestoreQuotaExhausted() && !dbData) {
-    try {
-      const firestorePromise = fetchDbFromFirestore();
-      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
-      const firestoreData = await Promise.race([firestorePromise, timeoutPromise]);
-
-      if (firestoreData) {
-        if (firestoreData.matches?.length > 0 || firestoreData.countries?.length > 0) {
-          dbData = firestoreData;
-        }
-        if (Array.isArray(firestoreData.users) && firestoreData.users.length > 0) {
-          firestoreUsers = firestoreData.users;
-        }
+  // 1. Try fetching from Static Public JSON (/data/football_db.json) with cache-busting (Primary for Vercel / Deployments)
+  try {
+    const response = await fetch(`/data/football_db.json?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+    });
+    if (response.ok) {
+      const staticData = await response.json();
+      if (staticData && (staticData.matches?.length > 0 || staticData.countries?.length > 0)) {
+        dbData = staticData;
       }
-    } catch (cloudErr) {
-      console.warn('Firestore fetch encountered an issue, falling back:', cloudErr);
     }
+  } catch {
+    // ignore
   }
 
-  // 2. Fallback to Server API if Firestore was empty or offline
+  // 2. Try fetching from Backend Server API (/api/db) if available
   if (!dbData) {
     try {
       const response = await fetch('/api/db', {
@@ -241,35 +230,37 @@ export async function fetchDatabaseState(): Promise<DbState> {
           dbData = serverData;
         }
       }
-    } catch (err) {
-      console.warn('Backend API not available, falling back to static /data/football_db.json or LocalStorage', err);
-    }
-  }
-
-  // 2.5 Fallback to static public JSON (/data/football_db.json) for static deploys (e.g. Vercel)
-  if (!dbData) {
-    try {
-      const response = await fetch('/data/football_db.json', {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
-      });
-      if (response.ok) {
-        const staticData = await response.json();
-        if (staticData && (staticData.matches?.length > 0 || staticData.countries?.length > 0)) {
-          dbData = staticData;
-        }
-      }
     } catch {
       // ignore
     }
   }
 
-  // 3. Fallback to local storage if static fetch failed or returned empty
+  // 3. Try fetching from Firebase Firestore if quota is not exhausted
+  if (!isFirestoreQuotaExhausted()) {
+    try {
+      const firestorePromise = fetchDbFromFirestore();
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+      const firestoreData = await Promise.race([firestorePromise, timeoutPromise]);
+
+      if (firestoreData) {
+        if (!dbData && (firestoreData.matches?.length > 0 || firestoreData.countries?.length > 0)) {
+          dbData = firestoreData;
+        }
+        if (Array.isArray(firestoreData.users) && firestoreData.users.length > 0) {
+          firestoreUsers = firestoreData.users;
+        }
+      }
+    } catch (cloudErr) {
+      console.warn('Firestore fetch note:', cloudErr);
+    }
+  }
+
+  // 4. Fallback to local storage if network was completely offline
   if (!dbData && localData) {
     dbData = localData;
   }
 
-  // 4. Fallback to preloaded built-in seed database if both cloud, server and localstorage were empty
+  // 5. Fallback to preloaded built-in seed database if everything else was empty
   if (!dbData || (!dbData.matches?.length && !dbData.countries?.length)) {
     dbData = {
       countries: SEED_DATABASE.countries || [],

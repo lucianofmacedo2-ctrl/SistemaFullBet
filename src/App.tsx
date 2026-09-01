@@ -282,7 +282,7 @@ export default function App() {
       setCurrentAuthUser(master);
     }
 
-    // 2. Background Cloud Sync (Non-blocking: pulls latest cloud changes asynchronously)
+    // 2. Background Cloud Sync (Non-blocking: pulls latest cloud / deploy changes asynchronously)
     async function syncCloudInBackground() {
       try {
         const data = await fetchDatabaseState();
@@ -290,16 +290,12 @@ export default function App() {
           const cleanData = sanitizeDbImages(data);
           const freshUsers = ensureDefaultUsers(cleanData.users);
 
-          setDbState(prev => {
-            // If local state already has matches (e.g. from user CSV/GitHub sync), keep local matches
-            const keepLocalMatches = (prev.matches?.length || 0) > 0;
-            return {
-              countries: keepLocalMatches && prev.countries?.length ? prev.countries : (cleanData.countries || []),
-              leagues: keepLocalMatches && prev.leagues?.length ? prev.leagues : (cleanData.leagues || []),
-              teams: keepLocalMatches && prev.teams?.length ? prev.teams : (cleanData.teams || []),
-              matches: keepLocalMatches ? prev.matches : (cleanData.matches || []),
-              users: freshUsers,
-            };
+          setDbState({
+            countries: cleanData.countries || [],
+            leagues: cleanData.leagues || [],
+            teams: cleanData.teams || [],
+            matches: cleanData.matches || [],
+            users: freshUsers,
           });
 
           // Update current user if permissions or expiry changed in cloud
