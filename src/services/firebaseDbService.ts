@@ -8,10 +8,19 @@ import {
   onSnapshot,
   writeBatch,
   Unsubscribe,
+  setLogLevel,
+  terminate,
 } from 'firebase/firestore';
 import { getAuth, signInAnonymously, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { DbState, Country, League, Team, Match, AppUser, Referee } from '../types';
+
+// Set Firestore log level to silent to prevent flooding console with internal retry/backoff messages
+try {
+  setLogLevel('silent');
+} catch {
+  // ignore
+}
 
 // Initialize Firebase App instance
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
