@@ -6,6 +6,7 @@ import {
   saveDbToFirestore,
   fetchDbFromFirestore,
   deleteUserFromFirestore,
+  isFirestoreQuotaExhausted,
 } from './firebaseDbService';
 
 const STORAGE_KEY = 'football_db_v1';
@@ -328,9 +329,9 @@ async function flushPendingRemoteSave(): Promise<boolean> {
   pendingStateToSave = null;
 
   // 1. Save to Cloud Firestore in real-time (Multi-device instant replication)
-  saveDbToFirestore(state).catch((err) => {
-    console.warn('Non-blocking Firestore sync warning:', err);
-  });
+  if (!isFirestoreQuotaExhausted()) {
+    saveDbToFirestore(state).catch(() => {});
+  }
 
   // 2. Also persist to backend server
   try {

@@ -88,6 +88,22 @@ const QUOTA_STORAGE_KEY = 'firestore_quota_exhausted_until';
 let isQuotaExhausted = false;
 let quotaExhaustedResetTime = 0;
 
+// Eager initialization of quota state
+if (typeof window !== 'undefined') {
+  try {
+    const stored = localStorage.getItem(QUOTA_STORAGE_KEY) || sessionStorage.getItem(QUOTA_STORAGE_KEY);
+    if (stored) {
+      const until = parseInt(stored, 10);
+      if (!isNaN(until) && Date.now() < until) {
+        isQuotaExhausted = true;
+        quotaExhaustedResetTime = until;
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
 // Mutex queue to ensure only one Firestore save operation executes at any given time
 let isSaveInProgress = false;
 let pendingStateForCloudSave: DbState | null = null;
@@ -98,11 +114,35 @@ async function runWithConcurrencyLimit(tasks: (() => Promise<any>)[], limit: num
   const executing: Promise<any>[] = [];
 
   for (const task of tasks) {
-    const p = Promise.resolve().then(() => task());
+    if (isFirestoreQuotaExhausted()) {
+      break;
+    }
+    const p = Promise.resolve().then(async () => {
+      if (isFirestoreQuotaExhausted()) return;
+      try {
+        return await task();
+      } catch (err: any) {
+        const msg = err?.message || String(err);
+        const code = err?.code || '';
+        if (
+          code === 'resource-exhausted' ||
+          msg.includes('resource-exhausted') ||
+          msg.includes('Quota limit exceeded') ||
+          msg.includes('quota metric') ||
+          msg.includes('Write stream exhausted') ||
+          msg.includes('maximum backoff delay')
+        ) {
+          markFirestoreQuotaExhausted(1440);
+        }
+        throw err;
+      }
+    });
     results.push(p);
 
     if (limit <= tasks.length) {
-      const e: Promise<any> = p.then(() => executing.splice(executing.indexOf(e), 1));
+      const e: Promise<any> = p.then(() => executing.splice(executing.indexOf(e), 1)).catch(() => {
+        executing.splice(executing.indexOf(e), 1);
+      });
       executing.push(e);
       if (executing.length >= limit) {
         await Promise.race(executing);
@@ -110,7 +150,12 @@ async function runWithConcurrencyLimit(tasks: (() => Promise<any>)[], limit: num
     }
   }
 
-  await Promise.all(results);
+  // Use allSettled so one quota failure doesn't leave uncaught rejections
+  const settled = await Promise.allSettled(results);
+  const firstRejected = settled.find((s) => s.status === 'rejected') as PromiseRejectedResult | undefined;
+  if (firstRejected) {
+    throw firstRejected.reason;
+  }
 }
 
 export function isFirestoreQuotaExhausted(): boolean {
