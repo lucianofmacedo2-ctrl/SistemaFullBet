@@ -182,26 +182,50 @@ export function getInstantCachedDatabaseState(): DbState {
   return dbData;
 }
 
+export const LAST_SAVED_KEY = 'football_db_last_saved_at';
+
 export async function fetchDatabaseState(): Promise<DbState> {
+  // Check if we have valid local storage data with a recent timestamp
+  const localSavedRaw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+  const localSavedTime = typeof localStorage !== 'undefined' ? Number(localStorage.getItem(LAST_SAVED_KEY) || 0) : 0;
+  let localData: DbState | null = null;
+  if (localSavedRaw) {
+    try {
+      const parsed = JSON.parse(localSavedRaw);
+      if (parsed && (parsed.matches?.length > 0 || parsed.countries?.length > 0)) {
+        localData = parsed;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   let dbData: DbState | null = null;
   let firestoreUsers: AppUser[] = [];
 
-  // 1. Try fetching from Firebase Firestore first (Primary Multi-Device Cloud with timeout)
-  try {
-    const firestorePromise = fetchDbFromFirestore();
-    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000));
-    const firestoreData = await Promise.race([firestorePromise, timeoutPromise]);
+  // If local user has saved data (e.g. from GitHub/CSV sync), keep localData as high priority
+  if (localData && (localData.matches?.length || 0) > 0) {
+    dbData = localData;
+  }
 
-    if (firestoreData) {
-      if (firestoreData.matches?.length > 0 || firestoreData.countries?.length > 0) {
-        dbData = firestoreData;
+  // 1. Try fetching from Firebase Firestore if quota is not exhausted
+  if (!isFirestoreQuotaExhausted() && !dbData) {
+    try {
+      const firestorePromise = fetchDbFromFirestore();
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000));
+      const firestoreData = await Promise.race([firestorePromise, timeoutPromise]);
+
+      if (firestoreData) {
+        if (firestoreData.matches?.length > 0 || firestoreData.countries?.length > 0) {
+          dbData = firestoreData;
+        }
+        if (Array.isArray(firestoreData.users) && firestoreData.users.length > 0) {
+          firestoreUsers = firestoreData.users;
+        }
       }
-      if (Array.isArray(firestoreData.users) && firestoreData.users.length > 0) {
-        firestoreUsers = firestoreData.users;
-      }
+    } catch (cloudErr) {
+      console.warn('Firestore fetch encountered an issue, falling back:', cloudErr);
     }
-  } catch (cloudErr) {
-    console.warn('Firestore fetch encountered an issue, falling back to server API/local:', cloudErr);
   }
 
   // 2. Fallback to Server API if Firestore was empty or offline
@@ -241,18 +265,8 @@ export async function fetchDatabaseState(): Promise<DbState> {
   }
 
   // 3. Fallback to local storage if static fetch failed or returned empty
-  if (!dbData) {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && (parsed.matches?.length > 0 || parsed.countries?.length > 0)) {
-          dbData = parsed;
-        }
-      } catch {
-        // ignore
-      }
-    }
+  if (!dbData && localData) {
+    dbData = localData;
   }
 
   // 4. Fallback to preloaded built-in seed database if both cloud, server and localstorage were empty
@@ -369,6 +383,7 @@ export async function saveDatabaseState(state: DbState, immediate: boolean = fal
   // Always update LocalStorage immediately for instant UX
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(LAST_SAVED_KEY, String(Date.now()));
     if (Array.isArray(state.users)) {
       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(state.users));
     }

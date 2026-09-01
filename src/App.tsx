@@ -289,8 +289,18 @@ export default function App() {
         if (data && (data.matches?.length > 0 || data.countries?.length > 0)) {
           const cleanData = sanitizeDbImages(data);
           const freshUsers = ensureDefaultUsers(cleanData.users);
-          const finalState = { ...cleanData, users: freshUsers };
-          setDbState(finalState);
+
+          setDbState(prev => {
+            // If local state already has matches (e.g. from user CSV/GitHub sync), keep local matches
+            const keepLocalMatches = (prev.matches?.length || 0) > 0;
+            return {
+              countries: keepLocalMatches && prev.countries?.length ? prev.countries : (cleanData.countries || []),
+              leagues: keepLocalMatches && prev.leagues?.length ? prev.leagues : (cleanData.leagues || []),
+              teams: keepLocalMatches && prev.teams?.length ? prev.teams : (cleanData.teams || []),
+              matches: keepLocalMatches ? prev.matches : (cleanData.matches || []),
+              users: freshUsers,
+            };
+          });
 
           // Update current user if permissions or expiry changed in cloud
           const currentAuth = getCurrentAuthUser();
@@ -316,12 +326,13 @@ export default function App() {
       (cloudDb) => {
         if (!cloudDb) return;
         setDbState(prev => {
-          // If cloud data is richer or updated, seamlessly update local UI
+          // If local already has matches from local user sync, do not blindly overwrite matches
+          const keepLocal = (prev.matches?.length || 0) > 0;
           return {
-            countries: cloudDb.countries || [],
-            leagues: cloudDb.leagues || [],
-            teams: cloudDb.teams || [],
-            matches: cloudDb.matches || [],
+            countries: keepLocal && prev.countries?.length ? prev.countries : (cloudDb.countries || []),
+            leagues: keepLocal && prev.leagues?.length ? prev.leagues : (cloudDb.leagues || []),
+            teams: keepLocal && prev.teams?.length ? prev.teams : (cloudDb.teams || []),
+            matches: keepLocal ? prev.matches : (cloudDb.matches || []),
             users: ensureDefaultUsers(cloudDb.users?.length > 0 ? cloudDb.users : prev.users),
           };
         });
