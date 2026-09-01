@@ -141,14 +141,6 @@ export const CANONICAL_COUNTRIES: CanonicalCountryDef[] = [
           'Paysandu', 'Ponte Preta', 'Brusque', 'Ituano', 'Guarani'
         ],
       },
-      {
-        name: 'Copa do Brasil',
-        type: 'Mata-Mata',
-        teams: [
-          'Flamengo', 'Atlético-MG', 'Corinthians', 'Vasco da Gama', 'São Paulo',
-          'Palmeiras', 'Bahia', 'Athletico-PR', 'Juventude', 'Botafogo'
-        ],
-      },
     ],
   },
   {
@@ -379,14 +371,6 @@ export const CANONICAL_COUNTRIES: CanonicalCountryDef[] = [
           'AaB Aalborg', 'Sønderjyske'
         ],
       },
-      {
-        name: '1. Division',
-        type: 'Pontos Corridos',
-        teams: [
-          'OB Odense', 'Hvidovre IF', 'FC Fredericia', 'Kolding IF', 'Hobro IK',
-          'Vendsyssel FF', 'B.93', 'AC Horsens', 'Hillerød Fodbold', 'HB Køge'
-        ],
-      },
     ],
   },
   {
@@ -414,7 +398,7 @@ export const CANONICAL_COUNTRIES: CanonicalCountryDef[] = [
     ],
   },
   {
-    code: 'EST',
+    code: 'USA',
     name: 'Estados Unidos',
     flag: '🇺🇸',
     leagues: [
@@ -1324,13 +1308,19 @@ export function ensureCanonicalCountriesAndLeagues(dbState: DbState): DbState {
     }
   });
 
-  // 1. Enrich existing countries with standard code & flag if available
+  // 1. Enrich existing countries with standard code & flag if available, and fix codes
   for (const country of countries) {
+    if (normalizeText(country.name) === 'estados unidos') {
+      country.code = 'USA';
+    } else if (normalizeText(country.name) === 'estonia') {
+      country.code = 'EST';
+    }
+
     const canon = CANONICAL_COUNTRIES.find(
       c => normalizeText(c.name) === normalizeText(country.name) || (country.code && c.code.toUpperCase() === country.code.toUpperCase())
     );
     if (canon) {
-      if (!country.code) country.code = canon.code;
+      country.code = canon.code;
       if (!country.flagUrl) country.flagUrl = canon.flag;
     }
   }
@@ -1354,41 +1344,132 @@ export function ensureCanonicalCountriesAndLeagues(dbState: DbState): DbState {
     }
   }
 
-  // 3. Heal known corrupted league names (e.g. Süper Lig in Dinamarca, Suíça, Sérvia, Grécia)
-  leagues.forEach(l => {
-    const normCountry = normalizeText(l.countryName || (l.countryId ? countryById.get(l.countryId)?.name : ''));
-    const normLeague = normalizeText(l.name);
+  // 3. Purge fictitious teams and matches
+  const isFictitious = (name?: string) => {
+    if (!name) return false;
+    return /\b(Clube|Team)\s*\d+\b/i.test(name) || /fict[ií]cio/i.test(name);
+  };
 
-    if (normCountry === 'dinamarca' && normLeague === 'super lig') {
+  const cleanTeams = teams.filter(t => !isFictitious(t.name));
+  const cleanMatches = matches.filter(m => !isFictitious(m.homeTeamName) && !isFictitious(m.awayTeamName));
+  teams.length = 0;
+  teams.push(...cleanTeams);
+  matches.length = 0;
+  matches.push(...cleanMatches);
+
+  // 4. Italian Serie A club list for reliable re-attribution
+  const italianSerieAClubs = new Set([
+    'inter', 'inter de milao', 'inter de milão', 'internazionale', 'ac milan', 'milan', 'juventus', 'napoli', 'roma',
+    'lazio', 'atalanta', 'fiorentina', 'torino', 'bologna', 'genoa', 'monza',
+    'hellas verona', 'verona', 'lecce', 'udinese', 'cagliari', 'empoli', 'parma', 'como', 'venezia'
+  ]);
+
+  const italiaCountry = countryByNorm.get('italia') || countries.find(c => normalizeText(c.name) === 'italia');
+  const serieALeague = leagues.find(l => normalizeText(l.name) === 'serie a' && (l.countryId === italiaCountry?.id || normalizeText(l.countryName) === 'italia'));
+
+  // 5. Heal and merge duplicate/unwanted leagues
+  const leagueMergeMap = new Map<string, string>(); // oldLeagueId -> newLeagueId
+  const leagueNameMergeMap = new Map<string, { targetName: string; countryName: string }>();
+
+  // Find canonical targets for leagues
+  const saudiLeague = leagues.find(l => normalizeText(l.name) === 'saudi pro league');
+  const belgiumLeague = leagues.find(l => normalizeText(l.name) === 'jupiler pro league');
+  const denmarkLeague = leagues.find(l => normalizeText(l.name) === 'superliga');
+  const estoniaLeague = leagues.find(l => normalizeText(l.name) === 'premium liiga');
+  const norwayObosLeague = leagues.find(l => normalizeText(l.name) === 'obos-ligaen' || normalizeText(l.name) === 'obos ligaen');
+
+  // Filter leagues list: remove duplicates, fictitious leagues, and unrequested leagues
+  const filteredLeagues: League[] = [];
+  const removedLeagueIds = new Set<string>();
+
+  for (const l of leagues) {
+    const normName = normalizeText(l.name);
+    const normCountry = normalizeText(l.countryName || (l.countryId ? countryById.get(l.countryId)?.name : ''));
+
+    // Copa do Brasil -> remove
+    if (normName === 'copa do brasil') {
+      removedLeagueIds.add(l.id);
+      continue;
+    }
+    // Liga Profissional Saudita -> merge to Saudi Pro League
+    if (normName === 'liga profissional saudita') {
+      if (saudiLeague) leagueMergeMap.set(l.id, saudiLeague.id);
+      removedLeagueIds.add(l.id);
+      continue;
+    }
+    // Liga Jupiler -> merge to Jupiler Pro League
+    if (normName === 'liga jupiler') {
+      if (belgiumLeague) leagueMergeMap.set(l.id, belgiumLeague.id);
+      removedLeagueIds.add(l.id);
+      continue;
+    }
+    // Dinamarca Superligaen or 1. Division -> merge to Superliga
+    if (normCountry === 'dinamarca' && (normName === 'superligaen' || normName === '1. division' || normName === '1 division')) {
+      if (denmarkLeague) leagueMergeMap.set(l.id, denmarkLeague.id);
+      removedLeagueIds.add(l.id);
+      continue;
+    }
+    // Estônia Meistriliiga or misassigned MLS/USL in Estonia
+    if (normCountry === 'estonia') {
+      if (normName === 'meistriliiga') {
+        if (estoniaLeague) leagueMergeMap.set(l.id, estoniaLeague.id);
+        removedLeagueIds.add(l.id);
+        continue;
+      }
+      if (normName === 'major league soccer' || normName === 'usl championship') {
+        removedLeagueIds.add(l.id);
+        continue;
+      }
+    }
+    // Noruega OBOS-ligaen (2ª Divisão) -> merge to OBOS-ligaen
+    if (normCountry === 'noruega' && (normName.includes('2 divisao') || normName.includes('2a divisao'))) {
+      if (norwayObosLeague) leagueMergeMap.set(l.id, norwayObosLeague.id);
+      removedLeagueIds.add(l.id);
+      continue;
+    }
+    // Nova Zelândia Liga Nacional -> remove (keep National League)
+    if (normCountry === 'nova zelandia' && normName === 'liga nacional') {
+      removedLeagueIds.add(l.id);
+      continue;
+    }
+    // Polônia Divisão 1 -> remove (keep Ekstraklasa)
+    if (normCountry === 'polonia' && (normName === 'divisao 1' || normName === '1 division')) {
+      removedLeagueIds.add(l.id);
+      continue;
+    }
+    // Islândia Divisão 2 -> remove
+    if (normCountry === 'islandia' && (normName === 'divisao 2' || normName === '2 division')) {
+      removedLeagueIds.add(l.id);
+      continue;
+    }
+
+    // Standard name healings
+    if (normCountry === 'dinamarca' && normName === 'super lig') {
       l.name = 'Superliga';
-    } else if (normCountry === 'suica' && normLeague === 'super lig') {
+    } else if (normCountry === 'suica' && normName === 'super lig') {
       l.name = 'Super League';
-    } else if (normCountry === 'servia' && normLeague === 'super lig') {
+    } else if (normCountry === 'servia' && normName === 'super lig') {
       l.name = 'SuperLiga Sérvia';
-    } else if (normCountry === 'grecia' && normLeague === 'super lig') {
+    } else if (normCountry === 'grecia' && normName === 'super lig') {
       l.name = 'Super League Grécia';
-    } else if (normCountry === 'pais de gales' && (normLeague === 'premier league' || normLeague === 'super lig')) {
+    } else if (normCountry === 'pais de gales' && (normName === 'premier league' || normName === 'super lig')) {
       l.name = 'Cymru Premier';
-    } else if (normCountry === 'escocia' && normLeague === 'championship') {
+    } else if (normCountry === 'escocia' && normName === 'championship') {
       l.name = 'Championship';
-    } else if (normCountry === 'estados unidos' && normLeague === 'championship') {
+    } else if (normCountry === 'estados unidos' && normName === 'championship') {
       l.name = 'USL Championship';
     }
 
-    // Fix country link if missing or invalid
-    if (!l.countryId || !countryById.has(l.countryId)) {
-      const matchCountry =
-        countryByNorm.get(normalizeText(l.countryName)) ||
-        (l.countryId ? countryByNorm.get(normalizeText(l.countryId)) : null) ||
-        (l.countryId ? countryByNorm.get(l.countryId.toUpperCase()) : null);
-      if (matchCountry) {
-        l.countryId = matchCountry.id;
-        l.countryName = matchCountry.name;
-      }
-    }
-  });
+    filteredLeagues.push(l);
+  }
 
-  // 4. Ensure each country has its canonical leagues and teams
+  leagues.length = 0;
+  leagues.push(...filteredLeagues);
+
+  // 6. Build canonical lookup map for all teams across all canonical leagues
+  const canonicalClubMap = new Map<string, { country: Country; league: League }>();
+
+  // Ensure each country has its canonical leagues and teams
   const leagueByCountryAndName = new Map<string, League>();
   leagues.forEach(l => {
     leagueByCountryAndName.set(`${l.countryId}:${normalizeText(l.name)}`, l);
@@ -1399,8 +1480,6 @@ export function ensureCanonicalCountriesAndLeagues(dbState: DbState): DbState {
     teamByCountryAndName.set(`${t.countryId}:${normalizeText(t.name)}`, t);
     teamByCountryAndName.set(`GLOBAL:${normalizeText(t.name)}`, t);
   });
-
-  const canonicalClubMap = new Map<string, { country: Country; league: League }>();
 
   for (const canon of CANONICAL_COUNTRIES) {
     const targetCountry = countryByNorm.get(normalizeText(canon.name));
@@ -1448,9 +1527,33 @@ export function ensureCanonicalCountriesAndLeagues(dbState: DbState): DbState {
     }
   }
 
-  // 5. Realign any misassigned teams and matches using canonical knowledge
+  // 7. Reassign misassigned / merged teams and matches
   teams.forEach(t => {
+    // If team's league was removed or merged
+    if (t.leagueId && leagueMergeMap.has(t.leagueId)) {
+      const newLid = leagueMergeMap.get(t.leagueId)!;
+      const targetL = leagues.find(l => l.id === newLid);
+      if (targetL) {
+        t.leagueId = targetL.id;
+        t.leagueName = targetL.name;
+        t.countryId = targetL.countryId;
+        t.countryName = targetL.countryName;
+      }
+    }
+
     const norm = normalizeText(t.name);
+    // Italian clubs must belong to Italy / Serie A
+    if (italianSerieAClubs.has(norm) && italiaCountry) {
+      t.countryId = italiaCountry.id;
+      t.countryName = italiaCountry.name;
+      const sA = leagues.find(l => normalizeText(l.name) === 'serie a' && l.countryId === italiaCountry.id);
+      if (sA) {
+        t.leagueId = sA.id;
+        t.leagueName = sA.name;
+      }
+      return;
+    }
+
     const canonInfo = canonicalClubMap.get(norm);
     if (canonInfo) {
       t.countryId = canonInfo.country.id;
@@ -1463,8 +1566,33 @@ export function ensureCanonicalCountriesAndLeagues(dbState: DbState): DbState {
   });
 
   matches.forEach(m => {
+    // Handle merged leagues in matches
+    if (m.leagueId && leagueMergeMap.has(m.leagueId)) {
+      const newLid = leagueMergeMap.get(m.leagueId)!;
+      const targetL = leagues.find(l => l.id === newLid);
+      if (targetL) {
+        m.leagueId = targetL.id;
+        m.leagueName = targetL.name;
+        m.countryId = targetL.countryId;
+        m.countryName = targetL.countryName;
+      }
+    }
+
     const normHome = normalizeText(m.homeTeamName);
     const normAway = normalizeText(m.awayTeamName);
+
+    // If either home or away is an Italian Serie A club, this match is Italian Serie A!
+    if ((italianSerieAClubs.has(normHome) || italianSerieAClubs.has(normAway)) && italiaCountry) {
+      m.countryId = italiaCountry.id;
+      m.countryName = italiaCountry.name;
+      const sA = leagues.find(l => normalizeText(l.name) === 'serie a' && l.countryId === italiaCountry.id);
+      if (sA) {
+        m.leagueId = sA.id;
+        m.leagueName = sA.name;
+      }
+      return;
+    }
+
     const canonHome = canonicalClubMap.get(normHome);
     const canonAway = canonicalClubMap.get(normAway);
     const canon = canonHome || canonAway;

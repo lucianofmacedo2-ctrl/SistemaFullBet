@@ -105,17 +105,20 @@ export const CANONICAL_LEAGUE_ALIASES: Record<string, { canonicalName: string; c
   'jupiler pro league': { canonicalName: 'Jupiler Pro League', countryCode: 'BEL' },
   'belgian pro league': { canonicalName: 'Jupiler Pro League', countryCode: 'BEL' },
   'pro league belgica': { canonicalName: 'Jupiler Pro League', countryCode: 'BEL' },
+  'liga jupiler': { canonicalName: 'Jupiler Pro League', countryCode: 'BEL' },
 
   // Dinamarca
-  'superliga': { canonicalName: 'Superligaen', countryCode: 'DEN' },
-  'superligaen': { canonicalName: 'Superligaen', countryCode: 'DEN' },
-  'danish superliga': { canonicalName: 'Superligaen', countryCode: 'DEN' },
+  'superliga': { canonicalName: 'Superliga', countryCode: 'DIN' },
+  'superligaen': { canonicalName: 'Superliga', countryCode: 'DIN' },
+  'danish superliga': { canonicalName: 'Superliga', countryCode: 'DIN' },
 
   // Noruega
   'eliteserien': { canonicalName: 'Eliteserien', countryCode: 'NOR' },
   'norwegian eliteserien': { canonicalName: 'Eliteserien', countryCode: 'NOR' },
   'obos-ligaen': { canonicalName: 'OBOS-ligaen', countryCode: 'NOR' },
   'obos ligaen': { canonicalName: 'OBOS-ligaen', countryCode: 'NOR' },
+  'obos-ligaen (2ª divisão)': { canonicalName: 'OBOS-ligaen', countryCode: 'NOR' },
+  'obos-ligaen (2a divisao)': { canonicalName: 'OBOS-ligaen', countryCode: 'NOR' },
 
   // Suécia
   'allsvenskan': { canonicalName: 'Allsvenskan', countryCode: 'SWE' },
@@ -173,6 +176,18 @@ export const CANONICAL_LEAGUE_ALIASES: Record<string, { canonicalName: string; c
   // Arábia Saudita
   'saudi pro league': { canonicalName: 'Saudi Pro League', countryCode: 'ARÁ' },
   'roshn saudi league': { canonicalName: 'Saudi Pro League', countryCode: 'ARÁ' },
+  'liga profissional saudita': { canonicalName: 'Saudi Pro League', countryCode: 'ARÁ' },
+
+  // Estônia
+  'meistriliiga': { canonicalName: 'Premium Liiga', countryCode: 'EST' },
+  'premium liiga': { canonicalName: 'Premium Liiga', countryCode: 'EST' },
+
+  // Nova Zelândia
+  'national league': { canonicalName: 'National League', countryCode: 'NOV' },
+  'liga nacional': { canonicalName: 'National League', countryCode: 'NOV' },
+
+  // Polônia
+  'ekstraklasa': { canonicalName: 'Ekstraklasa', countryCode: 'POL' },
 
   // Argentina
   'liga profesional': { canonicalName: 'Liga Profesional', countryCode: 'ARG' },
