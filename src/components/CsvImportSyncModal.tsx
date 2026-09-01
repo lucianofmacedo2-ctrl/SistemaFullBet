@@ -14,11 +14,21 @@ import {
   ExternalLink,
   Info,
   Trash2,
+  Calendar,
+  Layers,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { DbState } from '../types';
 import { parseAndSyncCsvLocally } from '../utils/csvSyncParser';
 import { saveDatabaseState, syncDatabaseFromServer } from '../services/dbService';
-import { syncDatabaseWithGitHub, GITHUB_REPO_URL, GITHUB_REPO_DATA_URL } from '../services/githubCsvSyncService';
+import {
+  syncDatabaseWithGitHub,
+  GITHUB_REPO_FINALIZADOS_DATA_URL,
+  GITHUB_REPO_FUTUROS_DATA_URL,
+  GITHUB_REPO_BASE_URL,
+  GitHubSyncTarget,
+} from '../services/githubCsvSyncService';
 
 interface CsvImportSyncModalProps {
   isOpen: boolean;
@@ -35,16 +45,24 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'github' | 'upload' | 'paste' | 'server'>('github');
   const [syncMode, setSyncMode] = useState<'replace' | 'merge'>('replace');
-  const [customGitHubUrl, setCustomGitHubUrl] = useState<string>('https://raw.githubusercontent.com/lucianofmacedo2-ctrl/SistemaFullBet/main/data/jogos_consolidados.csv');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // Custom URLs state
+  const [showAdvancedUrls, setShowAdvancedUrls] = useState<boolean>(false);
+  const [customFinalizadosUrl, setCustomFinalizadosUrl] = useState<string>(GITHUB_REPO_FINALIZADOS_DATA_URL);
+  const [customFuturosUrl, setCustomFuturosUrl] = useState<string>(GITHUB_REPO_FUTUROS_DATA_URL);
+
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [csvContent, setCsvContent] = useState<string>('');
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingTarget, setLoadingTarget] = useState<string>('');
+
   const [previewStats, setPreviewStats] = useState<{
     totalLines: number;
     headers: string[];
     sampleRows: string[][];
   } | null>(null);
+
   const [statusMessage, setStatusMessage] = useState<{
     type: 'success' | 'error';
     text: string;
@@ -55,25 +73,35 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleFileChange = (file: File) => {
-    if (!file.name.toLowerCase().endsWith('.csv') && !file.type.includes('csv') && !file.type.includes('text')) {
+  const handleFilesChange = (filesList: FileList | File[]) => {
+    const files = Array.from(filesList).filter(
+      (f) => f.name.toLowerCase().endsWith('.csv') || f.type.includes('csv') || f.type.includes('text')
+    );
+
+    if (files.length === 0) {
       setStatusMessage({
         type: 'error',
-        text: 'Por favor, selecione um arquivo de formato .csv válido.',
+        text: 'Por favor, selecione arquivos válidos no formato .csv (ex: jogos_finalizados.csv e/ou jogos_futuros.csv).',
       });
       return;
     }
 
-    setSelectedFile(file);
+    setSelectedFiles(files);
     setStatusMessage(null);
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      setCsvContent(text);
-      generatePreview(text);
-    };
-    reader.readAsText(file, 'UTF-8');
+    // Read files
+    if (files.length === 1) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        setCsvContent(text);
+        generatePreview(text);
+      };
+      reader.readAsText(files[0], 'UTF-8');
+    } else {
+      // Multiple files preview
+      setPreviewStats(null);
+    }
   };
 
   const handlePasteChange = (text: string) => {
@@ -122,38 +150,50 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileChange(e.dataTransfer.files[0]);
+      handleFilesChange(e.dataTransfer.files);
     }
   };
 
-  const handleSyncWithGitHub = async (forceClean: boolean = false) => {
+  const handleSyncWithGitHub = async (
+    target: GitHubSyncTarget = 'both',
+    forceClean: boolean = false
+  ) => {
     setIsLoading(true);
+    setLoadingTarget(target);
     setStatusMessage(null);
+
     try {
-      const isReplace = forceClean || syncMode === 'replace';
+      const isReplace = forceClean || (target === 'both' && syncMode === 'replace') || (target === 'finalizados' && syncMode === 'replace');
       const baseState = forceClean
         ? { countries: [], leagues: [], teams: [], matches: [], users: dbState.users || [] }
         : dbState;
-      const { updatedDb, result, csvText } = await syncDatabaseWithGitHub(baseState, isReplace, customGitHubUrl.trim() || undefined);
+
+      const { updatedDb, result, csvText } = await syncDatabaseWithGitHub(baseState, isReplace, {
+        target,
+        customUrl: customFinalizadosUrl.trim() || undefined,
+        customFuturosUrl: customFuturosUrl.trim() || undefined,
+      });
 
       if (!result.success) {
-        throw new Error('Nenhuma linha de jogo válida foi encontrada no arquivo do GitHub.');
+        throw new Error('Nenhum jogo válido foi encontrado nos arquivos CSV do GitHub.');
       }
 
-      setCsvContent(csvText);
-      generatePreview(csvText);
+      if (csvText) {
+        setCsvContent(csvText);
+        generatePreview(csvText);
+      }
 
       await saveDatabaseState(updatedDb, true);
 
       setStatusMessage({
         type: 'success',
-        text: `Sincronização com GitHub realizada com sucesso! ${result.message}`,
+        text: `Sincronização com GitHub concluída com sucesso! ${result.message}`,
         stats: result,
       });
 
       onImportSuccess(
         updatedDb,
-        `Dados atualizados do GitHub: ${result.totalMatches} jogos carregados (${result.finishedMatchesCount || 0} finalizados, ${result.futureMatchesCount || 0} agendados).`
+        `Dados atualizados do GitHub: ${result.totalMatches} jogos cadastrados (${result.finishedMatchesCount || 0} finalizados, ${result.futureMatchesCount || 0} futuros).`
       );
     } catch (err: any) {
       setStatusMessage({
@@ -162,14 +202,15 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
       });
     } finally {
       setIsLoading(false);
+      setLoadingTarget('');
     }
   };
 
-  const handleProcessImport = async () => {
-    if (!csvContent.trim()) {
+  const handleProcessImportLocalFiles = async () => {
+    if (selectedFiles.length === 0 && !csvContent.trim()) {
       setStatusMessage({
         type: 'error',
-        text: 'Nenhum conteúdo CSV foi fornecido. Selecione um arquivo ou cole o texto do CSV.',
+        text: 'Nenhum arquivo ou texto CSV foi fornecido.',
       });
       return;
     }
@@ -178,22 +219,48 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
     setStatusMessage(null);
 
     try {
-      const isReplace = syncMode === 'replace';
-      const { updatedDb, result } = parseAndSyncCsvLocally(csvContent, dbState, { replaceEntireDb: isReplace });
+      let currentWorkingDb = syncMode === 'replace'
+        ? { countries: [], leagues: [], teams: [], matches: [], users: dbState.users || [] }
+        : dbState;
 
-      if (!result.success) {
-        throw new Error('Nenhuma linha de jogo válida foi encontrada no arquivo CSV.');
+      if (selectedFiles.length > 0) {
+        // Read and process each selected file
+        for (const file of selectedFiles) {
+          const text = await file.text();
+          if (text.trim()) {
+            const { updatedDb } = parseAndSyncCsvLocally(text, currentWorkingDb, { replaceEntireDb: false });
+            currentWorkingDb = updatedDb;
+          }
+        }
+      } else if (csvContent.trim()) {
+        const { updatedDb } = parseAndSyncCsvLocally(csvContent, currentWorkingDb, { replaceEntireDb: false });
+        currentWorkingDb = updatedDb;
       }
 
-      await saveDatabaseState(updatedDb, true);
+      await saveDatabaseState(currentWorkingDb, true);
+
+      const finCount = currentWorkingDb.matches.filter((m) => m.status === 'FINALIZADO').length;
+      const futCount = currentWorkingDb.matches.filter((m) => m.status === 'AGENDADO').length;
+
+      const successStats = {
+        totalCountries: currentWorkingDb.countries.length,
+        totalLeagues: currentWorkingDb.leagues.length,
+        totalTeams: currentWorkingDb.teams.length,
+        totalMatches: currentWorkingDb.matches.length,
+        finishedMatchesCount: finCount,
+        futureMatchesCount: futCount,
+      };
 
       setStatusMessage({
         type: 'success',
-        text: result.message,
-        stats: result,
+        text: `Importação concluída com sucesso! Total de ${currentWorkingDb.matches.length} jogos carregados (${finCount} finalizados + ${futCount} futuros).`,
+        stats: successStats,
       });
 
-      onImportSuccess(updatedDb, result.message);
+      onImportSuccess(
+        currentWorkingDb,
+        `Importação local concluída: ${currentWorkingDb.matches.length} jogos carregados na base!`
+      );
     } catch (err: any) {
       setStatusMessage({
         type: 'error',
@@ -222,7 +289,7 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
     } catch (err: any) {
       setStatusMessage({
         type: 'error',
-        text: `Erro ao carregar do servidor: ${err.message || String(err)}. Tente subir o arquivo .CSV diretamente pela aba "Arquivo .CSV".`,
+        text: `Erro ao carregar do servidor: ${err.message || String(err)}.`,
       });
     } finally {
       setIsLoading(false);
@@ -242,11 +309,11 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
               <h2 className="text-lg font-bold flex items-center gap-2">
                 Sincronizar Base de Jogos (.csv)
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-300 border border-emerald-400/30">
-                  Auto-Cadastro
+                  Dual CSV (Finalizados + Futuros)
                 </span>
               </h2>
               <p className="text-xs text-blue-200">
-                Puxe direto do GitHub ou suba o arquivo do seu computador
+                Sincronização automática com GitHub e suporte a arquivos separados
               </p>
             </div>
           </div>
@@ -269,7 +336,7 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
             }`}
           >
             <Github className="w-4 h-4 text-emerald-600" />
-            Puxar do GitHub (1 Clique)
+            Puxar do GitHub (Recomendado)
           </button>
           <button
             onClick={() => setActiveTab('upload')}
@@ -280,7 +347,7 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
             }`}
           >
             <UploadCloud className="w-4 h-4 text-blue-600" />
-            Arquivo .CSV Local
+            Arquivos .CSV Locais
           </button>
           <button
             onClick={() => setActiveTab('paste')}
@@ -332,7 +399,7 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
                     Substituir Base (Recomendado)
                   </div>
                   <div className="text-[10px] text-slate-500 mt-0.5 leading-tight">
-                    Limpa dados antigos e deixa <strong>exatamente</strong> os dados da sua planilha.
+                    Limpa dados antigos e sincroniza exatamente com os CSVs do GitHub.
                   </div>
                 </button>
 
@@ -350,17 +417,17 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
                     Mesclar / Incrementar
                   </div>
                   <div className="text-[10px] text-slate-500 mt-0.5 leading-tight">
-                    Mantém os times e jogos já salvos e apenas acrescenta novos.
+                    Mantém os times e jogos já salvos e acrescenta/atualiza novos.
                   </div>
                 </button>
               </div>
             </div>
           )}
 
-          {/* Tab 0: GitHub 1-Click Sync */}
+          {/* Tab 0: GitHub Dual CSV Sync */}
           {activeTab === 'github' && (
             <div className="space-y-4">
-              <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white border border-slate-700 shadow-md space-y-3">
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white border border-slate-700 shadow-md space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 bg-white/10 rounded-xl">
@@ -371,76 +438,151 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
                         lucianofmacedo2-ctrl / SistemaFullBet
                       </h4>
                       <p className="text-xs text-slate-300">
-                        Repositório oficial configurado para leitura automática
+                        Repositório oficial configurado com estrutura de dois arquivos CSV
                       </p>
                     </div>
                   </div>
                   <a
-                    href="https://github.com/lucianofmacedo2-ctrl/SistemaFullBet"
+                    href={GITHUB_REPO_BASE_URL}
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs text-slate-400 hover:text-white flex items-center gap-1 bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg border border-white/10 transition-colors"
                   >
-                    Abrir <ExternalLink className="w-3 h-3" />
+                    Abrir Repo <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
-                    <span>Link direto (Raw URL do CSV no GitHub):</span>
-                    <span className="text-[10px] text-emerald-400 font-mono">data/jogos_consolidados.csv</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={customGitHubUrl}
-                    onChange={(e) => setCustomGitHubUrl(e.target.value)}
-                    placeholder="https://raw.githubusercontent.com/.../jogos_consolidados.csv"
-                    className="w-full text-xs font-mono bg-slate-950/80 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500"
-                  />
+                {/* Detected GitHub CSV Files */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  <div className="p-3 bg-slate-950/70 border border-slate-700/80 rounded-xl flex items-start gap-2.5">
+                    <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg mt-0.5">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-slate-200">Jogos Finalizados</div>
+                      <div className="text-[11px] font-mono text-emerald-400 truncate">data/jogos_finalizados.csv</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Histórico, placares e estatísticas detalhadas</div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-slate-950/70 border border-slate-700/80 rounded-xl flex items-start gap-2.5">
+                    <div className="p-1.5 bg-purple-500/20 text-purple-400 rounded-lg mt-0.5">
+                      <Calendar className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-slate-200">Jogos Futuros</div>
+                      <div className="text-[11px] font-mono text-purple-400 truncate">data/jogos_futuros.csv</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Grade de jogos agendados e odds</div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                {/* Primary Action Button: Sincronizar Tudo */}
+                <div className="space-y-2 pt-1">
                   <button
-                    onClick={() => handleSyncWithGitHub(false)}
+                    onClick={() => handleSyncWithGitHub('both', false)}
                     disabled={isLoading}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-900/30 transition-all cursor-pointer"
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-900/40 transition-all cursor-pointer"
                   >
-                    <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    {isLoading ? 'Baixando...' : 'Sincronizar Dados do GitHub'}
+                    <RefreshCw className={`w-4 h-4 ${isLoading && loadingTarget === 'both' ? 'animate-spin' : ''}`} />
+                    {isLoading && loadingTarget === 'both'
+                      ? 'Baixando e Sincronizando Ambos os Arquivos...'
+                      : 'Sincronizar Tudo (Finalizados + Futuros)'}
                   </button>
 
+                  {/* Secondary Granular Sync Buttons */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      onClick={() => handleSyncWithGitHub('finalizados', false)}
+                      disabled={isLoading}
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 disabled:opacity-50 text-slate-200 font-semibold text-xs rounded-xl transition-all cursor-pointer"
+                    >
+                      <Layers className="w-3.5 h-3.5 text-blue-400" />
+                      {isLoading && loadingTarget === 'finalizados' ? 'Baixando...' : 'Apenas Jogos Finalizados'}
+                    </button>
+
+                    <button
+                      onClick={() => handleSyncWithGitHub('futuros', false)}
+                      disabled={isLoading}
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 disabled:opacity-50 text-slate-200 font-semibold text-xs rounded-xl transition-all cursor-pointer"
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-purple-400" />
+                      {isLoading && loadingTarget === 'futuros' ? 'Baixando...' : 'Apenas Jogos Futuros (Grade)'}
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() => handleSyncWithGitHub(true)}
+                    onClick={() => handleSyncWithGitHub('both', true)}
                     disabled={isLoading}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-rose-700 hover:bg-rose-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-950/40 transition-all cursor-pointer"
-                    title="Apaga os dados pré-carregados e substitui exclusivamente pelo CSV do GitHub"
+                    className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-800/60 disabled:opacity-50 text-rose-200 font-semibold text-xs rounded-xl transition-all cursor-pointer mt-1"
+                    title="Apaga os dados pré-carregados e substitui exclusivamente pelos CSVs do GitHub"
                   >
-                    <Trash2 className="w-4 h-4" />
-                    Zerar Antigos e Carregar do GitHub
+                    <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                    Zerar Antigos e Recarregar Tudo do GitHub
                   </button>
+                </div>
+
+                {/* Advanced Custom URLs toggle */}
+                <div className="pt-2 border-t border-slate-700/60">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvancedUrls(!showAdvancedUrls)}
+                    className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1 cursor-pointer font-medium"
+                  >
+                    {showAdvancedUrls ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    {showAdvancedUrls ? 'Ocultar links diretos personalizados' : 'Editar URLs personalizadas do GitHub (Avançado)'}
+                  </button>
+
+                  {showAdvancedUrls && (
+                    <div className="mt-3 space-y-3 p-3 bg-slate-950/80 rounded-xl border border-slate-700 text-xs">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                          URL do CSV de Jogos Finalizados:
+                        </label>
+                        <input
+                          type="text"
+                          value={customFinalizadosUrl}
+                          onChange={(e) => setCustomFinalizadosUrl(e.target.value)}
+                          className="w-full font-mono text-[11px] bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                          URL do CSV de Jogos Futuros:
+                        </label>
+                        <input
+                          type="text"
+                          value={customFuturosUrl}
+                          onChange={(e) => setCustomFuturosUrl(e.target.value)}
+                          className="w-full font-mono text-[11px] bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-start gap-2.5">
                 <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                 <span>
-                  <strong>Dica de sincronização:</strong> O botão vermelho <em>"Zerar Antigos e Carregar do GitHub"</em> remove qualquer jogo antigo/demo em cache e salva no banco exatamente os jogos da planilha atual do seu GitHub.
+                  <strong>Rotina de Atualização:</strong> O sistema lê automaticamente os dois arquivos do seu repositório: <code>data/jogos_finalizados.csv</code> e <code>data/jogos_futuros.csv</code>, cadastrando os times, ligas e jogos de forma unificada e organizada.
                 </span>
               </div>
             </div>
           )}
 
-          {/* Tab 1: Upload de Arquivo Local */}
+          {/* Tab 1: Upload de Arquivos Locais */}
           {activeTab === 'upload' && (
             <div className="space-y-4">
               <input
                 ref={fileInputRef}
                 type="file"
+                multiple
                 accept=".csv,text/csv,text/plain"
                 className="hidden"
                 onChange={(e) => {
                   if (e.target.files && e.target.files.length > 0) {
-                    handleFileChange(e.target.files[0]);
+                    handleFilesChange(e.target.files);
                   }
                 }}
               />
@@ -453,41 +595,51 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
                 className={`border-2 border-dashed rounded-3xl p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center ${
                   isDragging
                     ? 'border-blue-600 bg-blue-50/80 scale-[1.01]'
-                    : selectedFile
+                    : selectedFiles.length > 0
                     ? 'border-emerald-500 bg-emerald-50/40'
                     : 'border-slate-300 bg-slate-50/60 hover:bg-slate-100/80 hover:border-slate-400'
                 }`}
               >
                 <div
                   className={`p-4 rounded-2xl mb-3 ${
-                    selectedFile
+                    selectedFiles.length > 0
                       ? 'bg-emerald-100 text-emerald-700'
                       : 'bg-blue-100 text-blue-700'
                   }`}
                 >
-                  {selectedFile ? (
+                  {selectedFiles.length > 0 ? (
                     <FileSpreadsheet className="w-8 h-8 text-emerald-600" />
                   ) : (
                     <UploadCloud className="w-8 h-8 text-blue-600" />
                   )}
                 </div>
 
-                {selectedFile ? (
-                  <div>
-                    <span className="text-sm font-bold text-slate-900 block mb-1">
-                      {selectedFile.name}
+                {selectedFiles.length > 0 ? (
+                  <div className="space-y-1">
+                    <span className="text-sm font-bold text-slate-900 block">
+                      {selectedFiles.length} arquivo(s) selecionado(s):
                     </span>
-                    <span className="text-xs text-slate-500 block">
-                      {(selectedFile.size / 1024).toFixed(1)} KB &bull; Clique para trocar de arquivo
+                    <div className="flex flex-wrap gap-1.5 justify-center max-w-md">
+                      {selectedFiles.map((f, idx) => (
+                        <span
+                          key={idx}
+                          className="text-[11px] bg-white border border-emerald-300 text-emerald-800 px-2 py-0.5 rounded-md font-mono"
+                        >
+                          {f.name} ({(f.size / 1024).toFixed(1)} KB)
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-xs text-slate-500 block pt-1">
+                      Clique para trocar ou adicionar mais arquivos
                     </span>
                   </div>
                 ) : (
                   <div>
                     <span className="text-sm font-bold text-slate-800 block mb-1">
-                      Arraste e solte o arquivo <code className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">jogos_consolidados.csv</code> aqui
+                      Arraste e solte <code className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">jogos_finalizados.csv</code> e/ou <code className="text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">jogos_futuros.csv</code> aqui
                     </span>
                     <span className="text-xs text-slate-500 block">
-                      ou clique para selecionar diretamente do seu computador
+                      Você pode selecionar os dois arquivos de uma só vez do seu computador
                     </span>
                   </div>
                 )}
@@ -632,7 +784,7 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
                       {(statusMessage.stats.finishedMatchesCount !== undefined ||
                         statusMessage.stats.futureMatchesCount !== undefined) && (
                         <span className="block text-[9px] text-slate-500 mt-0.5">
-                          {statusMessage.stats.finishedMatchesCount || 0} fin / {statusMessage.stats.futureMatchesCount || 0} fut
+                          {statusMessage.stats.finishedMatchesCount || 0} finalizados / {statusMessage.stats.futureMatchesCount || 0} futuros
                         </span>
                       )}
                     </div>
@@ -654,8 +806,8 @@ export const CsvImportSyncModal: React.FC<CsvImportSyncModalProps> = ({
 
           {activeTab !== 'server' && activeTab !== 'github' && (
             <button
-              onClick={handleProcessImport}
-              disabled={isLoading || !csvContent.trim()}
+              onClick={handleProcessImportLocalFiles}
+              disabled={isLoading || (selectedFiles.length === 0 && !csvContent.trim())}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />

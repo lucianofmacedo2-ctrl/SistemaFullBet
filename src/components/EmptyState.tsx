@@ -56,7 +56,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10 cursor-pointer"
                 >
                   <UploadCloud className="w-5 h-5 stroke-[2.5]" />
-                  Subir jogos_consolidados.csv
+                  Sincronizar Dados (.CSV / GitHub)
                 </button>
               )}
 

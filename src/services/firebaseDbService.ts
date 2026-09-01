@@ -73,8 +73,8 @@ function sanitizeForFirestore<T>(data: T): T {
 }
 
 // Chunking helpers to strictly respect Firestore document size limit (1MB max per doc)
-const MATCH_CHUNK_SIZE = 250; // max 250 matches per doc (~60-90 KB, well under 1MB limit, optimizes write units)
-const TEAM_CHUNK_SIZE = 300; // max 300 teams per doc (~75-100 KB, well under 1MB limit, optimizes write units)
+const MATCH_CHUNK_SIZE = 800; // max 800 matches per doc (~200-240 KB, well under 1MB limit, optimizes write stream and speed)
+const TEAM_CHUNK_SIZE = 800; // max 800 teams per doc (~180-220 KB, well under 1MB limit, optimizes write stream and speed)
 const COLLECTION_NAME = 'app_data';
 
 export const CLIENT_INSTANCE_ID = `client_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -87,6 +87,31 @@ let lastLocalSavedTimestamp: string | null = null;
 const QUOTA_STORAGE_KEY = 'firestore_quota_exhausted_until';
 let isQuotaExhausted = false;
 let quotaExhaustedResetTime = 0;
+
+// Mutex queue to ensure only one Firestore save operation executes at any given time
+let isSaveInProgress = false;
+let pendingStateForCloudSave: DbState | null = null;
+
+// Concurrency helper to run write tasks in batches of N to prevent write stream exhaustion
+async function runWithConcurrencyLimit(tasks: (() => Promise<any>)[], limit: number = 3): Promise<void> {
+  const results: Promise<any>[] = [];
+  const executing: Promise<any>[] = [];
+
+  for (const task of tasks) {
+    const p = Promise.resolve().then(() => task());
+    results.push(p);
+
+    if (limit <= tasks.length) {
+      const e: Promise<any> = p.then(() => executing.splice(executing.indexOf(e), 1));
+      executing.push(e);
+      if (executing.length >= limit) {
+        await Promise.race(executing);
+      }
+    }
+  }
+
+  await Promise.all(results);
+}
 
 export function isFirestoreQuotaExhausted(): boolean {
   if (typeof window !== 'undefined') {
@@ -124,7 +149,7 @@ export function markFirestoreQuotaExhausted(cooldownMinutes: number = 1440) {
       // ignore
     }
   }
-  console.warn(`[Firestore Quota Guard] Limite de cota diária do Firestore atingido. Sistema operando com total persistência e integridade no servidor API e LocalStorage pelos próximos ${cooldownMinutes} minutos.`);
+  console.warn(`[Firestore Quota Guard] Limite de cota/transmissão do Firestore. Sistema operando com total persistência e integridade no servidor API e LocalStorage pelos próximos ${cooldownMinutes} minutos.`);
 }
 
 export interface CloudSyncStats {
@@ -147,9 +172,9 @@ export interface SyncResult {
 }
 
 /**
- * Saves the entire DbState to Firestore partitioned across sub-documents in parallel.
+ * Internal single-run worker for saving state to Firestore with concurrency throttling.
  */
-export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
+async function executeFirestoreSave(state: DbState): Promise<SyncResult> {
   // If quota is already exhausted, gracefully skip without generating failed write requests
   if (isFirestoreQuotaExhausted()) {
     return {
@@ -161,11 +186,11 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
   try {
     await ensureFirebaseAuth();
 
-    const writeTasks: Promise<any>[] = [];
+    const writeTaskFactories: (() => Promise<any>)[] = [];
 
     // 1. Countries
     const cleanCountries = sanitizeForFirestore(state.countries || []);
-    writeTasks.push(
+    writeTaskFactories.push(() =>
       setDoc(doc(db, COLLECTION_NAME, 'countries'), {
         list: cleanCountries,
         updatedAt: new Date().toISOString(),
@@ -174,7 +199,7 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
 
     // 2. Leagues
     const cleanLeagues = sanitizeForFirestore(state.leagues || []);
-    writeTasks.push(
+    writeTaskFactories.push(() =>
       setDoc(doc(db, COLLECTION_NAME, 'leagues'), {
         list: cleanLeagues,
         updatedAt: new Date().toISOString(),
@@ -204,17 +229,17 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
     }
 
     const cleanUsers = sanitizeForFirestore(finalUsers);
-    writeTasks.push(
+    writeTaskFactories.push(() =>
       setDoc(doc(db, COLLECTION_NAME, 'users'), {
         list: cleanUsers,
         updatedAt: new Date().toISOString(),
       })
     );
 
-    // 4. Teams (Chunked in parallel)
+    // 4. Teams (Chunked in controlled batches)
     const teams = state.teams || [];
     const teamChunks = Math.ceil(teams.length / TEAM_CHUNK_SIZE) || 1;
-    writeTasks.push(
+    writeTaskFactories.push(() =>
       setDoc(doc(db, COLLECTION_NAME, 'teams_meta'), {
         total: teams.length,
         chunks: teamChunks,
@@ -225,13 +250,15 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
     for (let i = 0; i < teamChunks; i++) {
       const chunkTeams = teams.slice(i * TEAM_CHUNK_SIZE, (i + 1) * TEAM_CHUNK_SIZE);
       const cleanChunk = sanitizeForFirestore(chunkTeams);
-      writeTasks.push(setDoc(doc(db, COLLECTION_NAME, `teams_${i}`), { list: cleanChunk }));
+      writeTaskFactories.push(() =>
+        setDoc(doc(db, COLLECTION_NAME, `teams_${i}`), { list: cleanChunk })
+      );
     }
 
-    // 5. Matches (Chunked in parallel)
+    // 5. Matches (Chunked in controlled batches)
     const matches = state.matches || [];
     const matchChunks = Math.ceil(matches.length / MATCH_CHUNK_SIZE) || 1;
-    writeTasks.push(
+    writeTaskFactories.push(() =>
       setDoc(doc(db, COLLECTION_NAME, 'matches_meta'), {
         total: matches.length,
         chunks: matchChunks,
@@ -242,13 +269,15 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
     for (let i = 0; i < matchChunks; i++) {
       const chunkMatches = matches.slice(i * MATCH_CHUNK_SIZE, (i + 1) * MATCH_CHUNK_SIZE);
       const cleanChunk = sanitizeForFirestore(chunkMatches);
-      writeTasks.push(setDoc(doc(db, COLLECTION_NAME, `matches_${i}`), { list: cleanChunk }));
+      writeTaskFactories.push(() =>
+        setDoc(doc(db, COLLECTION_NAME, `matches_${i}`), { list: cleanChunk })
+      );
     }
 
     // 6. Referees (if available)
     if (state.referees && state.referees.length > 0) {
       const cleanReferees = sanitizeForFirestore(state.referees);
-      writeTasks.push(
+      writeTaskFactories.push(() =>
         setDoc(doc(db, COLLECTION_NAME, 'referees'), {
           list: cleanReferees,
           updatedAt: new Date().toISOString(),
@@ -260,7 +289,7 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
     lastLocalSavedTimestamp = nowIso;
 
     // 7. Meta info
-    writeTasks.push(
+    writeTaskFactories.push(() =>
       setDoc(doc(db, COLLECTION_NAME, 'meta'), {
         lastUpdated: nowIso,
         writerId: CLIENT_INSTANCE_ID,
@@ -275,25 +304,28 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
       })
     );
 
-    // Execute all write operations concurrently in parallel
-    await Promise.all(writeTasks);
+    // Execute with controlled concurrency (3 parallel writes at a time) to prevent write-stream exhaustion
+    await runWithConcurrencyLimit(writeTaskFactories, 3);
 
     return { success: true, count: matches.length };
   } catch (error: any) {
     const errMsg = error?.message || String(error);
     const errCode = error?.code || '';
 
-    // Handle Firestore Quota limit exceeded gracefully
+    // Handle Firestore Quota & Write stream limits gracefully
     if (
       errCode === 'resource-exhausted' ||
       errMsg.includes('resource-exhausted') ||
+      errMsg.includes('Write stream exhausted') ||
+      errMsg.includes('maximum allowed queued writes') ||
+      errMsg.includes('maximum backoff delay') ||
       errMsg.includes('Quota limit exceeded') ||
       errMsg.includes('quota metric')
     ) {
       markFirestoreQuotaExhausted(1440);
       return {
         success: false,
-        error: 'Quota de gravação diária do Firestore atingida. O sistema continua operando e salvando com segurança no servidor e armazenamento local.',
+        error: 'Transmissão/Quota de gravação do Firestore saturada. O sistema opera com total integridade e velocidade no servidor e armazenamento local.',
       };
     }
 
@@ -303,13 +335,41 @@ export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
     if (errMsg.includes('not found') || errCode === 'not-found') {
       try {
         db = getFirestore(app);
-        return await saveDbToFirestore(state);
+        return await executeFirestoreSave(state);
       } catch (fallbackErr: any) {
         return { success: false, error: fallbackErr?.message || String(fallbackErr) };
       }
     }
 
     return { success: false, error: errMsg };
+  }
+}
+
+/**
+ * Saves the entire DbState to Firestore partitioned across sub-documents with deduplication mutex.
+ */
+export async function saveDbToFirestore(state: DbState): Promise<SyncResult> {
+  if (isSaveInProgress) {
+    pendingStateForCloudSave = state;
+    return { success: true, count: state.matches?.length || 0 };
+  }
+
+  isSaveInProgress = true;
+  try {
+    const result = await executeFirestoreSave(state);
+
+    // If a newer state was requested while this save was executing, process it now
+    if (pendingStateForCloudSave) {
+      const nextState = pendingStateForCloudSave;
+      pendingStateForCloudSave = null;
+      setTimeout(() => {
+        saveDbToFirestore(nextState).catch(() => {});
+      }, 500);
+    }
+
+    return result;
+  } finally {
+    isSaveInProgress = false;
   }
 }
 
