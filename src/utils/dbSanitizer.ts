@@ -128,13 +128,51 @@ export const CANONICAL_LEAGUE_ALIASES: Record<string, { canonicalName: string; c
   '1. deild': { canonicalName: '1. deild karla', countryCode: 'ISL' },
 
   // Escócia
-  'scottish premiership': { canonicalName: 'Scottish Premiership', countryCode: 'SCO' },
-  'premiership escocia': { canonicalName: 'Scottish Premiership', countryCode: 'SCO' },
-  'premiership': { canonicalName: 'Scottish Premiership', countryCode: 'SCO' },
+  'scottish premiership': { canonicalName: 'Scottish Premiership', countryCode: 'ESC' },
+  'premiership escocia': { canonicalName: 'Scottish Premiership', countryCode: 'ESC' },
+  'premiership': { canonicalName: 'Scottish Premiership', countryCode: 'ESC' },
+  'scottish championship': { canonicalName: 'Championship', countryCode: 'ESC' },
+  'championship escocia': { canonicalName: 'Championship', countryCode: 'ESC' },
+
+  // Grécia
+  'super league greece': { canonicalName: 'Super League Grécia', countryCode: 'GRÉ' },
+  'super league grecia': { canonicalName: 'Super League Grécia', countryCode: 'GRÉ' },
+  'super league 1': { canonicalName: 'Super League Grécia', countryCode: 'GRÉ' },
+  'grecia super league': { canonicalName: 'Super League Grécia', countryCode: 'GRÉ' },
+
+  // País de Gales
+  'cymru premier': { canonicalName: 'Cymru Premier', countryCode: 'PAÍ' },
+  'welsh premier league': { canonicalName: 'Cymru Premier', countryCode: 'PAÍ' },
+  'liga do pais de gales': { canonicalName: 'Cymru Premier', countryCode: 'PAÍ' },
+
+  // Sérvia
+  'superliga servia': { canonicalName: 'SuperLiga Sérvia', countryCode: 'SÉR' },
+  'superliga serbia': { canonicalName: 'SuperLiga Sérvia', countryCode: 'SÉR' },
+  'serbian superliga': { canonicalName: 'SuperLiga Sérvia', countryCode: 'SÉR' },
+
+  // Suíça
+  'super league suica': { canonicalName: 'Super League', countryCode: 'SUÍ' },
+  'swiss super league': { canonicalName: 'Super League', countryCode: 'SUÍ' },
+  'credit suisse super league': { canonicalName: 'Super League', countryCode: 'SUÍ' },
+
+  // Áustria
+  'bundesliga austria': { canonicalName: 'Bundesliga', countryCode: 'ÁUS' },
+  'austrian bundesliga': { canonicalName: 'Bundesliga', countryCode: 'ÁUS' },
+  'admiral bundesliga': { canonicalName: 'Bundesliga', countryCode: 'ÁUS' },
+
+  // Egito
+  'egyptian premier league': { canonicalName: 'Premier League', countryCode: 'EGI' },
+  'premier league egito': { canonicalName: 'Premier League', countryCode: 'EGI' },
+  'egypt premier league': { canonicalName: 'Premier League', countryCode: 'EGI' },
+
+  // Singapura
+  'singapore premier league': { canonicalName: 'Premier League', countryCode: 'SIN' },
+  'premier league singapura': { canonicalName: 'Premier League', countryCode: 'SIN' },
+  'spl': { canonicalName: 'Premier League', countryCode: 'SIN' },
 
   // Arábia Saudita
-  'saudi pro league': { canonicalName: 'Saudi Pro League', countryCode: 'KSA' },
-  'roshn saudi league': { canonicalName: 'Saudi Pro League', countryCode: 'KSA' },
+  'saudi pro league': { canonicalName: 'Saudi Pro League', countryCode: 'ARÁ' },
+  'roshn saudi league': { canonicalName: 'Saudi Pro League', countryCode: 'ARÁ' },
 
   // Argentina
   'liga profesional': { canonicalName: 'Liga Profesional', countryCode: 'ARG' },
