@@ -1,6 +1,7 @@
 import { DbState, Country, League, Team, Match, MatchStats, MatchOdds } from '../types';
 
 import { sanitizeAndCleanDb, lookupCanonicalTeam } from './dbSanitizer';
+import { ensureCanonicalCountriesAndLeagues } from './countryLeagueHelper';
 
 export interface ClientSyncResult {
   success: boolean;
@@ -941,7 +942,8 @@ export function parseAndSyncCsvLocally(
     matches,
   };
 
-  const { cleanedDb } = sanitizeAndCleanDb(rawUpdatedDb);
+  const canonicalDb = ensureCanonicalCountriesAndLeagues(rawUpdatedDb);
+  const { cleanedDb } = sanitizeAndCleanDb(canonicalDb);
 
   const finishedMatchesCount = cleanedDb.matches.filter(m => m.status === 'FINALIZADO').length;
   const futureMatchesCount = cleanedDb.matches.filter(m => m.status === 'AGENDADO').length;

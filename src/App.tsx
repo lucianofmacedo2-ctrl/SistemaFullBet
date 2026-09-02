@@ -53,6 +53,8 @@ import { findOrCreateCountry, findOrCreateLeague, findOrCreateTeam, getNextUniqu
 import { ParsedMatchRow, ParsedMatchUpdateRow } from './utils/excelHelper';
 import { normalizeRefereeName } from './utils/refereeAnalytics';
 import { sanitizeDbImages, sanitizeImageUrl } from './utils/imageHelper';
+import { autoSyncDatabaseWithGitHub } from './services/githubCsvSyncService';
+import { ensureCanonicalCountriesAndLeagues } from './utils/countryLeagueHelper';
 import {
   getCurrentAuthUser,
   setCurrentAuthUser,
@@ -317,18 +319,52 @@ export default function App() {
 
     syncCloudInBackground();
 
+    // 3. Automatic GitHub Repository Sync (Fetches latest finished + future matches)
+    async function runAutoGitHubSync() {
+      try {
+        const currentLocal = getInstantCachedDatabaseState();
+        const res = await autoSyncDatabaseWithGitHub(currentLocal, false);
+        if (res.hasUpdates && res.updatedDb.matches.length > 0) {
+          const canonical = ensureCanonicalCountriesAndLeagues(res.updatedDb);
+          setDbState(canonical);
+          await saveDatabaseState(canonical);
+          console.log(`[GitHub Auto-Sync] Base atualizada automaticamente: ${canonical.matches.length} jogos carregados.`);
+        }
+      } catch (err: any) {
+        console.warn('[GitHub Auto-Sync] Aviso ao sincronizar automaticamente:', err?.message);
+      }
+    }
+
+    // Run immediate GitHub auto-sync on app boot (non-blocking)
+    runAutoGitHubSync();
+
+    // Re-check and sync whenever user returns to the tab (mobile lock/unlock or desktop window focus)
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        runAutoGitHubSync();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+
+    // Periodic auto-sync every 5 minutes to keep future matches and live scores fresh
+    const autoSyncInterval = setInterval(() => {
+      runAutoGitHubSync();
+    }, 5 * 60 * 1000);
+
     // 1. Subscribe to real-time bi-directional Firestore cloud synchronization
     const unsubscribe = subscribeToFirestoreSync(
       (cloudDb) => {
         if (!cloudDb) return;
         setDbState(prev => {
-          // If local already has matches from local user sync, do not blindly overwrite matches
-          const keepLocal = (prev.matches?.length || 0) > 0;
+          const cloudMatchesCount = cloudDb.matches?.length || 0;
+          const localMatchesCount = prev.matches?.length || 0;
+          const shouldUseCloudMatches = cloudMatchesCount >= localMatchesCount || localMatchesCount === 0;
           return {
-            countries: keepLocal && prev.countries?.length ? prev.countries : (cloudDb.countries || []),
-            leagues: keepLocal && prev.leagues?.length ? prev.leagues : (cloudDb.leagues || []),
-            teams: keepLocal && prev.teams?.length ? prev.teams : (cloudDb.teams || []),
-            matches: keepLocal ? prev.matches : (cloudDb.matches || []),
+            countries: cloudDb.countries?.length ? cloudDb.countries : (prev.countries || []),
+            leagues: cloudDb.leagues?.length ? cloudDb.leagues : (prev.leagues || []),
+            teams: cloudDb.teams?.length ? cloudDb.teams : (prev.teams || []),
+            matches: shouldUseCloudMatches ? (cloudDb.matches || []) : prev.matches,
             users: ensureDefaultUsers(cloudDb.users?.length > 0 ? cloudDb.users : prev.users),
           };
         });
@@ -349,6 +385,9 @@ export default function App() {
 
     return () => {
       unsubscribe();
+      clearInterval(autoSyncInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
       window.removeEventListener('click', handleUserInteraction);
       window.removeEventListener('keydown', handleUserInteraction);
       window.removeEventListener('touchstart', handleUserInteraction);
@@ -389,6 +428,17 @@ export default function App() {
     setCurrentUser(user);
     setCurrentAuthUser(user);
     setIsLoginModalOpen(false);
+    // Immediately ensure the latest GitHub matches are populated for this device
+    try {
+      const res = await autoSyncDatabaseWithGitHub(dbState, false);
+      if (res.hasUpdates && res.updatedDb.matches.length > 0) {
+        const canonical = ensureCanonicalCountriesAndLeagues(res.updatedDb);
+        setDbState(canonical);
+        await saveDatabaseState(canonical);
+      }
+    } catch {
+      // ignore
+    }
   };
 
   const handleLogout = () => {

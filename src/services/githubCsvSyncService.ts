@@ -240,3 +240,103 @@ export async function syncDatabaseWithGitHub(
     },
   };
 }
+
+export const GITHUB_LAST_SYNC_KEY = 'football_github_last_sync_timestamp';
+
+export function getLastGitHubSyncTime(): number {
+  try {
+    const raw = localStorage.getItem(GITHUB_LAST_SYNC_KEY);
+    return raw ? parseInt(raw, 10) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function setLastGitHubSyncTime(time: number = Date.now()): void {
+  try {
+    localStorage.setItem(GITHUB_LAST_SYNC_KEY, String(time));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Automatically synchronizes the database with GitHub if needed or periodically.
+ * Pulls both finished and future matches, merges cleanly and persists to local storage.
+ */
+export async function autoSyncDatabaseWithGitHub(
+  currentDb: DbState,
+  force: boolean = false
+): Promise<{
+  updatedDb: DbState;
+  hasUpdates: boolean;
+  result?: ClientSyncResult;
+  error?: string;
+}> {
+  const lastSync = getLastGitHubSyncTime();
+  const now = Date.now();
+  const MIN_SYNC_INTERVAL = 3 * 60 * 1000; // 3 minutes
+
+  // Skip if synced very recently and currentDb already has games, unless forced
+  if (!force && now - lastSync < MIN_SYNC_INTERVAL && (currentDb.matches?.length || 0) > 100) {
+    return { updatedDb: currentDb, hasUpdates: false };
+  }
+
+  try {
+    // Try syncing via backend server API first if available (faster & pre-cached)
+    try {
+      const serverResp = await fetch('/api/sync/github', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (serverResp.ok) {
+        const json = await serverResp.json();
+        if (json.success && json.db && Array.isArray(json.db.matches) && json.db.matches.length > 0) {
+          setLastGitHubSyncTime(now);
+          return {
+            updatedDb: json.db,
+            hasUpdates: json.db.matches.length !== currentDb.matches.length,
+            result: {
+              success: true,
+              message: json.stats?.message || 'Sincronizado automaticamente com o GitHub.',
+              totalCountries: json.db.countries?.length || 0,
+              totalLeagues: json.db.leagues?.length || 0,
+              totalTeams: json.db.teams?.length || 0,
+              totalMatches: json.db.matches?.length || 0,
+              finishedMatchesCount: json.stats?.finishedMatches,
+              futureMatchesCount: json.stats?.futureMatches,
+              newCountriesCount: 0,
+              newLeaguesCount: 0,
+              newTeamsCount: 0,
+              newMatchesCount: 0,
+            },
+          };
+        }
+      }
+    } catch {
+      // Fall through to direct client-side GitHub fetch
+    }
+
+    // Direct client fetch from GitHub raw URLs
+    const syncRes = await syncDatabaseWithGitHub(currentDb, false, { target: 'both' });
+    setLastGitHubSyncTime(now);
+
+    const hasUpdates =
+      syncRes.updatedDb.matches.length !== currentDb.matches.length ||
+      syncRes.updatedDb.teams.length !== currentDb.teams.length;
+
+    return {
+      updatedDb: syncRes.updatedDb,
+      hasUpdates: true,
+      result: syncRes.result,
+    };
+  } catch (err: any) {
+    console.warn('[GitHub Auto-Sync Client Warning]:', err?.message);
+    return {
+      updatedDb: currentDb,
+      hasUpdates: false,
+      error: err?.message || 'Falha na sincronização com o GitHub',
+    };
+  }
+}
+

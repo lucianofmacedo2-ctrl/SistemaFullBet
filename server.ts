@@ -4,6 +4,7 @@ import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import { syncOnlineFootballData, processMatchRows, importCustomCsvText } from './server/syncEngine';
+import { runServerGitHubSync, getServerSyncStats } from './server/githubSync';
 import { sanitizeAndCleanDb } from './src/utils/dbSanitizer';
 
 const app = express();
@@ -546,6 +547,22 @@ app.post('/api/auth/login', (req, res) => {
   res.json({ success: true, user: matched });
 });
 
+app.post('/api/sync/github', async (req, res) => {
+  try {
+    const currentDb = loadDb();
+    const { updatedDb, stats } = await runServerGitHubSync(currentDb);
+    saveDb(updatedDb);
+    res.json({ success: true, stats, db: updatedDb });
+  } catch (err: any) {
+    console.error('Error running GitHub auto-sync:', err);
+    res.status(500).json({ success: false, error: err.message || String(err) });
+  }
+});
+
+app.get('/api/sync/github-status', (req, res) => {
+  res.json({ success: true, stats: getServerSyncStats() });
+});
+
 app.post('/api/sync/run', async (req, res) => {
   try {
     const currentDb = loadDb();
@@ -796,6 +813,26 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[Football DB Server] Running on http://localhost:${PORT}`);
+
+    // Automatic GitHub synchronization on server startup (non-blocking)
+    setTimeout(async () => {
+      try {
+        const db = loadDb();
+        await runServerGitHubSync(db);
+      } catch (err: any) {
+        console.warn('[GitHub Auto-Sync] Startup sync warning:', err?.message);
+      }
+    }, 1500);
+
+    // Continuous automatic synchronization every 10 minutes
+    setInterval(async () => {
+      try {
+        const db = loadDb();
+        await runServerGitHubSync(db);
+      } catch (err: any) {
+        console.warn('[GitHub Auto-Sync] Periodic sync warning:', err?.message);
+      }
+    }, 10 * 60 * 1000);
   });
 }
 

@@ -7,7 +7,7 @@
     "role": "MASTER",
     "duration": "LIFETIME",
     "status": "ACTIVE",
-    "createdAt": "2026-08-19T00:00:00.000Z",
+    "createdAt": "2026-08-31T15:48:07.709Z",
     "expiresAt": null,
     "notes": "Perfil Master Principal"
   },
@@ -19,8 +19,65 @@
     "role": "CONSULTOR",
     "duration": "30_DAYS",
     "status": "ACTIVE",
-    "createdAt": "2026-08-21T00:00:00.000Z",
-    "expiresAt": "2026-09-20T09:38:00.000Z",
+    "createdAt": "2026-08-31T15:48:07.709Z",
+    "expiresAt": "2026-09-29T15:48:07.709Z",
     "notes": "Perfil de Teste Consulta & Análise"
+  },
+  {
+    "password": "q43q28",
+    "role": "CONSULTOR",
+    "duration": "90_DAYS",
+    "username": "douglas.silva",
+    "expiresAt": "2026-11-21T14:11:43.956Z",
+    "name": "Douglas Tadeu Celestino da Silva",
+    "status": "ACTIVE",
+    "id": "USER-005",
+    "createdAt": "2026-08-23T14:11:43.957Z",
+    "notes": "Assinatura 60 dias + 30 dias de brinde"
+  },
+  {
+    "role": "CONSULTOR",
+    "password": "123456",
+    "username": "teste.matusa",
+    "duration": "30_DAYS",
+    "expiresAt": "2026-09-20T13:26:21.273Z",
+    "name": "Douglas",
+    "status": "ACTIVE",
+    "createdAt": "2026-08-21T13:26:21.273Z",
+    "id": "USER-004",
+    "notes": ""
+  },
+  {
+    "notes": "",
+    "customDays": null,
+    "expiresAt": "2026-10-28T18:21:10.692Z",
+    "duration": "60_DAYS",
+    "id": "USER-006",
+    "username": "fernandosrocha",
+    "password": "cs4wnr",
+    "name": "Fernando da Silva Rocha",
+    "createdAt": "2026-08-29T18:21:10.693Z",
+    "status": "ACTIVE",
+    "role": "CONSULTOR"
+  },
+  {
+    "password": "123456",
+    "username": "teste.zoreba",
+    "duration": "30_DAYS",
+    "expiresAt": "2026-09-20T12:51:46.974Z",
+    "role": "CONSULTOR",
+    "id": "USER-002",
+    "createdAt": "2026-08-21T12:51:46.974Z",
+    "status": "ACTIVE",
+    "notes": "",
+    "name": "Fabio"
+  },
+  {
+    "id": "USR-MASTER-001",
+    "username": "luciano.macedo",
+    "password": "123",
+    "role": "MASTER",
+    "status": "ACTIVE",
+    "notes": "Administrador Geral"
   }
 ]
