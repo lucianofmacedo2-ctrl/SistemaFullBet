@@ -350,6 +350,7 @@ export interface Match {
   stadium?: string; // Estadio
   stadiumCapacity?: number | null; // Capacidade
   attendance?: number | null; // Publico
+  round?: number | string; // Rodada/Jornada/Matchday da Liga (ex: 1, 5, 26)
   status: MatchStatus;
   notes?: string;
   stats?: MatchStats;

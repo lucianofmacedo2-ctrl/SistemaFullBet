@@ -22,6 +22,47 @@ export function normalizeText(str?: string | null): string {
 }
 
 /**
+ * Extrai a base limpa de uma liga e o número/identificador da rodada caso presente.
+ * Exemplos:
+ *  - "Liga Profissional Saudita - Rodada 1" -> base: "Liga Profissional Saudita", round: "1"
+ *  - "Brasileirão Betano - Rodada 26" -> base: "Brasileirão Betano", round: "26"
+ *  - "LaLiga - Jornada 4" -> base: "LaLiga", round: "4"
+ *  - "Premier League - Matchday 5" -> base: "Premier League", round: "5"
+ *  - "Liga dos Campeões - Fase da Liga - Rodada 1" -> base: "Liga dos Campeões", round: "1"
+ *  - "Eredivisie (Rodada 5)" -> base: "Eredivisie", round: "5"
+ *  - "Liga MX - Abertura - Rodada 7" -> base: "Liga MX - Abertura", round: "7"
+ */
+export function extractLeagueBaseAndRound(rawName?: string | null): { cleanLeagueName: string; round?: string } {
+  if (!rawName) return { cleanLeagueName: '' };
+  const s = rawName.trim();
+  let round: string | undefined;
+
+  // 1. Regex de extração de número ou texto da rodada
+  const roundMatch = s.match(/(?:[-–—/|]\s*|\s+|\(|\b)(?:Fase da Liga\s*[-–—/|]\s*)?(?:Rodada|Jornada|Matchday|Round|Semana|Etapa|Ronda)\s*([0-9]+[ªº°]?|[A-Za-z0-9]+)\b\)?/i);
+  if (roundMatch && roundMatch[1]) {
+    round = roundMatch[1].replace(/[ªº°]/g, '').trim();
+  }
+
+  // 2. Limpar os sufixos de rodada da string da liga
+  let cleaned = s
+    .replace(/\s*[-–—/|]\s*(?:Fase da Liga\s*[-–—/|]\s*)?(?:Rodada|Jornada|Matchday|Round|Semana|Etapa|Ronda)\s*[0-9]+[ªº°]?\s*/gi, ' ')
+    .replace(/\s*\(\s*(?:Rodada|Jornada|Matchday|Round|Semana|Etapa|Ronda)\s*[0-9]+[ªº°]?\s*\)\s*/gi, ' ')
+    .replace(/\s*\[\s*(?:Rodada|Jornada|Matchday|Round|Semana|Etapa|Ronda)\s*[0-9]+[ªº°]?\s*\]\s*/gi, ' ')
+    .replace(/\s+(?:Rodada|Jornada|Matchday|Round|Semana|Etapa|Ronda)\s+[0-9]+[ªº°]?\s*$/gi, ' ')
+    .replace(/\s*[-–—/|]\s*(?:Fase da Liga|Fase de Grupos|Regular Season|Temporada Regular)\s*$/gi, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  // Limpeza de traço ou barra solta no final após a remoção
+  cleaned = cleaned.replace(/\s*[-–—/|]\s*$/g, '').trim();
+
+  return {
+    cleanLeagueName: cleaned || s,
+    round,
+  };
+}
+
+/**
  * Canonical metadata for known football countries, standard leagues and popular teams
  */
 export interface CanonicalCountryDef {
@@ -1365,14 +1406,19 @@ export function ensureCanonicalCountriesAndLeagues(dbState: DbState): DbState {
   ]);
 
   const italiaCountry = countryByNorm.get('italia') || countries.find(c => normalizeText(c.name) === 'italia');
+  const brasilCountry = countryByNorm.get('brasil') || countries.find(c => normalizeText(c.name) === 'brasil');
   const serieALeague = leagues.find(l => normalizeText(l.name) === 'serie a' && (l.countryId === italiaCountry?.id || normalizeText(l.countryName) === 'italia'));
 
   // 5. Heal and merge duplicate/unwanted leagues
   const leagueMergeMap = new Map<string, string>(); // oldLeagueId -> newLeagueId
-  const leagueNameMergeMap = new Map<string, { targetName: string; countryName: string }>();
+  const leagueRoundMap = new Map<string, string>(); // leagueId -> round (e.g. "1", "5")
+  const existingCleanLeagues = new Map<string, League>(); // `countryKey_cleanNormName` -> League
 
   // Find canonical targets for leagues
-  const saudiLeague = leagues.find(l => normalizeText(l.name) === 'saudi pro league');
+  const saudiLeague = leagues.find(l => {
+    const n = normalizeText(l.name);
+    return n === 'saudi pro league' || n === 'liga profissional saudita';
+  });
   const belgiumLeague = leagues.find(l => normalizeText(l.name) === 'jupiler pro league');
   const denmarkLeague = leagues.find(l => normalizeText(l.name) === 'superliga');
   const estoniaLeague = leagues.find(l => normalizeText(l.name) === 'premium liiga');
@@ -1383,38 +1429,56 @@ export function ensureCanonicalCountriesAndLeagues(dbState: DbState): DbState {
   const removedLeagueIds = new Set<string>();
 
   for (const l of leagues) {
-    const normName = normalizeText(l.name);
-    const normCountry = normalizeText(l.countryName || (l.countryId ? countryById.get(l.countryId)?.name : ''));
+    const { cleanLeagueName, round } = extractLeagueBaseAndRound(l.name);
+    if (round) {
+      leagueRoundMap.set(l.id, round);
+    }
 
-    // Copa do Brasil -> remove
-    if (normName === 'copa do brasil') {
-      removedLeagueIds.add(l.id);
-      continue;
+    const normName = normalizeText(l.name);
+    const cleanNorm = normalizeText(cleanLeagueName);
+    const normCountry = normalizeText(l.countryName || (l.countryId ? countryById.get(l.countryId)?.name : ''));
+    const countryKey = l.countryId || normCountry;
+
+    // Copa do Brasil / Copa Betano do Brasil -> manter e padronizar
+    if (normName.includes('copa do brasil') || cleanNorm.includes('copa do brasil') || normName.includes('copa betano') || cleanNorm.includes('copa betano')) {
+      l.name = 'Copa Betano do Brasil';
+      if (brasilCountry) {
+        l.countryId = brasilCountry.id;
+        l.countryName = brasilCountry.name;
+      }
     }
     // Liga Profissional Saudita -> merge to Saudi Pro League
-    if (normName === 'liga profissional saudita') {
-      if (saudiLeague) leagueMergeMap.set(l.id, saudiLeague.id);
-      removedLeagueIds.add(l.id);
-      continue;
+    if (cleanNorm === 'liga profissional saudita' || cleanNorm === 'saudi pro league' || normName.includes('liga profissional saudita')) {
+      if (saudiLeague && saudiLeague.id !== l.id) {
+        leagueMergeMap.set(l.id, saudiLeague.id);
+        removedLeagueIds.add(l.id);
+        continue;
+      }
     }
     // Liga Jupiler -> merge to Jupiler Pro League
-    if (normName === 'liga jupiler') {
-      if (belgiumLeague) leagueMergeMap.set(l.id, belgiumLeague.id);
-      removedLeagueIds.add(l.id);
-      continue;
+    if (normName === 'liga jupiler' || cleanNorm === 'liga jupiler') {
+      if (belgiumLeague && belgiumLeague.id !== l.id) {
+        leagueMergeMap.set(l.id, belgiumLeague.id);
+        removedLeagueIds.add(l.id);
+        continue;
+      }
     }
     // Dinamarca Superligaen or 1. Division -> merge to Superliga
     if (normCountry === 'dinamarca' && (normName === 'superligaen' || normName === '1. division' || normName === '1 division')) {
-      if (denmarkLeague) leagueMergeMap.set(l.id, denmarkLeague.id);
-      removedLeagueIds.add(l.id);
-      continue;
+      if (denmarkLeague && denmarkLeague.id !== l.id) {
+        leagueMergeMap.set(l.id, denmarkLeague.id);
+        removedLeagueIds.add(l.id);
+        continue;
+      }
     }
     // Estônia Meistriliiga or misassigned MLS/USL in Estonia
     if (normCountry === 'estonia') {
       if (normName === 'meistriliiga') {
-        if (estoniaLeague) leagueMergeMap.set(l.id, estoniaLeague.id);
-        removedLeagueIds.add(l.id);
-        continue;
+        if (estoniaLeague && estoniaLeague.id !== l.id) {
+          leagueMergeMap.set(l.id, estoniaLeague.id);
+          removedLeagueIds.add(l.id);
+          continue;
+        }
       }
       if (normName === 'major league soccer' || normName === 'usl championship') {
         removedLeagueIds.add(l.id);
@@ -1423,9 +1487,11 @@ export function ensureCanonicalCountriesAndLeagues(dbState: DbState): DbState {
     }
     // Noruega OBOS-ligaen (2ª Divisão) -> merge to OBOS-ligaen
     if (normCountry === 'noruega' && (normName.includes('2 divisao') || normName.includes('2a divisao'))) {
-      if (norwayObosLeague) leagueMergeMap.set(l.id, norwayObosLeague.id);
-      removedLeagueIds.add(l.id);
-      continue;
+      if (norwayObosLeague && norwayObosLeague.id !== l.id) {
+        leagueMergeMap.set(l.id, norwayObosLeague.id);
+        removedLeagueIds.add(l.id);
+        continue;
+      }
     }
     // Nova Zelândia Liga Nacional -> remove (keep National League)
     if (normCountry === 'nova zelandia' && normName === 'liga nacional') {
@@ -1460,6 +1526,24 @@ export function ensureCanonicalCountriesAndLeagues(dbState: DbState): DbState {
       l.name = 'USL Championship';
     }
 
+    // Unificação de ligas por base limpa (remove sufixos de rodada como "Rodada 1", "Rodada 2", etc.)
+    const cleanKey = `${countryKey}__${cleanNorm}`;
+    if (existingCleanLeagues.has(cleanKey)) {
+      const existing = existingCleanLeagues.get(cleanKey)!;
+      if (existing.id !== l.id) {
+        leagueMergeMap.set(l.id, existing.id);
+        removedLeagueIds.add(l.id);
+        if (!existing.logoUrl && l.logoUrl) existing.logoUrl = l.logoUrl;
+        continue;
+      }
+    }
+
+    // Limpar o nome da liga eliminando os sufixos de rodadas
+    if (cleanLeagueName && cleanLeagueName !== l.name) {
+      l.name = cleanLeagueName;
+    }
+
+    existingCleanLeagues.set(cleanKey, l);
     filteredLeagues.push(l);
   }
 
@@ -1566,6 +1650,7 @@ export function ensureCanonicalCountriesAndLeagues(dbState: DbState): DbState {
   });
 
   matches.forEach(m => {
+    const origLeagueId = m.leagueId;
     // Handle merged leagues in matches
     if (m.leagueId && leagueMergeMap.has(m.leagueId)) {
       const newLid = leagueMergeMap.get(m.leagueId)!;
@@ -1576,6 +1661,11 @@ export function ensureCanonicalCountriesAndLeagues(dbState: DbState): DbState {
         m.countryId = targetL.countryId;
         m.countryName = targetL.countryName;
       }
+    }
+
+    if (!m.round) {
+      const r = (origLeagueId ? leagueRoundMap.get(origLeagueId) : null) || (m.leagueId ? leagueRoundMap.get(m.leagueId) : null);
+      if (r) m.round = r;
     }
 
     const normHome = normalizeText(m.homeTeamName);
@@ -1600,7 +1690,16 @@ export function ensureCanonicalCountriesAndLeagues(dbState: DbState): DbState {
     if (canon) {
       m.countryId = canon.country.id;
       m.countryName = canon.country.name;
-      if (canon.league) {
+      const isCupOrSpecificLeague = m.leagueName && (
+        normalizeText(m.leagueName).includes('copa') ||
+        normalizeText(m.leagueName).includes('champions') ||
+        normalizeText(m.leagueName).includes('europa') ||
+        normalizeText(m.leagueName).includes('conference') ||
+        normalizeText(m.leagueName).includes('cup') ||
+        normalizeText(m.leagueName).includes('serie b') ||
+        normalizeText(m.leagueName).includes('2 division')
+      );
+      if (!isCupOrSpecificLeague && canon.league) {
         m.leagueId = canon.league.id;
         m.leagueName = canon.league.name;
       }

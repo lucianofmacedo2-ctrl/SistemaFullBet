@@ -1,7 +1,8 @@
 import { DbState, Country, League, Team, Match, MatchStats, MatchOdds } from '../types';
 
 import { sanitizeAndCleanDb, lookupCanonicalTeam } from './dbSanitizer';
-import { ensureCanonicalCountriesAndLeagues } from './countryLeagueHelper';
+import { ensureCanonicalCountriesAndLeagues, extractLeagueBaseAndRound } from './countryLeagueHelper';
+import { enforceUserVerifiedTodayMatches } from './todayMatchesHelper';
 
 export interface ClientSyncResult {
   success: boolean;
@@ -482,6 +483,14 @@ export function parseAndSyncCsvLocally(
       }
     }
 
+    // Extrair rodada e base da liga (evita criar ligas duplicadas por rodada, ex: "Liga Profissional Saudita - Rodada 1")
+    const { cleanLeagueName, round: extractedRoundFromLeague } = extractLeagueBaseAndRound(leagueName);
+    const rowRoundVal = getRowValue(r, ['Rodada', 'RODADA', 'Round', 'ROUND', 'Jornada', 'JORNADA', 'Matchday', 'MATCHDAY', 'Semana', 'SEMANA']);
+    const matchRound = rowRoundVal || extractedRoundFromLeague;
+    if (cleanLeagueName) {
+      leagueName = cleanLeagueName;
+    }
+
     // 1. Ensure Country
     const cKeyUpper = countryCodeOrName.toUpperCase();
     const cKeyFriendly = friendlyCountryName.toUpperCase();
@@ -882,6 +891,7 @@ export function parseAndSyncCsvLocally(
       if (fthg !== null) existingMatch.homeScore = fthg;
       if (ftag !== null) existingMatch.awayScore = ftag;
       if (referee) existingMatch.referee = referee;
+      if (matchRound && !existingMatch.round) existingMatch.round = matchRound;
 
       const mergedStats: MatchStats = { ...(existingMatch.stats || {}) };
       (Object.keys(statsObj) as (keyof MatchStats)[]).forEach((k) => {
@@ -922,6 +932,7 @@ export function parseAndSyncCsvLocally(
         homeScore: fthg,
         awayScore: ftag,
         referee,
+        round: matchRound || undefined,
         stats: statsObj,
         odds: oddsObj,
         createdAt: new Date().toISOString(),
@@ -944,19 +955,20 @@ export function parseAndSyncCsvLocally(
 
   const canonicalDb = ensureCanonicalCountriesAndLeagues(rawUpdatedDb);
   const { cleanedDb } = sanitizeAndCleanDb(canonicalDb);
+  const finalDb = enforceUserVerifiedTodayMatches(cleanedDb);
 
-  const finishedMatchesCount = cleanedDb.matches.filter(m => m.status === 'FINALIZADO').length;
-  const futureMatchesCount = cleanedDb.matches.filter(m => m.status === 'AGENDADO').length;
+  const finishedMatchesCount = finalDb.matches.filter(m => m.status === 'FINALIZADO').length;
+  const futureMatchesCount = finalDb.matches.filter(m => m.status === 'AGENDADO').length;
 
   const result: ClientSyncResult = {
     success: parsedRows.length > 0,
     message: replace
-      ? `Base sincronizada com sucesso: ${cleanedDb.countries.length} país(es), ${cleanedDb.leagues.length} liga(s), ${cleanedDb.teams.length} times e ${cleanedDb.matches.length} jogos (${finishedMatchesCount} finalizados e ${futureMatchesCount} futuros)!`
+      ? `Base sincronizada com sucesso: ${finalDb.countries.length} país(es), ${finalDb.leagues.length} liga(s), ${finalDb.teams.length} times e ${finalDb.matches.length} jogos (${finishedMatchesCount} finalizados e ${futureMatchesCount} futuros)!`
       : `Processamento concluído: +${newTeamsCount} times, +${newLeaguesCount} ligas, +${newCountriesCount} países e +${newMatchesCount} jogos adicionados/atualizados!`,
-    totalCountries: cleanedDb.countries.length,
-    totalLeagues: cleanedDb.leagues.length,
-    totalTeams: cleanedDb.teams.length,
-    totalMatches: cleanedDb.matches.length,
+    totalCountries: finalDb.countries.length,
+    totalLeagues: finalDb.leagues.length,
+    totalTeams: finalDb.teams.length,
+    totalMatches: finalDb.matches.length,
     finishedMatchesCount,
     futureMatchesCount,
     newCountriesCount,
@@ -965,6 +977,6 @@ export function parseAndSyncCsvLocally(
     newMatchesCount,
   };
 
-  return { updatedDb: cleanedDb, result };
+  return { updatedDb: finalDb, result };
 }
 

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { sanitizeAndCleanDb } from '../src/utils/dbSanitizer';
+import { extractLeagueBaseAndRound } from '../src/utils/countryLeagueHelper';
 
 export interface SyncResult {
   success: boolean;
@@ -451,6 +452,9 @@ export function processMatchRows(
       cCode;
 
     if (!lName) lName = `Liga Principal ${cCode}`;
+
+    const { cleanLeagueName } = extractLeagueBaseAndRound(lName);
+    if (cleanLeagueName) lName = cleanLeagueName;
 
     // 1. Ensure Country
     const cKeyUpper = cCode.toUpperCase();

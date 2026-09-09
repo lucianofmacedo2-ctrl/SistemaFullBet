@@ -6,6 +6,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { syncOnlineFootballData, processMatchRows, importCustomCsvText } from './server/syncEngine';
 import { runServerGitHubSync, getServerSyncStats } from './server/githubSync';
 import { sanitizeAndCleanDb } from './src/utils/dbSanitizer';
+import { enforceUserVerifiedTodayMatches } from './src/utils/todayMatchesHelper';
 
 const app = express();
 const PORT = 3000;
@@ -246,10 +247,12 @@ function loadDb(): DbData {
     const parsed = JSON.parse(raw);
     parsed.users = users;
     const { cleanedDb, stats } = sanitizeAndCleanDb(parsed as any);
+    const finalDb = enforceUserVerifiedTodayMatches(cleanedDb);
+    finalDb.users = users;
     if (stats.foreignLeaguesRemoved > 0 || stats.teamsCleaned > 0 || stats.duplicatesRemoved > 0) {
-      saveDb(cleanedDb);
+      saveDb(finalDb);
     }
-    return cleanedDb;
+    return finalDb;
   } catch (err) {
     console.error('Error reading db file:', err);
     return { countries: [], leagues: [], teams: [], matches: [], users };
@@ -262,8 +265,9 @@ function saveDb(data: DbData) {
       saveUsers(data.users);
     }
     const { cleanedDb } = sanitizeAndCleanDb(data as any);
+    const finalDb = enforceUserVerifiedTodayMatches(cleanedDb);
     const dataToSave = {
-      ...cleanedDb,
+      ...finalDb,
       users: loadUsers(),
     };
     fs.writeFileSync(DB_FILE, JSON.stringify(dataToSave, null, 2), 'utf-8');

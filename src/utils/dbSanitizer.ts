@@ -1,5 +1,5 @@
 import { DbState, Country, League, Team, Match } from '../types';
-import { normalizeText } from './countryLeagueHelper';
+import { normalizeText, extractLeagueBaseAndRound } from './countryLeagueHelper';
 
 export interface SanitizeStats {
   foreignLeaguesRemoved: number;
@@ -36,7 +36,8 @@ export const CANONICAL_LEAGUE_ALIASES: Record<string, { canonicalName: string; c
   'brasileirão série b': { canonicalName: 'Brasileirão Série B', countryCode: 'BRA' },
   'serie b brasil': { canonicalName: 'Brasileirão Série B', countryCode: 'BRA' },
   'campeonato brasileiro serie b': { canonicalName: 'Brasileirão Série B', countryCode: 'BRA' },
-  'copa do brasil': { canonicalName: 'Copa do Brasil', countryCode: 'BRA' },
+  'copa do brasil': { canonicalName: 'Copa Betano do Brasil', countryCode: 'BRA' },
+  'copa betano do brasil': { canonicalName: 'Copa Betano do Brasil', countryCode: 'BRA' },
   'copa do nordeste': { canonicalName: 'Copa do Nordeste', countryCode: 'BRA' },
 
   // Inglaterra
@@ -196,15 +197,28 @@ export const CANONICAL_LEAGUE_ALIASES: Record<string, { canonicalName: string; c
 
 export function lookupCanonicalLeague(leagueName?: string): { canonicalName: string; countryCode?: string } | undefined {
   if (!leagueName) return undefined;
-  const norm = normalizeText(leagueName);
-  if (CANONICAL_LEAGUE_ALIASES[norm]) {
-    return CANONICAL_LEAGUE_ALIASES[norm];
-  }
-  for (const [alias, data] of Object.entries(CANONICAL_LEAGUE_ALIASES)) {
-    if (norm === alias || norm.replace(/\s+/g, '') === alias.replace(/\s+/g, '')) {
-      return data;
+
+  const tryMatch = (str: string) => {
+    const norm = normalizeText(str);
+    if (CANONICAL_LEAGUE_ALIASES[norm]) {
+      return CANONICAL_LEAGUE_ALIASES[norm];
     }
+    for (const [alias, data] of Object.entries(CANONICAL_LEAGUE_ALIASES)) {
+      if (norm === alias || norm.replace(/\s+/g, '') === alias.replace(/\s+/g, '')) {
+        return data;
+      }
+    }
+    return undefined;
+  };
+
+  const direct = tryMatch(leagueName);
+  if (direct) return direct;
+
+  const { cleanLeagueName } = extractLeagueBaseAndRound(leagueName);
+  if (cleanLeagueName && cleanLeagueName !== leagueName) {
+    return tryMatch(cleanLeagueName);
   }
+
   return undefined;
 }
 
@@ -854,13 +868,21 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
   const cleanedLeagues: League[] = [];
   const leagueNameToId = new Map<string, string>(); // `countryKey_normLeagueName` -> canonicalLeagueId
   const leagueRemap = new Map<string, string>(); // oldDuplicateId -> canonicalLeagueId
+  const leagueRoundMap = new Map<string, string>(); // leagueId -> round extracted from its name (e.g. "5")
 
   for (const league of leagues) {
     if (!league || !league.name) continue;
     const l: League = { ...league };
-    const canonInfo = lookupCanonicalLeague(l.name);
-    const effectiveName = canonInfo?.canonicalName || l.name.trim();
+    const { cleanLeagueName, round } = extractLeagueBaseAndRound(l.name);
+    if (round) {
+      leagueRoundMap.set(l.id, round);
+    }
+
+    const canonInfo = lookupCanonicalLeague(cleanLeagueName || l.name);
+    const effectiveName = canonInfo?.canonicalName || cleanLeagueName || l.name.trim();
     const normName = normalizeText(effectiveName);
+    const normClean = normalizeText(cleanLeagueName);
+    const normRaw = normalizeText(l.name);
 
     // Garantir país da liga
     if (!l.countryId && canonInfo?.countryCode) {
@@ -877,26 +899,36 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
 
     const countryKey = (l.countryId || l.countryName || 'NO_COUNTRY').trim().toLowerCase();
     const lookupKey = `${countryKey}_${normName}`;
-    const rawLookupKey = `${countryKey}_${normalizeText(l.name)}`;
+    const cleanLookupKey = `${countryKey}_${normClean}`;
+    const rawLookupKey = `${countryKey}_${normRaw}`;
 
     const existingLeagueId =
       leagueNameToId.get(lookupKey) ||
+      (normClean ? leagueNameToId.get(cleanLookupKey) : null) ||
       leagueNameToId.get(rawLookupKey) ||
-      leagueNameToId.get(`no_country_${normName}`);
+      leagueNameToId.get(`no_country_${normName}`) ||
+      (normClean ? leagueNameToId.get(`no_country_${normClean}`) : null);
 
     if (existingLeagueId && existingLeagueId !== l.id) {
       leagueRemap.set(l.id, existingLeagueId);
       stats.duplicatesRemoved++;
-      stats.details.push(`Liga duplicada mesclada: "${l.name}" (${l.id}) unificada em "${effectiveName}" (${existingLeagueId}).`);
+      stats.details.push(`Liga fragmentada/duplicada unificada: "${l.name}" (${l.id}) consolidada em "${effectiveName}" (${existingLeagueId}).`);
       const targetL = cleanedLeagues.find(cl => cl.id === existingLeagueId);
-      if (targetL && !targetL.logoUrl && l.logoUrl) {
-        targetL.logoUrl = l.logoUrl;
+      if (targetL) {
+        if (!targetL.logoUrl && l.logoUrl) {
+          targetL.logoUrl = l.logoUrl;
+        }
+        // Se a targetL ainda tinha nome contendo sufixo de rodada e a nova tem nome limpo, limpa o nome
+        if (/(?:Rodada|Jornada|Matchday|Round|Semana)\s*\d+/i.test(targetL.name) && !/(?:Rodada|Jornada|Matchday|Round|Semana)\s*\d+/i.test(effectiveName)) {
+          targetL.name = effectiveName;
+        }
       }
       continue;
     }
 
     l.name = effectiveName;
     leagueNameToId.set(lookupKey, l.id);
+    if (normClean) leagueNameToId.set(cleanLookupKey, l.id);
     leagueNameToId.set(rawLookupKey, l.id);
     leagueRemap.set(l.id, l.id);
     cleanedLeagues.push(l);
@@ -1262,6 +1294,7 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
     }
 
     // 1. Remap de liga se foi mesclada
+    const origLeagueId = match.leagueId;
     if (match.leagueId && leagueRemap.has(match.leagueId)) {
       const mappedLid = leagueRemap.get(match.leagueId)!;
       if (match.leagueId !== mappedLid) {
@@ -1279,8 +1312,28 @@ export function sanitizeAndCleanDb(dbState: DbState): { cleanedDb: DbState; stat
       }
     }
 
-    // 2. Se ambos os times pertencem comprovadamente à mesma liga (ex: ambos da 2. Bundesliga), alinhar a partida a essa liga
-    if (ht?.leagueId && at?.leagueId && ht.leagueId === at.leagueId && match.leagueId !== ht.leagueId) {
+    // Se a partida não possui rodada definida, mas a liga (original ou alvo) tinha rodada em seu nome:
+    if (!match.round) {
+      const extractedR = (origLeagueId ? leagueRoundMap.get(origLeagueId) : null) || (match.leagueId ? leagueRoundMap.get(match.leagueId) : null);
+      if (extractedR) {
+        match.round = extractedR;
+        matchModified = true;
+      }
+    }
+
+    const isCupMatch = Boolean(
+      match.leagueName && (
+        match.leagueName.toLowerCase().includes('copa') ||
+        match.leagueName.toLowerCase().includes('cup') ||
+        match.leagueName.toLowerCase().includes('champions') ||
+        match.leagueName.toLowerCase().includes('libertadores') ||
+        match.leagueName.toLowerCase().includes('sul-americana') ||
+        match.leagueName.toLowerCase().includes('sudamericana')
+      )
+    );
+
+    // 2. Se ambos os times pertencem comprovadamente à mesma liga e NÃO é jogo de Copa, alinhar a essa liga
+    if (!isCupMatch && ht?.leagueId && at?.leagueId && ht.leagueId === at.leagueId && match.leagueId !== ht.leagueId) {
       const l = leagueById.get(ht.leagueId);
       if (l) {
         stats.details.push(`Partida "${match.homeTeamName} x ${match.awayTeamName}" realinhada para a liga "${l.name}" de ambos os clubes.`);
@@ -1435,12 +1488,13 @@ export function diagnoseDatabaseAnomalies(dbState: DbState): AnomalyReport {
   const leagueById = new Map<string, League>(dbState.leagues.map(l => [l.id, l]));
   const countryById = new Map<string, Country>(dbState.countries.map(c => [c.id, c]));
 
-  // 1. Diagnosticar Ligas Duplicadas (ex: MLS e Major League Soccer)
+  // 1. Diagnosticar Ligas Duplicadas (ex: MLS e Major League Soccer, ou ligas divididas por rodadas)
   const leagueGroups = new Map<string, Array<{ league: League; matchesCount: number }>>();
   for (const l of dbState.leagues || []) {
     if (!l?.name) continue;
-    const canonInfo = lookupCanonicalLeague(l.name);
-    const effectiveName = canonInfo?.canonicalName || l.name.trim();
+    const { cleanLeagueName } = extractLeagueBaseAndRound(l.name);
+    const canonInfo = lookupCanonicalLeague(cleanLeagueName || l.name);
+    const effectiveName = canonInfo?.canonicalName || cleanLeagueName || l.name.trim();
     const countryKey = (l.countryId || l.countryName || 'NO_COUNTRY').trim().toLowerCase();
     const groupKey = `${countryKey}__${normalizeText(effectiveName)}`;
     
