@@ -2,6 +2,7 @@ import { DbState, Country, League, Team, Match, AppUser } from '../types';
 import defaultDatabaseData from '../data/defaultDatabase.json';
 import { sanitizeAndCleanDb } from '../utils/dbSanitizer';
 import { ensureCanonicalCountriesAndLeagues } from '../utils/countryLeagueHelper';
+import { extractAndSaveAllLogos, reapplyLogosToDatabase } from '../utils/logoRegistry';
 import {
   saveDbToFirestore,
   fetchDbFromFirestore,
@@ -179,7 +180,7 @@ export function getInstantCachedDatabaseState(): DbState {
 
   const mergedUsers = mergeUsersLists(dbData.users, localSavedUsers, SEED_DATABASE.users);
   dbData.users = mergedUsers;
-  return dbData;
+  return reapplyLogosToDatabase(dbData);
 }
 
 export const LAST_SAVED_KEY = 'football_db_last_saved_at';
@@ -304,17 +305,22 @@ export async function fetchDatabaseState(): Promise<DbState> {
   const { cleanedDb, stats } = sanitizeAndCleanDb(enrichedDb);
   cleanedDb.users = mergedUsers;
 
+  // Extrai, registra e reaplica persistentemente todos os logos, escudos e fotos
+  extractAndSaveAllLogos(cleanedDb);
+  const finalDbWithLogos = reapplyLogosToDatabase(cleanedDb);
+  finalDbWithLogos.users = mergedUsers;
+
   // Save to LocalStorage so future access is instantaneous
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedDb));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(finalDbWithLogos));
   localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(mergedUsers));
   localStorage.setItem(USERS_BACKUP_STORAGE_KEY, JSON.stringify(mergedUsers));
 
   // If corrections were made or initializing cloud for first time, sync back
   if (stats.foreignLeaguesRemoved > 0 || stats.teamsCleaned > 0 || stats.duplicatesRemoved > 0 || stats.matchesFixed > 0 || stats.details.length > 0) {
-    saveDatabaseState(cleanedDb).catch(() => {});
+    saveDatabaseState(finalDbWithLogos).catch(() => {});
   }
 
-  return cleanedDb;
+  return finalDbWithLogos;
 }
 
 export async function syncDatabaseFromServer(): Promise<DbState> {
@@ -323,8 +329,9 @@ export async function syncDatabaseFromServer(): Promise<DbState> {
     const cloudState = await fetchDbFromFirestore();
     if (cloudState && (cloudState.matches?.length > 0 || cloudState.countries?.length > 0)) {
       const { cleanedDb } = sanitizeAndCleanDb(cloudState);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedDb));
-      return cleanedDb;
+      const withLogos = reapplyLogosToDatabase(cleanedDb);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(withLogos));
+      return withLogos;
     }
   } catch (err) {
     console.warn('Sync from Firestore failed, trying server API:', err);
@@ -337,8 +344,9 @@ export async function syncDatabaseFromServer(): Promise<DbState> {
   if (response.ok) {
     const data = await response.json();
     const { cleanedDb } = sanitizeAndCleanDb(data);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedDb));
-    return cleanedDb;
+    const withLogos = reapplyLogosToDatabase(cleanedDb);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(withLogos));
+    return withLogos;
   }
   throw new Error('Falha ao obter dados do servidor.');
 }
@@ -371,18 +379,22 @@ async function flushPendingRemoteSave(): Promise<boolean> {
 }
 
 export async function saveDatabaseState(state: DbState, immediate: boolean = false): Promise<boolean> {
+  // Blindar e registrar todos os escudos permanentemente antes de salvar
+  extractAndSaveAllLogos(state);
+  const shieldedState = reapplyLogosToDatabase(state);
+
   // Always update LocalStorage immediately for instant UX
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(shieldedState));
     localStorage.setItem(LAST_SAVED_KEY, String(Date.now()));
-    if (Array.isArray(state.users)) {
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(state.users));
+    if (Array.isArray(shieldedState.users)) {
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(shieldedState.users));
     }
   } catch (err) {
     console.warn('LocalStorage quota or write issue:', err);
   }
 
-  pendingStateToSave = state;
+  pendingStateToSave = shieldedState;
 
   if (immediate) {
     if (remoteSaveTimer) {

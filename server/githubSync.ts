@@ -5,6 +5,7 @@ import { ensureCanonicalCountriesAndLeagues } from '../src/utils/countryLeagueHe
 import { sanitizeAndCleanDb } from '../src/utils/dbSanitizer';
 import { enforceUserVerifiedTodayMatches } from '../src/utils/todayMatchesHelper';
 import { DbState } from '../src/types';
+import { extractAndSaveAllLogos, reapplyLogosToDatabase } from '../src/utils/logoRegistry';
 
 export const GITHUB_REPO_FINALIZADOS_DATA_URL =
   'https://raw.githubusercontent.com/lucianofmacedo2-ctrl/SistemaFullBet/main/data/jogos_finalizados.csv';
@@ -110,12 +111,16 @@ export async function runServerGitHubSync(currentDb: DbState): Promise<{ updated
     throw new Error('Não foi possível baixar nenhum dos arquivos CSV (finalizados ou futuros) do GitHub.');
   }
 
+  // 0. Extract and protect all logos from currentDb and disk
+  extractAndSaveAllLogos(currentDb);
+
   let runningDb: DbState = {
-    countries: [],
-    leagues: [],
-    teams: [],
+    countries: currentDb.countries || [],
+    leagues: currentDb.leagues || [],
+    teams: currentDb.teams || [],
     matches: [],
     users: currentDb.users || [],
+    referees: currentDb.referees || [],
   };
 
   // 1. Process finalized games first
@@ -135,19 +140,24 @@ export async function runServerGitHubSync(currentDb: DbState): Promise<{ updated
   const finalDb = enforceUserVerifiedTodayMatches(cleanedDb);
   finalDb.users = currentDb.users || [];
 
-  const finishedCount = finalDb.matches.filter(m => m.status === 'FINALIZADO').length;
-  const futureCount = finalDb.matches.filter(m => m.status === 'AGENDADO').length;
+  // 3. Absolute logo protection: re-apply and shield all crests, logos, flags and photos
+  const finalDbWithLogos = reapplyLogosToDatabase(finalDb);
+  finalDbWithLogos.users = currentDb.users || [];
+  extractAndSaveAllLogos(finalDbWithLogos);
+
+  const finishedCount = finalDbWithLogos.matches.filter(m => m.status === 'FINALIZADO').length;
+  const futureCount = finalDbWithLogos.matches.filter(m => m.status === 'AGENDADO').length;
 
   const stats: ServerSyncStats = {
     lastSyncTime: new Date().toISOString(),
-    success: finalDb.matches.length > 0,
-    totalMatches: finalDb.matches.length,
+    success: finalDbWithLogos.matches.length > 0,
+    totalMatches: finalDbWithLogos.matches.length,
     finishedMatches: finishedCount,
     futureMatches: futureCount,
-    countriesCount: finalDb.countries.length,
-    leaguesCount: finalDb.leagues.length,
-    teamsCount: finalDb.teams.length,
-    message: `Sincronização automática do GitHub concluída com sucesso: ${finalDb.matches.length} jogos (${finishedCount} finalizados + ${futureCount} futuros), ${finalDb.countries.length} países e ${finalDb.teams.length} clubes!`,
+    countriesCount: finalDbWithLogos.countries.length,
+    leaguesCount: finalDbWithLogos.leagues.length,
+    teamsCount: finalDbWithLogos.teams.length,
+    message: `Sincronização automática do GitHub concluída com sucesso: ${finalDbWithLogos.matches.length} jogos (${finishedCount} finalizados + ${futureCount} futuros), ${finalDbWithLogos.countries.length} países e ${finalDbWithLogos.teams.length} clubes!`,
   };
 
   lastServerSyncStats = stats;
@@ -157,7 +167,7 @@ export async function runServerGitHubSync(currentDb: DbState): Promise<{ updated
     const dataDir = path.join(process.cwd(), 'data');
     if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-    const jsonStr = JSON.stringify(finalDb, null, 2);
+    const jsonStr = JSON.stringify(finalDbWithLogos, null, 2);
     fs.writeFileSync(path.join(dataDir, 'football_db.json'), jsonStr, 'utf8');
 
     const publicDir = path.join(process.cwd(), 'public', 'data');
@@ -169,5 +179,5 @@ export async function runServerGitHubSync(currentDb: DbState): Promise<{ updated
     console.warn('[GitHub Auto-Sync] Erro ao gravar arquivos no disco:', err?.message);
   }
 
-  return { updatedDb: finalDb, stats };
+  return { updatedDb: finalDbWithLogos, stats };
 }

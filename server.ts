@@ -7,6 +7,16 @@ import { syncOnlineFootballData, processMatchRows, importCustomCsvText } from '.
 import { runServerGitHubSync, getServerSyncStats } from './server/githubSync';
 import { sanitizeAndCleanDb } from './src/utils/dbSanitizer';
 import { enforceUserVerifiedTodayMatches } from './src/utils/todayMatchesHelper';
+import {
+  extractAndSaveAllLogos,
+  reapplyLogosToDatabase,
+  loadPersistentLogosStore,
+  savePersistentLogosStore,
+  recordTeamLogo,
+  recordLeagueLogo,
+  recordCountryFlag,
+  recordRefereePhoto,
+} from './src/utils/logoRegistry';
 
 const app = express();
 const PORT = 3000;
@@ -248,11 +258,12 @@ function loadDb(): DbData {
     parsed.users = users;
     const { cleanedDb, stats } = sanitizeAndCleanDb(parsed as any);
     const finalDb = enforceUserVerifiedTodayMatches(cleanedDb);
-    finalDb.users = users;
+    const withLogos = reapplyLogosToDatabase(finalDb as any);
+    withLogos.users = users;
     if (stats.foreignLeaguesRemoved > 0 || stats.teamsCleaned > 0 || stats.duplicatesRemoved > 0) {
-      saveDb(finalDb);
+      saveDb(withLogos);
     }
-    return finalDb;
+    return withLogos;
   } catch (err) {
     console.error('Error reading db file:', err);
     return { countries: [], leagues: [], teams: [], matches: [], users };
@@ -264,13 +275,26 @@ function saveDb(data: DbData) {
     if (Array.isArray(data.users)) {
       saveUsers(data.users);
     }
+    // 1. Extrair e registrar todos os escudos permanentemente em data/custom_logos.json
+    extractAndSaveAllLogos(data as any);
+
+    // 2. Sanitizar e blindar
     const { cleanedDb } = sanitizeAndCleanDb(data as any);
     const finalDb = enforceUserVerifiedTodayMatches(cleanedDb);
+    const withLogos = reapplyLogosToDatabase(finalDb as any);
+
     const dataToSave = {
-      ...finalDb,
+      ...withLogos,
       users: loadUsers(),
     };
-    fs.writeFileSync(DB_FILE, JSON.stringify(dataToSave, null, 2), 'utf-8');
+
+    const jsonStr = JSON.stringify(dataToSave, null, 2);
+    fs.writeFileSync(DB_FILE, jsonStr, 'utf-8');
+
+    // Also mirror to public folder for direct client fetch
+    const publicDataDir = path.join(process.cwd(), 'public', 'data');
+    if (!fs.existsSync(publicDataDir)) fs.mkdirSync(publicDataDir, { recursive: true });
+    fs.writeFileSync(path.join(publicDataDir, 'football_db.json'), jsonStr, 'utf-8');
   } catch (err) {
     console.error('Error writing db file:', err);
   }
@@ -616,6 +640,63 @@ app.post('/api/db/save', (req, res) => {
   };
   saveDb(newData);
   res.json({ success: true, data: newData });
+});
+
+// Dedicated Persistent Logos API
+app.get('/api/logos', (req, res) => {
+  const store = loadPersistentLogosStore();
+  res.json({ success: true, logos: store });
+});
+
+app.post('/api/logos', (req, res) => {
+  try {
+    const { teamUpdates, leagueUpdates, countryUpdates, refereeUpdates } = req.body;
+    let modified = false;
+
+    if (teamUpdates && typeof teamUpdates === 'object') {
+      Object.entries(teamUpdates).forEach(([key, url]) => {
+        if (typeof url === 'string' && url.trim().startsWith('http')) {
+          recordTeamLogo({ id: key, name: key }, url.trim());
+          modified = true;
+        }
+      });
+    }
+
+    if (leagueUpdates && typeof leagueUpdates === 'object') {
+      Object.entries(leagueUpdates).forEach(([key, url]) => {
+        if (typeof url === 'string' && url.trim().startsWith('http')) {
+          recordLeagueLogo({ id: key, name: key }, url.trim());
+          modified = true;
+        }
+      });
+    }
+
+    if (countryUpdates && typeof countryUpdates === 'object') {
+      Object.entries(countryUpdates).forEach(([key, url]) => {
+        if (typeof url === 'string' && url.trim().startsWith('http')) {
+          recordCountryFlag({ id: key, name: key }, url.trim());
+          modified = true;
+        }
+      });
+    }
+
+    if (refereeUpdates && typeof refereeUpdates === 'object') {
+      Object.entries(refereeUpdates).forEach(([key, url]) => {
+        if (typeof url === 'string' && url.trim().startsWith('http')) {
+          recordRefereePhoto(key, url.trim());
+          modified = true;
+        }
+      });
+    }
+
+    // Immediately re-shield current database with new logos
+    const currentDb = loadDb();
+    saveDb(currentDb);
+
+    res.json({ success: true, logos: loadPersistentLogosStore() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 app.post('/api/db/clear', (req, res) => {

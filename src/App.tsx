@@ -56,6 +56,14 @@ import { sanitizeDbImages, sanitizeImageUrl } from './utils/imageHelper';
 import { autoSyncDatabaseWithGitHub } from './services/githubCsvSyncService';
 import { ensureCanonicalCountriesAndLeagues } from './utils/countryLeagueHelper';
 import {
+  recordTeamLogo,
+  recordLeagueLogo,
+  recordCountryFlag,
+  recordRefereePhoto,
+  extractAndSaveAllLogos,
+  reapplyLogosToDatabase,
+} from './utils/logoRegistry';
+import {
   getCurrentAuthUser,
   setCurrentAuthUser,
   ensureDefaultUsers,
@@ -323,12 +331,15 @@ export default function App() {
     async function runAutoGitHubSync() {
       try {
         const currentLocal = getInstantCachedDatabaseState();
+        extractAndSaveAllLogos(currentLocal);
         const res = await autoSyncDatabaseWithGitHub(currentLocal, false);
         if (res.hasUpdates && res.updatedDb.matches.length > 0) {
           const canonical = ensureCanonicalCountriesAndLeagues(res.updatedDb);
-          setDbState(canonical);
-          await saveDatabaseState(canonical);
-          console.log(`[GitHub Auto-Sync] Base atualizada automaticamente: ${canonical.matches.length} jogos carregados.`);
+          const shielded = reapplyLogosToDatabase(canonical);
+          extractAndSaveAllLogos(shielded);
+          setDbState(shielded);
+          await saveDatabaseState(shielded);
+          console.log(`[GitHub Auto-Sync] Base atualizada automaticamente: ${shielded.matches.length} jogos carregados.`);
         }
       } catch (err: any) {
         console.warn('[GitHub Auto-Sync] Aviso ao sincronizar automaticamente:', err?.message);
@@ -357,16 +368,37 @@ export default function App() {
       (cloudDb) => {
         if (!cloudDb) return;
         setDbState(prev => {
+          extractAndSaveAllLogos(prev);
+
           const cloudMatchesCount = cloudDb.matches?.length || 0;
           const localMatchesCount = prev.matches?.length || 0;
           const shouldUseCloudMatches = cloudMatchesCount >= localMatchesCount || localMatchesCount === 0;
-          return {
+
+          const localTeamLogos = new Map<string, string>();
+          (prev.teams || []).forEach(t => {
+            if (t.logoUrl) {
+              localTeamLogos.set(t.id, t.logoUrl);
+              if (t.name) localTeamLogos.set(t.name.toUpperCase(), t.logoUrl);
+            }
+          });
+
+          const mergedTeams = (cloudDb.teams?.length ? cloudDb.teams : (prev.teams || [])).map(t => {
+            const preservedLogo = t.logoUrl || localTeamLogos.get(t.id) || (t.name ? localTeamLogos.get(t.name.toUpperCase()) : undefined);
+            return preservedLogo ? { ...t, logoUrl: preservedLogo } : t;
+          });
+
+          const intermediateDb: DbState = {
             countries: cloudDb.countries?.length ? cloudDb.countries : (prev.countries || []),
             leagues: cloudDb.leagues?.length ? cloudDb.leagues : (prev.leagues || []),
-            teams: cloudDb.teams?.length ? cloudDb.teams : (prev.teams || []),
+            teams: mergedTeams,
             matches: shouldUseCloudMatches ? (cloudDb.matches || []) : prev.matches,
+            referees: cloudDb.referees?.length ? cloudDb.referees : (prev.referees || []),
             users: ensureDefaultUsers(cloudDb.users?.length > 0 ? cloudDb.users : prev.users),
           };
+
+          const shielded = reapplyLogosToDatabase(intermediateDb);
+          extractAndSaveAllLogos(shielded);
+          return shielded;
         });
       },
       (err) => {
@@ -670,6 +702,15 @@ export default function App() {
   // Update Country Flag
   const handleUpdateCountryFlag = async (countryId: string, flagUrl: string) => {
     const cleanUrl = sanitizeImageUrl(flagUrl);
+    const country = dbState.countries.find(c => c.id === countryId);
+    if (country && cleanUrl) {
+      recordCountryFlag(country, cleanUrl);
+      fetch('/api/logos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ countryUpdates: { [countryId]: cleanUrl } }),
+      }).catch(() => {});
+    }
     const updatedCountries = dbState.countries.map(c => c.id === countryId ? { ...c, flagUrl: cleanUrl } : c);
     const updatedMatches = dbState.matches.map(m => m.countryId === countryId ? { ...m, countryFlagUrl: cleanUrl } : m);
     const newState = { ...dbState, countries: updatedCountries, matches: updatedMatches };
@@ -680,6 +721,15 @@ export default function App() {
   // Update League Logo
   const handleUpdateLeagueLogo = async (leagueId: string, logoUrl: string) => {
     const cleanUrl = sanitizeImageUrl(logoUrl);
+    const league = dbState.leagues.find(l => l.id === leagueId);
+    if (league && cleanUrl) {
+      recordLeagueLogo(league, cleanUrl);
+      fetch('/api/logos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leagueUpdates: { [leagueId]: cleanUrl } }),
+      }).catch(() => {});
+    }
     const updatedLeagues = dbState.leagues.map(l => l.id === leagueId ? { ...l, logoUrl: cleanUrl } : l);
     const updatedMatches = dbState.matches.map(m => m.leagueId === leagueId ? { ...m, leagueLogoUrl: cleanUrl } : m);
     const newState = { ...dbState, leagues: updatedLeagues, matches: updatedMatches };
@@ -690,6 +740,15 @@ export default function App() {
   // Update Team Logo
   const handleUpdateTeamLogo = async (teamId: string, logoUrl: string) => {
     const cleanUrl = sanitizeImageUrl(logoUrl);
+    const team = dbState.teams.find(t => t.id === teamId);
+    if (team && cleanUrl) {
+      recordTeamLogo(team, cleanUrl);
+      fetch('/api/logos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamUpdates: { [teamId]: cleanUrl } }),
+      }).catch(() => {});
+    }
     const updatedTeams = dbState.teams.map(t => t.id === teamId ? { ...t, logoUrl: cleanUrl } : t);
     const updatedMatches = dbState.matches.map(m => {
       let updated = { ...m };
@@ -708,6 +767,15 @@ export default function App() {
     if (!trimmedName) return;
     const norm = normalizeRefereeName(trimmedName);
     const cleanUrl = sanitizeImageUrl(photoUrl);
+
+    if (cleanUrl) {
+      recordRefereePhoto(norm, cleanUrl);
+      fetch('/api/logos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refereeUpdates: { [norm]: cleanUrl } }),
+      }).catch(() => {});
+    }
 
     // 1. Update in all matches where referee matches
     const updatedMatches = dbState.matches.map(m => {
@@ -861,6 +929,22 @@ export default function App() {
       referees: updatedReferees,
       users: dbState.users,
     };
+
+    // Registrar no logoRegistry persistente
+    extractAndSaveAllLogos(newState);
+
+    // Persistir no backend /api/logos
+    fetch('/api/logos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        countryUpdates: cleanCountryUpdates,
+        leagueUpdates: cleanLeagueUpdates,
+        teamUpdates: cleanTeamUpdates,
+        refereeUpdates: cleanRefereeUpdates,
+      }),
+    }).catch(() => {});
+
     setDbState(newState);
     await saveDatabaseState(newState);
   };

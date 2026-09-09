@@ -3,6 +3,7 @@ import { DbState, Country, League, Team, Match, MatchStats, MatchOdds } from '..
 import { sanitizeAndCleanDb, lookupCanonicalTeam } from './dbSanitizer';
 import { ensureCanonicalCountriesAndLeagues, extractLeagueBaseAndRound } from './countryLeagueHelper';
 import { enforceUserVerifiedTodayMatches } from './todayMatchesHelper';
+import { extractAndSaveAllLogos, reapplyLogosToDatabase, findRegisteredTeamLogo, findRegisteredLeagueLogo } from './logoRegistry';
 
 export interface ClientSyncResult {
   success: boolean;
@@ -357,6 +358,9 @@ export function parseAndSyncCsvLocally(
   currentDb: DbState,
   options?: { replaceEntireDb?: boolean }
 ): { updatedDb: DbState; result: ClientSyncResult } {
+  // 0. Extract and protect all logos from currentDb before parsing
+  const persistentStore = extractAndSaveAllLogos(currentDb);
+
   const replace = options?.replaceEntireDb ?? true;
   const parsedRows = parseCsvLines(csvText);
 
@@ -566,6 +570,7 @@ export function parseAndSyncCsvLocally(
     if (!homeTeam) {
       nextTeamNum++;
       const id = `TIME-${String(nextTeamNum).padStart(3, '0')}`;
+      const foundLogo = findRegisteredTeamLogo({ id, name: homeName, countryId: country.id, countryName: country.name }, persistentStore);
       homeTeam = {
         id,
         name: homeName,
@@ -574,6 +579,7 @@ export function parseAndSyncCsvLocally(
         leagueId: league.id,
         leagueName: league.name,
         leagueIds: [league.id],
+        logoUrl: foundLogo || undefined,
         createdAt: new Date().toISOString(),
       };
       teams.push(homeTeam);
@@ -582,6 +588,11 @@ export function parseAndSyncCsvLocally(
       teamsMap.set(id, homeTeam);
       newTeamsCount++;
     } else {
+      // Preserve existing logo or look up if missing
+      if (!homeTeam.logoUrl) {
+        const foundLogo = findRegisteredTeamLogo(homeTeam, persistentStore);
+        if (foundLogo) homeTeam.logoUrl = foundLogo;
+      }
       // Update team's league association within its country
       let updated = false;
       if (!homeTeam.countryId) {
@@ -621,6 +632,7 @@ export function parseAndSyncCsvLocally(
     if (!awayTeam) {
       nextTeamNum++;
       const id = `TIME-${String(nextTeamNum).padStart(3, '0')}`;
+      const foundLogo = findRegisteredTeamLogo({ id, name: awayName, countryId: country.id, countryName: country.name }, persistentStore);
       awayTeam = {
         id,
         name: awayName,
@@ -629,6 +641,7 @@ export function parseAndSyncCsvLocally(
         leagueId: league.id,
         leagueName: league.name,
         leagueIds: [league.id],
+        logoUrl: foundLogo || undefined,
         createdAt: new Date().toISOString(),
       };
       teams.push(awayTeam);
@@ -637,6 +650,11 @@ export function parseAndSyncCsvLocally(
       teamsMap.set(id, awayTeam);
       newTeamsCount++;
     } else {
+      // Preserve existing logo or look up if missing
+      if (!awayTeam.logoUrl) {
+        const foundLogo = findRegisteredTeamLogo(awayTeam, persistentStore);
+        if (foundLogo) awayTeam.logoUrl = foundLogo;
+      }
       // Update team's league association within its country
       let updated = false;
       if (!awayTeam.countryId) {
@@ -957,18 +975,22 @@ export function parseAndSyncCsvLocally(
   const { cleanedDb } = sanitizeAndCleanDb(canonicalDb);
   const finalDb = enforceUserVerifiedTodayMatches(cleanedDb);
 
-  const finishedMatchesCount = finalDb.matches.filter(m => m.status === 'FINALIZADO').length;
-  const futureMatchesCount = finalDb.matches.filter(m => m.status === 'AGENDADO').length;
+  // Reapply and shield all crests, logos and photos
+  const finalDbWithLogos = reapplyLogosToDatabase(finalDb, persistentStore);
+  extractAndSaveAllLogos(finalDbWithLogos);
+
+  const finishedMatchesCount = finalDbWithLogos.matches.filter(m => m.status === 'FINALIZADO').length;
+  const futureMatchesCount = finalDbWithLogos.matches.filter(m => m.status === 'AGENDADO').length;
 
   const result: ClientSyncResult = {
     success: parsedRows.length > 0,
     message: replace
-      ? `Base sincronizada com sucesso: ${finalDb.countries.length} país(es), ${finalDb.leagues.length} liga(s), ${finalDb.teams.length} times e ${finalDb.matches.length} jogos (${finishedMatchesCount} finalizados e ${futureMatchesCount} futuros)!`
+      ? `Base sincronizada com sucesso: ${finalDbWithLogos.countries.length} país(es), ${finalDbWithLogos.leagues.length} liga(s), ${finalDbWithLogos.teams.length} times e ${finalDbWithLogos.matches.length} jogos (${finishedMatchesCount} finalizados e ${futureMatchesCount} futuros)!`
       : `Processamento concluído: +${newTeamsCount} times, +${newLeaguesCount} ligas, +${newCountriesCount} países e +${newMatchesCount} jogos adicionados/atualizados!`,
-    totalCountries: finalDb.countries.length,
-    totalLeagues: finalDb.leagues.length,
-    totalTeams: finalDb.teams.length,
-    totalMatches: finalDb.matches.length,
+    totalCountries: finalDbWithLogos.countries.length,
+    totalLeagues: finalDbWithLogos.leagues.length,
+    totalTeams: finalDbWithLogos.teams.length,
+    totalMatches: finalDbWithLogos.matches.length,
     finishedMatchesCount,
     futureMatchesCount,
     newCountriesCount,
@@ -977,6 +999,6 @@ export function parseAndSyncCsvLocally(
     newMatchesCount,
   };
 
-  return { updatedDb: finalDb, result };
+  return { updatedDb: finalDbWithLogos, result };
 }
 

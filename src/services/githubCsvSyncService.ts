@@ -1,5 +1,6 @@
 import { DbState } from '../types';
 import { parseAndSyncCsvLocally, ClientSyncResult } from '../utils/csvSyncParser';
+import { extractAndSaveAllLogos, reapplyLogosToDatabase } from '../utils/logoRegistry';
 
 export const GITHUB_REPO_FINALIZADOS_DATA_URL = 'https://raw.githubusercontent.com/lucianofmacedo2-ctrl/SistemaFullBet/main/data/jogos_finalizados.csv';
 export const GITHUB_REPO_FUTUROS_DATA_URL = 'https://raw.githubusercontent.com/lucianofmacedo2-ctrl/SistemaFullBet/main/data/jogos_futuros.csv';
@@ -185,8 +186,17 @@ export async function syncDatabaseWithGitHub(
     );
   }
 
+  extractAndSaveAllLogos(currentDb);
+
   let runningDb = replaceEntireDb
-    ? { countries: [], leagues: [], teams: [], matches: [], users: currentDb.users || [] }
+    ? {
+        countries: currentDb.countries || [],
+        leagues: currentDb.leagues || [],
+        teams: currentDb.teams || [],
+        matches: [],
+        users: currentDb.users || [],
+        referees: currentDb.referees || [],
+      }
     : currentDb;
 
   let totalFinMatches = 0;
@@ -210,28 +220,31 @@ export async function syncDatabaseWithGitHub(
     totalFutMatches = result.futureMatchesCount || 0;
   }
 
-  const finishedMatchesCount = runningDb.matches.filter((m) => m.status === 'FINALIZADO').length;
-  const futureMatchesCount = runningDb.matches.filter((m) => m.status === 'AGENDADO').length;
+  const finalDbWithLogos = reapplyLogosToDatabase(runningDb);
+  extractAndSaveAllLogos(finalDbWithLogos);
+
+  const finishedMatchesCount = finalDbWithLogos.matches.filter((m) => m.status === 'FINALIZADO').length;
+  const futureMatchesCount = finalDbWithLogos.matches.filter((m) => m.status === 'AGENDADO').length;
 
   const combinedResult: ClientSyncResult = {
-    success: runningDb.matches.length > 0,
-    message: `Base sincronizada com sucesso do GitHub: ${runningDb.countries.length} países, ${runningDb.leagues.length} ligas, ${runningDb.teams.length} times e ${runningDb.matches.length} jogos (${finishedMatchesCount} finalizados + ${futureMatchesCount} futuros/agendados)!`,
-    totalCountries: runningDb.countries.length,
-    totalLeagues: runningDb.leagues.length,
-    totalTeams: runningDb.teams.length,
-    totalMatches: runningDb.matches.length,
+    success: finalDbWithLogos.matches.length > 0,
+    message: `Base sincronizada com sucesso do GitHub: ${finalDbWithLogos.countries.length} países, ${finalDbWithLogos.leagues.length} ligas, ${finalDbWithLogos.teams.length} times e ${finalDbWithLogos.matches.length} jogos (${finishedMatchesCount} finalizados + ${futureMatchesCount} futuros/agendados)!`,
+    totalCountries: finalDbWithLogos.countries.length,
+    totalLeagues: finalDbWithLogos.leagues.length,
+    totalTeams: finalDbWithLogos.teams.length,
+    totalMatches: finalDbWithLogos.matches.length,
     finishedMatchesCount,
     futureMatchesCount,
-    newCountriesCount: runningDb.countries.length,
-    newLeaguesCount: runningDb.leagues.length,
-    newTeamsCount: runningDb.teams.length,
-    newMatchesCount: runningDb.matches.length,
+    newCountriesCount: finalDbWithLogos.countries.length,
+    newLeaguesCount: finalDbWithLogos.leagues.length,
+    newTeamsCount: finalDbWithLogos.teams.length,
+    newMatchesCount: finalDbWithLogos.matches.length,
   };
 
   const previewCsv = finalizadosText || futurosText;
 
   return {
-    updatedDb: runningDb,
+    updatedDb: finalDbWithLogos,
     result: combinedResult,
     csvText: previewCsv,
     details: {
@@ -282,6 +295,9 @@ export async function autoSyncDatabaseWithGitHub(
     return { updatedDb: currentDb, hasUpdates: false };
   }
 
+  // Ensure current logos are securely backed up in persistent store
+  extractAndSaveAllLogos(currentDb);
+
   try {
     // Try syncing via backend server API first if available (faster & pre-cached)
     try {
@@ -293,16 +309,19 @@ export async function autoSyncDatabaseWithGitHub(
         const json = await serverResp.json();
         if (json.success && json.db && Array.isArray(json.db.matches) && json.db.matches.length > 0) {
           setLastGitHubSyncTime(now);
+          const finalDb = reapplyLogosToDatabase(json.db);
+          extractAndSaveAllLogos(finalDb);
+
           return {
-            updatedDb: json.db,
-            hasUpdates: json.db.matches.length !== currentDb.matches.length,
+            updatedDb: finalDb,
+            hasUpdates: finalDb.matches.length !== currentDb.matches.length,
             result: {
               success: true,
               message: json.stats?.message || 'Sincronizado automaticamente com o GitHub.',
-              totalCountries: json.db.countries?.length || 0,
-              totalLeagues: json.db.leagues?.length || 0,
-              totalTeams: json.db.teams?.length || 0,
-              totalMatches: json.db.matches?.length || 0,
+              totalCountries: finalDb.countries?.length || 0,
+              totalLeagues: finalDb.leagues?.length || 0,
+              totalTeams: finalDb.teams?.length || 0,
+              totalMatches: finalDb.matches?.length || 0,
               finishedMatchesCount: json.stats?.finishedMatches,
               futureMatchesCount: json.stats?.futureMatches,
               newCountriesCount: 0,
