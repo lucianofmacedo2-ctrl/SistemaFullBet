@@ -372511,6 +372511,49 @@
         "awayHT": null
       },
       "createdAt": "2026-09-28T17:11:15.633975"
+    },
+    {
+      "id": "JOGO-6770",
+      "countryId": "PAIS-007",
+      "countryName": "Espanha",
+      "leagueId": "LIGA-095",
+      "leagueName": "La Liga 2 ESP",
+      "homeTeamId": "TIME-1590",
+      "homeTeamName": "Leganes",
+      "awayTeamId": "TIME-1586",
+      "awayTeamName": "Castellon",
+      "homeScore": 0,
+      "awayScore": 2,
+      "matchDate": "2026-09-28T19:30:00",
+      "status": "FINALIZADO",
+      "referee": "",
+      "stats": {
+        "halftimeHomeScore": 0,
+        "halftimeAwayScore": 1,
+        "shotsHomeFT": 15,
+        "shotsAwayFT": 20,
+        "shotsOnTargetHomeFT": 2,
+        "shotsOnTargetAwayFT": 6,
+        "cornersHomeFT": 4,
+        "cornersAwayFT": 2,
+        "yellowCardsHomeFT": 6,
+        "yellowCardsAwayFT": 1,
+        "redCardsHomeFT": 0,
+        "redCardsAwayFT": 1,
+        "foulsHome": 17,
+        "foulsAway": 11
+      },
+      "odds": {
+        "homeFT": 2.75,
+        "drawFT": 3.4,
+        "awayFT": 2.32,
+        "over25FT": 1.85,
+        "under25FT": 1.95,
+        "homeHT": null,
+        "drawHT": null,
+        "awayHT": null
+      },
+      "createdAt": "2026-09-29T15:14:37.466351"
     }
   ]
 }
