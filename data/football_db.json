@@ -374016,6 +374016,49 @@
         "awayHT": null
       },
       "createdAt": "2026-10-05T17:36:07.753792"
+    },
+    {
+      "id": "JOGO-6805",
+      "countryId": "PAIS-007",
+      "countryName": "Espanha",
+      "leagueId": "LIGA-095",
+      "leagueName": "La Liga 2 ESP",
+      "homeTeamId": "TIME-1589",
+      "homeTeamName": "Cordoba",
+      "awayTeamId": "TIME-655",
+      "awayTeamName": "Tenerife",
+      "homeScore": 3,
+      "awayScore": 1,
+      "matchDate": "2026-10-05T19:30:00",
+      "status": "FINALIZADO",
+      "referee": "",
+      "stats": {
+        "halftimeHomeScore": 2,
+        "halftimeAwayScore": 1,
+        "shotsHomeFT": 16,
+        "shotsAwayFT": 10,
+        "shotsOnTargetHomeFT": 6,
+        "shotsOnTargetAwayFT": 2,
+        "cornersHomeFT": 4,
+        "cornersAwayFT": 8,
+        "yellowCardsHomeFT": 4,
+        "yellowCardsAwayFT": 5,
+        "redCardsHomeFT": 0,
+        "redCardsAwayFT": 1,
+        "foulsHome": 18,
+        "foulsAway": 13
+      },
+      "odds": {
+        "homeFT": 1.86,
+        "drawFT": 3.4,
+        "awayFT": 4,
+        "over25FT": 1.88,
+        "under25FT": 1.93,
+        "homeHT": null,
+        "drawHT": null,
+        "awayHT": null
+      },
+      "createdAt": "2026-10-06T15:33:49.906303"
     }
   ]
 }
