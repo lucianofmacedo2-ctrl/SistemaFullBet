@@ -1,4 +1,74 @@
 ﻿Pais,Liga,Data,Hora,Mandante,Visitante,Placar_Mandante_FT,Placar_Visitante_FT,Placar_Mandante_HT,Placar_Visitante_HT,Arbitro,xG_Mandante_FT,xG_Visitante_FT,Finalizacoes_Mandante_FT,Finalizacoes_Visitante_FT,Chutes_Gol_Mandante_FT,Chutes_Gol_Visitante_FT,Faltas_Mandante_FT,Faltas_Visitante_FT,Escanteios_Mandante_FT,Escanteios_Visitante_FT,Cartao_Amarelo_Mandante_FT,Cartao_Amarelo_Visitante_FT,Cartao_Vermelho_Mandante_FT,Cartao_Vermelho_Visitante_FT,Odd_Home_FT,Odd_Draw_FT,Odd_Away_FT,Odd_Over25_FT,Odd_Under25_FT,Linha_Handicap_Asiático_Mandante_FT,Odd_Handicap_Asiático_Mandante_FT,Linha_Handicap_Asiático_Visitante_FT,Odd_Handicap_Asiático_Visitante_FT
+Inglaterra,Premier League ING,21/08/2026,20:00,Arsenal,Coventry,3,0,2,0,T Bramall,1.88,0.2,20,4,6,1,10,13,8,2,1,1,0,0,1.2,7.0,13.0,1.57,2.38,-2.0,2.03,2.0,1.78
+Inglaterra,Premier League ING,22/08/2026,12:30,Hull,Man United,2,0,2,0,D England,1.01,1.83,8,21,4,5,10,9,1,6,2,1,0,0,8.5,5.0,1.36,1.67,2.2,1.5,1.78,-1.5,2.03
+Inglaterra,Premier League ING,22/08/2026,15:00,Everton,Crystal Palace,2,0,1,0,P Tierney,1.12,1.96,16,11,5,4,5,15,4,0,0,1,0,0,2.15,3.5,3.3,1.95,1.9,-0.25,1.88,0.25,1.98
+Inglaterra,Premier League ING,22/08/2026,15:00,Ipswich,Sunderland,2,1,1,1,F Hallam,1.8,0.66,10,11,3,4,12,14,3,5,0,3,0,0,2.7,3.3,2.63,1.98,1.88,0.0,1.95,0.0,1.9
+Inglaterra,Premier League ING,22/08/2026,15:00,Nott'm Forest,Leeds,0,1,0,0,R Jones,0.66,0.47,12,11,2,3,15,14,3,2,2,1,0,0,2.3,3.4,3.1,1.98,1.88,-0.25,1.98,0.25,1.88
+Inglaterra,Premier League ING,22/08/2026,17:30,Brentford,Tottenham,3,0,2,0,M Oliver,3.88,0.57,26,9,8,4,17,14,7,3,1,1,0,0,2.4,3.7,2.75,1.67,2.2,0.0,1.8,0.0,2.05
+Inglaterra,Premier League ING,23/08/2026,14:00,Brighton,Aston Villa,4,0,4,0,P Bankes,3.77,0.28,21,6,6,0,12,11,5,2,2,3,0,1,2.15,3.6,3.0,1.73,2.1,-0.25,1.93,0.25,1.93
+Inglaterra,Premier League ING,23/08/2026,14:00,Man City,Bournemouth,2,1,0,1,J Gillett,2.36,0.63,13,5,6,4,11,11,8,3,1,2,0,0,1.48,4.5,6.25,1.44,2.75,-1.25,1.98,1.25,1.88
+Inglaterra,Premier League ING,23/08/2026,16:30,Newcastle,Liverpool,2,2,1,0,S Attwell,1.57,2.98,13,27,4,7,16,15,2,6,5,3,0,0,4.0,3.8,1.9,1.5,2.63,0.5,1.98,-0.5,1.88
+Inglaterra,Premier League ING,24/08/2026,20:00,Fulham,Chelsea,2,3,1,2,J Brooks,1.35,1.7,14,18,6,6,12,7,6,4,2,3,0,0,3.6,3.8,1.9,1.67,2.2,0.5,1.98,-0.5,1.88
+Inglaterra,Premier League ING,28/08/2026,20:00,Crystal Palace,Man City,1,4,0,1,A Madley,0.66,2.21,9,18,1,9,8,11,2,6,1,2,0,0,5.0,3.9,1.67,1.73,2.1,0.75,2.0,-0.75,1.85
+Inglaterra,Premier League ING,29/08/2026,12:30,Liverpool,Nott'm Forest,2,2,0,1,S Barrott,1.75,2.3,13,12,4,3,13,10,3,5,4,2,0,0,1.5,4.5,5.75,1.62,2.3,-1.0,1.83,1.0,2.03
+Inglaterra,Premier League ING,29/08/2026,15:00,Bournemouth,Everton,1,1,1,0,C Kavanagh,2.15,1.84,17,13,5,7,11,14,10,7,3,2,0,0,2.05,3.5,3.6,1.91,1.91,-0.5,2.05,0.5,1.8
+Inglaterra,Premier League ING,29/08/2026,15:00,Coventry,Hull,0,1,0,0,J Smith,1.28,0.73,11,6,3,2,11,8,6,2,1,4,0,0,1.9,3.5,4.2,1.91,1.91,-0.5,1.88,0.5,1.98
+Inglaterra,Premier League ING,29/08/2026,17:30,Tottenham,Newcastle,0,2,0,0,P Bankes,1.04,0.75,17,11,6,2,15,9,9,7,1,2,0,0,2.25,3.75,2.9,1.62,2.3,-0.25,2.0,0.25,1.85
+Inglaterra,Premier League ING,30/08/2026,14:00,Chelsea,Brighton,4,3,3,1,M Oliver,2.93,1.4,17,15,6,6,6,12,4,7,1,3,0,0,1.83,4.0,4.0,1.62,2.3,-0.5,1.83,0.5,2.03
+Inglaterra,Premier League ING,30/08/2026,14:00,Leeds,Brentford,1,1,0,1,T Harrington,1.43,1.56,12,22,2,5,5,13,5,6,0,4,0,0,2.6,3.3,2.7,1.9,1.95,0.0,1.88,0.0,1.98
+Inglaterra,Premier League ING,30/08/2026,14:00,Sunderland,Fulham,1,0,0,0,M Salisbury,2.02,0.95,12,11,4,0,10,15,3,4,0,2,0,0,2.4,3.2,3.1,2.0,1.8,-0.25,2.05,0.25,1.8
+Inglaterra,Premier League ING,30/08/2026,16:30,Man United,Ipswich,5,2,1,1,C Pawson,4.56,2.01,33,9,11,5,7,12,8,4,1,3,0,0,1.42,5.0,7.0,1.57,2.38,-1.25,1.88,1.25,1.98
+Inglaterra,Premier League ING,31/08/2026,20:00,Aston Villa,Arsenal,0,1,0,0,J Gillett,0.32,1.05,7,7,0,2,17,6,2,4,3,1,0,0,6.0,4.1,1.53,1.83,2.03,1.0,1.93,-1.0,1.93
+Inglaterra,Premier League ING,04/09/2026,20:00,Ipswich,Liverpool,0,2,0,2,D England,0.76,0.68,14,10,5,7,6,13,4,3,1,3,0,0,5.25,4.75,1.5,1.4,3.0,1.25,1.8,-1.25,2.05
+Inglaterra,Premier League ING,05/09/2026,12:30,Newcastle,Bournemouth,2,2,1,2,R Jones,0.71,1.37,8,17,2,5,19,17,4,3,2,3,0,0,2.1,3.6,3.3,1.57,2.38,-0.25,1.83,0.25,2.03
+Inglaterra,Premier League ING,05/09/2026,15:00,Brentford,Sunderland,1,1,0,0,T Bramall,1.2,1.71,12,14,2,5,19,9,4,3,3,2,0,0,1.62,3.9,5.5,1.8,2.0,-0.75,1.83,0.75,2.03
+Inglaterra,Premier League ING,05/09/2026,15:00,Brighton,Leeds,1,1,0,1,S Attwell,2.2,2.5,20,10,5,5,13,16,7,6,3,3,0,0,1.95,3.5,3.9,1.91,1.91,-0.5,1.98,0.5,1.88
+Inglaterra,Premier League ING,05/09/2026,15:00,Fulham,Crystal Palace,2,3,2,1,S Barrott,3.14,1.97,25,10,6,5,6,7,7,1,0,0,0,0,2.3,3.25,3.25,1.91,1.91,-0.25,1.98,0.25,1.88
+Inglaterra,Premier League ING,05/09/2026,15:00,Man City,Coventry,1,0,1,0,P Tierney,2.12,1.37,15,12,4,3,7,17,4,5,1,2,0,0,1.18,8.0,12.0,1.36,3.2,-2.25,2.03,2.25,1.78
+Inglaterra,Premier League ING,05/09/2026,15:00,Nott'm Forest,Tottenham,0,0,0,0,C Pawson,0.92,1.07,12,11,2,0,22,14,2,10,2,2,0,0,2.4,3.4,2.9,1.91,1.91,-0.25,2.05,0.25,1.8
+Inglaterra,Premier League ING,05/09/2026,17:30,Hull,Aston Villa,0,0,0,0,M Oliver,0.57,1.93,11,13,4,1,10,5,3,4,2,0,0,0,4.2,3.6,1.85,1.88,1.98,0.5,1.98,-0.5,1.88
+Inglaterra,Premier League ING,06/09/2026,14:00,Everton,Man United,2,2,0,0,J Brooks,1.01,0.69,18,14,6,3,7,11,4,3,3,3,0,0,3.3,3.5,2.1,1.73,2.1,0.25,2.0,-0.25,1.85
+Inglaterra,Premier League ING,06/09/2026,16:30,Arsenal,Chelsea,2,1,1,1,C Kavanagh,2.05,0.39,16,13,9,5,13,16,5,3,2,4,0,0,1.67,3.75,5.25,1.73,2.1,-0.75,1.88,0.75,1.98
+Inglaterra,Premier League ING,12/09/2026,15:00,Aston Villa,Nott'm Forest,1,2,0,0,A Madley,0.82,2.28,7,22,5,7,11,16,6,1,2,5,0,0,2.2,3.4,3.25,1.98,1.88,-0.25,1.93,0.25,1.93
+Inglaterra,Premier League ING,12/09/2026,15:00,Bournemouth,Brentford,2,2,1,1,J Gillett,1.75,0.5,20,8,10,2,10,13,2,1,5,1,0,0,2.5,3.6,2.7,1.62,2.3,0.0,1.83,0.0,2.03
+Inglaterra,Premier League ING,12/09/2026,15:00,Chelsea,Hull,2,2,1,2,F Hallam,0.9,1.38,12,14,7,5,7,12,10,4,1,5,0,0,1.22,6.5,11.0,1.4,3.0,-2.0,2.05,2.0,1.8
+Inglaterra,Premier League ING,12/09/2026,15:00,Crystal Palace,Ipswich,2,3,1,2,C Kavanagh,0.61,1.68,11,12,4,6,6,16,6,3,1,3,1,0,1.85,3.8,3.9,1.8,2.0,-0.5,1.85,0.5,2.0
+Inglaterra,Premier League ING,12/09/2026,15:00,Liverpool,Fulham,0,0,0,0,T Bramall,1.28,0.68,14,10,3,4,11,8,5,8,0,1,0,0,1.42,5.0,6.25,1.44,2.75,-1.25,1.93,1.25,1.93
+Inglaterra,Premier League ING,12/09/2026,17:30,Tottenham,Everton,0,0,0,0,D England,0.69,1.11,14,12,2,3,14,8,5,6,0,2,0,0,2.0,3.6,3.6,1.91,1.91,-0.5,2.0,0.5,1.85
+Inglaterra,Premier League ING,12/09/2026,20:00,Sunderland,Arsenal,0,2,0,0,J Brooks,1.8,1.88,12,11,3,5,18,11,4,2,6,2,1,0,7.5,4.1,1.48,2.1,1.73,1.0,2.05,-1.0,1.8
+Inglaterra,Premier League ING,13/09/2026,14:00,Coventry,Brighton,0,5,0,1,T Harrington,1.34,2.8,14,22,6,7,9,15,5,3,0,0,1,0,3.8,3.9,1.9,1.73,2.1,0.5,1.98,-0.5,1.88
+Inglaterra,Premier League ING,13/09/2026,16:30,Man United,Man City,0,1,0,0,M Oliver,1.0,1.1,16,6,3,2,17,10,6,7,1,2,0,1,3.25,3.8,2.1,1.53,2.5,0.25,2.0,-0.25,1.85
+Inglaterra,Premier League ING,14/09/2026,20:00,Leeds,Newcastle,4,1,3,0,M Salisbury,1.91,0.85,15,7,6,5,8,13,5,5,1,2,0,0,2.38,3.5,2.88,1.8,2.0,-0.25,2.05,0.25,1.8
+Inglaterra,Premier League ING,18/09/2026,20:00,Brentford,Chelsea,3,0,0,0,A Madley,2.65,0.85,13,12,6,2,10,7,4,12,2,0,0,0,2.55,3.8,2.45,1.5,2.63,0.0,1.95,0.0,1.9
+Inglaterra,Premier League ING,19/09/2026,12:30,Tottenham,Aston Villa,2,3,0,1,S Barrott,1.56,1.16,20,15,7,6,9,13,11,1,1,2,0,0,2.0,3.5,3.7,1.83,2.03,-0.5,2.03,0.5,1.83
+Inglaterra,Premier League ING,19/09/2026,15:00,Brighton,Arsenal,3,0,2,0,D England,1.31,1.63,17,11,5,2,13,11,5,6,4,1,0,0,5.0,3.9,1.67,1.73,2.1,0.75,2.0,-0.75,1.85
+Inglaterra,Premier League ING,19/09/2026,15:00,Everton,Ipswich,1,0,1,0,S Attwell,2.24,1.44,21,13,2,4,6,12,4,4,2,1,0,1,1.75,3.8,4.5,1.73,2.1,-0.75,1.98,0.75,1.88
+Inglaterra,Premier League ING,19/09/2026,15:00,Newcastle,Hull,2,1,2,0,T Harrington,1.44,1.59,12,22,5,4,4,10,4,7,1,4,0,0,1.6,4.33,5.0,1.62,2.3,-1.0,2.0,1.0,1.85
+Inglaterra,Premier League ING,19/09/2026,17:30,Nott'm Forest,Coventry,0,1,0,0,J Gillett,1.1,0.67,24,10,3,3,12,10,6,2,2,0,0,0,1.57,4.0,5.75,1.8,2.0,-1.0,1.98,1.0,1.88
+Inglaterra,Premier League ING,20/09/2026,14:00,Bournemouth,Liverpool,0,1,0,0,M Oliver,0.79,1.65,9,12,2,3,11,13,3,3,1,2,0,0,3.2,3.8,2.1,1.5,2.63,0.25,2.0,-0.25,1.85
+Inglaterra,Premier League ING,20/09/2026,14:00,Leeds,Crystal Palace,0,0,0,0,A Herczeg,1.31,1.06,13,12,2,4,10,12,4,3,2,3,0,0,1.73,3.9,4.75,1.73,2.1,-0.75,1.93,0.75,1.93
+Inglaterra,Premier League ING,20/09/2026,14:00,Man City,Sunderland,5,3,3,2,R Jones,2.82,3.57,16,17,6,9,14,14,6,5,0,1,0,0,1.3,5.5,9.0,1.57,2.38,-1.5,1.85,1.5,2.0
+Inglaterra,Premier League ING,20/09/2026,16:30,Fulham,Man United,1,1,0,0,P Bankes,1.62,1.6,12,29,6,6,9,5,3,13,3,0,0,0,3.5,3.8,2.0,1.57,2.38,0.5,1.85,-0.5,2.0
+Inglaterra,Premier League ING,10/10/2026,12:30,Arsenal,Leeds,2,1,0,0,P Tierney,2.33,0.62,13,11,6,5,12,20,2,4,1,4,0,0,1.4,5.0,7.5,1.85,2.0,-1.25,1.9,1.25,1.95
+Inglaterra,Premier League ING,10/10/2026,15:00,Aston Villa,Brentford,2,2,1,1,C Pawson,2.28,1.06,20,14,7,4,7,24,2,2,2,5,0,0,2.63,3.5,2.6,1.73,2.1,0.0,1.95,0.0,1.9
+Inglaterra,Premier League ING,10/10/2026,15:00,Chelsea,Bournemouth,5,1,2,0,S Barrott,1.1,1.38,10,9,6,4,7,15,1,7,0,4,0,0,1.65,4.33,4.5,1.5,2.63,-0.75,1.83,0.75,2.03
+Inglaterra,Premier League ING,10/10/2026,15:00,Ipswich,Fulham,2,1,0,0,L Smith,1.15,1.81,11,13,5,5,8,10,2,5,2,4,0,0,2.8,3.4,2.5,1.73,2.1,0.0,2.05,0.0,1.8
+Inglaterra,Premier League ING,10/10/2026,15:00,Sunderland,Brighton,0,2,0,0,T Bramall,0.72,1.41,12,13,3,4,8,12,7,5,0,1,0,1,3.1,3.5,2.25,1.8,2.0,0.25,1.88,-0.25,1.98
+Inglaterra,Premier League ING,10/10/2026,17:30,Man United,Tottenham,1,1,0,0,S Attwell,0.8,1.62,12,12,4,3,13,16,4,4,4,3,0,1,1.7,4.2,4.5,1.53,2.5,-0.75,1.85,0.75,2.0
+Inglaterra,Premier League ING,11/10/2026,14:00,Crystal Palace,Nott'm Forest,3,1,2,1,P Bankes,2.41,3.34,13,24,7,6,11,10,5,8,2,2,0,0,2.7,3.2,2.7,1.91,1.91,0.0,1.9,0.0,1.95
+Inglaterra,Premier League ING,11/10/2026,14:00,Hull,Everton,2,2,0,0,M Salisbury,1.33,1.68,9,15,5,7,15,4,7,6,2,0,0,0,3.7,3.4,2.05,2.0,1.85,0.5,1.8,-0.5,2.05
+Inglaterra,Premier League ING,11/10/2026,16:30,Liverpool,Man City,0,3,0,0,C Kavanagh,0.94,1.29,13,15,6,4,19,14,5,6,4,2,1,0,2.7,3.6,2.45,1.57,2.38,0.0,2.03,0.0,1.83
+Inglaterra,Premier League ING,12/10/2026,20:00,Coventry,Newcastle,4,1,1,0,J Brooks,1.43,1.84,9,19,6,6,3,10,2,6,1,1,0,0,3.3,3.7,2.1,1.67,2.2,0.5,1.75,-0.5,2.05
+Inglaterra,Premier League ING,17/10/2026,12:30,Everton,Chelsea,0,2,0,0,P Tierney,0.43,1.47,6,18,5,7,8,15,5,7,3,4,0,0,3.2,3.8,2.1,1.67,2.2,0.25,2.03,-0.25,1.83
+Inglaterra,Premier League ING,17/10/2026,15:00,Brentford,Liverpool,1,2,1,0,J Brooks,0.88,1.64,10,21,2,5,7,13,3,9,4,3,2,0,2.3,3.75,2.88,1.57,2.38,0.0,1.73,0.0,2.08
+Inglaterra,Premier League ING,17/10/2026,15:00,Fulham,Hull,1,0,1,0,C Kavanagh,1.38,0.16,18,5,6,0,13,11,10,2,2,2,1,0,1.73,3.9,4.5,1.73,2.1,-0.75,1.93,0.75,1.93
+Inglaterra,Premier League ING,17/10/2026,15:00,Man City,Ipswich,3,2,2,1,F Hallam,3.53,1.66,19,8,6,3,8,16,2,3,1,2,0,0,1.22,7.0,11.0,1.4,3.0,-1.75,1.85,1.75,2.0
+Inglaterra,Premier League ING,17/10/2026,17:30,Newcastle,Aston Villa,0,1,0,1,J Gillett,0.99,1.57,16,15,1,3,14,11,4,5,6,2,0,0,2.25,3.6,3.0,1.62,2.3,-0.25,1.98,0.25,1.88
+Inglaterra,Premier League ING,18/10/2026,14:00,Bournemouth,Sunderland,2,0,1,0,C Pawson,4.23,0.07,29,3,6,0,16,7,5,3,3,2,0,1,2.05,3.5,3.6,1.83,2.03,-0.5,2.05,0.5,1.8
+Inglaterra,Premier League ING,18/10/2026,14:00,Brighton,Crystal Palace,5,0,3,0,R Jones,2.0,0.77,17,5,9,1,13,11,8,5,2,1,0,0,1.53,4.5,5.5,1.57,2.38,-1.0,1.88,1.0,1.98
+Inglaterra,Premier League ING,18/10/2026,14:00,Leeds,Man United,1,1,0,1,D England,1.41,0.92,12,13,5,3,16,5,2,3,2,2,0,0,2.35,3.6,2.9,1.67,2.2,-0.25,2.05,0.25,1.8
+Inglaterra,Premier League ING,18/10/2026,16:30,Nott'm Forest,Arsenal,0,1,0,0,M Oliver,0.9,1.14,14,9,2,1,14,8,8,6,1,1,0,0,6.0,3.9,1.6,1.93,1.93,0.75,2.05,-0.75,1.75
+Inglaterra,Premier League ING,19/10/2026,20:00,Tottenham,Coventry,3,1,1,0,A Madley,0.87,0.82,16,12,5,1,15,14,4,4,1,3,0,0,1.45,4.5,7.0,1.57,2.38,-1.25,2.0,1.25,1.85
 Inglaterra,Championship ING,14/08/2026,20:00,Wolves,Blackburn,2,2,1,1,F Hallam,1.97,0.84,18,10,3,5,10,16,5,5,1,3,0,0,1.49,3.9,6.25,1.91,1.91,-1.0,1.93,1.0,1.93
 Inglaterra,Championship ING,15/08/2026,12:30,Bolton,Preston,2,1,2,0,A Herczeg,1.11,1.12,15,10,6,3,12,11,5,2,2,3,0,0,2.15,3.3,3.3,2.0,1.85,-0.25,1.93,0.25,1.93
 Inglaterra,Championship ING,15/08/2026,15:00,Bristol City,Millwall,0,2,0,1,L Smith,0.52,3.4,8,24,0,3,8,12,6,6,2,2,1,0,2.5,3.4,2.65,1.98,1.88,0.0,1.88,0.0,1.98
@@ -118,6 +188,18 @@ Inglaterra,Championship ING,14/10/2026,19:45,Norwich,Southampton,0,1,0,0,S Marti
 Inglaterra,Championship ING,14/10/2026,19:45,Portsmouth,Sheffield United,3,2,1,0,O Langford,2.22,2.01,24,11,7,4,6,7,10,6,3,3,0,1,2.2,3.25,3.2,1.91,1.91,-0.25,1.98,0.25,1.88
 Inglaterra,Championship ING,14/10/2026,19:45,QPR,Derby,4,1,3,0,M Corlett,1.52,0.86,9,15,7,6,10,10,1,3,2,3,0,0,1.66,3.8,4.5,1.8,2.0,-0.75,1.9,0.75,1.95
 Inglaterra,Championship ING,14/10/2026,20:00,Lincoln,West Ham,0,6,0,1,R Madley,0.35,3.2,5,32,0,12,7,14,3,11,0,2,2,0,5.0,3.8,1.62,1.67,2.2,0.75,1.98,-0.75,1.88
+Inglaterra,Championship ING,16/10/2026,20:00,Burnley,Wolves,1,2,1,1,L Smith,1.0,1.82,15,20,4,8,13,9,3,6,2,1,0,0,3.2,3.5,2.15,1.83,2.03,0.25,1.93,-0.25,1.93
+Inglaterra,Championship ING,17/10/2026,12:30,Middlesbrough,Cardiff,2,2,0,2,T Nield,2.76,0.85,36,7,12,3,9,10,11,4,0,2,0,1,1.49,4.5,5.5,1.4,3.0,-1.0,1.85,1.0,2.0
+Inglaterra,Championship ING,17/10/2026,12:30,Millwall,Lincoln,2,2,0,2,R Ricardo,2.12,1.32,18,9,6,3,14,10,12,2,6,4,0,1,1.61,3.8,5.0,1.8,2.0,-0.75,1.83,0.75,2.03
+Inglaterra,Championship ING,17/10/2026,12:30,Watford,Charlton,2,0,0,0,T Bramall,2.78,1.25,22,14,10,3,10,21,4,3,3,5,0,0,2.45,3.3,2.7,1.91,1.91,0.0,1.83,0.0,2.03
+Inglaterra,Championship ING,17/10/2026,15:00,Birmingham,QPR,3,0,1,0,T Kirk,1.3,1.15,11,12,5,4,13,7,0,4,2,2,0,0,1.96,3.5,3.6,1.91,1.91,-0.5,2.05,0.5,1.8
+Inglaterra,Championship ING,17/10/2026,15:00,Bristol City,Sheffield United,0,1,0,1,B Speedie,0.67,1.41,7,16,1,2,16,10,3,5,1,1,0,0,2.01,3.5,3.5,1.8,2.0,-0.5,2.05,0.5,1.75
+Inglaterra,Championship ING,17/10/2026,15:00,Derby,Stoke,0,1,0,0,O Langford,0.99,0.59,17,12,3,4,12,10,6,4,1,0,0,0,2.85,3.4,2.3,1.91,1.91,0.25,1.8,-0.25,2.05
+Inglaterra,Championship ING,17/10/2026,15:00,Norwich,Portsmouth,0,1,0,0,G Ward,0.29,1.19,9,9,2,2,13,13,1,1,3,2,0,0,1.71,3.9,4.33,1.73,2.1,-0.5,1.75,0.5,2.05
+Inglaterra,Championship ING,17/10/2026,15:00,Southampton,Bolton,0,0,0,0,M Donohue,2.19,1.53,14,14,2,3,8,9,5,3,2,4,0,0,1.45,4.75,6.0,1.44,2.75,-1.25,2.03,1.25,1.83
+Inglaterra,Championship ING,17/10/2026,15:00,Swansea,West Ham,0,1,0,1,J Smith,1.05,1.15,11,9,0,4,9,8,6,1,0,2,0,0,3.0,3.75,2.1,1.73,2.1,0.25,1.93,-0.25,1.93
+Inglaterra,Championship ING,17/10/2026,15:00,West Brom,Blackburn,3,2,1,2,A Herczeg,4.19,0.84,25,10,4,2,9,16,8,4,2,3,0,0,1.86,3.5,4.0,2.0,1.8,-0.5,1.93,0.5,1.93
+Inglaterra,Championship ING,17/10/2026,15:00,Wrexham,Preston,4,1,2,1,S Hooper,1.67,0.87,18,11,6,1,9,14,8,2,2,4,0,0,1.62,3.9,4.75,1.88,1.98,-0.75,1.88,0.75,1.98
 Inglaterra,League 1 ING,15/08/2026,12:30,Notts County,Leicester,1,1,0,0,E Duckworth,2.28,0.77,16,11,2,2,15,11,3,5,2,1,0,0,3.6,3.4,1.96,2.03,1.83,0.5,1.8,-0.5,2.05
 Inglaterra,League 1 ING,15/08/2026,12:30,Oxford,Milton Keynes Dons,2,2,1,2,O Yates,1.14,1.76,17,24,4,6,14,14,8,9,2,3,0,0,2.1,3.3,3.3,2.1,1.7,-0.25,1.88,0.25,1.98
 Inglaterra,League 1 ING,15/08/2026,12:30,Reading,Luton,3,4,3,1,L Doughty,1.77,1.6,17,12,5,5,12,11,5,2,1,2,0,0,3.3,3.4,2.05,1.93,1.93,0.25,1.95,-0.25,1.9
@@ -220,6 +302,18 @@ Inglaterra,League 1 ING,10/10/2026,15:00,Milton Keynes Dons,Reading,1,5,0,1,M Co
 Inglaterra,League 1 ING,10/10/2026,15:00,Stevenage,Wigan,1,0,0,0,A Byrne,2.08,0.19,15,6,6,1,9,12,2,7,0,4,0,0,2.05,3.2,3.5,2.15,1.67,-0.25,1.8,0.25,2.05
 Inglaterra,League 1 ING,10/10/2026,15:00,Stockport,Barnsley,3,1,0,1,M Coy,1.89,1.41,16,18,4,9,5,12,11,5,1,2,0,0,1.39,4.5,7.0,1.4,2.88,-1.25,1.88,1.25,1.98
 Inglaterra,League 1 ING,10/10/2026,15:00,Wycombe,Luton,1,4,0,2,S Oldham,2.2,2.89,18,14,7,7,10,16,4,6,0,2,0,0,2.57,3.4,2.45,1.67,2.15,0.0,1.98,0.0,1.88
+Inglaterra,League 1 ING,15/10/2026,20:00,Mansfield,Oxford,1,1,0,1,T Parsons,3.77,0.74,24,6,4,2,13,12,11,3,2,4,0,2,2.25,3.5,2.75,1.75,2.05,-0.25,2.0,0.25,1.85
+Inglaterra,League 1 ING,17/10/2026,12:30,Milton Keynes Dons,Luton,2,1,1,0,M Coy,1.45,1.54,11,25,3,5,11,13,5,6,2,0,0,0,3.1,3.5,2.1,1.7,2.1,0.25,1.95,-0.25,1.9
+Inglaterra,League 1 ING,17/10/2026,12:30,Peterboro,Burton,2,2,1,1,C Hicks,2.53,0.9,20,16,6,6,11,10,8,4,2,1,0,0,1.79,3.8,3.8,1.62,2.25,-0.5,1.88,0.5,1.98
+Inglaterra,League 1 ING,17/10/2026,15:00,Barnsley,Cambridge,1,2,1,0,D Rock,2.25,2.19,24,13,7,5,15,10,11,11,5,3,0,0,2.35,3.5,2.65,1.62,2.25,0.0,1.8,0.0,2.05
+Inglaterra,League 1 ING,17/10/2026,15:00,Bradford,Stevenage,2,0,0,0,S Mather,1.76,0.95,13,12,2,1,17,12,9,2,1,1,0,0,1.86,3.4,4.0,2.15,1.67,-0.5,1.95,0.5,1.9
+Inglaterra,League 1 ING,17/10/2026,15:00,Leicester,Doncaster,2,1,1,0,C Brook,1.76,0.6,14,15,7,3,12,10,6,7,1,3,0,0,1.79,3.8,3.75,1.53,2.4,-0.5,1.85,0.5,2.0
+Inglaterra,League 1 ING,17/10/2026,15:00,Leyton Orient,Blackpool,2,0,1,0,J Busby,2.2,0.81,14,16,6,4,15,12,3,11,1,3,0,0,2.15,3.5,3.0,1.67,2.15,-0.25,1.93,0.25,1.93
+Inglaterra,League 1 ING,17/10/2026,15:00,Plymouth,Huddersfield,0,2,0,1,D Whitestone,0.77,2.97,13,20,1,8,11,11,2,8,0,0,0,0,2.55,3.5,2.5,1.65,2.2,0.0,1.95,0.0,1.9
+Inglaterra,League 1 ING,17/10/2026,15:00,Sheffield Weds,AFC Wimbledon,5,0,3,0,E Heaslip,2.6,0.37,25,7,11,0,7,13,2,4,2,1,0,0,1.62,3.8,4.75,1.67,2.15,-0.75,1.88,0.75,1.98
+Inglaterra,League 1 ING,17/10/2026,15:00,Stockport,Bromley,1,0,1,0,S Stockbridge,1.49,0.28,18,4,6,0,13,6,7,3,1,2,0,0,1.22,6.0,10.0,1.44,2.7,-1.75,1.88,1.75,1.98
+Inglaterra,League 1 ING,17/10/2026,15:00,Wigan,Reading,1,0,0,0,E Duckworth,1.16,1.99,13,17,4,6,10,13,5,5,2,2,0,0,3.5,3.6,1.91,1.67,2.15,0.5,1.8,-0.5,2.05
+Inglaterra,League 1 ING,17/10/2026,15:00,Wycombe,Notts County,2,0,1,0,L Sandoe,1.09,0.41,15,4,3,0,18,11,9,3,1,2,0,0,1.91,3.4,3.75,1.85,2.0,-0.5,1.98,0.5,1.88
 Inglaterra,League 2 ING,15/08/2026,12:30,Newport County,Rochdale,3,0,2,0,H Blair,1.47,0.13,12,5,6,0,11,14,9,6,2,4,0,1,2.85,3.4,2.25,2.05,1.8,0.25,1.85,-0.25,2.0
 Inglaterra,League 2 ING,15/08/2026,12:30,Oldham,Port Vale,2,0,0,0,P Howard,1.68,0.62,11,13,3,2,12,16,1,6,2,4,0,0,2.5,3.2,2.65,2.1,1.7,0.0,1.88,0.0,1.98
 Inglaterra,League 2 ING,15/08/2026,15:00,Accrington,Colchester,2,2,2,1,E Swallow,2.13,0.72,20,7,11,5,20,10,9,4,1,0,0,0,2.35,3.2,2.85,2.1,1.7,0.0,1.83,0.0,2.03
@@ -334,6 +428,72 @@ Inglaterra,League 2 ING,10/10/2026,15:00,Rotherham,Gillingham,1,4,1,1,W Davis,1.
 Inglaterra,League 2 ING,10/10/2026,15:00,Shrewsbury,Exeter,0,1,0,0,D Brown,1.55,1.21,13,5,3,1,17,9,7,3,4,2,0,0,2.2,3.1,3.25,2.1,1.7,-0.25,1.98,0.25,1.88
 Inglaterra,League 2 ING,10/10/2026,15:00,Tranmere,Rochdale,1,1,1,0,S Gill,2.0,0.5,15,7,4,1,8,11,5,3,0,1,0,0,1.91,3.4,3.8,1.98,1.88,-0.5,1.98,0.5,1.88
 Inglaterra,League 2 ING,10/10/2026,15:00,York,Northampton,1,1,0,1,M Barlow,2.28,1.01,13,14,2,3,8,13,8,4,2,1,0,0,1.62,3.75,5.0,1.83,2.03,-0.75,1.85,0.75,2.0
+Inglaterra,League 2 ING,17/10/2026,12:30,Fleetwood Town,Rotherham,2,0,0,0,S Copeland,1.59,0.99,15,8,5,0,9,14,9,5,4,4,0,0,2.1,3.3,3.25,1.9,1.9,-0.25,1.88,0.25,1.98
+Inglaterra,League 2 ING,17/10/2026,12:30,Shrewsbury,Bristol Rvs,1,0,0,0,B Toner,1.62,0.51,10,8,3,1,15,15,6,3,2,3,2,0,3.1,3.3,2.2,2.05,1.75,0.25,1.88,-0.25,1.98
+Inglaterra,League 2 ING,17/10/2026,15:00,Accrington,Gillingham,3,1,2,1,W Finnie,1.43,0.52,21,6,7,0,8,15,11,1,2,3,0,0,2.25,3.3,3.0,1.95,1.85,0.0,1.7,0.0,2.1
+Inglaterra,League 2 ING,17/10/2026,15:00,Colchester,Exeter,0,0,0,0,B Atkinson,1.14,0.23,18,8,2,1,16,11,5,2,2,2,0,0,2.05,3.4,3.4,2.0,1.85,-0.25,1.85,0.25,2.0
+Inglaterra,League 2 ING,17/10/2026,15:00,Crewe,Rochdale,3,2,2,0,A Jackson,1.49,0.87,10,15,4,3,7,7,1,7,1,0,0,0,1.79,3.75,4.0,1.88,1.98,-0.5,1.85,0.5,2.0
+Inglaterra,League 2 ING,17/10/2026,15:00,Grimsby,Northampton,0,2,0,1,M Woods,2.8,1.64,13,10,3,6,9,14,3,7,3,2,1,0,1.62,3.75,5.0,1.85,2.0,-0.75,1.95,0.75,1.9
+Inglaterra,League 2 ING,17/10/2026,15:00,Newport County,York,1,1,0,1,N Hair,0.96,1.03,17,11,3,1,12,10,6,0,3,2,0,1,3.75,3.6,1.86,1.7,2.1,0.5,1.93,-0.5,1.93
+Inglaterra,League 2 ING,17/10/2026,15:00,Oldham,Cheltenham,4,1,3,1,S Oldham,2.15,0.89,18,9,5,4,6,11,4,5,0,2,0,0,1.66,4.0,4.33,1.75,2.05,-0.5,1.7,0.5,2.1
+Inglaterra,League 2 ING,17/10/2026,15:00,Port Vale,Chesterfield,1,0,1,0,H Blair,0.57,0.26,5,8,3,4,14,6,0,10,3,2,0,0,2.57,3.4,2.45,1.85,2.0,0.25,1.7,-0.25,2.1
+Inglaterra,League 2 ING,17/10/2026,15:00,Salford,Crawley Town,2,1,1,0,S Jackson,1.6,0.5,15,8,5,4,8,15,5,4,0,0,0,0,1.33,5.0,7.0,1.44,2.7,-1.5,2.0,1.5,1.85
+Inglaterra,League 2 ING,17/10/2026,15:00,Swindon,Walsall,1,1,1,0,A Chilowicz,1.82,1.69,17,18,5,8,5,9,2,10,1,0,0,0,2.65,3.5,2.4,1.67,2.15,0.0,2.05,0.0,1.8
+Inglaterra,League 2 ING,17/10/2026,15:00,Tranmere,Barnet,1,2,1,0,J Robinson,0.92,2.38,13,16,5,3,15,11,1,6,3,2,1,0,3.4,3.6,1.96,1.67,2.15,0.5,1.83,-0.5,2.03
+Escócia,Premiere League ESC,31/07/2026,20:00,Dundee United,Rangers,1,1,1,0,N Walsh,1.64,1.46,11,21,3,6,16,14,5,10,1,3,0,0,5.75,4.33,1.46,1.53,2.5,1.0,2.03,-1.0,1.83
+Escócia,Premiere League ESC,01/08/2026,15:00,Falkirk,St Mirren,0,2,0,1,D Nicolson,0.71,1.64,10,15,1,5,18,18,7,7,0,4,0,0,1.96,3.6,3.5,1.83,2.03,-0.5,2.03,0.5,1.83
+Escócia,Premiere League ESC,01/08/2026,17:30,Aberdeen,Hearts,2,1,0,1,D Dickinson,2.66,1.83,11,21,3,4,11,17,4,6,3,2,0,1,3.2,3.4,2.15,1.73,2.1,0.25,1.93,-0.25,1.93
+Escócia,Premiere League ESC,02/08/2026,14:00,St Johnstone,Kilmarnock,4,3,1,1,J Beaton,1.77,0.79,15,7,5,5,6,13,6,3,2,2,0,0,2.15,3.4,3.2,1.83,2.03,-0.25,1.93,0.25,1.93
+Escócia,Premiere League ESC,02/08/2026,16:30,Hibernian,Motherwell,1,2,0,1,S McLean,1.92,2.0,19,9,6,5,14,13,9,2,1,3,0,0,2.2,3.4,3.1,1.85,2.0,-0.25,1.98,0.25,1.88
+Escócia,Premiere League ESC,03/08/2026,19:30,Celtic,Dundee,1,0,0,0,M MacDermid,2.55,0.47,18,11,4,3,9,7,9,4,1,1,0,0,1.17,7.5,10.0,1.36,3.2,-2.0,1.93,2.0,1.93
+Escócia,Premiere League ESC,08/08/2026,15:00,Dundee,Aberdeen,2,0,1,0,C Scott,2.22,0.7,18,9,7,3,9,12,5,4,1,3,0,0,2.65,3.5,2.45,1.88,1.98,0.0,2.0,0.0,1.85
+Escócia,Premiere League ESC,08/08/2026,15:00,St Mirren,St Johnstone,1,0,0,0,R Hardie,1.36,1.13,13,9,4,2,11,8,5,2,2,1,0,0,2.25,3.3,3.1,1.9,1.95,-0.25,2.03,0.25,1.83
+Escócia,Premiere League ESC,09/08/2026,13:30,Kilmarnock,Celtic,1,5,0,3,R Lee,0.85,5.64,10,33,6,16,12,10,5,7,1,0,0,0,7.0,5.0,1.37,1.44,2.75,1.25,2.0,-1.25,1.85
+Escócia,Premiere League ESC,09/08/2026,15:00,Hearts,Dundee United,4,0,2,0,K Clancy,2.1,0.54,12,10,7,0,11,11,7,2,1,2,0,0,1.57,4.33,4.75,1.73,2.1,-0.75,1.83,0.75,2.03
+Escócia,Premiere League ESC,09/08/2026,15:00,Motherwell,Falkirk,0,0,0,0,C Graham,0.89,0.44,11,10,1,1,17,16,2,2,2,2,0,0,1.79,3.75,4.1,1.73,2.1,-0.5,1.83,0.5,2.03
+Escócia,Premiere League ESC,09/08/2026,16:00,Rangers,Hibernian,1,2,0,1,D Robertson,2.05,1.75,25,8,9,2,12,12,7,4,1,1,0,0,1.49,4.33,5.5,1.57,2.38,-1.0,1.88,1.0,1.98
+Escócia,Premiere League ESC,22/08/2026,17:45,Dundee United,Dundee,0,2,0,1,D Dickinson,1.24,1.68,24,14,5,4,11,11,6,6,4,3,0,0,2.15,3.4,3.2,1.8,2.0,-0.25,1.93,0.25,1.93
+Escócia,Premiere League ESC,29/08/2026,15:00,Celtic,Falkirk,2,1,2,0,C Graham,2.88,0.53,19,5,8,1,7,14,6,3,1,4,0,0,1.19,6.5,11.0,1.36,3.2,-2.0,2.0,2.0,1.85
+Escócia,Premiere League ESC,29/08/2026,15:00,Hearts,St Johnstone,2,1,2,0,R Lee,1.71,1.16,16,9,7,4,11,14,8,4,0,0,0,0,1.68,3.75,4.5,1.73,2.1,-0.75,1.95,0.75,1.9
+Escócia,Premiere League ESC,29/08/2026,15:00,Kilmarnock,Dundee United,0,4,0,3,N Walsh,1.03,3.51,16,21,4,8,11,12,3,5,3,3,0,0,2.35,3.4,2.7,1.8,2.0,0.0,1.83,0.0,2.03
+Escócia,Premiere League ESC,30/08/2026,12:00,Aberdeen,Rangers,0,1,0,0,M MacDermid,0.46,1.84,10,18,2,5,21,15,6,6,6,3,0,0,4.33,3.8,1.76,1.67,2.2,0.5,2.03,-0.5,1.78
+Escócia,Premiere League ESC,30/08/2026,15:00,Dundee,Hibernian,1,2,0,1,J Beaton,0.78,2.42,11,25,3,7,8,14,3,5,1,1,0,0,3.2,3.4,2.2,1.91,1.91,0.25,1.9,-0.25,1.95
+Escócia,Premiere League ESC,30/08/2026,15:00,St Mirren,Motherwell,3,3,3,2,K Clancy,2.32,2.11,23,22,9,7,14,12,7,7,2,2,0,0,2.45,3.3,2.7,2.0,1.85,0.0,1.85,0.0,2.0
+Escócia,Premiere League ESC,02/09/2026,19:45,Celtic,Aberdeen,3,0,3,0,D Nicolson,2.47,0.67,27,9,12,2,10,7,15,5,1,1,0,0,1.19,6.5,11.0,1.4,3.0,-1.75,1.83,1.75,2.03
+Escócia,Premiere League ESC,02/09/2026,19:45,Dundee,St Johnstone,1,1,0,0,R Hardie,1.97,1.07,10,15,2,3,16,14,2,5,0,2,0,0,2.55,3.5,2.55,1.88,1.98,0.0,1.93,0.0,1.93
+Escócia,Premiere League ESC,02/09/2026,19:45,Kilmarnock,St Mirren,0,1,0,1,D Dickinson,0.43,1.09,9,10,2,1,12,13,7,3,2,2,0,0,2.75,3.4,2.4,1.83,2.03,0.0,2.05,0.0,1.8
+Escócia,Premiere League ESC,02/09/2026,19:45,Motherwell,Dundee United,3,0,1,0,C Scott,2.14,0.19,25,5,8,1,8,6,9,3,1,0,0,1,1.91,3.75,3.6,1.73,2.1,-0.5,2.0,0.5,1.85
+Escócia,Premiere League ESC,02/09/2026,20:00,Falkirk,Rangers,1,2,1,1,D McFarlane,0.85,1.57,12,16,5,6,12,17,5,6,2,1,0,0,5.0,4.33,1.56,1.62,2.3,1.0,1.83,-1.0,2.03
+Escócia,Premiere League ESC,03/09/2026,19:45,Hibernian,Hearts,1,3,0,2,D Robertson,1.69,0.82,17,12,4,5,16,9,7,8,3,0,1,0,2.45,3.5,2.65,1.88,1.98,0.0,1.85,0.0,2.0
+Escócia,Premiere League ESC,05/09/2026,15:00,Aberdeen,Kilmarnock,0,0,0,0,J Beaton,0.85,0.93,10,11,2,4,13,13,6,7,5,3,0,1,1.68,3.75,4.5,1.67,2.2,-0.75,1.93,0.75,1.93
+Escócia,Premiere League ESC,05/09/2026,15:00,Dundee United,Falkirk,1,1,0,1,D McFarlane,2.27,0.85,27,12,9,4,16,14,14,5,3,2,0,0,1.86,3.6,3.8,1.73,2.1,-0.5,1.93,0.5,1.93
+Escócia,Premiere League ESC,05/09/2026,15:00,Rangers,Motherwell,1,0,1,0,D Nicolson,3.93,0.51,27,8,6,3,7,12,7,5,0,0,0,0,1.41,4.33,7.0,1.62,2.3,-1.25,2.03,1.25,1.83
+Escócia,Premiere League ESC,05/09/2026,20:00,St Mirren,Celtic,1,2,1,0,R Lee,1.73,2.93,19,23,6,8,6,15,6,10,4,1,0,0,6.25,4.33,1.45,1.44,2.75,1.25,1.8,-1.25,2.05
+Escócia,Premiere League ESC,06/09/2026,15:00,Hearts,Dundee,2,1,0,1,C Graham,1.87,0.51,27,4,7,1,11,19,14,2,2,3,0,1,1.46,4.1,6.25,1.57,2.38,-1.0,1.83,1.0,2.03
+Escócia,Premiere League ESC,06/09/2026,15:00,St Johnstone,Hibernian,2,1,2,1,S McLean,2.49,1.72,9,14,4,3,10,13,2,7,1,0,0,0,2.75,3.25,2.45,1.9,1.95,0.0,2.03,0.0,1.83
+Escócia,Premiere League ESC,09/09/2026,19:45,Rangers,St Mirren,1,0,0,0,D Robertson,2.14,1.1,18,10,7,2,13,13,12,0,1,1,0,0,1.3,5.5,8.0,1.44,2.75,-1.5,1.9,1.5,1.95
+Escócia,Premiere League ESC,09/09/2026,20:00,St Johnstone,Celtic,0,1,0,0,M MacDermid,0.77,2.22,9,15,3,9,13,9,2,11,2,2,0,0,5.5,4.75,1.46,1.5,2.63,1.25,1.78,-1.25,2.03
+Escócia,Premiere League ESC,15/09/2026,19:45,Falkirk,Hearts,2,1,1,1,J Beaton,2.04,1.73,13,9,4,4,15,13,3,4,4,3,0,0,3.8,3.6,1.86,1.73,2.1,0.5,1.95,-0.5,1.9
+Escócia,Premiere League ESC,15/09/2026,19:45,Hibernian,Kilmarnock,0,1,0,1,R Lee,1.3,1.94,23,12,7,7,8,10,15,7,0,3,0,1,1.39,4.75,6.5,1.44,2.75,-1.25,1.88,1.25,1.98
+Escócia,Premiere League ESC,15/09/2026,19:45,Motherwell,Aberdeen,0,4,0,1,S McLean,0.77,0.92,12,11,5,4,7,12,5,2,2,3,0,0,1.79,3.8,3.9,1.73,2.1,-0.5,1.83,0.5,2.03
+Escócia,Premiere League ESC,19/09/2026,15:00,Dundee,Motherwell,2,1,2,1,R Hardie,1.36,1.1,11,15,6,4,8,9,9,9,1,1,0,0,3.0,3.4,2.25,1.73,2.1,0.25,1.83,-0.25,2.03
+Escócia,Premiere League ESC,19/09/2026,15:00,Hibernian,Aberdeen,1,1,0,1,N Walsh,1.43,0.77,12,9,2,2,12,11,6,9,2,2,0,0,1.68,3.8,4.5,1.73,2.1,-0.75,1.95,0.75,1.9
+Escócia,Premiere League ESC,19/09/2026,15:00,St Johnstone,Falkirk,1,1,0,0,C Scott,0.68,0.9,8,13,5,4,13,18,3,8,2,0,1,0,2.01,3.5,3.5,1.91,1.91,-0.5,2.05,0.5,1.8
+Escócia,Premiere League ESC,19/09/2026,15:00,St Mirren,Dundee United,0,3,0,3,D Dickinson,0.85,1.52,10,13,0,9,13,13,4,7,2,2,0,0,2.3,3.6,2.82,1.67,2.2,-0.25,2.05,0.25,1.8
+Escócia,Premiere League ESC,19/09/2026,17:45,Kilmarnock,Hearts,1,1,1,0,D Nicolson,0.23,1.78,4,17,0,3,13,17,2,6,2,2,0,0,4.75,4.1,1.61,1.57,2.38,0.75,2.05,-0.75,1.8
+Escócia,Premiere League ESC,20/09/2026,12:00,Celtic,Rangers,0,1,0,1,J Beaton,0.71,1.23,5,15,1,8,16,19,8,4,2,3,0,0,2.15,3.7,3.0,1.53,2.5,-0.25,1.93,0.25,1.93
+Escócia,Premiere League ESC,10/10/2026,15:00,Dundee United,Hibernian,1,0,1,0,D Robertson,1.68,0.77,17,13,8,4,13,14,8,3,4,2,0,1,2.57,3.6,2.35,1.67,2.2,0.0,2.03,0.0,1.83
+Escócia,Premiere League ESC,10/10/2026,15:00,Falkirk,Dundee,1,2,1,0,D Dickinson,1.97,1.41,16,22,5,10,12,11,3,10,0,0,0,0,1.96,3.6,3.5,1.73,2.1,-0.5,2.03,0.5,1.83
+Escócia,Premiere League ESC,10/10/2026,15:00,Hearts,St Mirren,5,0,2,0,N Walsh,3.44,0.68,18,8,6,1,16,18,6,2,2,3,0,0,1.42,5.0,5.75,1.53,2.5,-1.25,2.0,1.25,1.85
+Escócia,Premiere League ESC,10/10/2026,15:00,Rangers,Kilmarnock,3,1,3,0,M MacDermid,1.42,1.15,18,13,4,5,15,13,7,3,1,1,0,0,1.11,7.5,17.0,1.36,3.2,-2.25,1.95,2.25,1.9
+Escócia,Premiere League ESC,11/10/2026,12:00,Motherwell,Celtic,0,2,0,1,S McLean,1.05,2.85,8,25,2,15,3,4,2,9,1,2,0,0,4.75,4.5,1.53,1.44,2.75,1.0,1.85,-1.0,2.0
+Escócia,Premiere League ESC,11/10/2026,14:00,Aberdeen,St Johnstone,0,1,0,1,R Lee,1.23,1.1,22,5,5,1,7,10,13,2,1,0,0,0,2.1,3.4,3.25,1.98,1.88,-0.25,1.9,0.25,1.95
+Escócia,Premiere League ESC,17/10/2026,15:00,Aberdeen,St Mirren,3,1,1,1,J Beaton,2.29,1.0,17,13,7,7,18,16,2,6,1,2,0,0,1.79,3.75,4.0,1.8,2.0,-0.5,1.85,0.5,2.0
+Escócia,Premiere League ESC,17/10/2026,15:00,Hibernian,Falkirk,1,2,1,2,N Walsh,1.35,0.76,17,10,3,5,5,20,6,3,1,3,0,0,1.57,4.0,5.0,1.73,2.1,-0.75,1.83,0.75,2.03
+Escócia,Premiere League ESC,17/10/2026,15:00,Kilmarnock,Motherwell,3,2,1,1,C Scott,1.51,2.44,16,15,6,7,9,8,5,3,1,0,0,0,3.25,3.75,2.01,1.62,2.3,0.25,2.03,-0.25,1.83
+Escócia,Premiere League ESC,17/10/2026,15:00,St Johnstone,Dundee United,1,1,1,0,R Hardie,1.28,1.11,11,14,5,7,11,15,4,7,2,4,0,0,2.57,3.5,2.5,1.8,2.0,0.0,1.98,0.0,1.88
+Escócia,Premiere League ESC,17/10/2026,20:00,Dundee,Rangers,2,2,1,1,D Nicolson,1.77,1.8,10,21,6,9,13,10,3,6,2,2,0,0,7.5,5.0,1.35,1.53,2.5,1.25,2.03,-1.25,1.83
+Escócia,Premiere League ESC,18/10/2026,15:00,Celtic,Hearts,7,1,5,1,D Dickinson,4.21,1.2,18,20,10,5,17,8,6,3,3,1,0,0,1.53,4.5,5.0,1.53,2.5,-1.0,1.98,1.0,1.88
 Escócia,Division 1 ESC,01/08/2026,15:00,Ayr,Arbroath,2,0,1,0,R Hardie,,,6,6,4,3,7,9,3,7,0,0,0,0,2.4,3.0,2.7,2.35,1.57,-0.25,2.08,0.25,1.73
 Escócia,Division 1 ESC,01/08/2026,15:00,Inverness C,Dunfermline,0,0,0,0,C Steven,,,19,7,7,2,8,11,5,2,1,1,0,0,2.25,3.25,2.75,2.05,1.75,0.0,1.7,0.0,2.1
 Escócia,Division 1 ESC,01/08/2026,15:00,Livingston,Queens Park,2,0,0,0,C Graham,,,20,6,7,2,11,6,9,0,1,1,0,0,1.42,3.9,6.25,1.9,1.9,-1.25,2.03,1.25,1.78
@@ -382,6 +542,11 @@ Escócia,Division 1 ESC,10/10/2026,15:00,Inverness C,Stenhousemuir,2,0,2,0,C Ste
 Escócia,Division 1 ESC,10/10/2026,15:00,Livingston,Partick,1,2,1,1,C Scott,,,7,8,1,6,14,11,7,7,1,3,0,0,2.25,3.1,2.9,1.8,2.0,-0.25,2.0,0.25,1.8
 Escócia,Division 1 ESC,10/10/2026,15:00,Raith Rvs,Queens Park,2,0,1,0,R Hardie,,,11,3,8,0,18,15,4,4,3,6,0,0,1.45,3.8,6.0,1.9,1.9,-1.0,1.85,1.0,1.95
 Escócia,Division 1 ESC,13/10/2026,19:45,Queens Park,Inverness C,2,1,2,1,D Nicolson,,,5,16,5,9,7,12,5,11,1,1,0,0,4.33,3.5,1.67,1.85,1.95,0.75,1.9,-0.75,1.9
+Escócia,Division 1 ESC,16/10/2026,19:30,Ayr,Partick,0,1,0,1,M MacDermid,,,4,5,2,2,8,20,5,5,2,6,0,0,4.2,3.7,1.65,1.7,2.1,0.75,1.95,-0.75,1.85
+Escócia,Division 1 ESC,17/10/2026,15:00,Dunfermline,Livingston,0,0,0,0,C Graham,,,5,4,3,0,8,9,3,4,1,4,0,0,2.5,3.3,2.4,1.8,2.0,0.0,1.98,0.0,1.83
+Escócia,Division 1 ESC,17/10/2026,15:00,Inverness C,Arbroath,2,0,2,0,S Murdoch,,,13,2,6,0,11,11,10,2,0,1,0,0,1.48,3.8,5.75,1.9,1.9,-1.0,1.9,1.0,1.9
+Escócia,Division 1 ESC,17/10/2026,15:00,Morton,Queens Park,2,0,2,0,J Wilkie,,,9,5,6,4,10,11,5,3,2,5,0,0,2.5,3.2,2.5,2.08,1.73,0.0,1.9,0.0,1.9
+Escócia,Division 1 ESC,17/10/2026,15:00,Stenhousemuir,Raith Rvs,1,1,1,0,L Murdoch,,,7,7,4,2,14,15,9,4,2,1,0,0,3.1,3.1,2.15,2.2,1.65,0.25,1.9,-0.25,1.9
 Escócia,Division 2 ESC,01/08/2026,15:00,Alloa,East Fife,0,0,0,0,J Kennedy,,,7,5,4,0,7,8,12,3,1,1,0,0,1.9,3.5,3.4,1.9,1.9,-0.5,1.95,0.5,1.85
 Escócia,Division 2 ESC,01/08/2026,15:00,Cove Rangers,Airdrie Utd,0,0,0,0,D Graves,,,10,8,6,3,18,13,4,5,2,3,0,0,2.63,3.4,2.25,2.0,1.8,0.0,2.08,0.0,1.73
 Escócia,Division 2 ESC,01/08/2026,15:00,East Kilbride,Queen of Sth,5,1,3,1,J Hay,,,15,4,7,4,8,19,4,1,1,6,0,0,1.45,3.9,5.75,1.62,2.25,-1.25,2.03,1.25,1.78
@@ -431,6 +596,11 @@ Escócia,Division 2 ESC,10/10/2026,15:00,Cove Rangers,East Fife,1,1,1,0,E Birch,
 Escócia,Division 2 ESC,10/10/2026,15:00,East Kilbride,Airdrie Utd,2,2,2,1,L Wilson,,,8,9,6,4,12,12,7,4,5,3,0,0,1.83,3.5,3.6,1.7,2.1,-0.5,1.88,0.5,1.93
 Escócia,Division 2 ESC,10/10/2026,15:00,Montrose,Ross County,0,5,0,3,S Murdoch,,,3,11,2,7,7,11,1,8,3,2,0,0,5.75,4.33,1.42,1.53,2.38,1.25,1.88,-1.25,1.93
 Escócia,Division 2 ESC,10/10/2026,15:00,Peterhead,Queen of Sth,0,1,0,0,J Kennedy,,,8,4,3,2,14,11,3,1,6,2,0,0,1.9,3.7,3.25,1.62,2.25,-0.5,1.93,0.5,1.88
+Escócia,Division 2 ESC,17/10/2026,15:00,East Fife,Alloa,0,3,0,1,G Calder,,,4,14,1,9,14,9,7,5,3,1,0,0,2.15,3.25,3.0,1.98,1.83,-0.25,1.9,0.25,1.9
+Escócia,Division 2 ESC,17/10/2026,15:00,East Kilbride,Montrose,1,1,0,0,D Graves,,,4,5,2,4,14,17,13,1,3,2,0,0,1.62,3.75,4.33,1.57,2.35,-0.75,1.83,0.75,1.98
+Escócia,Division 2 ESC,17/10/2026,15:00,Peterhead,Cove Rangers,2,0,0,0,I Snedden,,,13,2,7,0,12,16,6,5,3,2,0,1,2.3,3.4,2.6,1.67,2.15,-0.25,2.03,0.25,1.78
+Escócia,Division 2 ESC,17/10/2026,15:00,Queen of Sth,Ross County,1,7,0,5,G Grainger,,,6,23,3,18,12,20,3,5,3,3,0,0,7.5,5.5,1.25,1.36,3.0,1.75,1.9,-1.75,1.9
+Escócia,Division 2 ESC,17/10/2026,17:30,Airdrie Utd,Hamilton,1,2,0,1,C Stirling,,,5,9,2,3,10,15,4,7,3,5,0,0,3.4,3.4,1.91,1.75,2.05,0.5,1.8,-0.5,2.0
 Escócia,Division 3 ESC,01/08/2026,15:00,Annan Athletic,Spartans,2,4,1,0,C Ashwood,,,11,11,5,8,20,9,7,3,5,2,0,0,3.0,3.3,2.05,1.85,1.95,0.25,1.93,-0.25,1.88
 Escócia,Division 3 ESC,01/08/2026,15:00,Clyde,Stranraer,3,1,3,1,J McCunnie,,,16,7,6,5,9,8,7,7,1,2,0,0,2.2,3.3,2.75,1.85,1.95,-0.25,2.0,0.25,1.8
 Escócia,Division 3 ESC,01/08/2026,15:00,Edinburgh City,Elgin,0,5,0,3,G Hanvidge,,,7,10,4,5,17,13,3,5,3,1,0,0,1.83,3.8,3.3,1.73,2.08,-0.5,1.88,0.5,1.93
@@ -481,6 +651,11 @@ Escócia,Division 3 ESC,10/10/2026,15:00,Clyde,Dumbarton,2,1,2,0,G Soutar,,,8,5,
 Escócia,Division 3 ESC,10/10/2026,15:00,Edinburgh City,Spartans,1,3,1,1,J Hay,,,5,10,3,9,16,13,2,11,1,3,0,0,2.55,3.4,2.3,1.67,2.15,0.0,2.0,0.0,1.8
 Escócia,Division 3 ESC,10/10/2026,15:00,Forfar,Elgin,1,2,0,1,R Birrell,,,10,8,5,4,6,7,3,1,2,2,0,0,3.2,3.5,1.91,1.7,2.1,0.5,1.83,-0.5,1.98
 Escócia,Division 3 ESC,10/10/2026,15:00,Stirling,Kelty Hearts,2,1,0,1,D Graves,,,8,7,7,3,9,14,7,4,1,5,0,0,2.35,3.5,2.45,1.62,2.25,0.0,1.85,0.0,1.95
+Escócia,Division 3 ESC,17/10/2026,15:00,Clyde,Annan Athletic,4,1,1,0,A Hendry,,,14,5,7,3,16,12,5,3,2,2,0,0,1.67,3.7,3.9,1.57,2.35,-0.75,1.9,0.75,1.9
+Escócia,Division 3 ESC,17/10/2026,15:00,Dumbarton,Stirling,1,1,0,0,J Kennedy,,,5,6,2,4,7,14,8,6,2,3,0,0,2.3,3.6,2.5,1.53,2.38,0.0,1.8,0.0,2.0
+Escócia,Division 3 ESC,17/10/2026,15:00,Elgin,Edinburgh City,0,0,0,0,G Hanvidge,,,7,9,3,4,15,15,8,7,3,2,0,0,2.1,3.5,2.88,1.6,2.3,-0.5,2.15,0.5,1.68
+Escócia,Division 3 ESC,17/10/2026,15:00,Kelty Hearts,Forfar,2,1,1,1,C Ashwood,,,9,13,4,7,19,13,5,5,5,0,1,0,1.95,3.4,3.1,1.83,1.98,-0.5,2.0,0.5,1.8
+Escócia,Division 3 ESC,17/10/2026,15:00,Spartans,Stranraer,0,2,0,1,G Irvine,,,10,9,5,8,14,21,1,2,4,3,0,0,2.1,3.5,2.88,1.6,2.3,-0.25,1.9,0.25,1.9
 Alemanha,Bundesliga 1 ALE,28/08/2026,19:30,Bayern Munich,Stuttgart,5,1,1,0,,4.06,0.78,21,11,9,4,10,17,9,3,1,3,0,0,1.22,7.0,10.0,1.2,4.5,-2.0,1.83,2.0,2.03
 Alemanha,Bundesliga 1 ALE,29/08/2026,14:30,Elversberg,Leverkusen,3,2,2,0,,1.27,1.88,11,21,6,4,18,15,4,3,3,2,0,0,5.0,4.5,1.57,1.5,2.63,1.0,1.9,-1.0,1.95
 Alemanha,Bundesliga 1 ALE,29/08/2026,14:30,FC Koln,Hoffenheim,3,2,0,1,,1.95,1.88,18,15,6,4,11,14,6,7,0,2,0,0,2.88,3.75,2.25,1.53,2.5,0.25,1.85,-0.25,2.0
@@ -526,6 +701,15 @@ Alemanha,Bundesliga 1 ALE,10/10/2026,14:30,Union Berlin,Elversberg,1,0,0,0,,1.13
 Alemanha,Bundesliga 1 ALE,10/10/2026,17:30,RB Leipzig,Ein Frankfurt,6,0,4,0,,4.03,1.46,20,18,10,9,16,13,3,6,1,3,0,0,1.57,4.75,5.0,1.3,3.5,-1.0,1.88,1.0,1.98
 Alemanha,Bundesliga 1 ALE,11/10/2026,14:30,FC Koln,M'gladbach,2,1,1,1,,1.32,1.17,19,16,7,7,8,17,6,6,1,3,0,0,2.0,3.9,3.3,1.5,2.63,-0.5,2.03,0.5,1.83
 Alemanha,Bundesliga 1 ALE,11/10/2026,16:30,Freiburg,Schalke 04,2,1,1,1,,1.15,0.32,10,5,4,1,11,13,7,2,1,1,1,0,1.65,4.0,5.25,1.62,2.3,-1.0,2.05,1.0,1.75
+Alemanha,Bundesliga 1 ALE,16/10/2026,19:30,Ein Frankfurt,FC Koln,1,0,0,0,,1.8,0.8,15,9,7,3,8,17,7,3,2,2,0,0,1.85,4.2,3.6,1.33,3.4,-0.5,1.88,0.5,1.98
+Alemanha,Bundesliga 1 ALE,17/10/2026,14:30,Elversberg,Augsburg,4,3,3,1,,3.78,3.92,19,29,8,8,16,14,4,12,4,3,0,0,2.5,3.75,2.6,1.44,2.75,0.0,1.88,0.0,1.98
+Alemanha,Bundesliga 1 ALE,17/10/2026,14:30,Hamburg,Stuttgart,1,0,0,0,,1.5,2.28,14,24,3,5,12,9,5,9,3,0,0,0,3.8,4.2,1.8,1.4,3.0,0.75,1.83,-0.75,2.03
+Alemanha,Bundesliga 1 ALE,17/10/2026,14:30,Schalke 04,Mainz,0,1,0,1,,0.43,1.94,9,10,3,6,12,20,4,1,0,2,0,0,3.1,3.75,2.25,1.62,2.3,0.25,1.9,-0.25,1.95
+Alemanha,Bundesliga 1 ALE,17/10/2026,14:30,Union Berlin,Dortmund,0,0,0,0,,0.8,1.09,11,10,0,2,13,13,5,5,3,3,0,0,5.5,4.33,1.57,1.5,2.63,1.0,1.9,-1.0,1.95
+Alemanha,Bundesliga 1 ALE,17/10/2026,14:30,Werder Bremen,Paderborn,2,2,0,2,,3.21,1.15,18,11,11,4,11,14,5,3,1,1,0,0,1.75,4.2,4.1,1.53,2.5,-0.5,1.73,0.5,2.08
+Alemanha,Bundesliga 1 ALE,17/10/2026,17:30,Bayern Munich,RB Leipzig,6,1,3,0,,3.4,0.84,29,12,17,4,15,6,11,3,1,0,0,0,1.22,7.5,9.5,1.14,5.5,-2.25,2.0,2.25,1.85
+Alemanha,Bundesliga 1 ALE,18/10/2026,14:30,Leverkusen,Freiburg,2,1,1,1,,1.64,1.21,12,11,5,2,12,5,4,3,0,1,0,0,1.73,4.2,4.2,1.5,2.63,-0.75,1.9,0.75,1.95
+Alemanha,Bundesliga 1 ALE,18/10/2026,16:30,M'gladbach,Hoffenheim,1,2,0,1,,0.47,1.8,9,14,3,8,13,13,3,6,3,2,0,0,3.1,4.0,2.05,1.4,3.0,0.25,2.0,-0.25,1.85
 Alemanha,Bundesliga 2 ALE,07/08/2026,19:30,Bochum,Hertha,0,1,0,1,,1.16,0.74,13,11,3,2,18,13,5,2,2,5,0,0,2.25,3.5,3.0,1.7,2.1,-0.25,1.98,0.25,1.83
 Alemanha,Bundesliga 2 ALE,08/08/2026,12:00,Darmstadt,Holstein Kiel,2,2,0,2,,0.74,1.41,14,11,3,6,15,16,8,4,2,3,0,0,2.2,3.5,3.1,1.65,2.2,-0.25,1.93,0.25,1.88
 Alemanha,Bundesliga 2 ALE,08/08/2026,12:00,Heidenheim,Osnabruck,4,3,3,2,,2.4,2.09,20,26,6,6,6,6,4,6,1,2,0,0,1.62,3.9,5.0,1.67,2.15,-1.0,2.05,1.0,1.75
@@ -589,6 +773,15 @@ Alemanha,Bundesliga 2 ALE,10/10/2026,19:30,Nurnberg,Wolfsburg,4,4,0,2,,2.38,3.71
 Alemanha,Bundesliga 2 ALE,11/10/2026,12:30,Bochum,Bielefeld,0,1,0,0,,0.49,1.5,9,12,3,2,9,9,6,4,2,3,0,0,2.2,3.5,2.9,1.67,2.15,-0.25,1.98,0.25,1.83
 Alemanha,Bundesliga 2 ALE,11/10/2026,12:30,Hertha,Greuther Furth,2,1,0,0,,1.79,1.06,19,17,10,5,10,8,5,12,2,0,0,0,1.57,4.1,5.0,1.4,2.88,-1.0,1.95,1.0,1.85
 Alemanha,Bundesliga 2 ALE,11/10/2026,12:30,St Pauli,Karlsruhe,2,0,1,0,,0.8,1.16,13,12,6,5,12,15,6,9,1,2,0,0,1.7,4.0,4.1,1.44,2.7,-0.75,1.9,0.75,1.9
+Alemanha,Bundesliga 2 ALE,16/10/2026,17:30,Cottbus,Nurnberg,1,1,0,0,,1.86,1.35,14,19,5,5,9,12,2,8,3,2,0,0,3.6,4.1,1.8,1.33,3.4,0.5,2.03,-0.5,1.78
+Alemanha,Bundesliga 2 ALE,16/10/2026,17:30,Holstein Kiel,Hertha,0,0,0,0,,0.53,1.54,6,15,3,7,18,14,1,7,2,2,0,0,2.9,3.9,2.1,1.4,2.88,0.25,1.93,-0.25,1.88
+Alemanha,Bundesliga 2 ALE,17/10/2026,12:00,Greuther Furth,Braunschweig,2,0,1,0,,0.67,1.28,13,19,3,4,8,9,6,9,1,0,0,0,2.15,3.6,3.0,1.53,2.4,-0.25,1.9,0.25,1.9
+Alemanha,Bundesliga 2 ALE,17/10/2026,12:00,Kaiserslautern,Bochum,2,0,1,0,,2.34,0.59,16,8,3,2,8,11,6,4,1,3,0,0,2.15,3.5,3.0,1.7,2.1,-0.25,1.9,0.25,1.9
+Alemanha,Bundesliga 2 ALE,17/10/2026,12:00,Wolfsburg,Heidenheim,3,1,2,1,,1.6,1.98,19,23,10,9,15,9,8,8,4,1,0,0,1.67,4.2,4.2,1.36,3.1,-0.75,1.83,0.75,1.98
+Alemanha,Bundesliga 2 ALE,17/10/2026,19:30,Hannover,St Pauli,1,1,0,1,,1.27,0.94,13,15,4,6,11,11,3,3,2,1,0,0,2.1,3.6,2.9,1.57,2.35,-0.25,1.9,0.25,1.9
+Alemanha,Bundesliga 2 ALE,18/10/2026,12:30,Bielefeld,Osnabruck,2,1,1,1,,1.04,1.41,15,8,3,1,14,11,6,0,3,1,0,0,1.7,3.8,4.2,1.57,2.35,-0.75,1.95,0.75,1.85
+Alemanha,Bundesliga 2 ALE,18/10/2026,12:30,Dresden,Magdeburg,2,0,1,0,,2.05,0.87,12,14,6,4,8,9,3,0,1,0,0,0,2.45,3.6,2.55,1.53,2.4,0.0,1.9,0.0,1.9
+Alemanha,Bundesliga 2 ALE,18/10/2026,12:30,Karlsruhe,Darmstadt,4,0,2,0,,1.2,0.5,15,9,7,1,15,10,4,4,1,2,0,0,2.2,3.75,2.8,1.44,2.7,-0.25,1.95,0.25,1.85
 Itália,Serie A ITA,22/08/2026,17:30,Inter,Monza,4,1,1,1,,1.05,1.23,13,7,5,3,5,14,3,3,2,2,0,0,1.2,7.0,13.0,1.62,2.3,-2.0,2.03,2.0,1.78
 Itália,Serie A ITA,22/08/2026,17:30,Udinese,Como,1,1,1,0,,2.14,1.51,17,20,3,6,13,11,1,10,3,0,0,0,4.5,3.6,1.83,2.2,1.67,0.5,2.03,-0.5,1.83
 Itália,Serie A ITA,22/08/2026,19:45,Genoa,Napoli,0,2,0,0,,0.67,0.77,11,13,2,4,10,8,5,5,2,1,0,0,4.5,3.4,1.9,2.3,1.62,0.5,1.98,-0.5,1.88
@@ -649,6 +842,16 @@ Itália,Serie A ITA,11/10/2026,17:00,Sassuolo,Milan,1,1,0,0,,1.19,1.18,10,11,4,6
 Itália,Serie A ITA,11/10/2026,19:45,Cagliari,Juventus,1,1,1,0,,0.52,1.95,4,22,2,10,8,8,1,9,2,1,0,0,7.0,3.75,1.55,2.0,1.85,1.0,1.85,-1.0,2.0
 Itália,Serie A ITA,12/10/2026,17:30,Atalanta,Venezia,3,1,3,1,,2.08,2.63,22,19,11,4,14,6,8,7,0,2,1,0,1.57,4.2,5.75,1.57,2.38,-1.0,1.93,1.0,1.93
 Itália,Serie A ITA,12/10/2026,19:45,Torino,Udinese,2,1,1,1,,2.42,0.7,12,15,4,1,4,10,4,3,0,1,0,0,2.3,3.2,3.3,2.1,1.73,-0.25,2.0,0.25,1.85
+Itália,Serie A ITA,16/10/2026,19:45,Frosinone,Sassuolo,4,2,3,2,,2.08,1.92,21,14,10,6,13,11,5,4,0,1,0,0,2.3,3.9,2.75,1.4,3.0,0.0,1.73,0.0,2.08
+Itália,Serie A ITA,17/10/2026,14:00,Venezia,Napoli,1,0,0,0,,0.98,2.36,9,29,4,10,7,6,0,12,2,0,0,0,5.0,3.9,1.7,1.73,2.1,0.75,1.98,-0.75,1.88
+Itália,Serie A ITA,17/10/2026,17:00,Bologna,Inter,1,3,1,1,,1.0,3.16,11,17,4,8,8,11,2,6,4,3,0,0,5.5,4.0,1.62,1.67,2.2,1.0,1.85,-1.0,2.0
+Itália,Serie A ITA,17/10/2026,19:45,Roma,Genoa,2,0,0,0,,1.33,0.47,15,9,5,1,10,7,5,3,2,3,0,0,1.45,4.5,7.0,1.73,2.1,-1.0,1.73,1.0,2.08
+Itália,Serie A ITA,18/10/2026,11:30,Udinese,Lecce,0,3,0,2,,0.54,3.47,14,17,2,11,10,11,1,4,1,0,0,0,1.85,3.5,4.33,2.05,1.8,-0.5,1.88,0.5,1.98
+Itália,Serie A ITA,18/10/2026,14:00,Fiorentina,Como,1,3,1,2,,2.11,1.59,19,16,7,8,12,12,11,5,2,3,0,0,3.5,3.6,2.05,1.67,2.2,0.5,1.75,-0.5,2.05
+Itália,Serie A ITA,18/10/2026,17:00,Milan,Atalanta,3,2,2,0,,2.58,1.74,11,12,6,4,3,10,2,2,1,2,0,0,1.8,3.75,4.33,1.73,2.1,-0.5,1.8,0.5,2.05
+Itália,Serie A ITA,18/10/2026,19:45,Juventus,Lazio,0,3,0,1,,0.75,0.57,9,9,2,3,8,7,5,7,0,2,0,0,1.67,3.8,5.25,1.98,1.88,-0.75,1.88,0.75,1.98
+Itália,Serie A ITA,19/10/2026,17:30,Monza,Cagliari,4,0,1,0,,2.06,2.37,14,16,6,5,10,14,2,7,1,2,0,0,2.38,3.1,3.1,2.1,1.73,-0.25,2.05,0.25,1.8
+Itália,Serie A ITA,19/10/2026,19:45,Parma,Torino,0,3,0,2,,1.39,1.35,25,9,8,3,7,16,6,2,3,2,0,0,3.1,3.1,2.45,2.38,1.57,0.25,1.78,-0.25,2.1
 Itália,Serie B ITA,21/08/2026,19:30,Vicenza,Catanzaro,3,2,1,1,,1.84,1.77,23,13,9,6,15,16,10,6,2,3,0,0,2.57,3.0,2.82,2.08,1.73,0.0,1.8,0.0,2.0
 Itália,Serie B ITA,22/08/2026,18:00,Carrarese,Mantova,1,2,0,1,,0.86,1.17,10,12,2,4,19,17,2,3,1,1,0,0,2.25,3.25,3.1,2.0,1.8,-0.25,2.0,0.25,1.8
 Itália,Serie B ITA,22/08/2026,18:00,Sudtirol,Virtus Entella,1,0,0,0,,0.97,0.56,8,15,2,3,15,18,1,5,3,1,1,0,2.01,3.1,3.9,2.6,1.48,-0.25,1.75,0.25,2.05
@@ -709,6 +912,16 @@ Itália,Serie B ITA,10/10/2026,18:30,Arezzo,Cremonese,0,0,0,0,,1.09,0.12,19,3,2,
 Itália,Serie B ITA,11/10/2026,14:00,Catanzaro,Mantova,1,3,0,2,,0.96,2.73,14,17,4,8,8,13,5,6,2,2,0,0,2.25,3.1,3.1,1.8,2.0,-0.25,2.03,0.25,1.78
 Itália,Serie B ITA,11/10/2026,16:15,Padova,Carrarese,0,2,0,1,,0.87,1.38,11,10,1,4,7,14,5,1,1,4,0,0,1.86,3.3,3.8,1.9,1.9,-0.5,1.95,0.5,1.85
 Itália,Serie B ITA,11/10/2026,18:30,Modena,Verona,3,2,1,2,,2.32,2.04,23,14,6,7,5,11,3,4,2,1,0,1,1.91,3.2,3.8,2.05,1.75,-0.5,2.0,0.5,1.8
+Itália,Serie B ITA,16/10/2026,19:30,Verona,Catanzaro,2,2,1,1,,1.89,1.18,25,7,6,4,21,11,12,0,1,2,0,0,1.76,3.9,4.33,1.73,2.08,-0.5,1.78,0.5,2.03
+Itália,Serie B ITA,17/10/2026,14:00,Ascoli,Empoli,1,1,1,1,,1.55,0.8,9,16,2,3,11,17,6,7,1,1,0,0,1.81,3.3,4.0,1.9,1.9,-0.5,1.85,0.5,1.95
+Itália,Serie B ITA,17/10/2026,14:00,Benevento,Vicenza,2,2,2,0,,1.92,1.18,18,12,9,2,21,18,1,4,2,5,0,0,1.96,3.25,3.75,1.8,2.0,-0.5,2.0,0.5,1.8
+Itália,Serie B ITA,17/10/2026,14:00,Carrarese,Modena,2,1,1,0,,1.74,1.01,9,14,4,4,19,14,2,8,4,2,0,0,4.5,3.4,1.76,1.85,1.95,0.5,2.03,-0.5,1.78
+Itália,Serie B ITA,17/10/2026,14:00,Padova,Virtus Entella,1,2,1,0,,0.76,1.69,6,17,1,7,7,7,4,6,1,1,0,0,2.3,3.0,3.0,2.15,1.67,0.0,1.68,0.0,2.15
+Itália,Serie B ITA,17/10/2026,16:15,Mantova,Palermo,0,2,0,0,,1.84,1.94,15,13,4,5,15,12,3,3,0,1,0,0,3.25,3.3,2.1,1.75,2.05,0.25,1.93,-0.25,1.88
+Itália,Serie B ITA,17/10/2026,18:30,Pisa,Cremonese,3,1,1,1,,2.31,0.44,14,10,5,3,11,11,7,6,4,3,0,0,2.15,3.1,3.3,2.1,1.7,-0.25,1.85,0.25,1.95
+Itália,Serie B ITA,18/10/2026,14:00,Juve Stabia,Sudtirol,3,0,1,0,,2.73,0.28,22,6,9,2,18,17,2,3,3,2,0,1,2.1,3.1,3.4,2.05,1.75,-0.25,1.8,0.25,2.0
+Itália,Serie B ITA,18/10/2026,16:15,Cesena,Avellino,1,1,0,0,,2.09,1.13,18,20,6,4,14,6,7,5,1,1,0,0,2.2,3.2,3.2,1.9,1.9,-0.25,1.95,0.25,1.85
+Itália,Serie B ITA,18/10/2026,18:30,Sampdoria,Arezzo,1,2,1,1,,2.65,0.95,22,14,5,5,13,18,10,4,2,2,0,0,1.71,3.4,4.75,2.0,1.8,-0.5,1.83,0.5,1.98
 Espanha,La Liga 1 ESP,15/08/2026,18:30,Alaves,Getafe,3,0,0,0,,1.93,0.24,18,6,8,2,16,13,5,3,4,3,0,1,2.35,2.8,3.75,3.2,1.36,-0.25,1.98,0.25,1.88
 Espanha,La Liga 1 ESP,15/08/2026,20:30,Sevilla,Vallecano,2,1,0,1,,2.19,1.89,13,6,4,3,18,18,1,2,4,4,1,0,2.3,3.1,3.4,2.3,1.62,-0.25,1.98,0.25,1.88
 Espanha,La Liga 1 ESP,16/08/2026,16:00,Santander,Villarreal,2,2,2,2,,1.87,0.66,17,12,3,7,14,14,6,10,2,4,0,0,3.2,3.6,2.15,1.8,2.0,0.25,1.98,-0.25,1.88
@@ -787,6 +1000,16 @@ Espanha,La Liga 1 ESP,11/10/2026,15:15,Sociedad,La Coruna,3,2,2,0,,1.44,2.13,12,
 Espanha,La Liga 1 ESP,11/10/2026,17:30,Betis,Osasuna,5,2,2,0,,2.89,1.94,20,11,7,5,11,13,8,4,2,5,0,0,1.57,4.0,6.0,1.73,2.1,-1.0,1.95,1.0,1.9
 Espanha,La Liga 1 ESP,11/10/2026,20:00,Santander,Valencia,2,2,1,1,,1.28,1.8,20,10,11,2,15,10,8,3,3,3,0,0,2.3,3.6,3.0,1.67,2.2,-0.25,2.0,0.25,1.85
 Espanha,La Liga 1 ESP,12/10/2026,20:00,Levante,Sevilla,3,3,0,1,,1.95,2.53,20,18,8,5,7,17,5,2,2,4,0,1,2.75,3.25,2.63,2.0,1.8,0.0,1.98,0.0,1.88
+Espanha,La Liga 1 ESP,16/10/2026,20:00,La Coruna,Levante,1,1,0,0,,1.08,0.83,13,11,5,4,17,12,3,5,2,2,0,0,2.05,3.5,3.6,1.93,1.93,-0.5,2.05,0.5,1.75
+Espanha,La Liga 1 ESP,17/10/2026,13:00,Espanol,Ath Madrid,0,1,0,0,,0.51,1.47,10,19,2,6,10,9,4,12,2,5,0,0,5.0,4.0,1.7,1.83,2.03,0.75,1.98,-0.75,1.88
+Espanha,La Liga 1 ESP,17/10/2026,15:15,Villarreal,Elche,0,0,0,0,,2.38,0.3,20,7,7,1,12,7,10,5,2,4,0,0,1.45,5.0,6.0,1.44,2.75,-1.25,1.95,1.25,1.9
+Espanha,La Liga 1 ESP,17/10/2026,17:30,Betis,Barcelona,2,5,1,2,,1.24,3.1,6,18,5,10,10,11,2,5,3,2,1,0,5.75,5.75,1.42,1.25,4.0,1.5,1.83,-1.5,2.03
+Espanha,La Liga 1 ESP,17/10/2026,20:00,Valencia,Ath Bilbao,0,0,0,0,,1.41,0.59,16,9,3,2,14,13,2,6,3,3,0,0,3.4,3.3,2.2,2.1,1.73,0.25,1.95,-0.25,1.9
+Espanha,La Liga 1 ESP,18/10/2026,13:00,Osasuna,Santander,2,0,1,0,,3.65,0.28,20,9,7,1,21,9,7,4,2,3,0,0,2.0,3.6,3.7,1.67,2.2,-0.5,2.0,0.5,1.85
+Espanha,La Liga 1 ESP,18/10/2026,15:15,Celta,Alaves,2,1,0,0,,0.97,1.06,6,20,3,9,14,17,0,4,1,1,0,0,2.1,3.4,3.5,2.2,1.67,-0.25,1.83,0.25,2.03
+Espanha,La Liga 1 ESP,18/10/2026,17:30,Malaga,Sociedad,2,5,0,2,,1.24,2.44,17,21,6,9,4,9,4,5,1,2,0,0,3.3,3.5,2.15,1.8,2.0,0.25,1.98,-0.25,1.88
+Espanha,La Liga 1 ESP,18/10/2026,20:00,Real Madrid,Sevilla,4,1,2,0,,2.28,0.75,15,11,8,5,10,14,1,2,2,2,0,0,1.25,7.0,9.5,1.4,3.0,-1.75,1.83,1.75,2.03
+Espanha,La Liga 1 ESP,19/10/2026,20:00,Getafe,Vallecano,1,1,0,1,,0.63,2.14,12,21,4,5,12,9,8,8,6,3,1,0,2.9,3.0,2.7,2.63,1.5,0.0,2.03,0.0,1.83
 Espanha,La Liga 2 ESP,14/08/2026,19:30,Sociedad B,Castellon,0,1,0,1,,0.22,1.45,4,13,1,5,22,21,5,8,2,4,0,0,4.1,3.9,1.76,1.67,2.15,0.5,2.03,-0.5,1.78
 Espanha,La Liga 2 ESP,15/08/2026,16:00,Andorra,Ceuta,5,1,1,0,,4.26,1.3,25,5,11,1,22,8,2,2,3,1,0,0,1.68,3.7,4.75,1.8,2.0,-0.75,1.93,0.75,1.88
 Espanha,La Liga 2 ESP,15/08/2026,18:00,Cadiz,Celta B,0,0,0,0,,1.91,0.44,17,5,3,5,14,21,6,2,4,3,0,0,1.96,3.5,3.6,1.98,1.83,-0.5,2.0,0.5,1.8
@@ -886,6 +1109,17 @@ Espanha,La Liga 2 ESP,12/10/2026,13:00,Valladolid,Albacete,5,0,4,0,,2.88,0.66,19
 Espanha,La Liga 2 ESP,12/10/2026,15:15,Burgos,Granada,0,1,0,1,,1.14,2.26,23,7,6,3,11,14,4,0,4,2,0,0,2.4,3.1,3.0,2.15,1.67,-0.25,2.05,0.25,1.75
 Espanha,La Liga 2 ESP,12/10/2026,17:30,Oviedo,Eibar,3,1,2,0,,1.52,1.49,16,18,7,6,16,15,10,5,4,3,0,0,2.2,3.1,3.3,2.15,1.67,-0.25,1.95,0.25,1.85
 Espanha,La Liga 2 ESP,12/10/2026,20:00,Tenerife,Girona,1,1,1,1,,0.72,1.11,12,12,3,4,20,15,6,3,3,4,0,0,2.75,3.1,2.55,2.15,1.67,0.0,2.0,0.0,1.8
+Espanha,La Liga 2 ESP,16/10/2026,19:30,Leganes,Cordoba,0,1,0,0,,0.74,2.08,9,20,2,3,15,15,4,7,4,2,1,0,2.45,3.5,2.65,1.65,2.2,0.0,1.83,0.0,1.98
+Espanha,La Liga 2 ESP,17/10/2026,13:00,Sociedad B,Almeria,2,4,0,2,,1.59,1.89,21,7,9,4,14,12,10,2,2,1,0,0,3.4,3.4,2.05,1.73,2.08,0.5,1.75,-0.5,2.05
+Espanha,La Liga 2 ESP,17/10/2026,15:15,Eibar,Mallorca,1,1,0,0,,2.45,2.0,13,16,6,5,8,18,5,7,1,4,0,1,2.45,3.3,2.75,2.15,1.67,0.0,1.8,0.0,2.0
+Espanha,La Liga 2 ESP,17/10/2026,17:30,Sp Gijon,Albacete,2,1,1,0,,0.72,0.38,11,7,5,2,13,17,3,5,3,2,0,0,1.91,3.5,3.9,1.88,1.93,-0.5,1.95,0.5,1.85
+Espanha,La Liga 2 ESP,17/10/2026,20:00,Las Palmas,Castellon,0,3,0,2,,0.23,2.3,5,15,1,7,14,15,3,6,7,1,0,0,3.6,3.6,1.96,1.67,2.15,0.5,1.8,-0.5,2.0
+Espanha,La Liga 2 ESP,18/10/2026,13:00,Ceuta,Oviedo,1,2,0,1,,2.9,2.23,28,17,7,9,14,20,14,2,4,3,0,0,3.0,3.2,2.32,2.08,1.73,0.25,1.78,-0.25,2.03
+Espanha,La Liga 2 ESP,18/10/2026,15:15,Granada,Cadiz,2,0,0,0,,0.81,0.5,11,8,2,1,14,13,4,6,1,2,0,0,1.81,3.5,4.2,2.08,1.73,-0.5,1.85,0.5,1.95
+Espanha,La Liga 2 ESP,18/10/2026,17:30,Girona,Andorra,2,0,2,0,,1.23,0.32,11,6,4,3,12,19,2,6,2,2,0,0,1.79,3.7,4.1,1.7,2.1,-0.75,2.05,0.75,1.75
+Espanha,La Liga 2 ESP,18/10/2026,17:30,Valladolid,Eldense,2,3,1,2,,1.49,2.75,16,13,5,5,10,13,13,2,4,4,1,0,1.86,3.3,4.2,2.05,1.75,-0.5,1.9,0.5,1.9
+Espanha,La Liga 2 ESP,18/10/2026,20:00,Burgos,Sabadell,1,0,0,0,,2.14,0.46,13,7,7,2,10,21,10,3,2,1,0,0,2.65,2.85,2.85,2.5,1.5,0.0,1.83,0.0,1.98
+Espanha,La Liga 2 ESP,19/10/2026,19:30,Celta B,Tenerife,1,1,1,0,,0.97,0.4,14,9,4,3,20,12,4,4,3,2,0,0,2.57,3.1,2.7,2.05,1.75,0.0,1.85,0.0,1.95
 França,Le Championnat FRA,21/08/2026,19:45,Marseille,Strasbourg,4,0,0,0,,1.86,0.19,14,5,8,2,6,12,3,4,1,2,0,1,1.73,4.1,4.33,1.57,2.38,-0.75,1.93,0.75,1.93
 França,Le Championnat FRA,22/08/2026,16:15,Lens,Auxerre,5,2,1,0,,4.42,1.85,12,10,9,4,6,21,4,7,1,1,0,1,1.55,4.5,5.25,1.67,2.2,-1.0,1.95,1.0,1.9
 França,Le Championnat FRA,22/08/2026,19:45,Le Mans,Brest,2,2,1,1,,0.67,2.73,8,26,5,7,14,12,1,10,1,1,0,0,2.55,3.4,2.7,1.88,1.98,0.0,1.88,0.0,1.98
@@ -940,6 +1174,15 @@ França,Le Championnat FRA,10/10/2026,19:45,Paris SG,Le Mans,3,1,1,0,,4.25,1.43,
 França,Le Championnat FRA,11/10/2026,14:00,Nice,Strasbourg,2,1,1,1,,1.25,0.63,11,11,6,3,3,8,2,3,1,1,0,0,2.35,3.6,3.0,1.67,2.2,-0.25,2.03,0.25,1.83
 França,Le Championnat FRA,11/10/2026,16:15,Rennes,Auxerre,4,1,1,1,,2.56,1.76,21,12,10,5,12,11,12,5,4,0,0,0,1.44,4.75,7.0,1.5,2.63,-1.25,1.93,1.25,1.93
 França,Le Championnat FRA,11/10/2026,19:45,Troyes,Marseille,0,2,0,0,,1.06,1.3,15,5,3,2,14,15,6,3,4,1,0,0,3.75,3.75,1.91,1.57,2.38,0.5,1.98,-0.5,1.88
+França,Le Championnat FRA,16/10/2026,19:45,Le Mans,Toulouse,0,3,0,0,,0.95,1.81,11,13,1,5,15,9,2,2,2,1,0,0,3.0,3.5,2.3,1.67,2.2,0.25,1.83,-0.25,2.03
+França,Le Championnat FRA,17/10/2026,16:15,Strasbourg,Paris SG,1,3,1,0,,1.47,2.69,17,18,8,7,12,6,3,6,2,0,0,0,6.25,5.5,1.4,1.33,3.4,1.5,1.83,-1.5,2.03
+França,Le Championnat FRA,17/10/2026,19:45,Lille,Brest,1,1,0,1,,2.17,0.78,17,8,5,2,12,20,5,2,1,2,0,0,1.85,3.75,4.0,1.67,2.2,-0.5,1.85,0.5,2.0
+França,Le Championnat FRA,17/10/2026,19:45,Troyes,Lens,1,3,1,2,,1.24,1.43,12,13,5,3,13,11,6,4,2,2,0,0,3.8,4.0,1.85,1.57,2.38,0.5,2.0,-0.5,1.85
+França,Le Championnat FRA,18/10/2026,14:00,Angers,Marseille,2,5,1,2,,2.21,2.71,11,21,3,8,11,12,2,5,1,1,0,0,3.3,3.8,2.05,1.62,2.3,0.5,1.75,-0.5,2.05
+França,Le Championnat FRA,18/10/2026,16:15,Le Havre,Auxerre,1,3,0,1,,1.4,2.7,15,13,6,6,16,22,7,4,1,2,0,0,2.25,3.4,3.2,1.88,1.98,-0.25,1.98,0.25,1.88
+França,Le Championnat FRA,18/10/2026,16:15,Lorient,Monaco,1,0,0,0,,1.74,0.6,9,15,3,4,10,17,3,4,2,4,0,0,3.6,3.5,2.05,1.91,1.91,0.5,1.8,-0.5,2.05
+França,Le Championnat FRA,18/10/2026,16:15,Paris FC,Rennes,4,3,2,1,,3.62,3.35,19,12,9,7,13,16,3,4,3,4,0,0,2.25,3.6,3.0,1.67,2.2,-0.25,1.98,0.25,1.88
+França,Le Championnat FRA,18/10/2026,19:45,Lyon,Nice,2,1,2,1,,1.5,1.55,8,12,4,5,6,14,1,9,0,4,1,0,1.67,4.1,4.75,1.62,2.3,-0.75,1.83,0.75,2.03
 França,Division 2 FRA,08/08/2026,19:45,Boulogne,Nancy,0,0,0,0,,0.2,0.6,4,12,1,2,20,11,1,6,1,0,0,0,2.4,3.2,2.75,2.1,1.7,0.0,1.8,0.0,2.0
 França,Division 2 FRA,08/08/2026,19:45,Clermont,Reims,0,0,0,0,,0.3,0.78,3,9,0,0,17,11,3,2,1,1,0,0,3.6,3.4,1.95,2.1,1.7,0.5,1.83,-0.5,1.98
 França,Division 2 FRA,08/08/2026,19:45,Dunkerque,Grenoble,4,2,1,1,,2.15,0.56,17,9,6,2,18,9,10,2,2,3,0,0,1.9,3.4,3.7,1.98,1.83,-0.5,2.0,0.5,1.8
@@ -1012,6 +1255,15 @@ França,Division 2 FRA,10/10/2026,13:00,Clermont,Red Star,2,3,1,1,,1.71,2.33,9,1
 França,Division 2 FRA,10/10/2026,13:00,Nantes,Reims,0,0,0,0,,1.89,0.24,19,7,5,4,12,13,7,6,2,2,0,0,2.05,3.2,3.3,1.9,1.9,-0.25,1.83,0.25,1.98
 França,Division 2 FRA,10/10/2026,19:00,St Etienne,Rodez,2,0,1,0,,1.6,0.74,10,10,4,4,19,12,1,6,1,2,0,0,1.4,4.2,6.0,1.44,2.7,-1.5,2.08,1.5,1.73
 França,Division 2 FRA,12/10/2026,19:45,Dijon,Metz,4,2,3,1,,1.98,1.4,17,13,7,4,17,17,3,3,0,3,0,0,2.55,3.2,2.45,1.7,2.1,0.0,1.95,0.0,1.85
+França,Division 2 FRA,16/10/2026,19:00,Annecy,Nancy,1,2,0,1,,0.36,1.77,7,14,3,5,6,13,3,7,0,2,0,0,2.9,3.0,2.25,2.0,1.8,0.0,2.15,0.0,1.68
+França,Division 2 FRA,16/10/2026,19:00,Grenoble,Boulogne,0,2,0,0,,0.71,1.55,11,15,1,7,17,19,5,7,2,2,0,0,2.7,2.8,2.55,2.6,1.48,0.0,1.95,0.0,1.85
+França,Division 2 FRA,16/10/2026,19:00,Guingamp,Pau FC,1,2,0,2,,2.07,0.57,19,8,4,3,14,19,5,2,2,3,0,0,2.1,3.1,3.1,1.85,1.95,-0.25,1.88,0.25,1.93
+França,Division 2 FRA,16/10/2026,19:00,Laval,Clermont,3,3,0,2,,3.58,0.91,19,8,8,3,12,13,8,3,0,1,0,0,2.05,3.0,3.4,2.05,1.75,-0.25,1.85,0.25,1.95
+França,Division 2 FRA,16/10/2026,19:00,Reims,Dijon,4,2,3,1,,1.17,1.42,12,13,7,4,13,21,3,5,0,1,0,0,1.67,3.5,4.5,1.67,2.15,-0.75,1.9,0.75,1.9
+França,Division 2 FRA,17/10/2026,13:00,Metz,Sochaux,3,2,2,0,,1.65,1.79,13,18,5,4,12,17,5,5,1,1,0,0,1.75,3.2,4.2,1.95,1.85,-0.75,2.0,0.75,1.8
+França,Division 2 FRA,17/10/2026,13:00,Nantes,Dunkerque,2,3,1,2,,1.58,1.5,19,12,4,4,22,13,8,7,3,3,0,0,1.6,3.5,5.0,1.75,2.05,-0.75,1.85,0.75,1.95
+França,Division 2 FRA,17/10/2026,19:00,Red Star,St Etienne,0,1,0,1,,0.23,0.91,5,9,1,3,16,13,4,5,1,2,0,0,3.0,3.1,2.2,1.85,1.95,0.25,1.83,-0.25,1.98
+França,Division 2 FRA,19/10/2026,19:45,Rodez,Montpellier,0,3,0,0,,1.62,1.59,16,16,2,8,12,10,8,4,1,1,0,0,2.63,3.3,2.25,1.67,2.15,0.0,2.05,0.0,1.75
 Holanda,Eredivisie HOL,07/08/2026,19:00,Cambuur,Excelsior,0,4,0,3,,0.72,2.87,11,18,2,9,6,11,5,8,0,0,0,0,2.6,3.4,2.7,1.75,2.05,0.0,1.85,0.0,1.95
 Holanda,Eredivisie HOL,08/08/2026,15:30,Nijmegen,Telstar,1,2,0,2,,2.15,1.66,27,8,4,3,12,14,13,3,2,2,0,0,1.5,4.5,6.0,1.44,2.7,-1.25,2.0,1.25,1.8
 Holanda,Eredivisie HOL,08/08/2026,17:45,Go Ahead Eagles,Willem II,4,1,1,1,,2.43,1.51,20,13,10,1,6,14,6,2,2,1,0,0,1.65,4.1,4.75,1.57,2.35,-0.75,1.8,0.75,2.0
@@ -1084,6 +1336,15 @@ Holanda,Eredivisie HOL,11/10/2026,11:15,Utrecht,Willem II,3,1,0,0,,1.23,0.61,24,
 Holanda,Eredivisie HOL,11/10/2026,13:30,Telstar,Den Haag,2,2,2,2,,2.86,1.38,30,3,4,2,8,10,8,0,2,1,0,1,2.0,3.8,3.3,1.53,2.4,-0.5,2.0,0.5,1.8
 Holanda,Eredivisie HOL,11/10/2026,13:30,Zwolle,Cambuur,0,1,0,0,,0.98,0.82,15,13,6,4,16,15,5,5,3,3,0,0,1.95,3.75,3.5,1.53,2.4,-0.5,1.95,0.5,1.85
 Holanda,Eredivisie HOL,11/10/2026,15:45,Excelsior,Groningen,1,5,1,2,,1.77,2.75,16,14,2,9,10,11,3,6,0,2,0,0,2.55,3.6,2.55,1.53,2.4,0.0,1.9,0.0,1.9
+Holanda,Eredivisie HOL,16/10/2026,19:00,Heerenveen,Excelsior,4,0,1,0,,2.25,0.67,14,5,7,1,9,10,4,1,0,1,0,0,1.53,4.5,5.5,1.4,2.88,-1.0,1.8,1.0,2.0
+Holanda,Eredivisie HOL,17/10/2026,15:30,Den Haag,PSV Eindhoven,2,1,0,1,,1.39,1.05,16,15,5,4,20,9,3,2,3,2,0,1,8.0,6.25,1.29,1.25,4.0,1.75,1.98,-1.75,1.83
+Holanda,Eredivisie HOL,17/10/2026,19:00,Telstar,Feyenoord,3,4,2,3,,1.39,3.81,23,22,9,11,12,6,6,8,1,4,0,0,7.5,5.5,1.33,1.33,3.4,1.5,1.98,-1.5,1.83
+Holanda,Eredivisie HOL,17/10/2026,20:00,Sparta Rotterdam,Willem II,3,2,1,1,,3.38,1.17,22,13,8,4,12,12,3,4,4,4,0,0,1.62,4.33,4.75,1.48,2.6,-1.0,2.0,1.0,1.8
+Holanda,Eredivisie HOL,18/10/2026,11:15,Zwolle,Go Ahead Eagles,4,1,0,1,,1.77,2.74,19,18,9,6,7,8,5,6,0,0,0,0,3.5,3.9,1.95,1.44,2.7,0.5,1.88,-0.5,1.93
+Holanda,Eredivisie HOL,18/10/2026,13:30,Cambuur,AZ Alkmaar,2,2,2,1,,1.45,1.5,11,7,6,4,11,15,3,6,3,2,1,0,6.0,4.75,1.48,1.36,3.1,1.25,1.85,-1.25,1.95
+Holanda,Eredivisie HOL,18/10/2026,15:45,Groningen,Ajax,2,5,0,2,,2.36,3.08,16,15,5,11,12,17,7,4,1,2,0,0,3.6,4.0,1.91,1.36,3.1,0.5,1.9,-0.5,1.9
+Holanda,Eredivisie HOL,18/10/2026,19:00,Nijmegen,For Sittard,2,2,1,1,,2.99,0.39,24,5,7,3,11,10,13,0,0,2,0,0,1.62,4.33,5.0,1.4,2.88,-1.0,1.98,1.0,1.83
+Holanda,Eredivisie HOL,18/10/2026,19:00,Twente,Utrecht,1,2,1,0,,1.32,1.23,24,16,5,5,11,11,5,4,0,2,0,0,1.33,5.5,8.5,1.33,3.4,-1.5,1.85,1.5,1.95
 Bélgica,Jupiler League BEL,07/08/2026,19:45,Club Brugge,Kortrijk,3,0,1,0,,3.85,0.86,20,9,8,3,6,10,6,1,1,1,0,0,1.22,6.0,10.0,1.36,3.1,-1.75,1.8,1.75,2.0
 Bélgica,Jupiler League BEL,08/08/2026,17:15,Standard,Cercle Brugge,2,2,1,1,,2.59,1.47,20,18,6,2,9,13,7,11,1,1,0,0,2.2,3.5,2.8,1.95,1.85,-0.25,2.08,0.25,1.73
 Bélgica,Jupiler League BEL,08/08/2026,19:45,St Truiden,Lommel SK,1,1,0,1,,1.99,1.5,32,9,4,2,13,7,6,2,1,0,0,0,1.6,3.75,5.25,1.8,2.0,-0.75,1.78,0.75,2.03
@@ -1227,6 +1488,7 @@ Portugal,Liga I POR,11/10/2026,15:30,Rio Ave,Nacional,3,2,1,1,,1.66,1.21,11,12,7
 Portugal,Liga I POR,11/10/2026,18:00,Benfica,Guimaraes,2,0,1,0,,2.76,0.43,23,8,5,0,9,23,11,6,2,5,0,0,1.19,6.0,12.0,1.48,2.6,-1.75,1.83,1.75,2.03
 Portugal,Liga I POR,11/10/2026,20:30,Arouca,Estrela,1,0,1,0,,0.74,1.45,7,11,3,2,10,7,5,6,5,2,0,0,2.05,3.3,3.5,1.9,1.95,-0.25,1.83,0.25,2.03
 Portugal,Liga I POR,12/10/2026,20:15,Famalicao,Alverca,1,4,1,1,,0.36,2.89,13,14,2,5,11,27,8,3,3,2,0,0,1.79,3.3,4.75,2.08,1.73,-0.5,1.83,0.5,2.03
+Portugal,Liga I POR,19/10/2026,20:15,Sp Braga,Gil Vicente,1,2,1,0,,1.35,1.52,18,10,6,4,13,9,4,1,3,3,0,0,1.56,3.7,5.75,2.05,1.75,-0.75,1.75,0.75,2.05
 Turquia,Futbol Ligi 1 TUR,14/08/2026,19:30,Galatasaray,Corum,2,2,0,0,,2.9,0.61,38,8,13,3,11,6,8,1,1,0,0,1,1.25,5.75,9.0,1.53,2.4,-1.5,1.8,1.5,2.0
 Turquia,Futbol Ligi 1 TUR,15/08/2026,17:00,Kasimpasa,Trabzonspor,1,1,0,1,,1.86,0.86,9,13,4,5,17,9,3,10,2,0,0,0,4.2,3.75,1.76,1.8,2.0,0.5,1.98,-0.5,1.83
 Turquia,Futbol Ligi 1 TUR,15/08/2026,17:00,Konyaspor,Rizespor,0,1,0,0,,0.61,1.52,7,14,3,5,12,11,1,7,1,4,0,0,2.35,3.4,2.82,1.85,1.95,-0.25,2.08,0.25,1.73
@@ -1290,6 +1552,15 @@ Turquia,Futbol Ligi 1 TUR,11/10/2026,11:30,Konyaspor,Buyuksehyr,0,0,0,0,,0.41,0.
 Turquia,Futbol Ligi 1 TUR,11/10/2026,14:00,Gaziantep,Corum,0,3,0,1,,0.99,2.67,12,13,2,7,6,10,9,5,2,3,0,0,2.5,3.25,2.55,1.9,1.9,0.0,1.88,0.0,1.93
 Turquia,Futbol Ligi 1 TUR,11/10/2026,17:00,Besiktas,Kocaelispor,2,1,2,1,,2.21,1.65,16,11,6,6,11,13,4,7,1,2,0,0,1.24,4.75,11.0,1.62,2.25,-1.5,1.8,1.5,2.0
 Turquia,Futbol Ligi 1 TUR,12/10/2026,18:00,Eyupspor,Goztep,0,4,0,1,,1.39,3.21,7,19,4,7,8,17,3,7,2,2,1,0,3.7,3.5,1.86,1.73,2.08,0.5,1.9,-0.5,1.9
+Turquia,Futbol Ligi 1 TUR,16/10/2026,18:00,Corum,Rizespor,2,1,1,1,,0.71,0.84,10,15,4,4,19,12,2,8,2,2,0,0,1.96,3.5,3.25,1.65,2.2,-0.5,2.03,0.5,1.78
+Turquia,Futbol Ligi 1 TUR,17/10/2026,11:30,Erzurumspor,Eyupspor,2,0,1,0,,1.29,0.43,7,10,3,4,20,3,3,2,0,1,0,0,1.56,3.6,5.5,2.05,1.75,-0.75,1.78,0.75,2.03
+Turquia,Futbol Ligi 1 TUR,17/10/2026,14:00,Amedspor,Konyaspor,1,0,0,0,,1.65,0.25,13,4,4,1,17,10,7,2,1,3,0,0,1.76,3.4,4.1,1.93,1.88,-0.5,1.9,0.5,1.9
+Turquia,Futbol Ligi 1 TUR,17/10/2026,14:00,Genclerbirligi,Galatasaray,0,1,0,0,,1.74,1.92,19,18,6,4,12,10,9,10,0,1,0,0,7.5,5.25,1.27,1.48,2.6,1.25,1.98,-1.25,1.83
+Turquia,Futbol Ligi 1 TUR,17/10/2026,17:00,Fenerbahce,Alanyaspor,3,0,1,0,,3.84,0.96,24,13,7,5,18,3,4,3,1,0,0,0,1.25,5.0,8.5,1.53,2.4,-1.5,1.83,1.5,1.98
+Turquia,Futbol Ligi 1 TUR,18/10/2026,11:30,Kasimpasa,Samsunspor,4,1,2,1,,2.41,1.07,23,12,9,4,13,20,9,6,1,2,0,0,2.35,3.3,2.65,1.98,1.83,0.0,1.8,0.0,2.0
+Turquia,Futbol Ligi 1 TUR,18/10/2026,14:00,Kocaelispor,Goztep,1,2,0,1,,1.61,0.83,13,8,4,3,13,25,5,1,2,2,0,0,2.7,3.3,2.35,1.9,1.9,0.25,1.8,-0.25,2.0
+Turquia,Futbol Ligi 1 TUR,18/10/2026,17:00,Buyuksehyr,Gaziantep,2,1,1,0,,1.95,1.42,14,12,6,4,28,15,4,5,4,4,0,0,1.61,3.9,4.5,1.6,2.3,-0.75,1.83,0.75,1.98
+Turquia,Futbol Ligi 1 TUR,19/10/2026,18:00,Trabzonspor,Besiktas,2,0,1,0,,2.35,1.19,13,19,8,7,11,17,4,6,1,4,0,0,2.75,3.5,2.15,1.53,2.4,0.25,1.83,-0.25,1.98
 Grécia,Ethniki Katigoria GRE,22/08/2026,18:00,AEK,Iraklis,4,0,2,0,,2.06,0.38,24,7,11,1,19,17,5,2,1,0,0,0,1.17,6.5,13.0,1.53,2.4,-2.0,1.98,2.0,1.83
 Grécia,Ethniki Katigoria GRE,22/08/2026,18:00,Kalamata,Aris,2,3,1,1,,1.42,2.69,7,19,3,7,15,23,1,10,3,3,1,0,3.4,3.0,2.25,2.3,1.6,0.25,1.85,-0.25,1.95
 Grécia,Ethniki Katigoria GRE,22/08/2026,19:30,Olympiakos,Atromitos,1,0,0,0,,3.17,0.29,26,8,10,1,14,14,14,4,3,6,1,0,1.22,5.5,12.0,1.7,2.1,-1.5,1.75,1.5,2.05
@@ -1332,3 +1603,9 @@ Grécia,Ethniki Katigoria GRE,11/10/2026,15:00,Kifisia,Panetolikos,2,0,1,0,,1.51
 Grécia,Ethniki Katigoria GRE,11/10/2026,17:00,Aris,Volos NFC,3,2,3,0,,3.15,1.18,23,11,8,5,16,13,5,4,2,2,0,0,1.46,3.9,7.0,1.9,1.9,-1.0,1.85,1.0,1.95
 Grécia,Ethniki Katigoria GRE,11/10/2026,19:00,Olympiakos,Panathinaikos,1,0,1,0,,0.73,0.47,12,9,2,2,20,18,2,7,2,7,1,0,2.15,3.1,3.5,2.1,1.7,-0.25,1.85,0.25,1.95
 Grécia,Ethniki Katigoria GRE,12/10/2026,16:00,PAOK,Kalamata,1,3,1,1,,1.25,2.36,19,12,5,6,8,12,7,2,1,2,1,0,1.17,7.0,12.0,1.44,2.7,-2.0,1.98,2.0,1.83
+Grécia,Ethniki Katigoria GRE,17/10/2026,15:00,Levadeiakos,Volos NFC,0,0,0,0,,1.02,0.2,14,4,4,1,15,19,9,2,4,5,1,1,2.1,3.3,3.4,2.05,1.75,-0.25,1.9,0.25,1.9
+Grécia,Ethniki Katigoria GRE,18/10/2026,14:00,Kalamata,OFI Crete,4,3,2,0,,1.75,1.96,13,8,9,3,17,9,1,6,4,2,0,0,2.7,3.1,2.57,2.05,1.75,0.0,1.93,0.0,1.88
+Grécia,Ethniki Katigoria GRE,18/10/2026,15:00,Panetolikos,Olympiakos,0,2,0,1,,1.28,2.5,13,21,2,7,22,16,5,3,2,1,0,0,10.0,4.75,1.3,1.8,2.0,1.5,1.83,-1.5,1.98
+Grécia,Ethniki Katigoria GRE,18/10/2026,15:30,Panathinaikos,Asteras Tripolis,5,1,2,0,,5.72,0.85,27,5,8,1,10,7,9,1,0,0,0,0,1.22,5.5,12.0,1.65,2.2,-1.75,1.88,1.75,1.93
+Grécia,Ethniki Katigoria GRE,18/10/2026,18:00,Kifisia,Aris,1,2,0,1,,0.89,1.56,16,11,3,4,11,17,5,4,2,3,0,0,3.0,3.3,2.3,2.03,1.78,0.25,1.8,-0.25,2.0
+Grécia,Ethniki Katigoria GRE,18/10/2026,19:00,PAOK,Iraklis,2,1,0,0,,2.02,0.78,18,10,3,3,15,17,4,3,3,6,0,1,1.22,6.0,10.0,1.57,2.35,-1.75,1.98,1.75,1.83
