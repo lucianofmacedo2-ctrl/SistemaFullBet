@@ -400117,6 +400117,92 @@
         "awayHT": null
       },
       "createdAt": "2026-10-29T15:44:10.939515"
+    },
+    {
+      "id": "JOGO-7412",
+      "countryId": "PAIS-009",
+      "countryName": "Itália",
+      "leagueId": "LIGA-092",
+      "leagueName": "Serie A ITA",
+      "homeTeamId": "TIME-265",
+      "homeTeamName": "Frosinone",
+      "awayTeamId": "TIME-084",
+      "awayTeamName": "Lecce",
+      "homeScore": 5,
+      "awayScore": 1,
+      "matchDate": "2026-10-29T17:30:00",
+      "status": "FINALIZADO",
+      "referee": "",
+      "stats": {
+        "halftimeHomeScore": 2,
+        "halftimeAwayScore": 0,
+        "shotsHomeFT": 26,
+        "shotsAwayFT": 15,
+        "shotsOnTargetHomeFT": 9,
+        "shotsOnTargetAwayFT": 6,
+        "cornersHomeFT": 10,
+        "cornersAwayFT": 3,
+        "yellowCardsHomeFT": 0,
+        "yellowCardsAwayFT": 3,
+        "redCardsHomeFT": 0,
+        "redCardsAwayFT": 0,
+        "foulsHome": 10,
+        "foulsAway": 17
+      },
+      "odds": {
+        "homeFT": 1.65,
+        "drawFT": 4,
+        "awayFT": 5,
+        "over25FT": 1.44,
+        "under25FT": 2.75,
+        "homeHT": null,
+        "drawHT": null,
+        "awayHT": null
+      },
+      "createdAt": "2026-10-30T15:26:59.344256"
+    },
+    {
+      "id": "JOGO-7413",
+      "countryId": "PAIS-009",
+      "countryName": "Itália",
+      "leagueId": "LIGA-092",
+      "leagueName": "Serie A ITA",
+      "homeTeamId": "TIME-646",
+      "homeTeamName": "Fiorentina",
+      "awayTeamId": "TIME-398",
+      "awayTeamName": "Atalanta",
+      "homeScore": 2,
+      "awayScore": 2,
+      "matchDate": "2026-10-29T19:45:00",
+      "status": "FINALIZADO",
+      "referee": "",
+      "stats": {
+        "halftimeHomeScore": 0,
+        "halftimeAwayScore": 1,
+        "shotsHomeFT": 14,
+        "shotsAwayFT": 2,
+        "shotsOnTargetHomeFT": 4,
+        "shotsOnTargetAwayFT": 5,
+        "cornersHomeFT": 8,
+        "cornersAwayFT": 2,
+        "yellowCardsHomeFT": 3,
+        "yellowCardsAwayFT": 2,
+        "redCardsHomeFT": 0,
+        "redCardsAwayFT": 0,
+        "foulsHome": 10,
+        "foulsAway": 13
+      },
+      "odds": {
+        "homeFT": 2.2,
+        "drawFT": 3.6,
+        "awayFT": 3.1,
+        "over25FT": 1.62,
+        "under25FT": 2.3,
+        "homeHT": null,
+        "drawHT": null,
+        "awayHT": null
+      },
+      "createdAt": "2026-10-30T15:26:59.344469"
     }
   ]
 }
