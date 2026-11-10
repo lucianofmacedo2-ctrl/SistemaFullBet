@@ -415726,6 +415726,92 @@
         "awayHT": null
       },
       "createdAt": "2026-11-09T19:20:46.081457"
+    },
+    {
+      "id": "JOGO-7775",
+      "countryId": "PAIS-007",
+      "countryName": "Espanha",
+      "leagueId": "LIGA-095",
+      "leagueName": "La Liga 2 ESP",
+      "homeTeamId": "TIME-744",
+      "homeTeamName": "Las Palmas",
+      "awayTeamId": "TIME-381",
+      "awayTeamName": "Eldense",
+      "homeScore": 2,
+      "awayScore": 0,
+      "matchDate": "2026-11-09T19:30:00",
+      "status": "FINALIZADO",
+      "referee": "",
+      "stats": {
+        "halftimeHomeScore": 0,
+        "halftimeAwayScore": 0,
+        "shotsHomeFT": 12,
+        "shotsAwayFT": 7,
+        "shotsOnTargetHomeFT": 5,
+        "shotsOnTargetAwayFT": 1,
+        "cornersHomeFT": 5,
+        "cornersAwayFT": 2,
+        "yellowCardsHomeFT": 2,
+        "yellowCardsAwayFT": 7,
+        "redCardsHomeFT": 0,
+        "redCardsAwayFT": 0,
+        "foulsHome": 11,
+        "foulsAway": 23
+      },
+      "odds": {
+        "homeFT": 2.2,
+        "drawFT": 3.4,
+        "awayFT": 3.1,
+        "over25FT": 1.8,
+        "under25FT": 2,
+        "homeHT": null,
+        "drawHT": null,
+        "awayHT": null
+      },
+      "createdAt": "2026-11-10T16:41:17.601582"
+    },
+    {
+      "id": "JOGO-7776",
+      "countryId": "PAIS-007",
+      "countryName": "Espanha",
+      "leagueId": "LIGA-095",
+      "leagueName": "La Liga 2 ESP",
+      "homeTeamId": "TIME-049",
+      "homeTeamName": "Sabadell",
+      "awayTeamId": "TIME-1585",
+      "awayTeamName": "Sociedad B",
+      "homeScore": 0,
+      "awayScore": 0,
+      "matchDate": "2026-11-09T19:30:00",
+      "status": "FINALIZADO",
+      "referee": "",
+      "stats": {
+        "halftimeHomeScore": 0,
+        "halftimeAwayScore": 0,
+        "shotsHomeFT": 19,
+        "shotsAwayFT": 10,
+        "shotsOnTargetHomeFT": 3,
+        "shotsOnTargetAwayFT": 1,
+        "cornersHomeFT": 5,
+        "cornersAwayFT": 3,
+        "yellowCardsHomeFT": 2,
+        "yellowCardsAwayFT": 3,
+        "redCardsHomeFT": 0,
+        "redCardsAwayFT": 0,
+        "foulsHome": 16,
+        "foulsAway": 18
+      },
+      "odds": {
+        "homeFT": 1.68,
+        "drawFT": 3.6,
+        "awayFT": 4.75,
+        "over25FT": 2.05,
+        "under25FT": 1.75,
+        "homeHT": null,
+        "drawHT": null,
+        "awayHT": null
+      },
+      "createdAt": "2026-11-10T16:41:17.601672"
     }
   ]
 }
