@@ -417489,6 +417489,49 @@
         "awayHT": null
       },
       "createdAt": "2026-11-16T19:03:48.720828"
+    },
+    {
+      "id": "JOGO-7816",
+      "countryId": "PAIS-007",
+      "countryName": "Espanha",
+      "leagueId": "LIGA-095",
+      "leagueName": "La Liga 2 ESP",
+      "homeTeamId": "TIME-160",
+      "homeTeamName": "Albacete",
+      "awayTeamId": "TIME-1588",
+      "awayTeamName": "Celta B",
+      "homeScore": 1,
+      "awayScore": 0,
+      "matchDate": "2026-11-16T19:30:00",
+      "status": "FINALIZADO",
+      "referee": "",
+      "stats": {
+        "halftimeHomeScore": 1,
+        "halftimeAwayScore": 0,
+        "shotsHomeFT": 16,
+        "shotsAwayFT": 11,
+        "shotsOnTargetHomeFT": 6,
+        "shotsOnTargetAwayFT": 3,
+        "cornersHomeFT": 9,
+        "cornersAwayFT": 5,
+        "yellowCardsHomeFT": 3,
+        "yellowCardsAwayFT": 5,
+        "redCardsHomeFT": 0,
+        "redCardsAwayFT": 0,
+        "foulsHome": 14,
+        "foulsAway": 15
+      },
+      "odds": {
+        "homeFT": 1.57,
+        "drawFT": 3.8,
+        "awayFT": 5,
+        "over25FT": 1.62,
+        "under25FT": 2.25,
+        "homeHT": null,
+        "drawHT": null,
+        "awayHT": null
+      },
+      "createdAt": "2026-11-17T18:01:20.711441"
     }
   ]
 }
